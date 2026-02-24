@@ -18,7 +18,7 @@ app.use(
     origin: [
       'http://localhost:3001',
       'http://localhost:3002',
-      'https://test-refactor-console.virtality.app',
+      'https://preview-console.virtality.app',
     ], // replace with your origin
     allowHeaders: ['Content-Type', 'Authorization', 'trpc-accept'],
     allowMethods: ['POST', 'GET', 'OPTIONS'],
