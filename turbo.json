@@ -26,6 +26,12 @@
       "outputs": [".next/**"],
       "env": ["REDIS_SECRET"]
     },
+    "@virtality/db#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "console/prisma/generated/**"],
+      "env": ["CONSOLE_DATABASE_URL"]
+    },
     "@virtality/server#build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
