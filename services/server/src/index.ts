@@ -1,13 +1,14 @@
-import { auth } from '@virtality/auth'
 import { Hono } from 'hono'
-import { authMiddleware } from './middleware/auth.ts'
 import { cors } from 'hono/cors'
-import { ORPC_PREFIX } from '@virtality/orpc'
-
-import type { AuthContext } from '@virtality/auth'
-import { serve } from '@hono/node-server'
 import { logger } from 'hono/logger'
+import { serve } from '@hono/node-server'
+import { auth } from '@virtality/auth'
+import { ORPC_PREFIX } from '@virtality/orpc'
+import type { AuthContext } from '@virtality/auth'
+
+import { authMiddleware } from './middleware/auth.ts'
 import { orpcMiddleware } from './middleware/orpc.ts'
+import { findDeviceByDeviceId } from './data/device.ts'
 
 const app = new Hono<AppContext>()
 
@@ -20,7 +21,7 @@ app.use(
       'http://localhost:3002',
       'https://preview-console.virtality.app',
     ], // replace with your origin
-    allowHeaders: ['Content-Type', 'Authorization', 'trpc-accept'],
+    allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['POST', 'GET', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
@@ -31,6 +32,19 @@ app.use(
 app.use('/api/v1/auth/*', authMiddleware)
 
 app.on(['GET', 'POST'], '/api/v1/auth/*', (c) => auth.handler(c.req.raw))
+
+// Legacy route for VR deviceId check
+app.use('/api/v1/devices/:deviceId', async (c) => {
+  const { deviceId } = c.req.param()
+
+  const device = await findDeviceByDeviceId(deviceId)
+
+  if (!device) {
+    return c.json({ error: 'Device not found' }, 404)
+  }
+
+  return c.json(device)
+})
 
 app.use(`${ORPC_PREFIX}/*`, authMiddleware, orpcMiddleware)
 
