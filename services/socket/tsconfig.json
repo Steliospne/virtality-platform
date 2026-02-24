@@ -1,0 +1,11 @@
+{
+  "extends": "@virtality/typescript-config/nodenext.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    "rootDir": ".",
+    "outDir": "./dist",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true
+  }
+}

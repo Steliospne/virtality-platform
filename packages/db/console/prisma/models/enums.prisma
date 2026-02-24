@@ -1,0 +1,11 @@
+// Shared Enums
+
+enum Language {
+  Greek
+  English
+}
+
+enum Platform {
+  web
+  vr
+}

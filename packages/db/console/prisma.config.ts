@@ -1,0 +1,9 @@
+import 'dotenv/config'
+import type { PrismaConfig } from 'prisma'
+import { env } from 'prisma/config'
+
+export default {
+  schema: './prisma',
+  migrations: { path: './prisma/migrations' },
+  datasource: { url: env('CONSOLE_DATABASE_URL') },
+} satisfies PrismaConfig

@@ -1,0 +1,26 @@
+# Dependencies and package manager artifacts
+node_modules/
+.pnpm-store/
+
+# Build and runtime artifacts
+.next/
+dist/
+build/
+.turbo/
+coverage/
+tsconfig.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs and OS/editor noise
+*.log
+.DS_Store
+
+# Prisma
+generated*
+
+# Cursor Plans
+.cursor/plans/

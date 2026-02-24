@@ -1,0 +1,24 @@
+// Subscription and Billing Domain
+
+model Subscription {
+  id                   String    @id
+  plan                 String
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+}
+
+model WaitingList {
+  id        String    @id
+  email     String
+  plan      String?
+  createdAt DateTime  @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
+}

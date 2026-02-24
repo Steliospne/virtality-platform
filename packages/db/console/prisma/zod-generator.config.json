@@ -1,0 +1,27 @@
+{
+  "$schema": "../../node_modules/prisma-zod-generator/lib/config/schema.json",
+  "mode": "minimal",
+  "pureModels": true,
+  "pureModelsLean": true,
+  "pureModelsExcludeCircularRelations": true,
+  "globalExclusions": {
+    "operations": [
+      "findUnique",
+      "findUniqueOrThrow",
+      "findFirstOrThrow",
+      "createMany",
+      "createManyAndReturn",
+      "update",
+      "updateMany",
+      "updateManyAndReturn",
+      "upsert",
+      "delete",
+      "deleteMany",
+      "aggregate",
+      "groupBy",
+      "count"
+    ]
+  },
+
+  "variants": { "input": { "enabled": true }, "result": { "enabled": false } }
+}

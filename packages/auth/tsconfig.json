@@ -1,0 +1,14 @@
+{
+  "extends": "@virtality/typescript-config/react-library.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "baseUrl": "./src",
+    "outDir": "./dist",
+    "paths": { "@/*": ["*"] }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

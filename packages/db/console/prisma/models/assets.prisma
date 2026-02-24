@@ -1,0 +1,25 @@
+// Assets and Resources Domain
+
+model Avatar {
+  id    String  @id
+  name  String
+  image String? @unique
+}
+
+model Map {
+  id    String  @id
+  name  String
+  image String? @unique
+}
+
+model Device {
+  id        String    @id(map: "devices_pkey")
+  userId    String
+  deviceId  String?
+  model     String?
+  lastUsed  DateTime  @default(now()) @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
+  name      String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "devices_userId_fkey")
+}

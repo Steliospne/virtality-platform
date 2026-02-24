@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "MedicalHistory" ALTER COLUMN "bodyFront" SET DATA TYPE TEXT,
+ALTER COLUMN "bodyBack" SET DATA TYPE TEXT;

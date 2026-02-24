@@ -1,0 +1,41 @@
+{
+  "name": "@virtality/db",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./dist/index.js"
+    },
+    "./definitions": {
+      "types": "./console/prisma/generated/zod/schemas/index.ts",
+      "default": "./dist/console/prisma/generated/zod/schemas/index.js"
+    }
+  },
+  "scripts": {
+    "generate": "prisma generate --config ./console/prisma.config.ts",
+    "build": "pnpm generate && rimraf ./dist && tsc",
+    "migrate:dev": "prisma migrate dev --config ./console/prisma.config.ts",
+    "studio": "prisma studio --config ./console/prisma.config.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.0.1",
+    "@prisma/adapter-pg": "7.2.0",
+    "@prisma/client": "7.2.0",
+    "@prisma/client-runtime-utils": "7.2.0",
+    "dotenv": "17.2.3",
+    "pg": "8.16.3",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "10.2.0",
+    "@types/pg": "8.16.0",
+    "@virtality/eslint-config": "workspace:*",
+    "@virtality/typescript-config": "workspace:*",
+    "eslint": "9.39.2",
+    "prisma": "7.2.0",
+    "prisma-zod-generator": "2.1.4",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  }
+}

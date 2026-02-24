@@ -1,0 +1,31 @@
+{
+  "name": "@virtality/socket",
+  "version": "1.0.0",
+  "description": "Express server for real time communication between the Frontend and the VR headset.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env ./src/app.ts --host 0.0.0.0",
+    "dev_sim": "SIM=true tsx watch --env-file=.env ./src/app.ts",
+    "test_client": "tsx watch --env-file=.env src/tests/test_client.ts ",
+    "build": "tsc --build",
+    "start": "node --env-file=.env ./dist/src/app.js",
+    "type-check": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "author": "Stelios Pnevmatikakis",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "2.8.5",
+    "dotenv": "17.0.0",
+    "express": "5.1.0",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1"
+  },
+  "devDependencies": {
+    "@virtality/typescript-config": "workspace:*",
+    "@types/cors": "2.8.19",
+    "@types/express": "5.0.3",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

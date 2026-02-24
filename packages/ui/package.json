@@ -1,0 +1,27 @@
+{
+  "name": "@virtality/ui",
+  "version": "0.0.0",
+  "description": "UI components for the Virtality platform",
+  "type": "module",
+  "exports": {
+    "./components/*": {
+      "types": "./src/components/*.tsx",
+      "default": "./dist/components/*.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-email/components": "0.0.41",
+    "react": "19.2.3"
+  },
+  "devDependencies": {
+    "@virtality/typescript-config": "workspace:*",
+    "@types/react": "19.2.14",
+    "@types/node": "20.11.17",
+    "typescript": "5.9.3"
+  }
+}

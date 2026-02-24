@@ -1,0 +1,19 @@
+// Bug Reporting Domain
+
+model BugReport {
+  id             String           @id
+  title          String
+  platform       Platform
+  description    String
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(6)
+  deletedAt      DateTime?        @db.Timestamp(6)
+  bugReportImage BugReportImage[]
+}
+
+model BugReportImage {
+  id          String    @id
+  bugReportId String
+  image       String
+  bugReport   BugReport @relation(fields: [bugReportId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@virtality/orpc",
+  "version": "0.0.1",
+  "description": "oRPC API contract and client for Virtality server and client apps",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./s3": {
+      "types": "./src/s3/index.ts",
+      "default": "./dist/s3/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.943.0",
+    "@aws-sdk/s3-request-presigner": "3.943.0",
+    "@orpc/client": "1.13.5",
+    "@orpc/server": "1.13.5",
+    "@virtality/auth": "workspace:*",
+    "@virtality/db": "workspace:*",
+    "@virtality/shared": "workspace:*",
+    "superjson": "2.2.6",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@virtality/typescript-config": "workspace:*",
+    "rimraf": "6.1.2",
+    "typescript": "5.9.3"
+  }
+}

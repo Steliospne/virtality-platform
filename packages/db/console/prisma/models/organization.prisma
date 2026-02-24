@@ -1,0 +1,36 @@
+// Organization Management Domain
+
+model Organization {
+  id          String       @id(map: "organization_pkey")
+  name        String
+  slug        String       @unique(map: "organization_slug_key")
+  logo        String?
+  createdAt   DateTime     @db.Timestamp(6)
+  metadata    String?
+  isActive    Boolean?     @default(true)
+  isFrozen    Boolean?     @default(false)
+  invitations Invitation[]
+  members     Member[]
+}
+
+model Member {
+  id             String       @id(map: "member_pkey")
+  organizationId String
+  userId         String
+  role           String
+  createdAt      DateTime     @db.Timestamp(6)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "member_organizationId_fkey")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, map: "member_userId_fkey")
+}
+
+model Invitation {
+  id             String       @id(map: "invitation_pkey")
+  organizationId String
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime     @db.Timestamp(6)
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade, map: "invitation_inviterId_fkey")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "invitation_organizationId_fkey")
+}

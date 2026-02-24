@@ -1,0 +1,34 @@
+{
+  "name": "@virtality/auth",
+  "version": "1.0.0",
+  "description": "Authentication for the Virtality platform",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@better-auth/stripe": "1.4.18",
+    "@prisma/adapter-pg": "7.2.0",
+    "@prisma/client": "7.2.0",
+    "@react-email/render": "2.0.0",
+    "@virtality/db": "workspace:*",
+    "stripe": "18.5.0",
+    "better-auth": "1.4.18",
+    "@virtality/ui": "workspace:*",
+    "nodemailer": "7.0.11"
+  },
+  "devDependencies": {
+    "@virtality/typescript-config": "workspace:*",
+    "@types/nodemailer": "7.0.4",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,28 @@
+// Patient Program Domain
+
+model PatientProgram {
+  id              String            @id(map: "patient_program_pkey")
+  name            String
+  userId          String
+  patientId       String
+  createdAt       DateTime          @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime          @default(now()) @db.Timestamp(6)
+  deletedAt       DateTime?         @db.Timestamp(6)
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientSession  PatientSession[]
+  programExercise ProgramExercise[]
+}
+
+model ProgramExercise {
+  id             String         @id(map: "program_exercises_pkey")
+  programId      String
+  exerciseId     String
+  sets           Int            @default(3)
+  reps           Int            @default(10)
+  restTime       Int            @default(5)
+  holdTime       Int            @default(1)
+  speed          Float          @default(1)
+  exercise       Exercise       @relation(fields: [exerciseId], references: [id])
+  patientProgram PatientProgram @relation(fields: [programId], references: [id], onDelete: Cascade, map: "program_exercises_programId_fkey")
+}

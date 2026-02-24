@@ -1,0 +1,56 @@
+// Patient Session Domain
+
+model PatientSession {
+  id                  String                                 @id
+  patientId           String
+  programId           String?
+  nprs                String?
+  notes               String?
+  createdAt           DateTime                               @default(now()) @db.Timestamp(6)
+  completedAt         DateTime?                              @db.Timestamp(6)
+  deletedAt           DateTime?                              @db.Timestamp(6)
+  patient             Patient                                @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  program             PatientProgram?                        @relation(fields: [programId], references: [id], onDelete: SetNull)
+  sessionExercise     SessionExercise[]
+  sessionData         SessionData[]
+  supplementalTherapy PatientSessionSupplementalTherapyRel[]
+}
+
+model SessionExercise {
+  id               String          @id
+  patientSessionId String?
+  exerciseId       String
+  sets             Int
+  reps             Int
+  restTime         Int
+  holdTime         Int
+  speed            Float
+  sessionData      SessionData[]
+  exercise         Exercise        @relation(fields: [exerciseId], references: [id])
+  patientSession   PatientSession? @relation(fields: [patientSessionId], references: [id], onDelete: SetNull)
+}
+
+model SessionData {
+  id                String           @id
+  patientSessionId  String?
+  sessionExerciseId String?
+  value             String
+  session           PatientSession?  @relation(fields: [patientSessionId], references: [id], onDelete: SetNull)
+  sessionExercise   SessionExercise? @relation(fields: [sessionExerciseId], references: [id], onDelete: SetNull)
+}
+
+model SupplementalTherapy {
+  id                  String                                 @id
+  name                String
+  supplementalTherapy PatientSessionSupplementalTherapyRel[]
+}
+
+model PatientSessionSupplementalTherapyRel {
+  id                    String  @id
+  supplementalTherapyId String?
+  patientSessionId      String?
+  otherLabel            String?
+
+  session PatientSession?      @relation(fields: [patientSessionId], references: [id], onDelete: SetNull)
+  method  SupplementalTherapy? @relation(fields: [supplementalTherapyId], references: [id], onDelete: SetNull)
+}

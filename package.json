@@ -1,0 +1,28 @@
+{
+  "name": "virtality-refactor-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Temporary monorepo scaffold for Virtality refactor work",
+  "packageManager": "pnpm@10.23.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:console": "turbo run dev:console",
+    "dev:adminboard": "turbo run dev:adminboard",
+    "build": "turbo run build",
+    "build:server": "turbo run @virtality/server#build",
+    "build:console": "turbo run @virtality/console#build",
+    "build:website": "turbo run @virtality/website#build",
+    "build:adminboard": "turbo run @virtality/adminboard#build",
+    "build:packages": "turbo run build:packages",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "0.7.2",
+    "rimraf": "6.1.2",
+    "turbo": "latest"
+  }
+}

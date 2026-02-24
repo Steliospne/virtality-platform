@@ -1,0 +1,31 @@
+# Dependencies and package manager
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build and runtime artifacts
+.next/
+dist/
+build/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Generated
+generated/
+**/generated/
+**/generated-node/
+
+# Prisma
+**/prisma/generated/
+**/prisma/generated-node/
+
+# Env and secrets
+.env
+.env.*
+
+# Logs and OS
+*.log
+.DS_Store

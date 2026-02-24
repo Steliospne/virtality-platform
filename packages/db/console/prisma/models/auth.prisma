@@ -1,0 +1,75 @@
+// Authentication and User Management Domain
+
+model User {
+  id                  String           @id(map: "user_pkey")
+  name                String
+  email               String           @unique(map: "user_email_key")
+  emailVerified       Boolean
+  image               String?          @unique
+  createdAt           DateTime         @db.Timestamp(6)
+  updatedAt           DateTime         @db.Timestamp(6)
+  deletedAt           DateTime?        @db.Timestamp(6)
+  phoneNumber         String?
+  phoneNumberVerified Boolean?
+  stripeCustomerId    String?
+  banExpires          DateTime?
+  banReason           String?
+  banned              Boolean?
+  role                String?          @default("user")
+  testerCode          ReferralCode?
+  accounts            Account[]
+  devices             Device[]
+  invitations         Invitation[]
+  members             Member[]
+  patientProgram      PatientProgram[]
+  sessions            Session[]
+  userPreset          Preset[]
+}
+
+model Account {
+  id                    String    @id(map: "account_pkey")
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamp(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamp(6)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @db.Timestamp(6)
+  updatedAt             DateTime  @db.Timestamp(6)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "account_userId_fkey")
+}
+
+model Session {
+  id                   String   @id(map: "session_pkey")
+  expiresAt            DateTime @db.Timestamp(6)
+  token                String   @unique(map: "session_token_key")
+  createdAt            DateTime @db.Timestamp(6)
+  updatedAt            DateTime @db.Timestamp(6)
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  activeOrganizationId String?
+  impersonatedBy       String?
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "session_userId_fkey")
+}
+
+model Verification {
+  id         String    @id(map: "verification_pkey")
+  identifier String
+  value      String
+  expiresAt  DateTime  @db.Timestamp(6)
+  createdAt  DateTime? @db.Timestamp(6)
+  updatedAt  DateTime? @db.Timestamp(6)
+}
+
+model ReferralCode {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  usedAt     DateTime? @db.Timestamp(6)
+  usedBy     String?   @unique
+  usedByUser User?     @relation(fields: [usedBy], references: [id], onDelete: Cascade)
+}

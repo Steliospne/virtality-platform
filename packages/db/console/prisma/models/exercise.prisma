@@ -1,0 +1,46 @@
+// Exercise and Preset Domain
+
+model Exercise {
+  id              String            @id(map: "exercises_pkey")
+  name            String
+  displayName     String
+  category        String
+  direction       String
+  item            String?
+  image           String?
+  description     String
+  enabled         Boolean           @default(false)
+  isNew           Boolean           @default(false)
+  programExercise ProgramExercise[]
+  sessionExercise SessionExercise[]
+  PresetExercise  PresetExercise[]
+}
+
+model Preset {
+  id             String           @id
+  userId         String?
+  presetName     String           @default("")
+  pathology      String
+  description    String?
+  start          String?
+  end            String?
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(6)
+  deletedAt      DateTime?        @db.Timestamp(6)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  presetExercise PresetExercise[]
+}
+
+model PresetExercise {
+  id         String   @id
+  presetId   String
+  exerciseId String
+  optional   Boolean  @default(false)
+  sets       Int      @default(3)
+  reps       Int      @default(10)
+  restTime   Int      @default(5)
+  holdTime   Int      @default(1)
+  speed      Float    @default(1)
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  preset     Preset   @relation(fields: [presetId], references: [id], onDelete: Cascade)
+}

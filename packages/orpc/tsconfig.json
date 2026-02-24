@@ -1,0 +1,10 @@
+{
+  "extends": "@virtality/typescript-config/base.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

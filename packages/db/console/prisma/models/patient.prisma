@@ -1,0 +1,36 @@
+// Patient and Medical History Domain
+
+model Patient {
+  id             String           @id(map: "patients_pkey")
+  name           String
+  userId         String?
+  email          String?
+  phone          String?
+  dob            String?
+  sex            String?
+  weight         String?
+  height         String?
+  occupation     String?
+  language       Language         @default(Greek)
+  image          String?          @unique
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(6)
+  deletedAt      DateTime?        @db.Timestamp(6)
+  patientProgram PatientProgram[]
+  medicalHistory MedicalHistory[]
+  patientSession PatientSession[]
+}
+
+model MedicalHistory {
+  id           String  @id
+  patientId    String
+  anamneses    String?
+  complaints   String?
+  expectations String?
+  diagnosis    String?
+  nprs         String?
+  bodyFront    String?
+  bodyBack     String?
+  deltas       String?
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}

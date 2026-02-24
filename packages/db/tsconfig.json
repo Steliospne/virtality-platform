@@ -1,0 +1,15 @@
+{
+  "extends": "@virtality/typescript-config/base.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true,
+    "baseUrl": "./console",
+    "paths": { "@/*": ["*"] },
+    "outDir": "./dist"
+  },
+  "include": [
+    "index.ts",
+    "console/src/**/*.ts",
+    "console/prisma/generated/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

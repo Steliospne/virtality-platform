@@ -1,0 +1,79 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", ".next/**"],
+      "env": ["REDIS_SECRET", "CONSOLE_DATABASE_URL", "SENTRY_AUTH_TOKEN"]
+    },
+    "@virtality/website#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**"],
+      "env": []
+    },
+    "@virtality/adminboard#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**"],
+      "env": []
+    },
+    "@virtality/console#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**"],
+      "env": ["REDIS_SECRET"]
+    },
+    "@virtality/server#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "console/prisma/generated/**"],
+      "env": ["CONSOLE_DATABASE_URL", "SENTRY_AUTH_TOKEN", "NODE_ENV"]
+    },
+    "build:packages": {
+      "dependsOn": ["^build"],
+      "with": [
+        "@virtality/shared#build",
+        "@virtality/db#build",
+        "@virtality/orpc#build",
+        "@virtality/auth#build",
+        "@virtality/ui#build"
+      ],
+      "outputs": ["dist/**"],
+      "env": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "dev:console": {
+      "with": [
+        "@virtality/console#dev",
+        "@virtality/server#dev",
+        "@virtality/orpc#dev"
+      ],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "dev:adminboard": {
+      "with": ["@virtality/adminboard#dev", "@virtality/server#dev"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"]
+    }
+  }
+}

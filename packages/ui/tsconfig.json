@@ -1,0 +1,13 @@
+{
+  "extends": "@virtality/typescript-config/react-library.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true,
+    "baseUrl": "./src",
+    "outDir": "./dist/components/email",
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

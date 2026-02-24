@@ -1,0 +1,32 @@
+{
+  "name": "@virtality/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./utils": {
+      "types": "./src/utils/index.ts",
+      "default": "./dist/utils/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./dist/types/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.3.6",
+    "uuid": "11.1.0"
+  },
+  "devDependencies": {
+    "@virtality/typescript-config": "workspace:*",
+    "@types/node": "20.11.17",
+    "typescript": "5.9.3"
+  }
+}

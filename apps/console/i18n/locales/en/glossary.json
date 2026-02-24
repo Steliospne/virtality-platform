@@ -1,0 +1,12 @@
+{
+  "platform": "platform",
+  "application": "application",
+  "language": "Language",
+  "profile": "Profile",
+  "settings": "Settings",
+  "logout": "Logout",
+  "lng": {
+    "en": "English",
+    "el": "Greek"
+  }
+}

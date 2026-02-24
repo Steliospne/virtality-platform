@@ -1,0 +1,35 @@
+{
+  "name": "@virtality/server",
+  "version": "1.0.0",
+  "description": "New server for the Virtality platform",
+  "main": "./dist/index.mjs",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --watch --env-file=.env ./src/index.ts",
+    "build": "rimraf dist && tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.19.9",
+    "@hono/trpc-server": "0.4.2",
+    "@prisma/adapter-pg": "7.2.0",
+    "@prisma/client": "7.2.0",
+    "@trpc/server": "11.10.0",
+    "@virtality/auth": "workspace:*",
+    "@virtality/db": "workspace:*",
+    "@virtality/orpc": "workspace:*",
+    "@virtality/shared": "workspace:*",
+    "@virtality/ui": "workspace:*",
+    "hono": "4.11.9",
+    "pg": "8.16.3",
+    "superjson": "2.2.6",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.17",
+    "@virtality/typescript-config": "workspace:*",
+    "srvx": "0.11.4",
+    "tsx": "4.7.1",
+    "typescript": "5.9.3"
+  }
+}
