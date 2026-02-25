@@ -9,6 +9,7 @@ const app = express()
 const httpServer = createServer(app)
 
 console.log('env: ', process.env.ENV)
+console.log('node env: ', process.env.NODE_ENV)
 console.log('sim: ', process.env.SIM)
 
 const socketOptions = {
@@ -16,10 +17,8 @@ const socketOptions = {
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://www.virtality.app',
       'https://console.virtality.app',
-      'https://preview-web.virtality.app',
-      'https://preview-app.virtality.app',
+      'https://preview-console.virtality.app',
     ],
   },
 } satisfies Partial<ServerOptions>
@@ -31,6 +30,11 @@ const PORT = process.env.PORT || '8081'
 // Socket.IO connection handler
 io.on(CONNECTION_EVENT.CONNECTION, connectionHandler.bind(null, io))
 
-httpServer.listen({ port: PORT, host: '0.0.0.0' }, () => {
+const httpServerOptions =
+  process.env.NODE_ENV !== 'production'
+    ? { port: PORT, host: '0.0.0.0' }
+    : { port: PORT }
+
+httpServer.listen(httpServerOptions, () => {
   console.log(`Server listening on port ${PORT}`)
 })

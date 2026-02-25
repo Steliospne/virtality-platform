@@ -7,8 +7,10 @@ export const createEventHandler = (
   socket: Socket,
 ) => {
   socket.on(event[key].name, (payload: any) => {
-    console.log(`[RECEIVE] Event: ${event[key].name}`)
-    console.log(`[EMIT] Event: ${event[key].name} to room: ${roomCode}`)
+    // console.log(`[RECEIVE] Event: ${event[key].name}`)
+    console.log(
+      `[EMIT] Event: ${event[key].name} by ${socket.handshake.query?.agent} to room: ${roomCode}`,
+    )
     if (payload !== undefined) console.log(`[PAYLOAD]`, payload)
 
     socket
