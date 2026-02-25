@@ -6,6 +6,8 @@ import {
   GAME_EVENT,
   GameEvent,
   Room,
+  WEBRTC_EVENT,
+  WebRtcEventKey,
 } from '../types/models'
 import { createEventHandler } from './vrComms'
 import vrCommSim from './vrCommsTesting'
@@ -143,6 +145,15 @@ export const connectionHandler = (
       } for key: ${key}, payload: ${GAME_EVENT[key as GameEvent].payload}`,
     )
     createEventHandler(key as GameEvent, GAME_EVENT, roomCode, socket)
+  }
+
+  for (const key in WEBRTC_EVENT) {
+    console.log(
+      `[REGISTER] Event: ${
+        WEBRTC_EVENT[key as WebRtcEventKey].name
+      } for key: ${key}, payload: ${WEBRTC_EVENT[key as WebRtcEventKey].payload}`,
+    )
+    createEventHandler(key as WebRtcEventKey, WEBRTC_EVENT, roomCode, socket)
   }
 
   // socket.onAny((event, ...args) => {

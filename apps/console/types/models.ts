@@ -120,6 +120,15 @@ export const CONNECTION_EVENT = {
 
 export type ConnectionEventKey = keyof typeof CONNECTION_EVENT
 
+/** WebRTC signaling for VR casting: console requests offer, VR sends offer, console sends answer. */
+export const CASTING_EVENT = {
+  RequestOffer: { name: 'onRequestOffer', payload: false },
+  Offer: { name: 'onOffer', payload: true },
+  Answer: { name: 'onAnswer', payload: true },
+} as const
+
+export type CastingEventKey = keyof typeof CASTING_EVENT
+
 export type WarmupPayload = {
   settings: VRPayloadSettings
 }

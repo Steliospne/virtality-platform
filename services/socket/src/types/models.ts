@@ -57,6 +57,15 @@ export const GAME_EVENT = {
 
 export type GameEvent = keyof typeof GAME_EVENT
 
+/** WebRTC signaling events for VR casting (offer/answer over socket). */
+export const WEBRTC_EVENT = {
+  RequestOffer: { name: 'onRequestOffer', payload: false },
+  Offer: { name: 'onOffer', payload: true },
+  Answer: { name: 'onAnswer', payload: true },
+} as const
+
+export type WebRtcEventKey = keyof typeof WEBRTC_EVENT
+
 export type Room = {
   id: string
   firstMemberId: null | string
