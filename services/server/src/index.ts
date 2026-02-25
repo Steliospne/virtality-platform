@@ -19,6 +19,9 @@ app.use(
     origin: [
       'http://localhost:3001',
       'http://localhost:3002',
+      'https://admin.virtality.app',
+      'https://preview-admin.virtality.app',
+      'https://console.virtality.app',
       'https://preview-console.virtality.app',
     ], // replace with your origin
     allowHeaders: ['Content-Type', 'Authorization'],
