@@ -33,7 +33,7 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
     }
 
     if (!connected) {
-      selectedDevice.socket.io.opts.query.roomCode = deviceId
+      selectedDevice.mutations.setDeviceRoomCode(deviceId)
 
       selectedDevice.socket.connect()
       setConnectionLoading(true)

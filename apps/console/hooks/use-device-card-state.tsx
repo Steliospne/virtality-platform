@@ -91,7 +91,7 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
       if (code) {
         dispatch({ type: 'setVerificationCode', payload: code })
         dispatch({ type: 'setCodeFieldOpen', payload: !state.isCodeFieldOpen })
-        socket.io.opts.query.roomCode = code
+        device.mutations.setDeviceRoomCode(code)
         return code
       }
     } catch (err) {
@@ -104,7 +104,7 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
   const VRConnection = async () => {
     if (!connected) {
       if (device.data.deviceId)
-        socket.io.opts.query.roomCode = device.data.deviceId
+        device.mutations.setDeviceRoomCode(device.data.deviceId)
       socket.connect()
     }
   }
@@ -141,7 +141,7 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
   const resetPairing = async () => {
     setRePairDialogOpen()
     resetDeviceId({ id: device.data.id })
-    device.data.deviceId = null
+    device.mutations.clearDeviceRoomCode()
 
     await startPairing()
   }

@@ -141,19 +141,25 @@ export type ExerciseData = Omit<ProgramExercise, 'exerciseId' | 'programId'>
 export type VRDevice = {
   data: Device
   socket: SocketWithQuery
-  programStart: (payload: ProgramStartPayload) => void
-  programPause: () => void
-  programEnd: () => void
-  startWarmup: (payload: WarmupPayload) => void
-  endWarmup: () => void
-  settingsChange: (payload: ExerciseData) => void
-  changeExercise: (payload: string) => void
-  calibrateHeight: () => void
-  resetPosition: () => void
-  sittingChange: (payload: boolean) => void
-  gameLoad: (payload: { avatarId: number }) => void
-  gameStart: () => void
-  gameEnd: () => void
+  mutations: {
+    setDeviceRoomCode: (roomCode: string) => void
+    clearDeviceRoomCode: () => void
+  }
+  events: {
+    programStart: (payload: ProgramStartPayload) => void
+    programPause: () => void
+    programEnd: () => void
+    startWarmup: (payload: WarmupPayload) => void
+    endWarmup: () => void
+    settingsChange: (payload: ExerciseData) => void
+    changeExercise: (payload: string) => void
+    calibrateHeight: () => void
+    resetPosition: () => void
+    sittingChange: (payload: boolean) => void
+    gameLoad: (payload: { avatarId: number }) => void
+    gameStart: () => void
+    gameEnd: () => void
+  }
 }
 
 export const ROOM_EVENT = {

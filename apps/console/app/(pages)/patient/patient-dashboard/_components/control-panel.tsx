@@ -1,4 +1,4 @@
-import { useEffect, useState, MouseEvent, useCallback } from 'react'
+import { useEffect, useState, MouseEvent, useRef } from 'react'
 import {
   CircleAlert,
   PauseCircle,
@@ -51,6 +51,8 @@ import usePatient from '@/hooks/queries/patient/use-patient'
 import usePatientSessions from '@/hooks/queries/patient-session/use-patient-sessions'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+
+let wakeLock: WakeLockSentinel | null = null
 
 const ControlPanel = ({ className }: { className?: string }) => {
   const { devices } = useDeviceContext()
@@ -132,14 +134,14 @@ const ControlPanel = ({ className }: { className?: string }) => {
         totalSets: dispatchedData[0].sets,
       })
 
-      selectedDevice?.programStart(payload)
+      selectedDevice?.events.programStart(payload)
     } else {
-      selectedDevice?.programPause()
+      selectedDevice?.events.programPause()
     }
   }
 
   const programEnd = () => {
-    selectedDevice?.programEnd()
+    selectedDevice?.events.programEnd()
   }
 
   const skipExercise = (e: MouseEvent) => {
@@ -167,7 +169,7 @@ const ControlPanel = ({ className }: { className?: string }) => {
     }
     currExercise.current = nextExercise
     const payload = exercises[nextExercise].exerciseId
-    selectedDevice?.changeExercise(payload)
+    selectedDevice?.events.changeExercise(payload)
     setActiveExerciseData({
       currentRep: 0,
       currentSet: 1,
@@ -189,8 +191,8 @@ const ControlPanel = ({ className }: { className?: string }) => {
         mapId: selectedMap!.id,
       },
     }
-    if (programState !== 'started') selectedDevice?.startWarmup(payload)
-    else selectedDevice?.endWarmup()
+    if (programState !== 'started') selectedDevice?.events.startWarmup(payload)
+    else selectedDevice?.events.endWarmup()
   }
 
   const isProgramActive = programState === 'started'
@@ -276,6 +278,28 @@ const Controls = ({
   handleWarmupStart: () => Id | undefined
   skipExercise: (e: MouseEvent) => void
 }) => {
+  const StartProgramButton = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const buttonRef = StartProgramButton.current
+
+    const keepScreenAwake = async () => {
+      if ('wakeLock' in navigator && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen')
+      }
+    }
+
+    if (buttonRef) {
+      buttonRef.addEventListener('click', keepScreenAwake)
+    }
+
+    return () => {
+      if (buttonRef) {
+        buttonRef.removeEventListener('click', keepScreenAwake)
+      }
+    }
+  }, [])
+
   switch (selectedMode) {
     case 'main':
       return (
@@ -290,7 +314,12 @@ const Controls = ({
             <SkipBack />
           </Button>
 
-          <Button variant='primary' size='icon' onClick={programStart}>
+          <Button
+            ref={StartProgramButton}
+            variant='primary'
+            size='icon'
+            onClick={programStart}
+          >
             {isProgramInactive || isProgramPaused ? (
               <PlayCircle className='size-6' />
             ) : (
@@ -320,6 +349,7 @@ const Controls = ({
       return (
         <>
           <Button
+            ref={StartProgramButton}
             variant={isProgramInactive ? 'primary' : 'destructive'}
             size='icon'
             onClick={handleWarmupStart}
@@ -381,11 +411,11 @@ const SceneSettings = ({
   const [isSitting, setSitting] = useState(false)
 
   const handleCalibrateHeight = () => {
-    selectedDevice?.calibrateHeight()
+    selectedDevice?.events.calibrateHeight()
   }
 
   const handleResetPosition = () => {
-    selectedDevice?.resetPosition()
+    selectedDevice?.events.resetPosition()
   }
 
   const handleScenePopover = () => {
@@ -397,7 +427,7 @@ const SceneSettings = ({
   }
 
   const sittingChangeSocketHandler = (payload: boolean) => {
-    selectedDevice?.sittingChange(payload)
+    selectedDevice?.events.sittingChange(payload)
   }
 
   const sittingChangeAckSocketHandler = () => {

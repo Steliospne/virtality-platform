@@ -44,7 +44,7 @@ const defaultValues: DeviceForm = {
 const Devices = () => {
   const { isPending } = useIsAuthed()
   const [isDialogOpen, setDialogOpen] = useState(false)
-  const { devices, devicesLoading, createDevice } = useDeviceContext()
+  const { devices, isLoading, createDevice } = useDeviceContext()
 
   const form = useForm<DeviceForm>({
     resolver: zodResolver(DeviceSchema.pick({ name: true, model: true })),
@@ -68,7 +68,7 @@ const Devices = () => {
 
   const handleDialogOpen = () => setDialogOpen(!isDialogOpen)
 
-  if (devicesLoading && isPending)
+  if (isLoading && isPending)
     return (
       <div className='min-h-screen-with-nav'>
         <div className='flex flex-wrap gap-6 p-4'>
@@ -83,7 +83,7 @@ const Devices = () => {
     <div className='min-h-screen-with-nav'>
       <div className='flex flex-wrap gap-6 p-4'>
         {/* Add Device Card */}
-        {!devicesLoading &&
+        {!isLoading &&
           devices.map((device) => (
             <DeviceCard key={device.data.id} device={device} />
           ))}
