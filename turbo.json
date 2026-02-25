@@ -38,6 +38,11 @@
       "outputs": ["dist/**", "console/prisma/generated/**"],
       "env": ["CONSOLE_DATABASE_URL", "SENTRY_AUTH_TOKEN", "NODE_ENV"]
     },
+    "@virtality/socket": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": ["PORT", "NODE_ENV"]
+    },
     "build:packages": {
       "dependsOn": ["^build"],
       "with": [
