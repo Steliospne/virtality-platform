@@ -14,7 +14,7 @@ const listPatientSessions = authed
     const patientSessions = await prisma.patientSession.findMany({
       where: {
         patientId: input?.where?.patientId,
-        AND: [{ deletedAt: null, completedAt: { not: null } }],
+        AND: [{ deletedAt: null }],
         ...input.where,
       },
       take: input.take,

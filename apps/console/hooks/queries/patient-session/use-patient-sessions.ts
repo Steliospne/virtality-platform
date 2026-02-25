@@ -2,15 +2,14 @@
 
 import { orpc } from '@/integrations/orpc/client'
 import { useQuery } from '@tanstack/react-query'
+import { PatientSessionFindManyArgs } from '@virtality/db'
 
 interface usePatientSessionsProps {
-  patientId: string
+  input: PatientSessionFindManyArgs
 }
 
-const usePatientSessions = ({ patientId }: usePatientSessionsProps) => {
-  return useQuery(
-    orpc.patientSession.list.queryOptions({ input: { where: { patientId } } }),
-  )
+const usePatientSessions = ({ input }: usePatientSessionsProps) => {
+  return useQuery(orpc.patientSession.list.queryOptions({ input }))
 }
 
 export default usePatientSessions

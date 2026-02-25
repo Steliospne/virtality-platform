@@ -3,6 +3,8 @@ import { progressiveRetry } from '@/lib/utils'
 import { VRDevice } from '@/types/models'
 import { useRow, useStore } from 'tinybase/ui-react'
 import useResetDeviceId from './mutations/device/use-reset-device-id'
+import { orpc } from '@/integrations/orpc/client'
+import { getQueryClient } from '@/integrations/tanstack-query/provider'
 
 type State = {
   status: 'paired' | 'pairing' | 'unpaired'
@@ -59,6 +61,7 @@ interface useDeviceCardStateProps {
 }
 
 const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
+  const { queryClient } = getQueryClient()
   const store = useStore()
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const socket = device.socket
@@ -68,8 +71,13 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
   }
 
   const hasStartedPairing = useRef(false)
-
-  const { mutate: resetDeviceId } = useResetDeviceId({})
+  const { mutate: resetDeviceId } = useResetDeviceId({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: orpc.device.list.key(),
+      })
+    },
+  })
 
   useEffect(() => {
     if (device.data.deviceId) {
@@ -97,7 +105,6 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
     if (!connected) {
       if (device.data.deviceId)
         socket.io.opts.query.roomCode = device.data.deviceId
-      device.usedBy = ''
       socket.connect()
     }
   }
@@ -144,7 +151,6 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
     dispatch({ type: 'resetState' })
     hasStartedPairing.current = false
     store?.delRow('devices', device.data.id)
-    device.usedBy = null
   }
 
   const setRePairDialogOpen = () =>

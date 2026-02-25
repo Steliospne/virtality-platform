@@ -1,4 +1,4 @@
-import { useEffect, useState, MouseEvent } from 'react'
+import { useEffect, useState, MouseEvent, useCallback } from 'react'
 import {
   CircleAlert,
   PauseCircle,
@@ -55,7 +55,9 @@ import { Label } from '@/components/ui/label'
 const ControlPanel = ({ className }: { className?: string }) => {
   const { devices } = useDeviceContext()
   const { state, handler, patientId, currExercise } = usePatientDashboard()
-  const { data: patientSessions } = usePatientSessions({ patientId })
+  const { data: patientSessions } = usePatientSessions({
+    input: { where: { patientId } },
+  })
   const { data: patient } = usePatient({ patientId })
   const sessionNumber = patientSessions?.length ?? 0
   const {
@@ -82,9 +84,6 @@ const ControlPanel = ({ className }: { className?: string }) => {
       devices?.find(
         (device) => device.data.id === patientLocalData?.lastHeadset,
       ) ?? null
-
-    if (newDevice?.usedBy !== patientId && newDevice?.socket.connected)
-      return setSelectedDevice(null)
 
     if (selectedDevice?.data.id !== newDevice?.data.id) {
       setSelectedDevice(newDevice)
@@ -415,11 +414,8 @@ const SceneSettings = ({
       socket.off(PROGRAM_EVENT.SittingChange, sittingChangeSocketHandler)
       socket.off(PROGRAM_EVENT.SittingChangeAck, sittingChangeAckSocketHandler)
     }
-  }, [
-    selectedDevice,
-    sittingChangeSocketHandler,
-    sittingChangeAckSocketHandler,
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDevice])
 
   return (
     <Popover open={openSceneSettings} onOpenChange={setOpenSceneSettings}>

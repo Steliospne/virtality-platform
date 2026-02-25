@@ -141,7 +141,6 @@ export type ExerciseData = Omit<ProgramExercise, 'exerciseId' | 'programId'>
 export type VRDevice = {
   data: Device
   socket: SocketWithQuery
-  usedBy: string | null
   programStart: (payload: ProgramStartPayload) => void
   programPause: () => void
   programEnd: () => void

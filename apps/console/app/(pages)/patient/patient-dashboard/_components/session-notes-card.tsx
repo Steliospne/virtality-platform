@@ -14,15 +14,19 @@ import { SessionNotesSchema, SessionNotes } from '@virtality/shared/types'
 import { Save } from 'lucide-react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import useUpdatePatientSession from '@/hooks/mutations/patient-session/use-update-patient-session'
-import usePatientSession from '@/hooks/queries/patient-session/use-patient-session'
 
-const SessionNotesCard = () => {
-  const { state, patientSessionId } = usePatientDashboard()
+import { getQueryClient } from '@/integrations/tanstack-query/provider'
+import { orpc } from '@/integrations/orpc/client'
+import { cn } from '@/lib/utils'
+
+interface SessionNotesCardProps {
+  className?: string
+}
+
+const SessionNotesCard = ({ className }: SessionNotesCardProps) => {
+  const { queryClient } = getQueryClient()
+  const { state, patientSessionId, patientId } = usePatientDashboard()
   const { programState } = state
-
-  const { data: patientSession, refetch } = usePatientSession({
-    sessionId: patientSessionId.current,
-  })
 
   const form = useForm({
     resolver: zodResolver(SessionNotesSchema),
@@ -30,17 +34,21 @@ const SessionNotesCard = () => {
   })
 
   const { mutate: updatePatientSession, isPending } = useUpdatePatientSession({
-    onSuccess: () => refetch(),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientSession.list.key({
+          input: { where: { patientId } },
+        }),
+      }),
   })
 
   const onSubmit = (values: SessionNotes) => {
-    if (!patientSession) return
-
+    if (!patientSessionId.current) return
     updatePatientSession({ id: patientSessionId.current, notes: values.notes })
   }
 
   return (
-    <Card className='h-full'>
+    <Card className={cn('h-full', className)}>
       <CardHeader>
         <CardTitle>Session Notes</CardTitle>
       </CardHeader>

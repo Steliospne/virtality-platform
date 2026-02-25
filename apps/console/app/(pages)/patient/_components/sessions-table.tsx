@@ -26,7 +26,14 @@ const SessionsTable = ({ patientId, onSessionSelect }: SessionsTableProps) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
-  const { data: tableData } = usePatientSessions({ patientId })
+  const { data: tableData } = usePatientSessions({
+    input: {
+      where: {
+        patientId,
+        AND: [{ deletedAt: null }, { completedAt: { not: null } }],
+      },
+    },
+  })
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({

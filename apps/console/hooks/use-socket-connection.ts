@@ -10,10 +10,7 @@ const useSocketConnection = ({ device }: { device?: VRDevice | null }) => {
 
     if (!device) return onDisconnect()
 
-    const onConnect = () => {
-      if (!device.usedBy) return
-      setConnected(true)
-    }
+    const onConnect = () => setConnected(true)
 
     if (device.socket.connected) onConnect()
 
