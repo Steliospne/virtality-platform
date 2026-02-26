@@ -26,6 +26,7 @@ import { generateUUID } from '@virtality/shared/utils'
 import useCreateProgramExercises from '@/hooks/mutations/program-exercise/use-create-program-exercises'
 import useCreateProgram from '@/hooks/mutations/program/use-create-program'
 import { orpc } from '@/integrations/orpc/client'
+import posthog from 'posthog-js'
 
 const applyExercises = (
   exerciseInfo: Exercise[],
@@ -103,6 +104,8 @@ const QuickStartDialog = () => {
   const continueHandler = () => {
     if (!exerciseInfo) return
 
+    posthog.capture('quickstart_continue', { patientId })
+
     setDialogState(0)
     updateExercises([])
 
@@ -114,6 +117,8 @@ const QuickStartDialog = () => {
 
   const saveAsHandler = async (values: PatientProgramForm) => {
     if (!exerciseInfo || !values) return
+    posthog.capture('quickstart_program_created', { patientId })
+
     const { name } = values
 
     const data = { patientId, name }

@@ -50,6 +50,7 @@
     "@trpc/tanstack-react-query": "^11.10.0",
     "@types/mdx": "2.0.13",
     "@virtality/db": "workspace:*",
+    "@virtality/orpc": "workspace:*",
     "@virtality/react-joyride": "0.0.3",
     "@virtality/server": "workspace:*",
     "@virtality/shared": "workspace:*",
@@ -75,6 +76,7 @@
     "next": "16.1.6",
     "next-themes": "0.4.6",
     "pg": "8.16.3",
+    "posthog-js": "1.255.0",
     "quill": "2.0.3",
     "react": "19.2.3",
     "react-day-picker": "9.11.3",
@@ -95,8 +97,7 @@
     "tinybase": "6.7.5",
     "ua-parser-js": "2.0.6",
     "uuid": "11.1.0",
-    "zod": "4.3.6",
-    "@virtality/orpc": "workspace:*"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/lodash.capitalize": "4.2.1",
