@@ -104,7 +104,7 @@ const QuickStartDialog = () => {
   const continueHandler = () => {
     if (!exerciseInfo) return
 
-    posthog.capture('quickstart_continue', { patientId })
+    posthog.capture('quickstart_continue')
 
     setDialogState(0)
     updateExercises([])
@@ -117,7 +117,7 @@ const QuickStartDialog = () => {
 
   const saveAsHandler = async (values: PatientProgramForm) => {
     if (!exerciseInfo || !values) return
-    posthog.capture('quickstart_program_created', { patientId })
+    posthog.capture('quickstart_program_created')
 
     const { name } = values
 

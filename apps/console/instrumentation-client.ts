@@ -1,8 +1,11 @@
 import posthog from 'posthog-js'
-// import { orpc } from './integrations/orpc/client'
 import { authClient } from './auth-client'
 
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  throw new Error('POSTHOG_KEY is not set')
+}
+
+posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
   api_host: '/ph',
   ui_host: 'https://eu.posthog.com',
   persistence: 'localStorage+cookie',
