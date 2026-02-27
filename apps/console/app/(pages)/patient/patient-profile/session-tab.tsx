@@ -20,8 +20,6 @@ const SessionTab = ({ patientId }: SessionTabProps) => {
 
   return sessionViewing === '' ? (
     <SessionsTable patientId={patientId} onSessionSelect={setSessionViewing} />
-  ) : isLoading ? (
-    <div>Loading...</div>
   ) : session ? (
     <SessionCard
       session={session}

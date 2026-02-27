@@ -164,12 +164,7 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
                 <span>{currentProgram?.name}</span>
                 <div className='flex flex-col gap-2'>
                   {session.completedAt && (
-                    <Badge
-                      variant='outline'
-                      // className={`${getStatusColor(session.completedAt)}`}
-                    >
-                      Completed
-                    </Badge>
+                    <Badge variant='outline'>Completed</Badge>
                   )}
                   <Button
                     size='icon'
@@ -269,7 +264,11 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
                           >
                             Cancel
                           </Button>
-                          <Button size='sm' onClick={handleSaveNotes}>
+                          <Button
+                            size='sm'
+                            onClick={handleSaveNotes}
+                            disabled={isPending}
+                          >
                             Save
                           </Button>
                         </div>

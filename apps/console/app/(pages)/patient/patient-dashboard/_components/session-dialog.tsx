@@ -51,7 +51,14 @@ const SessionDialog = () => {
   const { mutateAsync: createSupplementalTherapyRel } =
     useCreateSupplementalTherapyRelMutation({})
   const { mutate: deletePatientSession } = useDeletePatientSession({})
-  const { mutateAsync: updatePatientSession } = useUpdatePatientSession({})
+  const { mutateAsync: updatePatientSession } = useUpdatePatientSession({
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: orpc.patientSession.find.key({
+          input: { where: { id: patientSessionId.current } },
+        }),
+      }),
+  })
 
   const form = useForm({
     resolver: zodResolver(
@@ -62,6 +69,9 @@ const SessionDialog = () => {
       otherEnabled: false,
       otherText: '',
       notes: '',
+    },
+    values: {
+      notes: patientSessionData?.notes ?? '',
     },
   })
 
@@ -117,6 +127,7 @@ const SessionDialog = () => {
                     {method.name.replaceAll('_', ' ')}
                   </span>
                 }
+                // eslint-disable-next-line react-hooks/incompatible-library
                 checked={form.watch('methods')?.includes(method.id)}
                 onCheckedChange={(value) => {
                   const current = form.getValues('methods') ?? []
@@ -148,7 +159,7 @@ const SessionDialog = () => {
             )}
 
             <Textarea
-              value={patientSessionData?.notes ?? ''}
+              value={form.watch('notes') ?? ''}
               onChange={(e) => form.setValue('notes', e.target.value)}
             />
           </div>
