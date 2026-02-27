@@ -63,9 +63,6 @@ const SessionDialog = () => {
       otherText: '',
       notes: '',
     },
-    values: {
-      notes: patientSessionData?.notes ?? '',
-    },
   })
 
   const onSubmit = async (
@@ -151,7 +148,7 @@ const SessionDialog = () => {
             )}
 
             <Textarea
-              value={form.watch('notes') ?? ''}
+              value={patientSessionData?.notes ?? ''}
               onChange={(e) => form.setValue('notes', e.target.value)}
             />
           </div>

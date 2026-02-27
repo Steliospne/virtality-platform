@@ -16,16 +16,20 @@ const SessionTab = ({ patientId }: SessionTabProps) => {
     sessionId: sessionViewing,
   })
 
+  if (isLoading) return <div>Loading...</div>
+
   return sessionViewing === '' ? (
     <SessionsTable patientId={patientId} onSessionSelect={setSessionViewing} />
   ) : isLoading ? (
     <div>Loading...</div>
-  ) : (
+  ) : session ? (
     <SessionCard
       session={session}
       patientId={patientId}
       onBack={setSessionViewing}
     />
+  ) : (
+    <div>Session not found</div>
   )
 }
 

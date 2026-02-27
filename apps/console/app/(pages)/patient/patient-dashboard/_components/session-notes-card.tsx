@@ -35,11 +35,18 @@ const SessionNotesCard = ({ className }: SessionNotesCardProps) => {
 
   const { mutate: updatePatientSession, isPending } = useUpdatePatientSession({
     onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: orpc.patientSession.list.key({
-          input: { where: { patientId } },
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: orpc.patientSession.list.key({
+            input: { where: { patientId } },
+          }),
         }),
-      }),
+        queryClient.invalidateQueries({
+          queryKey: orpc.patientSession.find.key({
+            input: { where: { id: patientSessionId.current } },
+          }),
+        }),
+      ]),
   })
 
   const onSubmit = (values: SessionNotes) => {

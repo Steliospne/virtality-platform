@@ -11,9 +11,12 @@ import {
 import Chart from '@/components/ui/progress-chart'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import useUpdatePatientSession from '@/hooks/mutations/patient-session/use-update-patient-session'
 import usePatientPrograms from '@/hooks/queries/patient-program/use-patient-programs'
 import useExercise from '@/hooks/queries/use-exercise'
 import useUserName from '@/hooks/queries/user/use-user-name'
+import { orpc } from '@/integrations/orpc/client'
+import { getQueryClient } from '@/integrations/tanstack-query/provider'
 import { getDisplayName } from '@/lib/utils'
 import { ExtendedPatientSession, ProgressDataPoint } from '@/types/models'
 import { format } from 'date-fns'
@@ -26,14 +29,17 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import { toast } from 'react-toastify'
 
 interface SessionCardProps {
-  session?: ExtendedPatientSession | null
+  session: ExtendedPatientSession
   patientId: string
   onBack: (value: string) => void
 }
 
 const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
+  const { queryClient } = getQueryClient()
+
   const [chartIndex, setChartIndex] = useState(0)
   const [notes, setNotes] = useState(session?.notes ?? '')
   const [isEditing, setIsEditing] = useState(false)
@@ -42,6 +48,24 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
   const { data: programs } = usePatientPrograms({ patientId })
   const { data: userName } = useUserName()
   const { data: exercises } = useExercise()
+
+  const { mutate: updatePatientSession, isPending } = useUpdatePatientSession({
+    onSuccess: () => {
+      toast.success('Notes updated successfully.')
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: orpc.patientSession.list.key({
+            input: { where: { patientId } },
+          }),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: orpc.patientSession.find.key({
+            input: { where: { id: session.id } },
+          }),
+        }),
+      ])
+    },
+  })
 
   const chartData =
     session?.sessionData.map((data) => {
@@ -111,19 +135,17 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
   }
 
   const handleSaveNotes = () => {
+    updatePatientSession({ id: session.id, notes })
     setIsEditing(false)
   }
 
   const handleCancelEdit = () => {
-    setNotes('') // replace with session.notes later
     setIsEditing(false)
   }
 
   const handleBack = () => {
     onBack('')
   }
-
-  if (!session) return null
 
   return (
     <AnimatePresence mode='wait'>
