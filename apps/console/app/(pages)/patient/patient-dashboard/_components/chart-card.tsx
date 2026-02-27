@@ -5,14 +5,12 @@ import useExercise from '@/hooks/queries/use-exercise'
 import { getDisplayName } from '@/lib/utils'
 
 const ChartCard = ({ className }: { className?: string }) => {
-  const { state, currExercise, plotData } = usePatientDashboard()
-  const { exercises } = state
+  const { state, plotData } = usePatientDashboard()
+  const { exercises, activeExerciseData } = state
   const { data: defaultExercise } = useExercise()
 
   const chartTitle = getDisplayName(
-    defaultExercise?.find(
-      (e) => e.id === exercises?.[currExercise.current]?.exerciseId,
-    ),
+    defaultExercise?.find((e) => e.id === activeExerciseData.id),
   )
 
   return (

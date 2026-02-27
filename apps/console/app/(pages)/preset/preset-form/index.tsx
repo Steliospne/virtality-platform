@@ -17,7 +17,6 @@ import capitalize from 'lodash.capitalize'
 import ComboSelect from '@/app/(pages)/patient/patient-programs/_components/combo-select'
 import { pathologies } from '@/data/static/program-form/data'
 import { P } from '@/components/ui/typography'
-import { User } from '@/auth-client'
 import { getQueryClient } from '@/integrations/tanstack-query/provider'
 import ExerciseLibraryList from '@/components/ui/exercise-library-list'
 import LoadingScreen from '@/components/ui/loading-screen'
@@ -29,13 +28,16 @@ import useCreatePreset from '@/hooks/mutations/preset/use-create-preset'
 import { orpc } from '@/integrations/orpc/client'
 import useCreatePresetExercises from '@/hooks/mutations/preset-exercise/use-create-preset-exercises'
 import { generateUUID } from '@virtality/shared/utils'
+import useIsAuthed from '@/hooks/use-is-authed'
 
-const PresetForm = ({ user }: { user: User }) => {
+const PresetForm = () => {
+  const { data } = useIsAuthed()
   const { queryClient } = getQueryClient()
   const router = useRouter()
   const { t } = useClientT('common')
   const { state } = useExerciseLibrary()
   const { selectedExercises } = state
+  const user = data?.user
 
   const isEmptyList = selectedExercises.length === 0
 
@@ -64,8 +66,11 @@ const PresetForm = ({ user }: { user: User }) => {
   })
 
   const onSubmit = async (values: PresetForm) => {
+    if (!user) return
+
     if (isEmptyList)
       return toast.error('You need to add at least one exercise.')
+
     const newPreset = {
       id: generateUUID(),
       createdAt: new Date(),

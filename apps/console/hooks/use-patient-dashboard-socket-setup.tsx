@@ -162,6 +162,7 @@ const usePatientDashboardSocketSetup = ({
       programState: ProgramStatus.END,
       isDialogOpen: !isDialogOpen,
       activeExerciseData: {
+        ...activeExerciseData,
         currentRep: 0,
         currentSet: 0,
         totalReps: 0,
@@ -179,6 +180,7 @@ const usePatientDashboardSocketSetup = ({
       programState: ProgramStatus.END,
       isDialogOpen: !isDialogOpen,
       activeExerciseData: {
+        ...activeExerciseData,
         currentRep: 0,
         currentSet: 0,
         totalReps: 0,
@@ -196,6 +198,7 @@ const usePatientDashboardSocketSetup = ({
     const index = nextExercise + 1
 
     setActiveExerciseData({
+      id: exercises[index].exerciseId,
       currentRep: 0,
       currentSet: 1,
       totalReps: exercises[index].reps,
@@ -327,6 +330,13 @@ const usePatientDashboardSocketSetup = ({
         updatePatientDashboardState({
           programState: ProgramStatus.END,
           isDialogOpen: !isDialogOpen,
+          activeExerciseData: {
+            id: null,
+            currentRep: 0,
+            currentSet: 0,
+            totalReps: 0,
+            totalSets: 0,
+          },
         })
       } catch (error) {
         console.log(error)

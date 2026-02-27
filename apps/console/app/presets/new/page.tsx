@@ -3,13 +3,9 @@ import { Button } from '@/components/ui/button'
 import { H2 } from '@/components/ui/typography'
 import { ExerciseLibraryProvider } from '@/context/exercise-library-context'
 import { getServerT } from '@/i18n/get-server-t'
-import { getUser } from '@/lib/authActions'
 import Link from 'next/link'
 
 const PresetCreationPage = async () => {
-  const user = await getUser()
-  if (!user) return
-
   const { t } = await getServerT('common')
 
   return (
@@ -29,7 +25,7 @@ const PresetCreationPage = async () => {
         </div>
       </div>
       <ExerciseLibraryProvider>
-        <PresetForm user={user} />
+        <PresetForm />
       </ExerciseLibraryProvider>
     </div>
   )

@@ -28,7 +28,7 @@ const ProgramSelector = ({ className }: { className?: string }) => {
   const { data: programs, isLoading: programsLoading } = usePatientPrograms({
     patientId,
   })
-  const { selectedProgram, inQuickStart } = state
+  const { selectedProgram, inQuickStart, activeExerciseData } = state
   const { updatePatientDashboardState, setInQuickStart } = handler
 
   const [isComboBoxOpen, setIsComboBoxOpen] = useState(false)
@@ -44,14 +44,35 @@ const ProgramSelector = ({ className }: { className?: string }) => {
       ...patientLocalData,
       lastProgram: pickedProgram.id,
     })
-    updatePatientDashboardState({ selectedProgram: pickedProgram, exercises })
+    updatePatientDashboardState({
+      selectedProgram: pickedProgram,
+      exercises,
+      activeExerciseData: {
+        ...activeExerciseData,
+        id: exercises[0].exerciseId,
+        currentRep: 0,
+        currentSet: 0,
+        totalReps: exercises[0].reps,
+        totalSets: exercises[0].sets,
+      },
+    })
     setIsComboBoxOpen(!isComboBoxOpen)
   }
 
   const programSelectionClear = (e: MouseEvent) => {
     if (!patient) return
     e.stopPropagation()
-    updatePatientDashboardState({ selectedProgram: null, exercises: [] })
+    updatePatientDashboardState({
+      selectedProgram: null,
+      exercises: [],
+      activeExerciseData: {
+        id: null,
+        currentRep: 0,
+        currentSet: 0,
+        totalReps: 0,
+        totalSets: 0,
+      },
+    })
     store?.delCell('patients', patient.id, 'lastProgram')
   }
 

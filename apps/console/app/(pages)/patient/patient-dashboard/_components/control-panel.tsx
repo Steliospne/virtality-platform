@@ -128,6 +128,7 @@ const ControlPanel = ({ className }: { className?: string }) => {
       }
 
       setActiveExerciseData({
+        id: exercises[0].exerciseId,
         currentRep: 0,
         currentSet: 1,
         totalReps: dispatchedData[0].reps,
@@ -171,6 +172,7 @@ const ControlPanel = ({ className }: { className?: string }) => {
     const payload = exercises[nextExercise].exerciseId
     selectedDevice?.events.changeExercise(payload)
     setActiveExerciseData({
+      id: exercises[nextExercise].exerciseId,
       currentRep: 0,
       currentSet: 1,
       totalReps: exercises[nextExercise].reps,

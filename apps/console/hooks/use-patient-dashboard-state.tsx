@@ -17,6 +17,7 @@ type State = {
   selectedMap: Map | null
   inQuickStart: boolean
   activeExerciseData: {
+    id: string | null
     currentSet: number
     totalSets: number
     currentRep: number
@@ -36,6 +37,7 @@ const initialState: State = {
   selectedMap: null,
   inQuickStart: false,
   activeExerciseData: {
+    id: null,
     currentSet: 0,
     totalSets: 0,
     currentRep: 0,
@@ -107,7 +109,14 @@ const usePatientDashboardState = ({
 
     if (program && !state.selectedProgram) {
       const { programExercise: exercises } = program
-      updatePatientDashboardState({ selectedProgram: program, exercises })
+      updatePatientDashboardState({
+        selectedProgram: program,
+        exercises,
+        activeExerciseData: {
+          ...state.activeExerciseData,
+          id: exercises[0].exerciseId,
+        },
+      })
     }
 
     const avatar = avatars?.find(
