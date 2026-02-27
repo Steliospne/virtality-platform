@@ -18,7 +18,7 @@ const ChartCard = ({ className }: { className?: string }) => {
       <CardHeader>
         <CardTitle>
           {exercises && exercises?.length !== 0
-            ? `${chartTitle}`
+            ? `${chartTitle ?? 'Exercise not found'}`
             : 'Exercise not found'}
         </CardTitle>
       </CardHeader>

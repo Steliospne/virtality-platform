@@ -109,12 +109,15 @@ const usePatientDashboardState = ({
 
     if (program && !state.selectedProgram) {
       const { programExercise: exercises } = program
+
+      const firstExercise = exercises[0]
+
       updatePatientDashboardState({
         selectedProgram: program,
         exercises,
         activeExerciseData: {
           ...state.activeExerciseData,
-          id: exercises[0].exerciseId,
+          id: firstExercise ? firstExercise.exerciseId : null,
         },
       })
     }

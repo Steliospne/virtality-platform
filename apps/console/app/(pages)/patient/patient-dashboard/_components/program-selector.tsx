@@ -44,18 +44,20 @@ const ProgramSelector = ({ className }: { className?: string }) => {
       ...patientLocalData,
       lastProgram: pickedProgram.id,
     })
+
+    const firstExercise = exercises[0]
+
     updatePatientDashboardState({
       selectedProgram: pickedProgram,
       exercises,
       activeExerciseData: {
         ...activeExerciseData,
-        id: exercises[0].exerciseId,
-        currentRep: 0,
-        currentSet: 0,
-        totalReps: exercises[0].reps,
-        totalSets: exercises[0].sets,
+        id: firstExercise ? firstExercise.exerciseId : null,
+        totalReps: firstExercise ? firstExercise.reps : 0,
+        totalSets: firstExercise ? firstExercise.sets : 0,
       },
     })
+
     setIsComboBoxOpen(!isComboBoxOpen)
   }
 
