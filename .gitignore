@@ -24,3 +24,4 @@ generated*
 
 # Cursor Plans
 .cursor/plans/
+.vercel
