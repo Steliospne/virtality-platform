@@ -12,7 +12,7 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**"],
-      "env": []
+      "env": ["NODE_ENV", "CONSOLE_DATABASE_URL"]
     },
     "@virtality/adminboard#build": {
       "dependsOn": ["^build"],
@@ -72,6 +72,12 @@
     },
     "dev:adminboard": {
       "with": ["@virtality/adminboard#dev", "@virtality/server#dev"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "dev:website": {
+      "with": ["@virtality/website#dev"],
       "cache": false,
       "persistent": true,
       "interactive": true

@@ -4,15 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "build": "next build",
     "legacy": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
-    "update:prisma": "rm -rf node_modules/@virtality/schema node_modules/@prisma && npm i @virtality/schema@alpha @prisma/client"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.943.0",
-    "@aws-sdk/s3-request-presigner": "3.943.0",
     "@hookform/resolvers": "5.1.0",
     "@icons-pack/react-simple-icons": "10.2.0",
     "@prisma/adapter-pg": "7.2.0",
@@ -27,6 +25,7 @@
     "@radix-ui/react-switch": "1.2.5",
     "@react-email/components": "0.0.41",
     "@virtality/db": "workspace:*",
+    "@virtality/shared": "workspace:*",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",

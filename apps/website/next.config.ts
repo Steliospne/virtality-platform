@@ -20,19 +20,6 @@ const nextConfig: NextConfig = {
       protocol: 'https',
     })),
   },
-  async rewrites() {
-    return [
-      {
-        source: '/relay-sOZA/static/:path*',
-        destination: 'https://us-assets.i.posthog.com/static/:path*',
-      },
-      {
-        source: '/relay-sOZA/:path*',
-        destination: 'https://eu.i.posthog.com/:path*',
-      },
-    ]
-  },
-  skipTrailingSlashRedirect: true,
 }
 
 export default nextConfig

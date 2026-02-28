@@ -88,7 +88,7 @@ const ContactUs = () => {
   }
 
   return (
-    <section className='min-h-screen-with-nav flex justify-center bg-gradient-to-br from-slate-50 to-white max-lg:py-10'>
+    <section className='min-h-screen-with-nav flex justify-center bg-linear-to-br from-slate-50 to-white max-lg:py-10'>
       <div className='m-auto'>
         <div className='text-center mb-6'>
           <div className='inline-block bg-vital-blue-700/10 text-vital-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6'>
@@ -176,7 +176,12 @@ const ContactUs = () => {
                         name='phone'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone Number *</FormLabel>
+                            <FormLabel>
+                              Phone Number{' '}
+                              <span className='text-xs text-gray-500'>
+                                (optional)
+                              </span>
+                            </FormLabel>
                             <FormControl>
                               <Input
                                 {...field}

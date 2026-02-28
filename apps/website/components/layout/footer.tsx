@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 const Footer = () => {
   return (
-    <footer className='relative border-t-2 border-vital-blue-100 bg-gradient-to-b from-slate-50 to-white py-16 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-900'>
+    <footer className='relative border-t-2 border-vital-blue-100 bg-liner-to-b from-slate-50 to-white py-16 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-900'>
       <div className='container mx-auto px-4 md:px-8'>
         <div className='text-center mb-8'>
           <p className='text-slate-600 dark:text-gray-400 text-sm font-medium mb-2'>
@@ -32,20 +32,6 @@ const Footer = () => {
           >
             Contact Us
           </Link>
-        </div>
-        <div className='flex flex-wrap justify-center gap-6 text-xs text-slate-500 dark:text-gray-500'>
-          <div className='flex items-center gap-2'>
-            <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-            <span>HIPAA Compliant</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-            <span>FDA Cleared</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-            <span>ISO 13485</span>
-          </div>
         </div>
       </div>
     </footer>

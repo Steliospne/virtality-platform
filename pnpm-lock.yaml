@@ -531,12 +531,6 @@ importers:
 
   apps/website:
     dependencies:
-      '@aws-sdk/client-s3':
-        specifier: 3.943.0
-        version: 3.943.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: 3.943.0
-        version: 3.943.0
       '@hookform/resolvers':
         specifier: 5.1.0
         version: 5.1.0(react-hook-form@7.57.0(react@19.2.3))
@@ -579,6 +573,9 @@ importers:
       '@virtality/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@virtality/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1

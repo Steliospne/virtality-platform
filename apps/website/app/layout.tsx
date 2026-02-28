@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/context/ThemeProvider'
 import Navbar from '@/components/layout/navbar'
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/footer'
+import { WEBSITE_URL, WEBSITE_URL_LOCAL } from '@virtality/shared/types'
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
@@ -18,8 +19,11 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500', '600'],
 })
 
+const websiteURL =
+  process.env.NODE_ENV === 'production' ? WEBSITE_URL : WEBSITE_URL_LOCAL
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.DOMAIN_URL!),
+  metadataBase: new URL(websiteURL),
   title: 'Virtality',
   description: 'Because every move matters.',
   openGraph: {
@@ -47,7 +51,7 @@ export default function RootLayout({
       className='scroll-pt-[60px] scroll-smooth'
     >
       <body
-        className={`${dmSans.variable} ${jetbrainsMono.variable} antialiased font-[var(--font-dm-sans)]`}
+        className={`${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeProvider
           storageKey='website-theme'

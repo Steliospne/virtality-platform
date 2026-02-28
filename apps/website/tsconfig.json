@@ -3,6 +3,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": false,
     "paths": {
       "@/*": ["./*"]
     }

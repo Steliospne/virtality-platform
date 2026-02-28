@@ -8,7 +8,7 @@ const Features = () => {
       className='relative dark:bg-zinc-900 flex py-24 overflow-hidden'
     >
       {/* Background with medical motif */}
-      <div className='absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-vital-blue-50/20'></div>
+      <div className='absolute inset-0 bg-linear-to-b from-slate-50 via-white to-vital-blue-50/20'></div>
       <div
         className='absolute inset-0 opacity-[0.02]'
         style={{
@@ -26,7 +26,7 @@ const Features = () => {
           </div>
           <h2 className='mb-6 text-4xl font-bold md:text-5xl text-slate-900 dark:text-white'>
             Clinical Features for{' '}
-            <span className='bg-gradient-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
+            <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
               Modern Healthcare
             </span>
           </h2>
@@ -54,7 +54,7 @@ const Features = () => {
           <div className='bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-vital-blue-100/50 p-8'>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-vital-blue-100'>
               <div className='pt-8 md:pt-0'>
-                <div className='text-4xl font-bold text-vital-blue-700 mb-2 font-[var(--font-jetbrains-mono)]'>
+                <div className='text-4xl font-bold text-vital-blue-700 mb-2'>
                   50-95%
                 </div>
                 <div className='text-sm font-medium text-slate-600 dark:text-gray-300'>
@@ -65,7 +65,7 @@ const Features = () => {
                 </div>
               </div>
               <div className='pt-8 md:pt-0'>
-                <div className='text-4xl font-bold text-vital-blue-700 mb-2 font-[var(--font-jetbrains-mono)]'>
+                <div className='text-4xl font-bold text-vital-blue-700 mb-2'>
                   95%
                 </div>
                 <div className='text-sm font-medium text-slate-600 dark:text-gray-300'>
@@ -76,7 +76,7 @@ const Features = () => {
                 </div>
               </div>
               <div className='pt-8 md:pt-0'>
-                <div className='text-4xl font-bold text-vital-blue-700 mb-2 font-[var(--font-jetbrains-mono)]'>
+                <div className='text-4xl font-bold text-vital-blue-700 mb-2'>
                   2.5x
                 </div>
                 <div className='text-sm font-medium text-slate-600 dark:text-gray-300'>

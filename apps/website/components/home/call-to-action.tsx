@@ -99,22 +99,6 @@ const CallToAction = ({ waitlistCount }: { waitlistCount: number }) => {
                   </div>
                 </div>
               </div>
-
-              {/* Trust badges */}
-              <div className='mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500'>
-                <div className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-                  <span className='font-medium'>HIPAA Compliant</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-                  <span className='font-medium'>FDA Cleared</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <div className='w-2 h-2 bg-vital-blue-600 rounded-full'></div>
-                  <span className='font-medium'>ISO 13485 Certified</span>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

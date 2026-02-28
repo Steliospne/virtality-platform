@@ -97,9 +97,6 @@ const PromoVideo = () => {
                       <p className='text-sm font-medium mb-1'>
                         Clinical VR Platform Overview
                       </p>
-                      <p className='text-xs text-slate-300'>
-                        3 minute demonstration
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -110,25 +107,25 @@ const PromoVideo = () => {
           {/* Video stats */}
           <div className='mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center'>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-[var(--font-jetbrains-mono)]'>
-                12+
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
+                100+
               </div>
-              <div className='text-sm text-slate-400'>Exercise Modules</div>
+              <div className='text-sm text-slate-400'>Exercises</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-[var(--font-jetbrains-mono)]'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
                 Real-time
               </div>
               <div className='text-sm text-slate-400'>Biofeedback</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-[var(--font-jetbrains-mono)]'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
                 Cloud
               </div>
               <div className='text-sm text-slate-400'>Data Analytics</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-[var(--font-jetbrains-mono)]'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
                 Custom
               </div>
               <div className='text-sm text-slate-400'>Treatment Plans</div>

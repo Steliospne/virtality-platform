@@ -38,10 +38,10 @@ const FeatureCard = ({
       }}
     >
       {/* Decorative corner accent */}
-      <div className='absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-vital-blue-600/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity'></div>
+      <div className='absolute top-0 right-0 w-20 h-20 bg-linear-to-br from-vital-blue-600/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity'></div>
 
       <div className='flex flex-col h-full'>
-        <div className='mb-5 flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 group-hover:scale-110 transition-transform duration-300'>
+        <div className='mb-5 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 group-hover:scale-110 transition-transform duration-300'>
           <div className='*:size-6 text-white'>{importedComponent}</div>
         </div>
 
@@ -55,7 +55,7 @@ const FeatureCard = ({
 
         {/* Bottom accent line */}
         <div className='mt-6 pt-4 border-t border-vital-blue-100 dark:border-zinc-700'>
-          <div className='h-1 w-0 bg-gradient-to-r from-vital-blue-700 to-vital-blue-600 rounded-full group-hover:w-full transition-all duration-500'></div>
+          <div className='h-1 w-0 bg-linear-to-r from-vital-blue-700 to-vital-blue-600 rounded-full group-hover:w-full transition-all duration-500'></div>
         </div>
       </div>
 

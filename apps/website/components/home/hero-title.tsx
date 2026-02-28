@@ -47,14 +47,14 @@ const HeroTitle = () => {
 
   return (
     <div ref={containerRef} className='space-y-8'>
-      <div className='inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-vital-blue-700 to-vital-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-vital-blue-700/20'>
+      <div className='inline-flex items-center gap-2 rounded-full bg-linear-to-r from-vital-blue-700 to-vital-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-vital-blue-700/20'>
         <Activity className='w-4 h-4' />
         <span className='tracking-wide'>Clinical-Grade VR Rehabilitation</span>
       </div>
 
       <h1 className='text-4xl font-bold leading-[1.15] md:text-5xl lg:text-6xl text-slate-900 dark:text-white'>
         Accelerate Patient Recovery with{' '}
-        <span className='bg-gradient-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
+        <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
           Evidence-Based VR Therapy
         </span>
       </h1>
@@ -71,8 +71,9 @@ const HeroTitle = () => {
           className='h-auto px-6 py-4 text-base font-semibold bg-vital-blue-700 hover:bg-vital-blue-800 shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all'
         >
           <Link
-            href='https://cal.com/virtuality'
+            href='https://cal.com/virtality'
             className='flex items-center gap-2 group'
+            target='_blank'
           >
             Request Clinical Demo
             <ArrowRight className='w-5 h-5 group-hover:translate-x-1 transition-transform' />
@@ -88,30 +89,6 @@ const HeroTitle = () => {
             View Features
           </Link>
         </Button>
-      </div>
-
-      {/* Trust indicators */}
-      <div className='flex flex-wrap items-center gap-6 pt-6 text-sm text-slate-600 dark:text-gray-400'>
-        <div className='flex items-center gap-2'>
-          <div className='w-2 h-2 bg-vital-blue-600 rounded-full animate-pulse'></div>
-          <span className='font-medium'>FDA Cleared</span>
-        </div>
-        <div className='w-px h-4 bg-slate-300'></div>
-        <div className='flex items-center gap-2'>
-          <div
-            className='w-2 h-2 bg-vital-blue-600 rounded-full animate-pulse'
-            style={{ animationDelay: '0.5s' }}
-          ></div>
-          <span className='font-medium'>HIPAA Compliant</span>
-        </div>
-        <div className='w-px h-4 bg-slate-300'></div>
-        <div className='flex items-center gap-2'>
-          <div
-            className='w-2 h-2 bg-vital-blue-600 rounded-full animate-pulse'
-            style={{ animationDelay: '1s' }}
-          ></div>
-          <span className='font-medium'>Clinical Evidence</span>
-        </div>
       </div>
     </div>
   )
