@@ -13,6 +13,8 @@ import {
 
 const baseURL = `${process.env.NODE_ENV === 'production' ? SERVER_URL : SERVER_URL_LOCAL}${API_PREFIX}/auth`
 
+console.log('auth client baseURL: ', baseURL)
+
 export const authClient = createAuthClient({
   baseURL,
   plugins: [

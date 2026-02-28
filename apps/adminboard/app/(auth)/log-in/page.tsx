@@ -17,12 +17,15 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useUnmount } from '@/hooks/use-unmount'
 import { authClient } from '@/auth-client'
+import { useRouter } from 'next/navigation'
+
 const defaultValues = {
   email: '',
   password: '',
 }
 
 const LogIn = () => {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   const [loginError, setLoginError] = useState<{
@@ -42,7 +45,11 @@ const LogIn = () => {
 
     const { error } = await authClient.signIn.email({
       ...values,
-      callbackURL: '/',
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/')
+        },
+      },
     })
     setLoginError(error)
   }
