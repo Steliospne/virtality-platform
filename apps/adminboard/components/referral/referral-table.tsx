@@ -18,8 +18,11 @@ import { Button } from '@/components/ui/button'
 import { PlusSquare } from 'lucide-react'
 import useCreateReferralCode from '@/hooks/use-create-referral-code'
 import { toast } from 'sonner'
+import { getQueryClient } from '@/react-query'
+import { referralKeys } from '@/data/client/referral'
 
 const ReferralTableDAL = () => {
+  const queryClient = getQueryClient()
   const { data, isLoading } = useReferralCode()
   const { mutate: createReferralCode, isPending } = useCreateReferralCode()
 
@@ -27,6 +30,7 @@ const ReferralTableDAL = () => {
     createReferralCode(undefined, {
       onSuccess: () => {
         toast.success('Referral code generated successfully')
+        return queryClient.invalidateQueries({ queryKey: referralKeys.all })
       },
       onError: (error) => {
         toast.error('Failed to generate referral code')
