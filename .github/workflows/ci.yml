@@ -1,10 +1,7 @@
 name: Deploy Dev to Vercel Preview
 
 env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
 
 on:
   pull_request:
@@ -18,8 +15,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Detect app from PR title
+        id: app
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          # Match (word) in title (e.g. (console), (website), (server))
+          if [[ "$TITLE" =~ \(([a-zA-Z0-9_-]+)\) ]]; then
+            echo "name=${BASH_REMATCH[1],,}" >> $GITHUB_OUTPUT
+            echo "matched=true" >> $GITHUB_OUTPUT
+          else
+            echo "name=" >> $GITHUB_OUTPUT
+            echo "matched=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Runner Setup
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v3
         with:
@@ -37,8 +47,47 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      # Console app
       - name: Pull Vercel Console Environment Information
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'console'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSOLE }}
         run: vercel pull --cwd ./apps/console --yes --environment=preview --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
 
-      - name: Deploy Project Artifacts to Vercel
+      - name: Deploy Console to Vercel
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'console'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSOLE }}
         run: vercel deploy --cwd ./apps/console --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
+
+      # Website app
+      - name: Pull Vercel Website Environment Information
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'website'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEBSITE }}
+        run: vercel pull --cwd ./apps/website --yes --environment=preview --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
+
+      - name: Deploy Website to Vercel
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'website'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEBSITE }}
+        run: vercel deploy --cwd ./apps/website --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
+
+      # Adminboard app
+      - name: Pull Vercel Adminboard Environment Information
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'adminboard'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMINBOARD }}
+        run: vercel pull --cwd ./apps/adminboard --yes --environment=preview --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
+
+      - name: Deploy Adminboard to Vercel
+        if: steps.app.outputs.matched == 'true' && steps.app.outputs.name == 'adminboard'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMINBOARD }}
+        run: vercel deploy --cwd ./apps/adminboard --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID
+
+      - name: No deploy (no (app) in PR title)
+        if: steps.app.outputs.matched == 'false'
+        run: |
+          echo "No (app) tag found in PR title. Use e.g. (console), (website), or (adminboard) to deploy a preview."
+          echo "Examples: '(console) Fix login' or '(website) Update hero'"
