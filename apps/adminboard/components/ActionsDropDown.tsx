@@ -1,27 +1,27 @@
-import { MoreHorizontal } from 'lucide-react';
-import { Button } from './ui/button';
+import { MoreHorizontal } from 'lucide-react'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import UploadResource from './UploadResource';
-import { useContext, useState } from 'react';
-import { TableContext } from './ui/data-table';
+} from './ui/dropdown-menu'
+import UploadResource from './UploadResource'
+import { useContext, useState } from 'react'
+import { TableContext } from './ui/data-table'
 
 const ActionsDropDown = ({
   id,
   rowIndex,
   typeName,
 }: {
-  id: string | number;
-  rowIndex: number;
-  typeName: string;
+  id: string | number
+  rowIndex: number
+  typeName: string
 }) => {
-  const tableContext = useContext(TableContext);
-  const [open, setOpen] = useState(false);
+  const tableContext = useContext(TableContext)
+  const [open, setOpen] = useState(false)
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       {' '}
@@ -39,14 +39,14 @@ const ActionsDropDown = ({
             rowIndex={rowIndex}
             typeName={typeName}
             onImageUploaded={(imageUrl, rowIndex) => {
-              setOpen(false);
-              tableContext?.handleImageUpdate?.(imageUrl, rowIndex);
+              setOpen(false)
+              tableContext?.handleImageUpdate?.(imageUrl, rowIndex)
             }}
           />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
+  )
+}
 
-export default ActionsDropDown;
+export default ActionsDropDown

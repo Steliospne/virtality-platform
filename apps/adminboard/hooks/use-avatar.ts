@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { createAvatarQuery } from '@/data/client/avatar';
-import { useQuery } from '@tanstack/react-query';
+import { createAvatarQuery } from '@/data/client/avatar'
+import { useQuery } from '@tanstack/react-query'
 
 const useAvatarList = () => {
-  return useQuery(createAvatarQuery());
-};
+  return useQuery(createAvatarQuery())
+}
 
-export default useAvatarList;
+export default useAvatarList

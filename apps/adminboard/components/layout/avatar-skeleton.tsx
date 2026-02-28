@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'
 
 const AvatarSkeleton = () => {
   return (
@@ -6,7 +6,7 @@ const AvatarSkeleton = () => {
       <Skeleton className='h-6 w-40' />
       <Skeleton className='size-12 rounded-full' />
     </div>
-  );
-};
+  )
+}
 
-export default AvatarSkeleton;
+export default AvatarSkeleton

@@ -1,9 +1,9 @@
-import DateCell from '@/components/tables/date-cell';
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ColumnDef } from '@tanstack/react-table';
-import { UserWithRole } from 'better-auth/plugins/admin';
-import startCase from 'lodash.startcase';
+import DateCell from '@/components/tables/date-cell'
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ColumnDef } from '@tanstack/react-table'
+import { UserWithRole } from 'better-auth/plugins/admin'
+import startCase from 'lodash.startcase'
 
 export const columns: ColumnDef<UserWithRole>[] = [
   {
@@ -36,8 +36,8 @@ export const columns: ColumnDef<UserWithRole>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id: string = row.getValue('id');
-      return <div>{id}</div>;
+      const id: string = row.getValue('id')
+      return <div>{id}</div>
     },
   },
   {
@@ -65,4 +65,4 @@ export const columns: ColumnDef<UserWithRole>[] = [
     ),
     cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
   },
-];
+]

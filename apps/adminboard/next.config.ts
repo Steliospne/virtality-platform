@@ -1,11 +1,11 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'next'
 
 const remoteHosts = [
   'avatars.githubusercontent.com',
   'platform-lookaside.fbsbx.com',
   'lh3.googleusercontent.com',
   'cdn.virtality.app',
-];
+]
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -15,6 +15,6 @@ const nextConfig: NextConfig = {
       protocol: 'https',
     })),
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

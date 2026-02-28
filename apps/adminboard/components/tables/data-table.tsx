@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
 import {
   ColumnDef,
   flexRender,
   type Table as TableType,
-} from '@tanstack/react-table';
+} from '@tanstack/react-table'
 import {
   Table,
   TableBody,
@@ -12,26 +12,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { MouseEvent, ReactNode } from 'react';
-import { Input } from '@/components/ui/input';
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { MouseEvent, ReactNode } from 'react'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+} from '@/components/ui/dropdown-menu'
+import { AlertCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 
 export function DataTableHeader<TData>({
   children,
@@ -41,15 +41,15 @@ export function DataTableHeader<TData>({
   className,
   filters,
 }: {
-  children?: ReactNode;
-  table: TableType<TData>;
-  globalFilter: string;
-  setGlobalFilter: (val: string) => void;
-  className?: string;
-  filters?: ReactNode;
+  children?: ReactNode
+  table: TableType<TData>
+  globalFilter: string
+  setGlobalFilter: (val: string) => void
+  className?: string
+  filters?: ReactNode
 }) {
   const isColumnMissing =
-    table.getAllColumns().length > table.getVisibleLeafColumns().length;
+    table.getAllColumns().length > table.getVisibleLeafColumns().length
 
   return (
     <div className='flex flex-col gap-2 py-4'>
@@ -84,7 +84,7 @@ export function DataTableHeader<TData>({
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
-                );
+                )
               })}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -92,7 +92,7 @@ export function DataTableHeader<TData>({
       </div>
       {filters}
     </div>
-  );
+  )
 }
 
 export function DataTableBody<TData, TValue>({
@@ -101,23 +101,23 @@ export function DataTableBody<TData, TValue>({
   rowNavigation = false,
   className,
 }: {
-  table: TableType<TData>;
-  columns: ColumnDef<TData, TValue>[];
-  rowNavigation?: boolean;
-  className?: string;
+  table: TableType<TData>
+  columns: ColumnDef<TData, TValue>[]
+  rowNavigation?: boolean
+  className?: string
 }) {
-  const router = useRouter();
+  const router = useRouter()
 
   const handleClick = (e: MouseEvent) => {
-    if (!rowNavigation) return;
-    e.stopPropagation();
-    const target = e.target as HTMLElement;
-    const currTarget = e.currentTarget as HTMLElement;
-    const isAction = target.closest('#actions');
-    if (isAction) return;
+    if (!rowNavigation) return
+    e.stopPropagation()
+    const target = e.target as HTMLElement
+    const currTarget = e.currentTarget as HTMLElement
+    const isAction = target.closest('#actions')
+    if (isAction) return
 
-    router.push(`/resources/preset/${currTarget.id}`);
-  };
+    router.push(`/resources/preset/${currTarget.id}`)
+  }
 
   return (
     <div className={cn('overflow-hidden rounded-md border', className)}>
@@ -135,7 +135,7 @@ export function DataTableBody<TData, TValue>({
                           header.getContext(),
                         )}
                   </TableHead>
-                );
+                )
               })}
             </TableRow>
           ))}
@@ -147,18 +147,16 @@ export function DataTableBody<TData, TValue>({
               const hasDeleted = Object.hasOwn(
                 row.original as object,
                 'deletedAt',
-              );
+              )
 
-              const hasId = Object.hasOwn(row.original as object, 'id');
+              const hasId = Object.hasOwn(row.original as object, 'id')
 
               const isDeleted =
                 hasDeleted &&
                 (row.original as { deletedAt?: string | null }).deletedAt !==
-                  null;
+                  null
 
-              const id = hasId
-                ? (row.original as { id: string }).id
-                : undefined;
+              const id = hasId ? (row.original as { id: string }).id : undefined
 
               return (
                 <TableRow
@@ -180,7 +178,7 @@ export function DataTableBody<TData, TValue>({
                     </TableCell>
                   ))}
                 </TableRow>
-              );
+              )
             })
           ) : (
             <TableRow>
@@ -192,7 +190,7 @@ export function DataTableBody<TData, TValue>({
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }
 
 export function DataTableFooter<TData>({ table }: { table: TableType<TData> }) {
@@ -207,7 +205,7 @@ export function DataTableFooter<TData>({ table }: { table: TableType<TData> }) {
         <Select
           value={`${table.getState().pagination.pageSize}`}
           onValueChange={(value) => {
-            table.setPageSize(Number(value));
+            table.setPageSize(Number(value))
           }}
         >
           <SelectTrigger className='h-8 w-[70px]'>
@@ -241,5 +239,5 @@ export function DataTableFooter<TData>({ table }: { table: TableType<TData> }) {
         </Button>
       </div>
     </div>
-  );
+  )
 }

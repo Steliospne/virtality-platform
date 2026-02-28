@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
@@ -6,24 +6,24 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form-legacy';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PresetFormSchema } from '@/types/definitions';
-import capitalize from 'lodash.capitalize';
-import { pathologies } from '@/data/static/pathologies';
-import { type PresetForm } from '@/types/models';
-import { ReactNode } from 'react';
-import ComboSelect from '@/components/ui/combo-select';
+} from '@/components/ui/form-legacy'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { PresetFormSchema } from '@/types/definitions'
+import capitalize from 'lodash.capitalize'
+import { pathologies } from '@/data/static/pathologies'
+import { type PresetForm } from '@/types/models'
+import { ReactNode } from 'react'
+import ComboSelect from '@/components/ui/combo-select'
 
 const PresetForm = ({
   values,
   onSubmit,
   SubmitBtn,
 }: {
-  values?: PresetForm;
-  onSubmit: (values: PresetForm) => void;
-  SubmitBtn?: ReactNode;
+  values?: PresetForm
+  onSubmit: (values: PresetForm) => void
+  SubmitBtn?: ReactNode
 }) => {
   const form = useForm<PresetForm>({
     resolver: zodResolver(PresetFormSchema),
@@ -35,7 +35,7 @@ const PresetForm = ({
       end: '',
     },
     values,
-  });
+  })
 
   return (
     <Form {...form}>
@@ -128,7 +128,7 @@ const PresetForm = ({
         {SubmitBtn}
       </form>
     </Form>
-  );
-};
+  )
+}
 
-export default PresetForm;
+export default PresetForm

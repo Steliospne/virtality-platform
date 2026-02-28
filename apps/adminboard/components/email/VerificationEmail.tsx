@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
-import type React from 'react';
+import type React from 'react'
 
 interface EmailPreviewProps {
-  firstName: string;
-  verificationUrl: string;
+  firstName: string
+  verificationUrl: string
 }
 
 export const EmailPreview = ({
@@ -55,7 +55,7 @@ export const EmailPreview = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default EmailPreview;
+export default EmailPreview

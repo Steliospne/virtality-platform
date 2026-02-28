@@ -2,16 +2,16 @@ import {
   organizationClient,
   adminClient,
   phoneNumberClient,
-} from 'better-auth/client/plugins';
-import { createAuthClient } from 'better-auth/react';
-import { stripeClient } from '@better-auth/stripe/client';
+} from 'better-auth/client/plugins'
+import { createAuthClient } from 'better-auth/react'
+import { stripeClient } from '@better-auth/stripe/client'
+import {
+  API_PREFIX,
+  SERVER_URL,
+  SERVER_URL_LOCAL,
+} from '@virtality/shared/types'
 
-const isMobile = process.env.NEXT_PUBLIC_MOBILE_DEV === 'true';
-const authURL = process.env.NEXT_PUBLIC_AUTH_URL?.replace(/\/$/, '') ?? '';
-
-const baseURL = isMobile
-  ? 'https://service.virtality.app/api/v1/auth'
-  : `${authURL}/api/v1/auth`;
+const baseURL = `${process.env.NODE_ENV === 'production' ? SERVER_URL : SERVER_URL_LOCAL}${API_PREFIX}/auth`
 
 export const authClient = createAuthClient({
   baseURL,
@@ -23,8 +23,8 @@ export const authClient = createAuthClient({
       subscription: true,
     }),
   ],
-});
+})
 
-export type User = typeof authClient.$Infer.Session.user;
+export type User = typeof authClient.$Infer.Session.user
 
-export type Session = typeof authClient.$Infer.Session.session;
+export type Session = typeof authClient.$Infer.Session.session

@@ -8,22 +8,22 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from '@tanstack/react-table';
-import { useState } from 'react';
+} from '@tanstack/react-table'
+import { useState } from 'react'
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
   const table = useReactTable({
     data,
@@ -42,10 +42,10 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
-  });
+  })
 
   const isColumnMissing =
-    table.getAllColumns().length > table.getVisibleLeafColumns().length;
+    table.getAllColumns().length > table.getVisibleLeafColumns().length
 
   return (
     <div className='p-8'>
@@ -58,5 +58,5 @@ export function DataTable<TData, TValue>({
       <DataTableBody table={table} columns={columns} />
       <DataTableFooter table={table} /> */}
     </div>
-  );
+  )
 }

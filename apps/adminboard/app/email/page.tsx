@@ -1,15 +1,15 @@
-import { getEmails } from '@/data/client/email';
-import EmailDashboard from './email-dashboard';
+import EmailDashboard from './email-dashboard'
 
 export type Email = {
-  id: string | number;
-  title: string;
-  category: string;
-  html: string;
-};
+  id: string | number
+  title: string
+  category: string
+  html: string
+}
 
 const EmailPage = async () => {
-  const payload = await getEmails();
+  // Disabled for now
+  const payload = [] as Email[]
   return (
     <div className='min-h-screen-with-header mx-auto max-w-7xl px-4 py-6'>
       <div className='mb-8'>
@@ -20,7 +20,7 @@ const EmailPage = async () => {
       </div>
       <EmailDashboard payload={payload} />
     </div>
-  );
-};
+  )
+}
 
-export default EmailPage;
+export default EmailPage

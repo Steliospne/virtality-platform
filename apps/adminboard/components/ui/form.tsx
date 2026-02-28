@@ -3,47 +3,47 @@ import {
   ControllerProps,
   FieldPath,
   FieldValues,
-} from 'react-hook-form';
+} from 'react-hook-form'
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from './field';
-import { Input } from './input';
-import { ChangeEventHandler, ReactNode } from 'react';
-import { Textarea } from './textarea';
-import { Select, SelectContent, SelectTrigger, SelectValue } from './select';
-import { Checkbox } from './checkbox';
+} from './field'
+import { Input } from './input'
+import { ChangeEventHandler, ReactNode } from 'react'
+import { Textarea } from './textarea'
+import { Select, SelectContent, SelectTrigger, SelectValue } from './select'
+import { Checkbox } from './checkbox'
 
 type FormControlProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   TTransformedValues = TFieldValues,
 > = {
-  name: TName;
-  label: ReactNode;
-  description?: ReactNode;
-  control: ControllerProps<TFieldValues, TName, TTransformedValues>['control'];
-};
+  name: TName
+  label: ReactNode
+  description?: ReactNode
+  control: ControllerProps<TFieldValues, TName, TTransformedValues>['control']
+}
 
 type FormBaseProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   TTransformedValues = TFieldValues,
 > = FormControlProps<TFieldValues, TName, TTransformedValues> & {
-  horizontal?: boolean;
-  controlFirst?: boolean;
+  horizontal?: boolean
+  controlFirst?: boolean
   children: (
     field: Parameters<
       ControllerProps<TFieldValues, TName, TTransformedValues>['render']
     >[0]['field'] & {
-      'aria-invalid': boolean;
-      id: string;
+      'aria-invalid': boolean
+      id: string
     },
-  ) => ReactNode;
-};
+  ) => ReactNode
+}
 
 type FormControlFunc<
   ExtraProps extends Record<string, unknown> = Record<never, never>,
@@ -53,7 +53,7 @@ type FormControlFunc<
   TTransformedValues = TFieldValues,
 >(
   props: FormControlProps<TFieldValues, TName, TTransformedValues> & ExtraProps,
-) => ReactNode;
+) => ReactNode
 
 function FormBase<
   TFieldValues extends FieldValues = FieldValues,
@@ -78,15 +78,15 @@ function FormBase<
             <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
             {description && <FieldDescription>{description}</FieldDescription>}
           </>
-        );
+        )
         const control = children({
           ...field,
           id: field.name,
           'aria-invalid': fieldState.invalid,
-        });
+        })
         const errorElem = fieldState.invalid && (
           <FieldError errors={[fieldState.error]} />
-        );
+        )
 
         return (
           <Field
@@ -109,49 +109,49 @@ function FormBase<
               </>
             )}
           </Field>
-        );
+        )
       }}
     />
-  );
+  )
 }
 
 export const FormInput: FormControlFunc<{
-  type?: React.ComponentProps<'input'>['type'];
+  type?: React.ComponentProps<'input'>['type']
 }> = (props) => {
   return (
     <FormBase {...props}>
       {(field) => <Input type={props.type} {...field} />}
     </FormBase>
-  );
-};
+  )
+}
 
 export const FormFileInput: FormControlFunc<{
-  onChange?: (url: string) => void;
+  onChange?: (url: string) => void
 }> = (props) => {
   return (
     <FormBase {...props}>
       {(field) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { value, ...rest } = field;
+        const { value, ...rest } = field
 
         const handleFileUpload: ChangeEventHandler<HTMLInputElement> = (e) => {
           if (e.target.files) {
-            const file = e.target.files[0];
-            field.onChange(file);
+            const file = e.target.files[0]
+            field.onChange(file)
             if (props.onChange) {
-              props.onChange(URL.createObjectURL(file));
+              props.onChange(URL.createObjectURL(file))
             }
           }
-        };
-        return <Input type='file' {...rest} onChange={handleFileUpload} />;
+        }
+        return <Input type='file' {...rest} onChange={handleFileUpload} />
       }}
     </FormBase>
-  );
-};
+  )
+}
 
 export const FormTextarea: FormControlFunc = (props) => {
-  return <FormBase {...props}>{(field) => <Textarea {...field} />}</FormBase>;
-};
+  return <FormBase {...props}>{(field) => <Textarea {...field} />}</FormBase>
+}
 
 export const FormSelect: FormControlFunc<{ children: ReactNode }> = ({
   children,
@@ -172,8 +172,8 @@ export const FormSelect: FormControlFunc<{ children: ReactNode }> = ({
         </Select>
       )}
     </FormBase>
-  );
-};
+  )
+}
 
 export const FormCheckbox: FormControlFunc = (props) => {
   return (
@@ -182,5 +182,5 @@ export const FormCheckbox: FormControlFunc = (props) => {
         <Checkbox {...field} checked={value} onCheckedChange={onChange} />
       )}
     </FormBase>
-  );
-};
+  )
+}

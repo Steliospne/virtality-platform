@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Exercise } from '@virtality/db';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Exercise } from '@virtality/db'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
 
 export const columns: ColumnDef<Exercise>[] = [
   {
@@ -37,8 +37,8 @@ export const columns: ColumnDef<Exercise>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id: string = row.getValue('id');
-      return <div>{id.split('-')[0]}</div>;
+      const id: string = row.getValue('id')
+      return <div>{id.split('-')[0]}</div>
     },
   },
   {
@@ -77,4 +77,4 @@ export const columns: ColumnDef<Exercise>[] = [
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
   },
-];
+]

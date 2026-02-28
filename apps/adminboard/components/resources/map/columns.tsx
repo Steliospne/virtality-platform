@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Map } from '@virtality/db';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Map } from '@virtality/db'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
 
 export const columns: ColumnDef<Map>[] = [
   {
@@ -37,8 +37,8 @@ export const columns: ColumnDef<Map>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id: string = row.getValue('id');
-      return <div>{id}</div>;
+      const id: string = row.getValue('id')
+      return <div>{id}</div>
     },
   },
   {
@@ -47,4 +47,4 @@ export const columns: ColumnDef<Map>[] = [
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
   },
-];
+]

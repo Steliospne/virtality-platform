@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import { fetchExercises } from '@/data/client/exercise';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { fetchExercises } from '@/data/client/exercise'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
 const useSuspenseExercise = () => {
   const { data, isPending } = useSuspenseQuery({
     queryKey: ['exercises'],
     queryFn: fetchExercises,
     staleTime: 'static',
-  });
-  return { data, isPending };
-};
-export default useSuspenseExercise;
+  })
+  return { data, isPending }
+}
+export default useSuspenseExercise

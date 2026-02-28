@@ -1,49 +1,49 @@
-'use client';
+'use client'
 
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Mail, Send } from 'lucide-react';
-import { Email } from './page';
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { sendEmail } from '@/data/client/email';
+} from '@/components/ui/card'
+import { Mail, Send } from 'lucide-react'
+import { Email } from './page'
+import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { sendEmail } from '@/data/client/email'
 
 type Props = {
-  payload: Email[];
-};
+  payload: Email[]
+}
 
 const EmailDashboard = ({ payload }: Props) => {
-  const [selectedEmail, setSelectedEmail] = useState<Email>();
-  const [recipientEmail, setRecipientEmail] = useState('');
+  const [selectedEmail, setSelectedEmail] = useState<Email>()
+  const [recipientEmail, setRecipientEmail] = useState('')
 
   const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!recipientEmail || !recipientEmail.includes('@')) {
-      toast.error('Please enter a valid email address');
+      toast.error('Please enter a valid email address')
 
-      return;
+      return
     }
 
     // Simulate API call
-    await sendEmail({ recipientEmail, emailId: selectedEmail?.id });
+    await sendEmail({ recipientEmail, emailId: selectedEmail?.id })
 
     toast.success(
       `Email sent "${selectedEmail?.title}" sent to ${recipientEmail}`,
-    );
+    )
 
-    setRecipientEmail('');
+    setRecipientEmail('')
     // setSending(false)
-  };
+  }
 
   return (
     <div className='flex flex-col gap-6 max-lg:h-300 lg:grid lg:grid-cols-[300px_1fr] lg:grid-rows-[repeat(17,24px)]'>
@@ -112,7 +112,9 @@ const EmailDashboard = ({ payload }: Props) => {
         <Card>
           <CardHeader>
             <CardTitle>Send Email</CardTitle>
-            <CardDescription>Enter recipient's email address</CardDescription>
+            <CardDescription>
+              Enter recipient&apos;s email address
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSendEmail} className='flex gap-3'>
@@ -137,7 +139,7 @@ const EmailDashboard = ({ payload }: Props) => {
         </Card>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default EmailDashboard;
+export default EmailDashboard

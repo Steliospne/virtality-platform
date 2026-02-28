@@ -1,42 +1,42 @@
-'use client';
+'use client'
 import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
-} from '@/components/tables/data-table';
+} from '@/components/tables/data-table'
 // button imported in header via PresetForm
 import {
   ColumnDef,
   SortingState,
   useReactTable,
   VisibilityState,
-} from '@tanstack/react-table';
-import { useState } from 'react';
-import PresetPopover from './preset-popover';
-import { columns } from '@/app/resources/preset/columns';
-import { tableDefaults } from '@/tanstack-tables';
-import useSuspensePreset from '@/hooks/use-suspense-preset';
+} from '@tanstack/react-table'
+import { useState } from 'react'
+import PresetPopover from './preset-popover'
+import { columns } from '@/app/resources/preset/columns'
+import { tableDefaults } from '@/tanstack-tables'
+import useSuspensePreset from '@/hooks/use-suspense-preset'
 
 const PresetTableDAL = () => {
-  const { data } = useSuspensePreset();
-  return <PresetTable columns={columns} data={data} />;
-};
+  const { data } = useSuspensePreset()
+  return <PresetTable columns={columns} data={data} />
+}
 
-export default PresetTableDAL;
+export default PresetTableDAL
 
 interface PresetTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
 }
 
 const PresetTable = <TData, TValue>({
   data,
   columns,
 }: PresetTableProps<TData, TValue>) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
   const table = useReactTable({
     data,
@@ -52,7 +52,7 @@ const PresetTable = <TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
-  });
+  })
 
   return (
     <div className='p-8'>
@@ -66,5 +66,5 @@ const PresetTable = <TData, TValue>({
       <DataTableBody table={table} columns={columns} rowNavigation />
       <DataTableFooter table={table} />
     </div>
-  );
-};
+  )
+}

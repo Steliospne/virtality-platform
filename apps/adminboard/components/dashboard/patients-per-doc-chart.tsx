@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   BarChart,
@@ -9,17 +9,17 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from 'recharts'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui/card'
 
 interface PatientsPerDocChartProps {
-  data: { name: string; totalPatients: number }[];
+  data: { name: string; totalPatients: number }[]
 }
 
 export function PatientsPerDocChart({ data }: PatientsPerDocChartProps) {
@@ -82,5 +82,5 @@ export function PatientsPerDocChart({ data }: PatientsPerDocChartProps) {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }

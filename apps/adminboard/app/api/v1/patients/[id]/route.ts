@@ -1,21 +1,21 @@
-import { getUserAndSession } from '@/lib/actions/authActions';
-import { getPatient } from '@/data/server/patient';
-import { NextRequest, NextResponse } from 'next/server';
+import { getUserAndSession } from '@/lib/actions/authActions'
+import { getPatient } from '@/data/server/patient'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
+  const { id } = await params
 
-  const data = await getUserAndSession();
+  const data = await getUserAndSession()
 
   if (!data)
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const patient = await getPatient(id);
+  const patient = await getPatient(id)
 
-  return NextResponse.json({ patient });
+  return NextResponse.json({ patient })
 }
 export async function POST() {}
 export async function PUT() {}

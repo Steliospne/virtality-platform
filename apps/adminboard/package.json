@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3002",
-    "build:adminboard": "next build --turbopack",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "next lint",
-    "setup:dev:db": "./scripts/setup-dev-db.sh",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -53,7 +52,8 @@
     "tailwind-merge": "3.2.0",
     "uuid": "11.1.0",
     "zod": "4.3.6",
-    "@virtality/db": "workspace:*"
+    "@virtality/db": "workspace:*",
+    "@virtality/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "19.2.14",

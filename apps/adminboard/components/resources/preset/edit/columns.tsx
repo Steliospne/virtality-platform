@@ -1,21 +1,21 @@
-'use client';
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import ExerciseInputPill from '@/components/ui/exercise-input-pill';
-import useExerciseList from '@/hooks/use-exercise';
-import { getDisplayName } from '@/lib/utils';
-import { PresetExercise } from '@virtality/db';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
-import { Copy, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+'use client'
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import ExerciseInputPill from '@/components/ui/exercise-input-pill'
+import useExerciseList from '@/hooks/use-exercise'
+import { getDisplayName } from '@/lib/utils'
+import { PresetExercise } from '@virtality/db'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
+import { Copy, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 type PillValue = {
-  name: string;
-  value: string;
-  id: string;
-};
+  name: string
+  value: string
+  id: string
+}
 
 export const columns: ColumnDef<PresetExercise>[] = [
   {
@@ -51,18 +51,18 @@ export const columns: ColumnDef<PresetExercise>[] = [
       <ColumnHeader column={column} title={'Exercise Name'} />
     ),
     cell: function ExerciseCell({ cell }) {
-      const { data, isPending } = useExerciseList();
+      const { data, isPending } = useExerciseList()
 
-      const id = cell.getValue();
+      const id = cell.getValue()
 
-      const exercise = data?.find((ex) => ex.id === id);
+      const exercise = data?.find((ex) => ex.id === id)
       if (isPending)
         return (
           <div>
             <p className='animate-pulse'>Loading ...</p>
           </div>
-        );
-      return <div>{getDisplayName(exercise)}</div>;
+        )
+      return <div>{getDisplayName(exercise)}</div>
     },
   },
   {
@@ -77,12 +77,12 @@ export const columns: ColumnDef<PresetExercise>[] = [
         name: '',
         value: '',
         id: '',
-      });
-      const initialValue = cell.getValue() as string;
+      })
+      const initialValue = cell.getValue() as string
       const test = (target: PillValue) => {
-        setState(target);
-        table.options.meta?.updateData(row.index, id, target.value);
-      };
+        setState(target)
+        table.options.meta?.updateData(row.index, id, target.value)
+      }
       return (
         <ExerciseInputPill
           name='reps'
@@ -90,7 +90,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
           initialValue={state.value !== '' ? state.value : initialValue}
           onSetValue={test}
         />
-      );
+      )
     },
   },
   {
@@ -101,12 +101,12 @@ export const columns: ColumnDef<PresetExercise>[] = [
         name: '',
         value: '',
         id: '',
-      });
-      const initialValue = cell.getValue() as string;
+      })
+      const initialValue = cell.getValue() as string
       const test = (target: PillValue) => {
-        setState(target);
-        table.options.meta?.updateData(row.index, id, target.value);
-      };
+        setState(target)
+        table.options.meta?.updateData(row.index, id, target.value)
+      }
       return (
         <ExerciseInputPill
           name='sets'
@@ -114,7 +114,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
           initialValue={state.value !== '' ? state.value : initialValue}
           onSetValue={test}
         />
-      );
+      )
     },
   },
   {
@@ -125,12 +125,12 @@ export const columns: ColumnDef<PresetExercise>[] = [
         name: '',
         value: '',
         id: '',
-      });
-      const initialValue = cell.getValue() as string;
+      })
+      const initialValue = cell.getValue() as string
       const test = (target: PillValue) => {
-        setState(target);
-        table.options.meta?.updateData(row.index, id, target.value);
-      };
+        setState(target)
+        table.options.meta?.updateData(row.index, id, target.value)
+      }
       return (
         <ExerciseInputPill
           name='restTime'
@@ -138,7 +138,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
           initialValue={state.value !== '' ? state.value : initialValue}
           onSetValue={test}
         />
-      );
+      )
     },
   },
   {
@@ -149,12 +149,12 @@ export const columns: ColumnDef<PresetExercise>[] = [
         name: '',
         value: '',
         id: '',
-      });
-      const initialValue = cell.getValue() as string;
+      })
+      const initialValue = cell.getValue() as string
       const test = (target: PillValue) => {
-        setState(target);
-        table.options.meta?.updateData(row.index, id, target.value);
-      };
+        setState(target)
+        table.options.meta?.updateData(row.index, id, target.value)
+      }
       return (
         <ExerciseInputPill
           name='holdTime'
@@ -162,7 +162,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
           initialValue={state.value !== '' ? state.value : initialValue}
           onSetValue={test}
         />
-      );
+      )
     },
   },
   {
@@ -173,12 +173,12 @@ export const columns: ColumnDef<PresetExercise>[] = [
         name: '',
         value: '',
         id: '',
-      });
-      const initialValue = cell.getValue() as string;
+      })
+      const initialValue = cell.getValue() as string
       const test = (target: PillValue) => {
-        setState(target);
-        table.options.meta?.updateData(row.index, id, target.value);
-      };
+        setState(target)
+        table.options.meta?.updateData(row.index, id, target.value)
+      }
       return (
         <ExerciseInputPill
           name='speed'
@@ -189,19 +189,19 @@ export const columns: ColumnDef<PresetExercise>[] = [
           initialValue={state.value !== '' ? state.value : initialValue}
           onSetValue={test}
         />
-      );
+      )
     },
   },
   {
     id: 'actions',
     cell: function ActionCell({ row, table }) {
-      const preset = row.original;
+      const preset = row.original
       const copyId = () => {
-        navigator.clipboard.writeText(preset.exerciseId);
-      };
+        navigator.clipboard.writeText(preset.exerciseId)
+      }
 
       const handleDeleteAction = () =>
-        table.options.meta?.deleteRow(preset.exerciseId);
+        table.options.meta?.deleteRow(preset.exerciseId)
 
       return (
         <div className='flex gap-2'>
@@ -216,7 +216,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
             <Trash2 />
           </Button>
         </div>
-      );
+      )
     },
   },
-];
+]

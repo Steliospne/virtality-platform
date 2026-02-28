@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import DateCell from '@/components/tables/date-cell';
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Patient } from '@virtality/db';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
+import DateCell from '@/components/tables/date-cell'
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Patient } from '@virtality/db'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
 
 export const columns: ColumnDef<Patient>[] = [
   {
@@ -38,8 +38,8 @@ export const columns: ColumnDef<Patient>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id: string = row.getValue('id');
-      return <div>{id.split('-')[0]}</div>;
+      const id: string = row.getValue('id')
+      return <div>{id.split('-')[0]}</div>
     },
   },
   {
@@ -85,4 +85,4 @@ export const columns: ColumnDef<Patient>[] = [
     ),
     cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
   },
-];
+]

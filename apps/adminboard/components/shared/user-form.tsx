@@ -1,4 +1,4 @@
-'use client';
+'use client'
 import {
   Dialog,
   DialogClose,
@@ -6,7 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -14,30 +14,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form-legacy';
-import { Input } from '@/components/ui/input';
+} from '@/components/ui/form-legacy'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { NewUserFormSchema } from '@/types/definitions';
-import { NewUserForm } from '@/types/models';
-import capitalize from 'lodash.capitalize';
-import { Button } from '@/components/ui/button';
+} from '@/components/ui/select'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { NewUserFormSchema } from '@/types/definitions'
+import { NewUserForm } from '@/types/models'
+import capitalize from 'lodash.capitalize'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../ui/card';
-import Link from 'next/link';
-import { authClient } from '@/auth-client';
+} from '../ui/card'
+import Link from 'next/link'
+import { authClient } from '@/auth-client'
 
 const defaultValues: NewUserForm = {
   name: '',
@@ -45,30 +45,30 @@ const defaultValues: NewUserForm = {
   password: '',
   passwordConf: '',
   role: 'user',
-};
+}
 
 const UserForm = ({
   dialog,
   isDialogOpen,
   setDialogOpen,
 }: {
-  dialog?: boolean;
-  isDialogOpen?: boolean;
-  setDialogOpen?: (value: boolean) => void;
+  dialog?: boolean
+  isDialogOpen?: boolean
+  setDialogOpen?: (value: boolean) => void
 }) => {
-  const roles = ['user', 'admin'];
+  const roles = ['user', 'admin']
 
   const form = useForm<NewUserForm>({
     resolver: zodResolver(NewUserFormSchema),
     mode: 'all',
     criteriaMode: 'all',
     defaultValues,
-  });
+  })
 
   const onSubmit = async (values: NewUserForm) => {
-    console.log(values);
-    await authClient.admin.createUser({ ...values });
-  };
+    console.log(values)
+    await authClient.admin.createUser({ ...values })
+  }
 
   if (!dialog)
     return (
@@ -186,7 +186,7 @@ const UserForm = ({
           </Form>
         </CardContent>
       </Card>
-    );
+    )
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -303,7 +303,7 @@ const UserForm = ({
         </Form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
 
-export default UserForm;
+export default UserForm

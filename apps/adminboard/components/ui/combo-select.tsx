@@ -1,9 +1,9 @@
-import { CheckIcon, ChevronsUpDownIcon, X } from 'lucide-react';
+import { CheckIcon, ChevronsUpDownIcon, X } from 'lucide-react'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@/components/ui/popover'
 import {
   Command,
   CommandEmpty,
@@ -11,10 +11,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Button } from '@/components/ui/button';
-import { MouseEvent, useState } from 'react';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/command'
+import { Button } from '@/components/ui/button'
+import { MouseEvent, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 const ComboSelect = ({
   value,
@@ -22,22 +22,22 @@ const ComboSelect = ({
   onChange,
   options,
 }: {
-  value: string;
-  term: string;
-  onChange: (value: string) => void;
-  options: string[];
+  value: string
+  term: string
+  onChange: (value: string) => void
+  options: string[]
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   const selectValue = (currentValue: string) => {
-    onChange(currentValue === value ? '' : currentValue);
-    setOpen(false);
-  };
+    onChange(currentValue === value ? '' : currentValue)
+    setOpen(false)
+  }
 
   const clearSearch = (e: MouseEvent) => {
-    e.stopPropagation();
-    onChange('');
-  };
+    e.stopPropagation()
+    onChange('')
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -92,7 +92,7 @@ const ComboSelect = ({
         </Command>
       </PopoverContent>
     </Popover>
-  );
-};
+  )
+}
 
-export default ComboSelect;
+export default ComboSelect

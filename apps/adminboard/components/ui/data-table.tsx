@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   ColumnDef,
@@ -11,13 +11,13 @@ import {
   ColumnFiltersState,
   getFilteredRowModel,
   Cell,
-} from '@tanstack/react-table';
+} from '@tanstack/react-table'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -25,8 +25,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from './button';
+} from '@/components/ui/table'
+import { Button } from './button'
 import {
   ChangeEvent,
   createContext,
@@ -34,55 +34,55 @@ import {
   useCallback,
   useRef,
   useState,
-} from 'react';
-import { Input } from './input';
-import { Label } from './label';
-import { Check, MoreHorizontal } from 'lucide-react';
+} from 'react'
+import { Input } from './input'
+import { Label } from './label'
+import { Check, MoreHorizontal } from 'lucide-react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './select';
-import { cn } from '@/lib/utils';
+} from './select'
+import { cn } from '@/lib/utils'
 export const TableContext = createContext<{
-  handleImageUpdate?: (imageUrl: string, rowIndex: number) => void;
-} | null>(null);
+  handleImageUpdate?: (imageUrl: string, rowIndex: number) => void
+} | null>(null)
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
   updateAction: (
     state: {
-      validationErrors: string | null;
-      values: string | null;
+      validationErrors: string | null
+      values: string | null
     },
     formData?: FormData,
   ) => Promise<{
-    validationErrors: string | null;
-    values: string | null;
-  }>;
+    validationErrors: string | null
+    values: string | null
+  }>
 }
 const initialState = {
   validationErrors: null,
   values: null,
-};
+}
 export function DataTable<
   TData extends Record<string, unknown | null>,
   TValue,
 >({ columns, data, updateAction }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [filter, setFilter] = useState<string>('name');
-  const [tableData, setTableData] = useState<TData[]>(data);
-  const [activeInputId, setActiveInputId] = useState<string | null>(null);
-  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  type InputChange = { name: string; value: string };
-  const [formState, formAction] = useActionState(updateAction, initialState);
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [filter, setFilter] = useState<string>('name')
+  const [tableData, setTableData] = useState<TData[]>(data)
+  const [activeInputId, setActiveInputId] = useState<string | null>(null)
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  type InputChange = { name: string; value: string }
+  const [formState, formAction] = useActionState(updateAction, initialState)
   const [changedInputs, setChangedInputs] = useState<InputChange[]>(
     JSON.parse(formState.values!) || [],
-  );
-  const dataRef = useRef<TData[]>([]);
+  )
+  const dataRef = useRef<TData[]>([])
   const table = useReactTable({
     data,
     columns,
@@ -98,92 +98,92 @@ export function DataTable<
     },
     enableColumnResizing: true,
     columnResizeMode: 'onChange', // or 'onEnd'
-  });
+  })
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>, row: TData) => {
-    const { name, value } = e.target;
-    const index = Number(name.split('_')[0]);
+    const { name, value } = e.target
+    const index = Number(name.split('_')[0])
     const idInput = e.target.parentElement?.parentElement?.firstElementChild
-      ?.firstElementChild as HTMLInputElement;
-    const itemId = idInput.value;
-    const property = name.split('_')[1] as keyof TData;
+      ?.firstElementChild as HTMLInputElement
+    const itemId = idInput.value
+    const property = name.split('_')[1] as keyof TData
 
     setChangedInputs((prev) => {
       return [
         { name, value },
         ...prev.filter((item) => item.name !== name),
-      ].filter((item) => data[index][property] !== item.value);
-    });
+      ].filter((item) => data[index][property] !== item.value)
+    })
 
     const tableDataEntry = dataRef.current.find((item) => {
-      if ('id' in item) return item.id === itemId;
-    });
+      if ('id' in item) return item.id === itemId
+    })
 
     if (tableDataEntry) {
       if (row[property] === value)
-        dataRef.current = dataRef.current.filter((item) => item.id !== itemId);
-      tableDataEntry[property] = value as TData[typeof property];
+        dataRef.current = dataRef.current.filter((item) => item.id !== itemId)
+      tableDataEntry[property] = value as TData[typeof property]
     } else {
-      const newTableDataEntry = { ...row, [property]: value };
-      dataRef.current.push(newTableDataEntry);
+      const newTableDataEntry = { ...row, [property]: value }
+      dataRef.current.push(newTableDataEntry)
     }
 
     setTableData((prev) => {
-      const newData = [...prev];
+      const newData = [...prev]
       if (newData[index]) {
         newData[index] = {
           ...newData[index],
           [property]: value,
-        };
+        }
       }
-      return newData;
-    });
-  };
+      return newData
+    })
+  }
 
   const handleDoubleClick = (id: string) => {
-    setActiveInputId(id);
+    setActiveInputId(id)
     setTimeout(() => {
-      inputRefs.current[id]?.focus();
-    }, 0);
-  };
+      inputRefs.current[id]?.focus()
+    }, 0)
+  }
 
   const handleImageUpdate = useCallback(
     (imageUrl: string, rowIndex: number) => {
-      const fieldName = 'image';
+      const fieldName = 'image'
       setTableData((prev) => {
-        const newData = [...prev];
+        const newData = [...prev]
         if (newData[rowIndex]) {
           newData[rowIndex] = {
             ...newData[rowIndex],
             [fieldName]: imageUrl,
-          };
+          }
         }
-        return newData;
-      });
+        return newData
+      })
 
-      const tableDataEntryId = data[rowIndex].id;
+      const tableDataEntryId = data[rowIndex].id
       const tableDataEntry = dataRef.current.find(
         (item) => item.id === tableDataEntryId,
-      );
+      )
 
       if (tableDataEntry) {
         tableDataEntry[fieldName as keyof TData] =
-          imageUrl as TData[typeof fieldName];
+          imageUrl as TData[typeof fieldName]
       } else {
         const newTableDataEntryId = {
           ...data[rowIndex],
           [fieldName]: imageUrl,
-        };
-        dataRef.current.push(newTableDataEntryId);
+        }
+        dataRef.current.push(newTableDataEntryId)
       }
     },
     [data],
-  );
+  )
 
   const cellResolution = (cell: Cell<TData, unknown>) => {
-    const col = cell.column.id as keyof TData;
-    const row = cell.row.index as number;
-    const cellValue = tableData[row][col];
+    const col = cell.column.id as keyof TData
+    const row = cell.row.index as number
+    const cellValue = tableData[row][col]
 
     return typeof cellValue === 'boolean'
       ? cellValue.toString()
@@ -191,8 +191,8 @@ export function DataTable<
         ? 'NULL'
         : ['createdAt', 'deletedAt', 'updatedAt'].includes(col as string)
           ? (cellValue as Date)?.toLocaleDateString()
-          : (cellValue as string);
-  };
+          : (cellValue as string)
+  }
 
   return (
     <TableContext.Provider value={{ handleImageUpdate }}>
@@ -271,13 +271,13 @@ export function DataTable<
                         style={{ width: cell.column.getSize() }}
                         id={cell.id}
                         onDoubleClick={() => {
-                          handleDoubleClick(cell.id);
+                          handleDoubleClick(cell.id)
                         }}
                       >
                         {cell.column.id !== 'actions' ? (
                           <Input
                             ref={(el) => {
-                              inputRefs.current[cell.id] = el;
+                              inputRefs.current[cell.id] = el
                             }}
                             disabled={activeInputId !== cell.id}
                             name={cell.id}
@@ -289,7 +289,7 @@ export function DataTable<
                               ) && 'border-teal-700 text-teal-700 opacity-100!',
                             )}
                             onChange={(e) => {
-                              handleInputChange(e, row.original);
+                              handleInputChange(e, row.original)
                             }}
                             onBlur={() => setActiveInputId(null)}
                           />
@@ -325,7 +325,7 @@ export function DataTable<
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => {
-                table.setPageSize(Number(value));
+                table.setPageSize(Number(value))
               }}
             >
               <SelectTrigger size='sm' className='w-20' id='rows-per-page'>
@@ -380,5 +380,5 @@ export function DataTable<
         )}
       </div>
     </TableContext.Provider>
-  );
+  )
 }

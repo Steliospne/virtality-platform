@@ -1,7 +1,7 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { type Image as ImageType } from '@/types/models';
-import Image from 'next/image';
+import { ColumnDef } from '@tanstack/react-table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { type Image as ImageType } from '@/types/models'
+import Image from 'next/image'
 
 export const columns: ColumnDef<ImageType>[] = [
   {
@@ -52,4 +52,4 @@ export const columns: ColumnDef<ImageType>[] = [
     accessorKey: 'resource',
     header: () => <div>Resource</div>,
   },
-];
+]

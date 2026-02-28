@@ -1,58 +1,58 @@
-'use client';
-import { fetchPresetById } from '@/data/client/preset';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import PresetForm from '@/components/resources/preset/preset-form';
-import { updatePreset } from '@/data/server/preset';
-import { getQueryClient } from '@/react-query';
-import { Preset, PresetExercise } from '@virtality/db';
+'use client'
+import { fetchPresetById } from '@/data/client/preset'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import PresetForm from '@/components/resources/preset/preset-form'
+import { updatePreset } from '@/data/server/preset'
+import { getQueryClient } from '@/react-query'
+import { Preset, PresetExercise } from '@virtality/db'
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import PresetExerciseTable from '@/components/resources/preset/edit/preset-exercise-table';
-import { columns } from '@/components/resources/preset/edit/columns';
-import { useState } from 'react';
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
+import PresetExerciseTable from '@/components/resources/preset/edit/preset-exercise-table'
+import { columns } from '@/components/resources/preset/edit/columns'
+import { useState } from 'react'
 
 const PresetView = ({ id }: { id: string }) => {
-  const queryClient = getQueryClient();
-  const router = useRouter();
+  const queryClient = getQueryClient()
+  const router = useRouter()
   const { data: preset } = useSuspenseQuery({
     queryKey: ['preset', id],
     queryFn: () => fetchPresetById(id),
-  });
+  })
 
   const { mutate: updatePresetMutation, isPending } = useMutation({
     mutationFn: updatePreset,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['presets'] });
-      queryClient.invalidateQueries({ queryKey: ['preset', id] });
-      router.push('/resources/preset');
+      queryClient.invalidateQueries({ queryKey: ['presets'] })
+      queryClient.invalidateQueries({ queryKey: ['preset', id] })
+      router.push('/resources/preset')
     },
     mutationKey: ['updatePreset'],
-  });
+  })
 
   const onSubmit = (values: PresetForm) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { presetExercise, ...rest } = preset;
+    const { presetExercise, ...rest } = preset
     const updatedPreset: Preset = {
       ...rest,
       ...values,
       updatedAt: new Date(),
-    };
+    }
 
     // console.log(updatedPreset, tableData.length);
 
-    updatePresetMutation({ data: updatedPreset, exercises: tableData });
-  };
+    updatePresetMutation({ data: updatedPreset, exercises: tableData })
+  }
 
   const [tableData, setTableData] = useState<PresetExercise[]>(
     preset?.presetExercise ?? [],
-  );
+  )
 
   return (
     <div className='h-screen-with-header flex flex-col gap-2 p-2'>
@@ -88,7 +88,7 @@ const PresetView = ({ id }: { id: string }) => {
         className='h-fit'
       />
     </div>
-  );
-};
+  )
+}
 
-export default PresetView;
+export default PresetView

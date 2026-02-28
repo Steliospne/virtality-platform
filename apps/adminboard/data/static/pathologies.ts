@@ -32,4 +32,4 @@ export const pathologies = [
   'Supraspinatus Tendinopathy',
   'Swimming Overuse Injuries',
   'Other',
-];
+]

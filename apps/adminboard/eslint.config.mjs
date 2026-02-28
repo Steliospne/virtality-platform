@@ -1,3 +1,3 @@
-import nextConfig from '@virtality/eslint-config/next';
+import nextConfig from '@virtality/eslint-config/next'
 
-export default nextConfig;
+export default nextConfig

@@ -1,7 +1,7 @@
-'use client';
-import placeholder from '@/public/placeholder.svg';
-import Image from 'next/image';
-import { authClient } from '@/auth-client';
+'use client'
+import placeholder from '@/public/placeholder.svg'
+import Image from 'next/image'
+import { authClient } from '@/auth-client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
 import {
   Check,
   Home,
@@ -23,31 +23,31 @@ import {
   Settings,
   Sun,
   User as UserIcon,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import capitalize from 'lodash.capitalize';
-import AvatarSkeleton from './avatar-skeleton';
-import useMounted from '@/hooks/use-mounted';
-import { useRouter } from 'next/navigation';
+} from 'lucide-react'
+import Link from 'next/link'
+import { useTheme } from 'next-themes'
+import capitalize from 'lodash.capitalize'
+import AvatarSkeleton from './avatar-skeleton'
+import useMounted from '@/hooks/use-mounted'
+import { useRouter } from 'next/navigation'
 
 interface AvatarProps {
-  websiteDomain?: string;
+  websiteDomain?: string
 }
 const Avatar = ({ websiteDomain }: AvatarProps) => {
-  const mounted = useMounted();
-  const { setTheme, resolvedTheme, theme, themes } = useTheme();
-  const { data, isPending } = authClient.useSession();
-  const router = useRouter();
+  const mounted = useMounted()
+  const { setTheme, resolvedTheme, theme, themes } = useTheme()
+  const { data, isPending } = authClient.useSession()
+  const router = useRouter()
 
   const handleSignOut = async () =>
     await authClient.signOut({
       fetchOptions: { onSuccess: () => router.push('/log-in') },
-    });
+    })
 
-  const user = data?.user;
+  const user = data?.user
 
-  if (isPending) return <AvatarSkeleton />;
+  if (isPending) return <AvatarSkeleton />
 
   return (
     <DropdownMenu>
@@ -137,6 +137,6 @@ const Avatar = ({ websiteDomain }: AvatarProps) => {
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
-export default Avatar;
+  )
+}
+export default Avatar

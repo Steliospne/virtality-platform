@@ -1,7 +1,7 @@
-'use client';
-import { HeaderTemplate } from '@/components/HeaderTemplate';
-import { ColumnDef } from '@tanstack/react-table';
-import ActionsDropDown from './ActionsDropDown';
+'use client'
+import { HeaderTemplate } from '@/components/HeaderTemplate'
+import { ColumnDef } from '@tanstack/react-table'
+import ActionsDropDown from './ActionsDropDown'
 
 export function generateColumns<T extends { id: string | number }>(
   keys: readonly (keyof T)[],
@@ -13,7 +13,7 @@ export function generateColumns<T extends { id: string | number }>(
     size: 160,
     minSize: 150,
     maxSize: 400,
-  }));
+  }))
 
   const actionColumn: ColumnDef<T> = {
     id: 'actions',
@@ -26,7 +26,7 @@ export function generateColumns<T extends { id: string | number }>(
         typeName={typeName}
       />
     ),
-  };
+  }
 
-  return [...baseColumns, actionColumn];
+  return [...baseColumns, actionColumn]
 }

@@ -3,7 +3,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-} from '@tanstack/react-table';
+} from '@tanstack/react-table'
 
 export const tableDefaults = {
   models: {
@@ -12,4 +12,4 @@ export const tableDefaults = {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   },
-};
+}

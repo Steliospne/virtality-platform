@@ -4,11 +4,11 @@ import {
   getTotalPatientSession,
   getTotalUniquePatients,
   getUniquePatientsPerDoc,
-} from '@/data/server/dashboard';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { PatientsPerDocChart } from '@/components/dashboard/patients-per-doc-chart';
-import { SessionsPerPatientChart } from '@/components/dashboard/sessions-per-patient-chart';
-import { SessionsPerWeekChart } from '@/components/dashboard/sessions-per-week-chart';
+} from '@/data/server/dashboard'
+import { StatCard } from '@/components/dashboard/stat-card'
+import { PatientsPerDocChart } from '@/components/dashboard/patients-per-doc-chart'
+import { SessionsPerPatientChart } from '@/components/dashboard/sessions-per-patient-chart'
+import { SessionsPerWeekChart } from '@/components/dashboard/sessions-per-week-chart'
 
 const StartPage = async () => {
   const [
@@ -23,7 +23,7 @@ const StartPage = async () => {
     getSessionsPerPatient(),
     getTotalPatientSession(),
     getPatientSessionsPerWeekPerUser(),
-  ]);
+  ])
 
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
@@ -65,7 +65,7 @@ const StartPage = async () => {
         <SessionsPerWeekChart data={patientSessionsPerWeekPerUser} />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StartPage;
+export default StartPage

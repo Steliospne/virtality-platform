@@ -1,42 +1,42 @@
-'use client';
+'use client'
 import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
-} from '@/components/tables/data-table';
+} from '@/components/tables/data-table'
 import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
   useReactTable,
   VisibilityState,
-} from '@tanstack/react-table';
-import { useState } from 'react';
-import { tableDefaults } from '@/tanstack-tables';
-import { columns } from './columns';
-import useAvatarList from '@/hooks/use-avatar';
+} from '@tanstack/react-table'
+import { useState } from 'react'
+import { tableDefaults } from '@/tanstack-tables'
+import { columns } from './columns'
+import useAvatarList from '@/hooks/use-avatar'
 
 const AvatarTableDAL = () => {
-  const { data } = useAvatarList();
-  return <AvatarTable columns={columns} data={data} />;
-};
+  const { data } = useAvatarList()
+  return <AvatarTable columns={columns} data={data} />
+}
 
-export default AvatarTableDAL;
+export default AvatarTableDAL
 
 interface AvatarTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data?: TData[];
+  columns: ColumnDef<TData, TValue>[]
+  data?: TData[]
 }
 
 const AvatarTable = <TData, TValue>({
   data,
   columns,
 }: AvatarTableProps<TData, TValue>) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const table = useReactTable({
     data: data ?? [],
@@ -54,7 +54,7 @@ const AvatarTable = <TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-  });
+  })
 
   return (
     <div className='p-8'>
@@ -66,5 +66,5 @@ const AvatarTable = <TData, TValue>({
       <DataTableBody table={table} columns={columns} rowNavigation />
       <DataTableFooter table={table} />
     </div>
-  );
-};
+  )
+}

@@ -1,22 +1,22 @@
-'use client';
+'use client'
 
-import DateCell from '@/components/tables/date-cell';
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import DateCell from '@/components/tables/date-cell'
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { deleteReferralCode } from '@/data/server/referral';
-import { getQueryClient } from '@/react-query';
-import { ReferralCode } from '@virtality/db';
-import { useMutation } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
-import { Copy, Ellipsis, Trash2 } from 'lucide-react';
+} from '@/components/ui/dropdown-menu'
+import { deleteReferralCode } from '@/data/server/referral'
+import { getQueryClient } from '@/react-query'
+import { ReferralCode } from '@virtality/db'
+import { useMutation } from '@tanstack/react-query'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
+import { Copy, Ellipsis, Trash2 } from 'lucide-react'
 
 export const columns: ColumnDef<ReferralCode>[] = [
   {
@@ -49,10 +49,8 @@ export const columns: ColumnDef<ReferralCode>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id = row.getValue('id') as number | string;
-      return (
-        <div>{typeof id === 'string' ? id.split('-')[0] : String(id)}</div>
-      );
+      const id = row.getValue('id') as number | string
+      return <div>{typeof id === 'string' ? id.split('-')[0] : String(id)}</div>
     },
   },
   {
@@ -74,31 +72,31 @@ export const columns: ColumnDef<ReferralCode>[] = [
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
     cell: ({ row }) => {
-      const usedBy = row.getValue('usedBy') as string | null;
-      return <div>{usedBy || '-'}</div>;
+      const usedBy = row.getValue('usedBy') as string | null
+      return <div>{usedBy || '-'}</div>
     },
   },
   {
     id: 'actions',
     cell: function ActionCell({ row }) {
-      const queryClient = getQueryClient();
+      const queryClient = getQueryClient()
       const { mutate: deleteReferralCodeMutation } = useMutation({
         mutationFn: deleteReferralCode,
         onSuccess: () => {
-          queryClient.refetchQueries({ queryKey: ['referral'] });
+          queryClient.refetchQueries({ queryKey: ['referral'] })
         },
         mutationKey: ['deleteReferralCode'],
-      });
-      const referralCode = row.original;
+      })
+      const referralCode = row.original
       const copyId = () => {
-        navigator.clipboard.writeText(String(referralCode.id));
-      };
+        navigator.clipboard.writeText(String(referralCode.id))
+      }
       const copyCode = () => {
-        navigator.clipboard.writeText(referralCode.code);
-      };
+        navigator.clipboard.writeText(referralCode.code)
+      }
 
       const handleDeleteAction = () =>
-        deleteReferralCodeMutation(referralCode.id);
+        deleteReferralCodeMutation(referralCode.id)
 
       return (
         <DropdownMenu>
@@ -122,7 +120,7 @@ export const columns: ColumnDef<ReferralCode>[] = [
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      );
+      )
     },
   },
-];
+]

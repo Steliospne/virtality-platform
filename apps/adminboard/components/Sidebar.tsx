@@ -1,38 +1,38 @@
-'use client';
-import { useLayoutEffect, useState } from 'react';
-import TabBar, { LinkObject } from './TabBar';
-import { Contact, FileX, Globe2, User } from 'lucide-react';
+'use client'
+import { useLayoutEffect, useState } from 'react'
+import TabBar, { LinkObject } from './TabBar'
+import { Contact, FileX, Globe2, User } from 'lucide-react'
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLargeScreen, setIsLargeScreen] = useState(false)
 
   useLayoutEffect(() => {
     const handleWindowResize = () => {
-      const isLarge = window.innerWidth > 1024;
+      const isLarge = window.innerWidth > 1024
       if (isLarge) {
-        setIsOpen(true);
-        setIsLargeScreen(true);
+        setIsOpen(true)
+        setIsLargeScreen(true)
       } else {
-        setIsOpen(false);
-        setIsLargeScreen(false);
+        setIsOpen(false)
+        setIsLargeScreen(false)
       }
-    };
+    }
 
     // We call the function to get initial state fixes reload issue
-    handleWindowResize();
+    handleWindowResize()
 
-    window.addEventListener('resize', handleWindowResize);
-    return () => window.removeEventListener('resize', handleWindowResize);
-  }, []);
+    window.addEventListener('resize', handleWindowResize)
+    return () => window.removeEventListener('resize', handleWindowResize)
+  }, [])
 
   const handleMouseEnter = () => {
-    if (!isLargeScreen) setIsOpen(true);
-  };
+    if (!isLargeScreen) setIsOpen(true)
+  }
 
   const handleMouseLeave = () => {
-    if (!isLargeScreen) setIsOpen(false);
-  };
+    if (!isLargeScreen) setIsOpen(false)
+  }
 
   const links: LinkObject = [
     {
@@ -95,7 +95,7 @@ const Sidebar = () => {
               'flex justify-center p-2 mx-1 rounded-lg dark:text-zinc-200',
           }),
     },
-  ];
+  ]
   return (
     <div
       onMouseEnter={handleMouseEnter}
@@ -108,7 +108,7 @@ const Sidebar = () => {
         </nav>
       </aside>
     </div>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar

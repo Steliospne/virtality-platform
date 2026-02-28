@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { createMapQuery } from '@/data/client/map';
-import { useQuery } from '@tanstack/react-query';
+import { createMapQuery } from '@/data/client/map'
+import { useQuery } from '@tanstack/react-query'
 
 const useMapList = () => {
-  return useQuery(createMapQuery());
-};
+  return useQuery(createMapQuery())
+}
 
-export default useMapList;
+export default useMapList

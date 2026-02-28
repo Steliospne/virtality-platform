@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   BarChart,
@@ -9,17 +9,17 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from 'recharts'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui/card'
 
 interface SessionsPerPatientChartProps {
-  data: Array<{ patientId: string | null; _count: { _all: number } }>;
+  data: Array<{ patientId: string | null; _count: { _all: number } }>
 }
 
 export function SessionsPerPatientChart({
@@ -32,7 +32,7 @@ export function SessionsPerPatientChart({
       fullPatientId: item.patientId,
       sessions: item._count._all,
     }))
-    .sort((a, b) => b.sessions - a.sessions);
+    .sort((a, b) => b.sessions - a.sessions)
 
   return (
     <Card className='shadow-sm transition-shadow hover:shadow-md'>
@@ -76,8 +76,8 @@ export function SessionsPerPatientChart({
             <Tooltip
               formatter={(value: number) => [value, 'Sessions']}
               labelFormatter={(label, payload) => {
-                const fullId = payload?.[0]?.payload?.fullPatientId || label;
-                return `Patient ID: ${fullId}`;
+                const fullId = payload?.[0]?.payload?.fullPatientId || label
+                return `Patient ID: ${fullId}`
               }}
               cursor={{
                 fill: 'color-mix(in oklab, var(--accent) 35%, transparent)',
@@ -102,5 +102,5 @@ export function SessionsPerPatientChart({
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }

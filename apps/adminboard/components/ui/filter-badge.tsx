@@ -1,24 +1,24 @@
-import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 const FilterBadge = ({
   name,
   checked: checkedProp,
   onClick,
 }: {
-  name: string;
-  checked?: boolean;
-  onClick?: () => void;
+  name: string
+  checked?: boolean
+  onClick?: () => void
 }) => {
-  const [checked, setChecked] = useState(checkedProp || false);
+  const [checked, setChecked] = useState(checkedProp || false)
 
   const handleClick = () => {
     if (onClick) {
-      onClick();
+      onClick()
     }
-    setChecked(!checked);
-  };
+    setChecked(!checked)
+  }
 
   return (
     <div>
@@ -32,7 +32,7 @@ const FilterBadge = ({
         {name}
       </Badge>
     </div>
-  );
-};
+  )
+}
 
-export default FilterBadge;
+export default FilterBadge

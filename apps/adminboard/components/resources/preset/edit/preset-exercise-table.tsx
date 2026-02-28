@@ -1,11 +1,11 @@
-'use client';
+'use client'
 import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
-} from '@/components/tables/data-table';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+} from '@/components/tables/data-table'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogClose,
@@ -15,11 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useExerciseList from '@/hooks/use-exercise';
-import { getDisplayName, getUUID } from '@/lib/utils';
-import { PresetExercise } from '@virtality/db';
+} from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import useExerciseList from '@/hooks/use-exercise'
+import { getDisplayName, getUUID } from '@/lib/utils'
+import { PresetExercise } from '@virtality/db'
 import {
   ColumnDef,
   getCoreRowModel,
@@ -30,24 +30,24 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from '@tanstack/react-table';
-import uniq from 'lodash.uniq';
-import { Info, PlusCircle, PlusSquare } from 'lucide-react';
-import { Fragment, SetStateAction, useMemo, useState } from 'react';
+} from '@tanstack/react-table'
+import uniq from 'lodash.uniq'
+import { Info, PlusCircle, PlusSquare } from 'lucide-react'
+import { Fragment, SetStateAction, useMemo, useState } from 'react'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
-    updateData: (rowIndex: number, columnId: string, value: unknown) => void;
-    deleteRow: (exerciseId: string) => void;
+    updateData: (rowIndex: number, columnId: string, value: unknown) => void
+    deleteRow: (exerciseId: string) => void
   }
 }
 
 interface PresetExerciseTableProps {
-  columns: ColumnDef<PresetExercise>[];
-  data?: PresetExercise[];
-  setData?: (value: SetStateAction<PresetExercise[]>) => void;
-  className?: string;
+  columns: ColumnDef<PresetExercise>[]
+  data?: PresetExercise[]
+  setData?: (value: SetStateAction<PresetExercise[]>) => void
+  className?: string
 }
 
 const PresetExerciseTable = ({
@@ -56,10 +56,10 @@ const PresetExerciseTable = ({
   columns,
   className,
 }: PresetExerciseTableProps) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
   const table = useReactTable({
     data: data ?? [],
@@ -86,19 +86,19 @@ const PresetExerciseTable = ({
               return {
                 ...old[rowIndex]!,
                 [columnId]: value,
-              };
+              }
             }
-            return row;
+            return row
           }),
-        );
+        )
       },
       deleteRow: (exerciseId: string) => {
-        setData?.(data?.filter((ex) => ex.exerciseId !== exerciseId) ?? []);
+        setData?.(data?.filter((ex) => ex.exerciseId !== exerciseId) ?? [])
       },
     },
-  });
+  })
 
-  const { data: exerciseList } = useExerciseList();
+  const { data: exerciseList } = useExerciseList()
 
   const categories = useMemo(() => {
     return (
@@ -107,8 +107,8 @@ const PresetExerciseTable = ({
           ?.sort((a, b) => a.category!.localeCompare(b.category!))
           .map((e) => e.category),
       ) ?? []
-    );
-  }, [exerciseList]);
+    )
+  }, [exerciseList])
 
   return (
     <Card className={className}>
@@ -172,7 +172,7 @@ const PresetExerciseTable = ({
                                             holdTime: 1,
                                             speed: 1,
                                           },
-                                        ]);
+                                        ])
                                       }
                                     }}
                                   />
@@ -198,7 +198,7 @@ const PresetExerciseTable = ({
         <DataTableFooter table={table} />
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default PresetExerciseTable;
+export default PresetExerciseTable

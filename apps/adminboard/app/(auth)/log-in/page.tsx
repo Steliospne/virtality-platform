@@ -1,10 +1,10 @@
-'use client';
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { LoginForm } from '@/types/models';
-import { useForm } from 'react-hook-form';
-import { LoginFormSchema } from '@/types/definitions';
-import { zodResolver } from '@hookform/resolvers/zod';
+'use client'
+import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { LoginForm } from '@/types/models'
+import { useForm } from 'react-hook-form'
+import { LoginFormSchema } from '@/types/definitions'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
   FormControl,
@@ -12,41 +12,42 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form-legacy';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { useUnmount } from '@/hooks/use-unmount';
-import { authClient } from '@/auth-client';
+} from '@/components/ui/form-legacy'
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
+import { useUnmount } from '@/hooks/use-unmount'
+import { authClient } from '@/auth-client'
 const defaultValues = {
   email: '',
   password: '',
-};
+}
 
 const LogIn = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false)
+
   const [loginError, setLoginError] = useState<{
-    code?: string | undefined;
-    message?: string | undefined;
-    status: number;
-    statusText: string;
-  } | null>(null);
+    code?: string | undefined
+    message?: string | undefined
+    status: number
+    statusText: string
+  } | null>(null)
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(LoginFormSchema),
     defaultValues,
-  });
+  })
 
   const onSubmit = async (values: LoginForm) => {
-    setLoading(!loading);
+    setLoading(!loading)
 
     const { error } = await authClient.signIn.email({
       ...values,
       callbackURL: '/',
-    });
-    setLoginError(error);
-  };
+    })
+    setLoginError(error)
+  }
 
-  useUnmount(() => setLoading(false));
+  useUnmount(() => setLoading(false))
 
   return (
     <div className='flex h-svh flex-col items-center justify-center gap-4 dark:bg-zinc-800'>
@@ -108,7 +109,7 @@ const LogIn = () => {
         </Form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LogIn;
+export default LogIn

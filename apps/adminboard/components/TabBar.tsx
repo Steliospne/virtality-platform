@@ -1,24 +1,24 @@
-'use client';
+'use client'
 
-import { cn } from '@/lib/utils';
-import Link, { LinkProps } from 'next/link';
-import { usePathname } from 'next/navigation';
-import { HTMLAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils'
+import Link, { LinkProps } from 'next/link'
+import { usePathname } from 'next/navigation'
+import { HTMLAttributes, ReactNode } from 'react'
 
 type TabBarProps = {
-  linkObject?: LinkObject;
-  className?: HTMLAttributes<HTMLDivElement>['className'];
-};
+  linkObject?: LinkObject
+  className?: HTMLAttributes<HTMLDivElement>['className']
+}
 
 export type LinkObject = (LinkProps & {
-  textContext?: string;
-  icon?: ReactNode;
-  className?: HTMLAttributes<HTMLInputElement>['className'];
-})[];
+  textContext?: string
+  icon?: ReactNode
+  className?: HTMLAttributes<HTMLInputElement>['className']
+})[]
 
 const TabBar = ({ linkObject, className }: TabBarProps) => {
-  const pathname = usePathname();
-  const links = linkObject ? linkObject : null;
+  const pathname = usePathname()
+  const links = linkObject ? linkObject : null
 
   return (
     <div className='sticky top-[60px] z-30'>
@@ -50,7 +50,7 @@ const TabBar = ({ linkObject, className }: TabBarProps) => {
           ))}
       </ul>
     </div>
-  );
-};
+  )
+}
 
-export default TabBar;
+export default TabBar

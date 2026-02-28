@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   BarChart,
@@ -9,54 +9,54 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from 'recharts'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui/card'
 
 interface SessionData {
-  week: number;
-  year: number;
-  count: number;
+  week: number
+  year: number
+  count: number
 }
 
 interface UserSessions {
-  userId: string;
-  userName: string;
-  sessions: SessionData[];
+  userId: string
+  userName: string
+  sessions: SessionData[]
 }
 
 interface SessionsPerWeekChartProps {
-  data: UserSessions[];
+  data: UserSessions[]
 }
 
 export function SessionsPerWeekChart({ data }: SessionsPerWeekChartProps) {
   // Get all unique week/year combinations
-  const allWeeks = new Set<string>();
+  const allWeeks = new Set<string>()
   data.forEach((user) => {
     user.sessions.forEach((session) => {
       allWeeks.add(
         `${session.year}-W${session.week.toString().padStart(2, '0')}`,
-      );
-    });
-  });
+      )
+    })
+  })
 
   // Create chart data with all weeks and user data
-  const weeksArray = Array.from(allWeeks).sort();
+  const weeksArray = Array.from(allWeeks).sort()
   const chartData = weeksArray.map((weekKey) => {
-    const entry: Record<string, string | number> = { week: weekKey };
+    const entry: Record<string, string | number> = { week: weekKey }
     data.forEach((user) => {
       const session = user.sessions.find(
         (s) => `${s.year}-W${s.week.toString().padStart(2, '0')}` === weekKey,
-      );
-      entry[user.userName] = session?.count || 0;
-    });
-    return entry;
-  });
+      )
+      entry[user.userName] = session?.count || 0
+    })
+    return entry
+  })
 
   const chartColors = [
     'var(--chart-1)',
@@ -64,7 +64,7 @@ export function SessionsPerWeekChart({ data }: SessionsPerWeekChartProps) {
     'var(--chart-3)',
     'var(--chart-4)',
     'var(--chart-5)',
-  ];
+  ]
 
   return (
     <Card className='shadow-sm transition-shadow hover:shadow-md'>
@@ -124,5 +124,5 @@ export function SessionsPerWeekChart({ data }: SessionsPerWeekChartProps) {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }

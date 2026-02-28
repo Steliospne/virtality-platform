@@ -1,16 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CSSProperties, ReactNode } from 'react';
-import { CalendarDays, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { CSSProperties, ReactNode } from 'react'
+import { CalendarDays, Users } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-type Tone = 'blue' | 'teal' | 'violet' | 'amber' | 'slate';
+type Tone = 'blue' | 'teal' | 'violet' | 'amber' | 'slate'
 
 interface StatCardProps {
-  title: string;
-  value: number;
-  description?: string;
-  tone?: Tone;
-  icon?: ReactNode;
+  title: string
+  value: number
+  description?: string
+  tone?: Tone
+  icon?: ReactNode
 }
 
 const toneToColor: Record<Tone, string> = {
@@ -19,19 +19,19 @@ const toneToColor: Record<Tone, string> = {
   violet: 'var(--chart-5)',
   amber: 'var(--chart-4)',
   slate: 'var(--foreground)',
-};
+}
 
 function getDefaultToneAndIcon(title: string): {
-  tone: Tone;
-  icon?: ReactNode;
+  tone: Tone
+  icon?: ReactNode
 } {
   if (title.toLowerCase().includes('patient')) {
-    return { tone: 'blue', icon: <Users className='size-4' /> };
+    return { tone: 'blue', icon: <Users className='size-4' /> }
   }
   if (title.toLowerCase().includes('session')) {
-    return { tone: 'teal', icon: <CalendarDays className='size-4' /> };
+    return { tone: 'teal', icon: <CalendarDays className='size-4' /> }
   }
-  return { tone: 'slate' };
+  return { tone: 'slate' }
 }
 
 export function StatCard({
@@ -41,9 +41,9 @@ export function StatCard({
   tone,
   icon,
 }: StatCardProps) {
-  const defaults = getDefaultToneAndIcon(title);
-  const resolvedTone = tone ?? defaults.tone;
-  const resolvedIcon = icon ?? defaults.icon;
+  const defaults = getDefaultToneAndIcon(title)
+  const resolvedTone = tone ?? defaults.tone
+  const resolvedIcon = icon ?? defaults.icon
 
   return (
     <Card
@@ -101,5 +101,5 @@ export function StatCard({
         ) : null}
       </CardContent>
     </Card>
-  );
+  )
 }

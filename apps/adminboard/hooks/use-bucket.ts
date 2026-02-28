@@ -1,8 +1,8 @@
-import { createBucketQuery } from '@/data/client/bucket';
-import { useQuery } from '@tanstack/react-query';
+import { createBucketQuery } from '@/data/client/bucket'
+import { useQuery } from '@tanstack/react-query'
 
 const useBucket = () => {
-  return useQuery(createBucketQuery());
-};
+  return useQuery(createBucketQuery())
+}
 
-export default useBucket;
+export default useBucket

@@ -1,9 +1,9 @@
-import * as React from 'react';
-import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
-import { cva } from 'class-variance-authority';
-import { ChevronDownIcon } from 'lucide-react';
+import * as React from 'react'
+import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu'
+import { cva } from 'class-variance-authority'
+import { ChevronDownIcon } from 'lucide-react'
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
 
 function NavigationMenu({
   className,
@@ -11,7 +11,7 @@ function NavigationMenu({
   viewport = true,
   ...props
 }: React.ComponentProps<typeof NavigationMenuPrimitive.Root> & {
-  viewport?: boolean;
+  viewport?: boolean
 }) {
   return (
     <NavigationMenuPrimitive.Root
@@ -26,7 +26,7 @@ function NavigationMenu({
       {children}
       {viewport && <NavigationMenuViewport />}
     </NavigationMenuPrimitive.Root>
-  );
+  )
 }
 
 function NavigationMenuList({
@@ -42,7 +42,7 @@ function NavigationMenuList({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function NavigationMenuItem({
@@ -55,12 +55,12 @@ function NavigationMenuItem({
       className={cn('relative', className)}
       {...props}
     />
-  );
+  )
 }
 
 const navigationMenuTriggerStyle = cva(
   'group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm hover:bg-zinc-100 hover:text-zinc-900 focus:bg-zinc-100 focus:text-zinc-900 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-zinc-100 data-[state=open]:text-zinc-900 data-[state=open]:focus:bg-zinc-100 data-[state=open]:bg-zinc-100/50 focus-visible:ring-zinc-950/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 dark:focus:bg-zinc-800 dark:focus:text-zinc-50 dark:data-[state=open]:hover:bg-zinc-800 dark:data-[state=open]:text-zinc-50 dark:data-[state=open]:focus:bg-zinc-800 dark:data-[state=open]:bg-zinc-800/50 dark:focus-visible:ring-zinc-300/50',
-);
+)
 
 function NavigationMenuTrigger({
   className,
@@ -80,7 +80,7 @@ function NavigationMenuTrigger({
         aria-hidden='true'
       />
     </NavigationMenuPrimitive.Trigger>
-  );
+  )
 }
 
 function NavigationMenuContent({
@@ -97,7 +97,7 @@ function NavigationMenuContent({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function NavigationMenuViewport({
@@ -119,7 +119,7 @@ function NavigationMenuViewport({
         {...props}
       />
     </div>
-  );
+  )
 }
 
 function NavigationMenuLink({
@@ -135,7 +135,7 @@ function NavigationMenuLink({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function NavigationMenuIndicator({
@@ -153,7 +153,7 @@ function NavigationMenuIndicator({
     >
       <div className='relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-zinc-200 shadow-md dark:bg-zinc-800' />
     </NavigationMenuPrimitive.Indicator>
-  );
+  )
 }
 
 export {
@@ -166,4 +166,4 @@ export {
   NavigationMenuIndicator,
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
-};
+}

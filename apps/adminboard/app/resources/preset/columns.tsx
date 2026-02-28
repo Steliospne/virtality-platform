@@ -1,22 +1,22 @@
-'use client';
+'use client'
 
-import DateCell from '@/components/tables/date-cell';
-import { ColumnHeader } from '@/components/tables/header-cell';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import DateCell from '@/components/tables/date-cell'
+import { ColumnHeader } from '@/components/tables/header-cell'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { deletePreset } from '@/data/server/preset';
-import { getQueryClient } from '@/react-query';
-import { Preset } from '@virtality/db';
-import { useMutation } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
-import startCase from 'lodash.startcase';
-import { Copy, Ellipsis, Pencil, Trash2 } from 'lucide-react';
+} from '@/components/ui/dropdown-menu'
+import { deletePreset } from '@/data/server/preset'
+import { getQueryClient } from '@/react-query'
+import { Preset } from '@virtality/db'
+import { useMutation } from '@tanstack/react-query'
+import { ColumnDef } from '@tanstack/react-table'
+import startCase from 'lodash.startcase'
+import { Copy, Ellipsis, Pencil, Trash2 } from 'lucide-react'
 
 export const columns: ColumnDef<Preset>[] = [
   {
@@ -49,8 +49,8 @@ export const columns: ColumnDef<Preset>[] = [
   {
     accessorKey: 'id',
     cell({ row }) {
-      const id: string = row.getValue('id');
-      return <div>{id.split('-')[0]}</div>;
+      const id: string = row.getValue('id')
+      return <div>{id.split('-')[0]}</div>
     },
   },
   {
@@ -100,21 +100,21 @@ export const columns: ColumnDef<Preset>[] = [
   {
     id: 'actions',
     cell: function ActionCell({ row }) {
-      const queryClient = getQueryClient();
+      const queryClient = getQueryClient()
       const { mutate: deletePresetMutation } = useMutation({
         mutationFn: deletePreset,
         onSuccess: (data) => {
-          queryClient.setQueryData(['presets'], data);
-          queryClient.refetchQueries({ queryKey: ['presets'] });
+          queryClient.setQueryData(['presets'], data)
+          queryClient.refetchQueries({ queryKey: ['presets'] })
         },
         mutationKey: ['deletePreset'],
-      });
-      const preset = row.original;
+      })
+      const preset = row.original
       const copyId = () => {
-        navigator.clipboard.writeText(preset.id);
-      };
+        navigator.clipboard.writeText(preset.id)
+      }
 
-      const handleDeleteAction = () => deletePresetMutation(preset.id);
+      const handleDeleteAction = () => deletePresetMutation(preset.id)
 
       return (
         <DropdownMenu>
@@ -138,7 +138,7 @@ export const columns: ColumnDef<Preset>[] = [
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      );
+      )
     },
   },
-];
+]

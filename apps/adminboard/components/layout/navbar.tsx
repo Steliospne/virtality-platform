@@ -1,4 +1,4 @@
-'use client';
+'use client'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -6,34 +6,27 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Check, LayoutDashboard, LinkIcon, Mail, Trash } from 'lucide-react';
-import Avatar from './avatar';
-import capitalize from 'lodash.capitalize';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import UserForm from '@/components/shared/user-form';
-import { authClient } from '@/auth-client';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '@/components/ui/navigation-menu'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Check, LayoutDashboard, LinkIcon, Mail, Trash } from 'lucide-react'
+import Avatar from './avatar'
+import capitalize from 'lodash.capitalize'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import UserForm from '@/components/shared/user-form'
+import { authClient } from '@/auth-client'
+import { Skeleton } from '@/components/ui/skeleton'
 
-const resourceList = [
-  'avatar',
-  'map',
-  'exercises',
-  'user',
-  'patient',
-  'preset',
-];
+const resourceList = ['avatar', 'map', 'exercises', 'user', 'patient', 'preset']
 
-const adminActionList = ['create user'];
-const { useSession } = authClient;
+const adminActionList = ['create user']
+const { useSession } = authClient
 
 const Navbar = () => {
-  const { isPending } = useSession();
-  const [isNewUserDialogOpen, setNewUserDialogOpen] = useState(false);
-  const pathname = usePathname();
+  const { isPending } = useSession()
+  const [isNewUserDialogOpen, setNewUserDialogOpen] = useState(false)
+  const pathname = usePathname()
 
   const handleResourcesClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // Check if the device supports touch; only preventDefault for non-touch devices
@@ -41,15 +34,15 @@ const Navbar = () => {
       typeof window !== 'undefined' &&
       ('ontouchstart' in window ||
         (window.navigator.maxTouchPoints &&
-          window.navigator.maxTouchPoints > 0));
+          window.navigator.maxTouchPoints > 0))
     if (!hasTouch) {
-      e.preventDefault();
+      e.preventDefault()
     }
-  };
+  }
 
-  if (pathname === '/log-in') return null;
+  if (pathname === '/log-in' || pathname === '/no-access') return null
 
-  if (isPending) return <Skeleton className='h-[60px]' />;
+  if (isPending) return <Skeleton className='h-[60px]' />
 
   return (
     <header className='dark:bg-opacity-80 sticky top-0 z-10 col-span-2 col-start-1 flex h-[60px] bg-zinc-200 px-[8px] py-[4px] text-zinc-800 drop-shadow backdrop-blur-sm backdrop-saturate-180 dark:bg-zinc-950 dark:text-white'>
@@ -120,7 +113,7 @@ const Navbar = () => {
                   key={link}
                   variant='ghost'
                   onClick={() => {
-                    setNewUserDialogOpen(!isNewUserDialogOpen);
+                    setNewUserDialogOpen(!isNewUserDialogOpen)
                   }}
                 >
                   {capitalize(link)}
@@ -139,7 +132,7 @@ const Navbar = () => {
 
       <Avatar />
     </header>
-  );
-};
+  )
+}
 
-export default Navbar;
+export default Navbar
