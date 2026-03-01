@@ -14,6 +14,15 @@ import { CONSOLE_URL, CONSOLE_URL_LOCAL } from '@virtality/shared/types'
 const consoleURL =
   process.env.NODE_ENV === 'production' ? CONSOLE_URL : CONSOLE_URL_LOCAL
 
+const X_URL = process.env.X_URL
+const LINKEDIN_URL = process.env.LINKEDIN_URL
+const FACEBOOK_URL = process.env.FACEBOOK_URL
+const INSTAGRAM_URL = process.env.INSTAGRAM_URL
+
+if (!X_URL || !LINKEDIN_URL || !FACEBOOK_URL || !INSTAGRAM_URL) {
+  throw new Error('Social media URLs are not set')
+}
+
 const Navbar = async () => {
   return (
     <NavigationMenu className='h-[60px] max-w-full sticky top-0 z-20 backdrop-blur-md backdrop-saturate-180 bg-white/80 dark:bg-zinc-900/80 flex justify-between px-4 border-b border-vital-blue-100/50 dark:border-zinc-800'>
@@ -29,22 +38,22 @@ const Navbar = async () => {
 
       <div className='flex items-center gap-2'>
         <div className='flex justify-center gap-6 text-slate-600'>
-          <Link href={process.env.NEXT_PUBLIC_FACEBOOK_URL ?? '#'}>
+          <Link href={FACEBOOK_URL} target='_blank'>
             <SiFacebook
               className={`size-4.5 hover:text-[#0866FF] hover:scale-110 transition-all`}
             />
           </Link>
-          <Link href={process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? '#'}>
+          <Link href={INSTAGRAM_URL} target='_blank'>
             <SiInstagram
               className={`size-4.5 hover:text-[#E4405F] hover:scale-110 transition-all`}
             />
           </Link>
-          <Link href={process.env.NEXT_PUBLIC_LINKEDIN_URL ?? '#'}>
+          <Link href={LINKEDIN_URL} target='_blank'>
             <SiLinkedin
               className={`size-4.5 hover:text-[#0A66C2] hover:scale-110 transition-all`}
             />
           </Link>
-          <Link href={process.env.NEXT_PUBLIC_X_URL ?? '#'}>
+          <Link href={X_URL} target='_blank'>
             <SiX
               className={`size-4.5 hover:text-[#000000] dark:hover:text-white hover:scale-110 transition-all`}
             />

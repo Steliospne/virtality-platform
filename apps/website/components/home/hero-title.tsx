@@ -45,6 +45,11 @@ const HeroTitle = () => {
     })
   }, [])
 
+  const handleViewFeatures = () => {
+    const featuresElement = document.getElementById('features')
+    featuresElement?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <div ref={containerRef} className='space-y-8'>
       <div className='inline-flex items-center gap-2 rounded-full bg-linear-to-r from-vital-blue-700 to-vital-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-vital-blue-700/20'>
@@ -81,13 +86,11 @@ const HeroTitle = () => {
         </Button>
 
         <Button
-          asChild
           variant='outline'
           className='h-auto px-6 py-4 text-base font-semibold border-2 border-vital-blue-700 text-vital-blue-700 hover:bg-vital-blue-50'
+          onClick={handleViewFeatures}
         >
-          <Link href='#features' className='flex items-center gap-2'>
-            View Features
-          </Link>
+          View Features
         </Button>
       </div>
     </div>

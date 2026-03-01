@@ -12,7 +12,14 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**"],
-      "env": ["NODE_ENV", "CONSOLE_DATABASE_URL"]
+      "env": [
+        "NODE_ENV",
+        "CONSOLE_DATABASE_URL",
+        "X_URL",
+        "LINKEDIN_URL",
+        "FACEBOOK_URL",
+        "INSTAGRAM_URL"
+      ]
     },
     "@virtality/adminboard#build": {
       "dependsOn": ["^build"],
