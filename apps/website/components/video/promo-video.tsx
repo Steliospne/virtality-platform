@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Play, Pause } from 'lucide-react'
+import { Play } from 'lucide-react'
 
 const PromoVideo = () => {
   const [isPlaying, setPlaying] = useState(false)
@@ -15,11 +15,11 @@ const PromoVideo = () => {
     }
 
     video.play()
-    video.onplay = (_event) => {
+    video.onplay = () => {
       setPlaying(true)
     }
 
-    video.onpause = (_event) => {
+    video.onpause = () => {
       setPlaying(false)
     }
   }
@@ -64,19 +64,19 @@ const PromoVideo = () => {
           {/* Video container */}
           <div className='relative aspect-video rounded-2xl overflow-hidden shadow-2xl border-2 border-vital-blue-700/30 group'>
             {/* Video frame decoration */}
-            <div className='absolute -inset-1 bg-gradient-to-r from-vital-blue-600 to-vital-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity'></div>
+            <div className='absolute -inset-1 bg-linear-to-r from-vital-blue-600 to-vital-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity'></div>
 
             <div className='relative bg-black rounded-xl overflow-hidden'>
               <video
                 ref={videoRef}
                 controls
                 controlsList='nodownload'
-                src='https://cdn.virtality.app/virtality-promo-web-latest.mp4'
+                src='https://cdn.virtality.app/virtality-promo-web-001.mp4'
                 className='w-full'
               />
               {!isPlaying && (
                 <div
-                  className='absolute inset-0 bg-gradient-to-br from-vital-blue-900/40 to-slate-900/60 backdrop-blur-[2px] flex items-center justify-center cursor-pointer group/play'
+                  className='absolute inset-0 bg-linear-to-br from-vital-blue-900/40 to-slate-900/60 backdrop-blur-[2px] flex items-center justify-center cursor-pointer group/play'
                   role='button'
                   onClick={handleVideoPlayback}
                 >
@@ -86,17 +86,8 @@ const PromoVideo = () => {
                     <div className='absolute inset-0 bg-vital-blue-600/20 rounded-full animate-pulse'></div>
 
                     {/* Play button */}
-                    <div className='relative bg-gradient-to-br from-vital-blue-700 to-vital-blue-600 rounded-full w-20 h-20 flex items-center justify-center text-white shadow-2xl shadow-vital-blue-700/50 group-hover/play:scale-110 transition-transform'>
+                    <div className='relative bg-linear-to-br from-vital-blue-700 to-vital-blue-600 rounded-full w-20 h-20 flex items-center justify-center text-white shadow-2xl shadow-vital-blue-700/50 group-hover/play:scale-110 transition-transform'>
                       <Play className='w-8 h-8 ml-1' />
-                    </div>
-                  </div>
-
-                  {/* Text overlay */}
-                  <div className='absolute bottom-8 left-8 right-8 text-white'>
-                    <div className='bg-black/50 backdrop-blur-md rounded-lg p-4 border border-white/10'>
-                      <p className='text-sm font-medium mb-1'>
-                        Clinical VR Platform Overview
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -107,25 +98,25 @@ const PromoVideo = () => {
           {/* Video stats */}
           <div className='mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center'>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
                 100+
               </div>
               <div className='text-sm text-slate-400'>Exercises</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
                 Real-time
               </div>
               <div className='text-sm text-slate-400'>Biofeedback</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
                 Cloud
               </div>
               <div className='text-sm text-slate-400'>Data Analytics</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1 font-(--font-jetbrains-mono)'>
+              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
                 Custom
               </div>
               <div className='text-sm text-slate-400'>Treatment Plans</div>

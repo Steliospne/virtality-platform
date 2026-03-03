@@ -4,16 +4,15 @@ import { stripe } from '@better-auth/stripe'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { createAuthMiddleware, getOAuthState } from 'better-auth/api'
 import Stripe from 'stripe'
-import { toPlainText } from '@react-email/render'
-import EmailVerification from '@virtality/ui/components/email/email-verification'
-import ResetPassword from '@virtality/ui/components/email/reset-password'
-import DeleteUserEmail from '@virtality/ui/components/email/delete-user-email'
 import { prisma } from '@virtality/db'
 import { ac, roles } from './permissions.ts'
-import { transporter } from './nodemailer.ts'
-import { reactToHTML } from './lib/react-to-email.ts'
 import validateAndConsumeReferralCode from './lib/referral-code.ts'
 import { updateUserRole } from './data/user.ts'
+import {
+  sendDeleteAccountVerification,
+  sendResetPassword,
+  sendVerificationEmail,
+} from '@virtality/nodemailer'
 
 const DOMAIN = process.env.BETTER_AUTH_URL
   ? new URL(process.env.BETTER_AUTH_URL)
@@ -38,61 +37,16 @@ export const auth = betterAuth({
   user: {
     deleteUser: {
       enabled: true,
-      sendDeleteAccountVerification: async (data) => {
-        const {
-          user: { email, name },
-          url,
-        } = data
-
-        const html = await reactToHTML(DeleteUserEmail({ url, name }))
-        const text = toPlainText(html)
-        await transporter.sendMail({
-          from,
-          to: email,
-          subject: 'Delete account - Action required',
-          html,
-          text,
-        })
-      },
+      sendDeleteAccountVerification,
     },
   },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    sendResetPassword: async (data) => {
-      const {
-        user: { email, name },
-        url,
-      } = data
-
-      const html = await reactToHTML(ResetPassword({ url, name }))
-      const text = toPlainText(html)
-      await transporter.sendMail({
-        from,
-        to: email,
-        subject: 'Reset your password - Action required',
-        html,
-        text,
-      })
-    },
+    sendResetPassword,
   },
   emailVerification: {
-    sendVerificationEmail: async (data) => {
-      const {
-        user: { email },
-        url,
-      } = data
-
-      const html = await reactToHTML(EmailVerification({ url }))
-      const text = toPlainText(html)
-      await transporter.sendMail({
-        from,
-        to: email,
-        subject: 'Verify your email address',
-        html,
-        text,
-      })
-    },
+    sendVerificationEmail,
   },
   socialProviders: {
     google: {

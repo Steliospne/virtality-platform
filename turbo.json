@@ -57,7 +57,8 @@
         "@virtality/db#build",
         "@virtality/orpc#build",
         "@virtality/auth#build",
-        "@virtality/ui#build"
+        "@virtality/ui#build",
+        "@virtality/nodemailer#build"
       ],
       "outputs": ["dist/**"],
       "env": []

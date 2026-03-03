@@ -1,56 +1,7 @@
 'use server'
-import { ContactForm, SlackMessage, WaitlistFormType } from '@/types/models'
-import { WaitlistFormSchema } from './definitions'
-import { prisma } from '@virtality/db'
-import { v4 as uuid } from 'uuid'
-import resend from '@/resend'
-import WaitingListEmail from '@/components/email/waitinglist-email'
+import { ContactForm, SlackMessage } from '@/types/models'
+
 import { sendSlackMessage } from './server-utils'
-
-export const submitWaitlistAction = async (
-  state: {
-    success: boolean | null
-    exists: boolean
-    values: {
-      email: string
-    }
-  },
-  formData: FormData,
-) => {
-  if (!formData) return state
-  const entries = Object.fromEntries(formData)
-
-  const { email, plan } = entries as unknown as WaitlistFormType
-
-  const validateFields = WaitlistFormSchema.safeParse({
-    email,
-  })
-
-  if (validateFields.success) {
-    const exists =
-      (await prisma.waitingList.findFirst({ where: { email } })) !== null
-
-    if (!exists) {
-      const newListItem = {
-        id: uuid(),
-        ...validateFields.data,
-        plan,
-        createdAt: new Date(),
-      }
-      await prisma.waitingList.create({ data: newListItem })
-      await resend.emails.send({
-        from: 'info@virtality.app',
-        to: newListItem.email,
-        subject: 'Thank you for joining waitlist.',
-        react: WaitingListEmail({ email }),
-      })
-      return { ...state, success: true }
-    }
-    return { exists: true, success: false, values: validateFields.data }
-  }
-
-  return { ...state, success: false }
-}
 
 export const submitContactMsg = async (
   state: ContactForm,
@@ -105,5 +56,3 @@ export const submitContactMsg = async (
   await sendSlackMessage(slackWebhookUrl, slackMessage, 'contact')
   return entries
 }
-
-// export const submitContactMsg = async (formData: FormData) => {};

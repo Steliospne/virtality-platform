@@ -1,5 +1,5 @@
 import { Column, Heading, Img, Row, Section } from '@react-email/components'
-import { header, headerText } from '../styles/email.ts'
+import { header, headerText } from '../styles/email.js'
 
 const baseURL = process.env.CDN_URL
 

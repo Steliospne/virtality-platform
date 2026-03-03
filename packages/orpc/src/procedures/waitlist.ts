@@ -19,14 +19,24 @@ const createWaitlist = base
   .input(WaitlistSchema)
   .handler(async ({ context, input }) => {
     const { prisma } = context
-    const waitlist = await prisma.waitingList.create({
+
+    const exists = await prisma.waitingList.findFirst({
+      where: { email: input.email },
+    })
+
+    if (exists) {
+      return { success: false, message: 'You are already on the waitlist.' }
+    }
+
+    await prisma.waitingList.create({
       data: {
         id: generateUUID(),
         ...input,
         createdAt: new Date(),
       },
     })
-    return waitlist
+
+    return { success: true, message: null }
   })
 
 export const waitlist = {

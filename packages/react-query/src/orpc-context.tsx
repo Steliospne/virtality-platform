@@ -1,8 +1,8 @@
 'use client'
 
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import { createORPCClient } from '@virtality/orpc'
-import type { ORPCClientLink } from '@virtality/orpc'
+import { createORPCClient } from '@virtality/orpc/client'
+import type { ORPCClientLink } from '@virtality/orpc/client'
 import {
   createContext,
   type ReactNode,
@@ -39,8 +39,7 @@ export function ORPCProvider({
   const link = useMemo<ORPCClientLink>(
     () => ({
       url,
-      fetch: (request, init) =>
-        fetch(request, { ...init, credentials }),
+      fetch: (request, init) => fetch(request, { ...init, credentials }),
     }),
     [url, credentials],
   )

@@ -18,16 +18,14 @@
     "@better-auth/stripe": "1.4.18",
     "@prisma/adapter-pg": "7.2.0",
     "@prisma/client": "7.2.0",
-    "@react-email/render": "2.0.0",
     "@virtality/db": "workspace:*",
-    "stripe": "18.5.0",
-    "better-auth": "1.4.18",
     "@virtality/ui": "workspace:*",
-    "nodemailer": "7.0.11"
+    "@virtality/nodemailer": "workspace:*",
+    "stripe": "18.5.0",
+    "better-auth": "1.4.18"
   },
   "devDependencies": {
     "@virtality/typescript-config": "workspace:*",
-    "@types/nodemailer": "7.0.4",
     "tsx": "4.20.6",
     "typescript": "5.9.3"
   }

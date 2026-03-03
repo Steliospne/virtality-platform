@@ -1,4 +1,4 @@
-import { orpcHandler } from '@virtality/orpc'
+import { orpcHandler } from '@virtality/orpc/server'
 import { createMiddleware } from 'hono/factory'
 import type { AppContext } from '../index.ts'
 import { prisma } from '@virtality/db'
@@ -9,7 +9,7 @@ export const orpcMiddleware = createMiddleware<AppContext>(async (c, next) => {
   const { matched, response } = await orpcHandler.handle(c.req.raw, {
     prefix: ORPC_PREFIX,
     context: {
-      prisma: prisma,
+      prisma,
       headers: c.req.raw.headers,
       user: c.var.user,
       session: c.var.session,

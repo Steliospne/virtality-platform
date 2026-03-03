@@ -1,7 +1,8 @@
-import { startTransition, useActionState, useEffect } from 'react'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { submitWaitlistAction } from '@/lib/actions'
 import { useForm } from 'react-hook-form'
 import { WaitlistFormType } from '@/types/models'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,20 +16,14 @@ import {
 } from '@/components/ui/form'
 import { toast } from 'sonner'
 import { ArrowRight } from 'lucide-react'
-
-const initialFormState = {
-  success: null,
-  exists: false,
-  values: {
-    email: '',
-  },
-}
+import { useCreateWaitlist } from '@virtality/react-query'
+import { useSendThankYouEmail } from '@virtality/react-query'
 
 const WaitlistForm = () => {
-  const [formState, formAction, pending] = useActionState(
-    submitWaitlistAction,
-    initialFormState,
-  )
+  const router = useRouter()
+  const { mutate: createWaitlist, isPending: isCreating } = useCreateWaitlist()
+  const { mutate: sendThankYouEmail, isPending: isSending } =
+    useSendThankYouEmail()
 
   const form = useForm<WaitlistFormType>({
     resolver: zodResolver(WaitlistFormSchema),
@@ -38,29 +33,22 @@ const WaitlistForm = () => {
   })
 
   const onSubmit = (values: WaitlistFormType) => {
-    const formData = new FormData()
-    Object.entries(values).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value.toString())
-      }
-    })
-
-    startTransition(() => formAction(formData))
-    form.reset()
+    createWaitlist(
+      { email: values.email },
+      {
+        onSuccess: (data) => {
+          if (data.success) {
+            toast.success('Thank you for joining the waitlist!')
+            form.reset()
+            sendThankYouEmail({ email: values.email })
+            router.push('/thank-you')
+          } else {
+            toast.error(data.message)
+          }
+        },
+      },
+    )
   }
-
-  useEffect(() => {
-    if (formState.success === null) return
-
-    if (formState.exists) {
-      formState.exists = false
-      toast.warning('You are already on the waitlist.')
-    } else if (formState.success === false) {
-      toast.error('Something went wrong.')
-    } else {
-      toast.success('Thank you for joining the waitlist!')
-    }
-  }, [formState])
 
   return (
     <Form {...form}>
@@ -84,7 +72,9 @@ const WaitlistForm = () => {
                       type='submit'
                       className='h-14 px-6 text-base font-semibold bg-vital-blue-700 hover:bg-vital-blue-800 shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all rounded-xl group'
                     >
-                      {pending ? 'Submitting...' : 'Join Waitlist'}
+                      {isCreating || isSending
+                        ? 'Submitting...'
+                        : 'Join Waitlist'}
                       <ArrowRight className='size-4 ml-2 group-hover:translate-x-1 transition-transform' />
                     </Button>
                   </div>

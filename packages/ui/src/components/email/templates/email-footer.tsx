@@ -1,5 +1,5 @@
 import { Text, Section } from '@react-email/components'
-import { footer, footerText } from '../styles/email.ts'
+import { footer, footerText } from '../styles/email.js'
 
 interface EmailFooterProps {
   companyName: string

@@ -1,5 +1,5 @@
 import { Body, Html, Preview, Head } from '@react-email/components'
-import { main } from '../styles/email.ts'
+import { main } from '../styles/email.js'
 
 interface EmailBaseProps {
   children: React.ReactNode

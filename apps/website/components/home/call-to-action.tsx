@@ -1,11 +1,12 @@
 'use client'
-import { Card, CardContent } from '@/components/ui/card'
-import WaitlistForm from '../call-to-action/waitlist-form'
 import { Users, TrendingUp, Clock } from 'lucide-react'
 import { useWaitlist } from '@virtality/react-query'
+import { Card, CardContent } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
+import WaitlistForm from '../call-to-action/waitlist-form'
 
 const CallToAction = () => {
-  const { data: waitlist } = useWaitlist()
+  const { data: waitlist, isLoading } = useWaitlist()
 
   return (
     <section id='cta' className='relative py-24 overflow-hidden'>
@@ -61,7 +62,13 @@ const CallToAction = () => {
                       <Users className='w-6 h-6 text-white' />
                     </div>
                     <div className='text-3xl font-bold text-vital-blue-700 mb-1'>
-                      {waitlist?.length ?? 0 + 20}+
+                      <div className='flex items-center justify-center'>
+                        {isLoading ? (
+                          <Spinner className='size-9' />
+                        ) : (
+                          (waitlist?.length ?? 0) + '+'
+                        )}
+                      </div>
                     </div>
                     <div className='text-sm font-medium text-slate-600'>
                       Healthcare Professionals

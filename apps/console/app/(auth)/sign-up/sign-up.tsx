@@ -20,11 +20,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useClientT } from '@/i18n/use-client-t'
 import { Loader2 } from 'lucide-react'
 import SignupForm from '@/components/auth/sign-up-form'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 const SignUp = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const referralCode = searchParams.get('referralCode')
+  const _referralCode = searchParams.get('referralCode')
+  const [referralCode, setReferralCode] = useState(_referralCode || '')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const { i18n } = useClientT()
 
@@ -66,6 +69,22 @@ const SignUp = () => {
         </CardHeader>
         <CardContent>
           <Separator className='my-2' />
+          <div className='mb-4 space-y-2'>
+            <Label
+              htmlFor='referral-code'
+              className='text-muted-foreground text-xs'
+            >
+              Referral code (optional)
+            </Label>
+            <Input
+              id='referral-code'
+              type='text'
+              placeholder='Enter code to sign up as referral'
+              value={referralCode || ''}
+              onChange={(e) => setReferralCode(e.target.value)}
+              className='text-sm'
+            />
+          </div>
           <SignupForm id='sign-up-form' form={form} onSubmit={onSubmit} />
           {submitError && (
             <div className='text-red-500 dark:text-red-500'>{submitError}</div>

@@ -1,7 +1,7 @@
 import { os } from '@orpc/server'
-import { AuthContext } from '@virtality/auth'
-import { PrismaClient } from '@virtality/db'
-import { VirtalityS3Client } from './s3/index.ts'
+import type { AuthContext } from '@virtality/auth'
+import type { PrismaClient } from '@virtality/db'
+import type { VirtalityS3Client } from './s3/index.ts'
 /**
  * Initial context provided by the server when handling requests.
  * The server should pass `headers` and, for authed procedures, set `user` and `session`

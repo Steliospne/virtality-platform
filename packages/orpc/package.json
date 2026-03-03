@@ -4,9 +4,13 @@
   "description": "oRPC API contract and client for Virtality server and client apps",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
+    "./server": {
+      "types": "./src/server.ts",
+      "default": "./dist/server.js"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "default": "./dist/client.js"
     },
     "./s3": {
       "types": "./src/s3/index.ts",
@@ -26,6 +30,7 @@
     "@virtality/auth": "workspace:*",
     "@virtality/db": "workspace:*",
     "@virtality/shared": "workspace:*",
+    "@virtality/nodemailer": "workspace:*",
     "superjson": "2.2.6",
     "zod": "4.3.6"
   },

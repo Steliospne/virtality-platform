@@ -1,6 +1,6 @@
-import EmailBase from './templates/email-base.tsx'
-import EmailHeader from './templates/email-header.tsx'
-import EmailFooter from './templates/email-footer.tsx'
+import EmailBase from './templates/email-base.js'
+import EmailHeader from './templates/email-header.js'
+import EmailFooter from './templates/email-footer.js'
 import {
   container,
   content,
@@ -12,7 +12,7 @@ import {
   linkText,
   link,
   warningText,
-} from './styles/email.ts'
+} from './styles/email.js'
 import {
   Button,
   Container,

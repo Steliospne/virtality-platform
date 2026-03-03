@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer'
+import * as Nodemailer from 'nodemailer'
 
 if (
   !process.env.SMTP_HOST ||
@@ -10,7 +10,7 @@ if (
   )
 }
 
-export const transporter = nodemailer.createTransport({
+export const nodemailer = Nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   secure: true,
   port: 465,

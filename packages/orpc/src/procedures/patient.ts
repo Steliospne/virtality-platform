@@ -6,7 +6,7 @@ import {
 } from '@virtality/db/definitions'
 import { authed } from '../middleware/auth.ts'
 import { generateImageFile } from '@virtality/shared/utils'
-import { CDN_URL } from '../lib/const.ts'
+import { CDN_URL } from '@virtality/shared/types'
 
 const CombinedPatientSchema = z.object({
   data: z.object({
