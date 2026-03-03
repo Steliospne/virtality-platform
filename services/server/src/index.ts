@@ -20,6 +20,8 @@ app.use(
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:3002',
+      'https://virtality.app',
+      'https://preview-web.virtality.app',
       'https://admin.virtality.app',
       'https://preview-admin.virtality.app',
       'https://console.virtality.app',
