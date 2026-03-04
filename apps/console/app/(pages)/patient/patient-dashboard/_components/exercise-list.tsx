@@ -44,7 +44,7 @@ const ExerciseList = ({ className }: { className?: string }) => {
   const applySettings = (index: number) => {
     if (!exercises) return
 
-    const { exerciseId, sets, reps, restTime, holdTime, speed } =
+    const { exerciseId, sets, reps, restTime, holdTime, speed, romMode } =
       exercises[index]
 
     const payload = {
@@ -54,6 +54,7 @@ const ExerciseList = ({ className }: { className?: string }) => {
       restTime,
       holdTime,
       speed,
+      romMode,
     }
 
     if (currExercise.current === index) {

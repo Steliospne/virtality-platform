@@ -54,7 +54,17 @@ import { Label } from '@/components/ui/label'
 
 let wakeLock: WakeLockSentinel | null = null
 
-const ControlPanel = ({ className }: { className?: string }) => {
+interface ControlPanelProps {
+  className?: string
+  showCasting: boolean
+  setShowCasting: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+const ControlPanel = ({
+  className,
+  showCasting,
+  setShowCasting,
+}: ControlPanelProps) => {
   const { devices } = useDeviceContext()
   const { state, handler, patientId, currExercise } = usePatientDashboard()
   const { data: patientSessions } = usePatientSessions({
@@ -244,8 +254,15 @@ const ControlPanel = ({ className }: { className?: string }) => {
 
         <DeviceSelector devices={devices} connected={connected} />
 
-        <Button>
-          <MonitorPlay />
+        <Button onClick={() => setShowCasting((prev) => !prev)}>
+          <MonitorPlay
+            className={cn(
+              'size-6 rounded-sm border p-1',
+              showCasting
+                ? 'border-green-800/60 bg-green-600/60'
+                : 'border-red-800/60 bg-red-600/60',
+            )}
+          />
           Cast
         </Button>
 
