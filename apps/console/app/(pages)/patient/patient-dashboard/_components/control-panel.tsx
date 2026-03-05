@@ -51,6 +51,7 @@ import { Item } from '@/components/ui/item'
 import { usePatient, usePatientSessions } from '@virtality/react-query'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { useFeatureFlagResult } from 'posthog-js/react'
 
 let wakeLock: WakeLockSentinel | null = null
 
@@ -254,17 +255,10 @@ const ControlPanel = ({
 
         <DeviceSelector devices={devices} connected={connected} />
 
-        <Button onClick={() => setShowCasting((prev) => !prev)}>
-          <MonitorPlay
-            className={cn(
-              'size-6 rounded-sm border p-1',
-              showCasting
-                ? 'border-green-800/60 bg-green-600/60'
-                : 'border-red-800/60 bg-red-600/60',
-            )}
-          />
-          Cast
-        </Button>
+        <CastingButton
+          showCasting={showCasting}
+          setShowCasting={setShowCasting}
+        />
 
         {isProgramInactive && isMain && <ProgramSelector className='flex-1' />}
 
@@ -574,5 +568,30 @@ const DeviceSelector = ({ devices, connected }: DeviceSelectorProps) => {
         <PopoverArrow className='fill-zinc-200 dark:fill-zinc-900' />
       </PopoverContent>
     </Popover>
+  )
+}
+
+interface CastingButtonProps {
+  showCasting: boolean
+  setShowCasting: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+const CastingButton = ({ showCasting, setShowCasting }: CastingButtonProps) => {
+  const res = useFeatureFlagResult('cast_feature')
+
+  if (res?.enabled && res.payload === false) return null
+
+  return (
+    <Button onClick={() => setShowCasting((prev) => !prev)}>
+      <MonitorPlay
+        className={cn(
+          'size-6 rounded-sm border p-1',
+          showCasting
+            ? 'border-green-800/60 bg-green-600/60'
+            : 'border-red-800/60 bg-red-600/60',
+        )}
+      />
+      Cast
+    </Button>
   )
 }
