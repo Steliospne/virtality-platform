@@ -118,7 +118,8 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
       videoRef.current.srcObject = null
     }
     setStatus('idle')
-  }, [])
+    socket?.emit(CASTING_EVENT.StopCasting['name'])
+  }, [socket])
 
   useEffect(() => {
     return () => {

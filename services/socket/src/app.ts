@@ -28,7 +28,7 @@ const io = new Server(httpServer, socketOptions)
 const PORT = process.env.PORT || '8081'
 
 // Socket.IO connection handler
-io.on(CONNECTION_EVENT.CONNECTION, connectionHandler.bind(null, io))
+io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
 
 const httpServerOptions =
   process.env.NODE_ENV !== 'production'

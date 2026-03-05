@@ -123,6 +123,7 @@ export const CASTING_EVENT = {
   RequestOffer: { name: 'onRequestOffer', payload: false },
   Offer: { name: 'onOffer', payload: true },
   Answer: { name: 'onAnswer', payload: true },
+  StopCasting: { name: 'onStopCasting', payload: false },
 } as const
 
 export type CastingEventKey = keyof typeof CASTING_EVENT

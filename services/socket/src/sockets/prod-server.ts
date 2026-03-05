@@ -14,10 +14,7 @@ import vrCommSim from './vrCommsTesting'
 
 const activeRooms: Map<string, Room> = new Map()
 // Socket.IO connection handler
-export const connectionHandler = (
-  io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,
-  socket: Socket,
-) => {
+export const connectionHandler = (socket: Socket) => {
   const { SIM } = process.env
 
   console.log(`[CONNECTION] Event: New connection ${socket.id}`)
@@ -116,7 +113,7 @@ export const connectionHandler = (
 
   // If this is the second member, notify both that the room is complete
   if (room.members === 2) {
-    io.to(roomCode).emit('roomComplete', {
+    socket.to(roomCode).emit('roomComplete', {
       roomCode,
       timestamp: Date.now(),
     })
