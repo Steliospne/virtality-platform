@@ -12,9 +12,16 @@ import {
   SERVER_URL_STAGING,
 } from '@virtality/shared/types'
 
-const env = process.env.ENV || 'development'
+const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
-const baseURL = `${env === 'production' ? SERVER_URL : env === 'preview' ? SERVER_URL_STAGING : SERVER_URL_LOCAL}${API_PREFIX}/auth`
+const base =
+  env === 'production'
+    ? SERVER_URL
+    : env === 'preview'
+      ? SERVER_URL_STAGING
+      : SERVER_URL_LOCAL
+
+const baseURL = base + API_PREFIX + '/auth'
 
 console.log('auth client baseURL: ', baseURL)
 

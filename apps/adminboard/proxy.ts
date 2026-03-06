@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { auth } from '@virtality/auth'
+import { auth } from '@virtality/auth/adminboard'
 
 const { enabled } = process.env
 

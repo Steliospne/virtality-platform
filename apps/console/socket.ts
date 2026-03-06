@@ -5,7 +5,8 @@ import { SOCKET_URL, SOCKET_URL_LOCAL } from '@virtality/shared/types'
 
 const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
-const connectionURL = env === 'production' ? SOCKET_URL : SOCKET_URL_LOCAL
+const connectionURL =
+  env === 'production' || env === 'preview' ? SOCKET_URL : SOCKET_URL_LOCAL
 
 const socketOptions = {
   secure: true,

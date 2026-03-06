@@ -8,6 +8,7 @@
     "legacy:console": "next build",
     "build": "next build",
     "build:prerender": "next build --debug-prerender",
+    "module:analyze": "next experimental-analyze",
     "start": "next start",
     "lint": "next lint",
     "next:types": "next typegen",

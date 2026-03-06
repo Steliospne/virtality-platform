@@ -1,5 +1,5 @@
 import { os } from '@orpc/server'
-import type { AuthContext } from '@virtality/auth'
+import type { AuthContext } from '@virtality/auth/server'
 import type { PrismaClient } from '@virtality/db'
 import type { VirtalityS3Client } from './s3/index.ts'
 /**

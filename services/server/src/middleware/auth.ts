@@ -1,4 +1,4 @@
-import { auth } from '@virtality/auth'
+import { auth } from '@virtality/auth/server'
 import { createMiddleware } from 'hono/factory'
 import type { AppContext } from '../index.ts'
 

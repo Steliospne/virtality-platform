@@ -13,7 +13,7 @@ import {
   SERVER_URL_STAGING,
 } from '@virtality/shared/types'
 
-const env = process.env.ENV || 'development'
+const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
 const base =
   env === 'production'

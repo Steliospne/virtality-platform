@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import acceptLanguage from 'accept-language'
 import { settings } from '@/i18n/settings'
-import { auth } from '@virtality/auth'
+import { auth } from '@virtality/auth/console'
 import {
   WEBSITE_URL,
   WEBSITE_URL_STAGING,

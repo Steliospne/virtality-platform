@@ -4,9 +4,17 @@
   "description": "Authentication for the Virtality platform",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./console": {
+      "types": "./src/console.ts",
+      "default": "./dist/console.js"
+    },
+    "./adminboard": {
+      "types": "./src/adminboard.ts",
+      "default": "./dist/adminboard.js"
+    },
+    "./server": {
+      "types": "./src/server.ts",
+      "default": "./dist/server.js"
     }
   },
   "scripts": {
