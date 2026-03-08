@@ -9,7 +9,7 @@ const HomePage = async () => {
   const cookie = cookieStore.get(
     env === 'production' || env === 'preview'
       ? '__Secure-virtality_admin_session'
-      : 'virtality_admin_session_local',
+      : 'virtality_admin_session',
   )
 
   return <Dashboard isImpersonating={!!cookie} />

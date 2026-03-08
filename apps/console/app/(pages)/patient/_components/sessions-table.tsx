@@ -14,19 +14,22 @@ import {
 import { useState } from 'react'
 import { usePatientSessions } from '@virtality/react-query'
 import { sessionsColumns } from './sessions-columns'
+import type { ExtendedPatientSession } from '@/types/models'
 
 interface SessionsTableProps {
   patientId: string
   onSessionSelect: (value: string) => void
+  /** When provided, use this list instead of fetching (e.g. date-filtered). */
+  sessions?: ExtendedPatientSession[] | null
 }
 
-const SessionsTable = ({ patientId, onSessionSelect }: SessionsTableProps) => {
+const SessionsTable = ({ patientId, onSessionSelect, sessions: sessionsProp }: SessionsTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
-  const { data: tableData } = usePatientSessions({
+  const { data: fetchedSessions } = usePatientSessions({
     input: {
       where: {
         patientId,
@@ -35,9 +38,11 @@ const SessionsTable = ({ patientId, onSessionSelect }: SessionsTableProps) => {
     },
   })
 
+  const tableData = sessionsProp !== undefined ? (sessionsProp ?? []) : (fetchedSessions ?? [])
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: tableData ?? [],
+    data: tableData,
     columns: sessionsColumns,
     ...tableDefaults.models,
     state: {

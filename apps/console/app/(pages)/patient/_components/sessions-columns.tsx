@@ -13,8 +13,10 @@ import { Copy, Ellipsis } from 'lucide-react'
 import ColumnHeader from '@/components/tables/header-cell'
 import DateCell from '@/components/tables/date-cell'
 import { PatientSession } from '@virtality/db'
+import { getSessionDurationMinutes } from '@/lib/session-metrics'
+import type { ExtendedPatientSession } from '@/types/models'
 
-export const sessionsColumns: ColumnDef<PatientSession>[] = [
+export const sessionsColumns: ColumnDef<PatientSession & { sessionData?: unknown[]; sessionExercise?: unknown[] }>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -71,6 +73,15 @@ export const sessionsColumns: ColumnDef<PatientSession>[] = [
       />
     ),
     cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
+  },
+  {
+    id: 'duration',
+    header: () => 'Duration',
+    cell: ({ row }) => {
+      const session = row.original as ExtendedPatientSession
+      const min = getSessionDurationMinutes(session)
+      return min != null ? <span className="tabular-nums">{min.toFixed(1)} min</span> : '—'
+    },
   },
   {
     id: 'actions',
