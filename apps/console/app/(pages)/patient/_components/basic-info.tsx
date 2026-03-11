@@ -39,6 +39,7 @@ import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { format, formatISO } from 'date-fns'
 import placeholder from '@/public/placeholder.svg'
 import { useClientT } from '@/i18n/use-client-t'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface BasicInfoProps {
   form: ReturnType<typeof useForm<PatientForm>>
@@ -46,6 +47,9 @@ interface BasicInfoProps {
 }
 
 const BasicInfo = ({ form, patient }: BasicInfoProps) => {
+  usePageViewTracking({
+    props: { route_group: 'patient', tab_view: 'patient-profile' },
+  })
   const { t } = useClientT(['common'])
   const [previewUrl, setPreviewUrl] = useState<Patient['image']>(null)
   const [hasImage, setImage] = useState(patient?.image ? true : false)

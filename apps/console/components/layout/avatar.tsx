@@ -44,6 +44,10 @@ import {
   ADMINBOARD_URL_LOCAL,
   ADMINBOARD_URL_STAGING,
 } from '@virtality/shared/types'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
+import useConsoleSessionTracking, {
+  finalizeConsoleSession,
+} from '@/hooks/analytics/use-console-session-tracking'
 
 const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
@@ -62,6 +66,7 @@ const adminboardURL =
       : ADMINBOARD_URL_LOCAL
 
 const Avatar = () => {
+  useConsoleSessionTracking()
   const router = useRouter()
   const mounted = useMounted()
   const { setTheme, resolvedTheme, theme, themes } = useTheme()
@@ -71,9 +76,17 @@ const Avatar = () => {
   const store = useStore()
 
   const handleSignOut = async () => {
-    posthog.reset()
+    const consentStatus = posthog.get_explicit_consent_status()
     await authClient.signOut({
-      fetchOptions: { onSuccess: () => router.push('/sign-in') },
+      fetchOptions: {
+        onSuccess: () => {
+          finalizeConsoleSession('manual')
+          posthog.reset()
+          if (consentStatus === 'granted') posthog.opt_in_capturing()
+          if (consentStatus === 'denied') posthog.opt_out_capturing()
+          router.push('/sign-in')
+        },
+      },
     })
   }
 
@@ -124,7 +137,15 @@ const Avatar = () => {
               </Link>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem asChild className='cursor-pointer'>
+          <DropdownMenuItem
+            asChild
+            className='cursor-pointer'
+            onClick={() => {
+              trackAnalyticsEvent('nav_item_clicked', {
+                item: 'landing_page',
+              })
+            }}
+          >
             <Link href={baseURL} className='flex w-full'>
               <Home />
               {t('home_page')}
@@ -134,6 +155,11 @@ const Avatar = () => {
             id='user-profile'
             asChild
             className='cursor-pointer'
+            onClick={() => {
+              trackAnalyticsEvent('nav_item_clicked', {
+                item: 'user_profile',
+              })
+            }}
           >
             <Link href={`/user/${user?.id}/profile`} className='flex w-full'>
               <UserIcon />

@@ -24,6 +24,7 @@ import {
 } from '@/components/tables/data-table'
 import { Button } from '@/components/ui/button'
 import DeleteConfirmDialog from '@/components/ui/delete-confirm-dialog'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface UserPresetsTableProps {
   columns: ColumnDef<Preset>[]
@@ -31,6 +32,9 @@ interface UserPresetsTableProps {
 }
 
 export default function UserPresetsTable({ columns }: UserPresetsTableProps) {
+  usePageViewTracking({
+    props: { route_group: 'preset', tab_view: 'user-presets' },
+  })
   const queryClient = getQueryClient()
   const orpc = useORPC()
   const router = useRouter()

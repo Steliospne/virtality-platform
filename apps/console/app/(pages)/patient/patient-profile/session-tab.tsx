@@ -8,6 +8,7 @@ import { usePatientSession, usePatientSessions } from '@virtality/react-query'
 import SessionCard from '../_components/session-card'
 import type { DateRangePreset } from '@/lib/session-metrics'
 import { filterSessionsByDateRange } from '@/lib/session-metrics'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface SessionTabProps {
   patientId: string
@@ -17,6 +18,9 @@ const DEFAULT_RANGE: DateRangePreset = 'month'
 const DEFAULT_START = subDays(new Date(), 30)
 
 export default function SessionTab({ patientId }: SessionTabProps) {
+  usePageViewTracking({
+    props: { route_group: 'patient', tab_view: 'patient-sessions' },
+  })
   const [sessionViewing, setSessionViewing] = useState<string>('')
   const [startDate, setStartDate] = useState<Date>(() => DEFAULT_START)
   const [rangePreset, setRangePreset] = useState<DateRangePreset>(DEFAULT_RANGE)
@@ -41,8 +45,10 @@ export default function SessionTab({ patientId }: SessionTabProps) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-12">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading session…</p>
+      <div className='flex flex-1 items-center justify-center py-12'>
+        <p className='text-sm text-zinc-500 dark:text-zinc-400'>
+          Loading session…
+        </p>
       </div>
     )
   }
@@ -59,12 +65,12 @@ export default function SessionTab({ patientId }: SessionTabProps) {
 
   if (sessionViewing !== '' && !session) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900/40">
-        <p className="text-zinc-600 dark:text-zinc-400">Session not found.</p>
+      <div className='rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900/40'>
+        <p className='text-zinc-600 dark:text-zinc-400'>Session not found.</p>
         <button
-          type="button"
+          type='button'
           onClick={() => setSessionViewing('')}
-          className="mt-2 text-sm font-medium text-teal-600 hover:underline dark:text-teal-400"
+          className='mt-2 text-sm font-medium text-teal-600 hover:underline dark:text-teal-400'
         >
           Back to list
         </button>
@@ -73,7 +79,7 @@ export default function SessionTab({ patientId }: SessionTabProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className='flex flex-1 flex-col gap-8'>
       <SessionsOverview
         sessions={allSessions ?? []}
         startDate={startDate}
@@ -81,7 +87,7 @@ export default function SessionTab({ patientId }: SessionTabProps) {
         onStartDateChange={setStartDate}
         onRangePresetChange={setRangePreset}
       />
-      <div className="flex flex-1 flex-col">
+      <div className='flex flex-1 flex-col'>
         <SessionsTable
           patientId={patientId}
           onSessionSelect={setSessionViewing}

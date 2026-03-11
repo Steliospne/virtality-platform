@@ -56,6 +56,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Exercise } from '@virtality/db'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface SessionCardProps {
   session: ExtendedPatientSession
@@ -64,6 +65,9 @@ interface SessionCardProps {
 }
 
 const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
+  usePageViewTracking({
+    props: { route_group: 'patient', tab_view: 'patient-session' },
+  })
   const queryClient = getQueryClient()
   const orpc = useORPC()
   const [chartIndex, setChartIndex] = useState(0)

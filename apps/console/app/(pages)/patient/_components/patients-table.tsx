@@ -25,6 +25,7 @@ import {
   useORPC,
   getQueryClient,
 } from '@virtality/react-query'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 const rowNavigationExceptions = [
   'div[data-slot="dialog-content"]',
@@ -37,6 +38,7 @@ const rowNavigationExceptions = [
 
 const PatientsTable = () => {
   useIsAuthed()
+  usePageViewTracking({ props: { route_group: 'patient' } })
   const queryClient = getQueryClient()
   const orpc = useORPC()
   const router = useRouter()

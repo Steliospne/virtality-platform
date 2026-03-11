@@ -22,6 +22,7 @@ const websiteURL =
 
 const whiteList = [
   'api',
+  'ph',
   '_next',
   '_next/static',
   '_next/image',
@@ -45,6 +46,7 @@ const publicPathPrefixes = [
   '/goodbye',
   '/auth',
   '/api',
+  '/ph',
   '/_next',
 ]
 
@@ -75,7 +77,7 @@ export const config = {
   matcher: [
     {
       source:
-        '/((?!^$|api|_next/static|_next/image|favicon.ico|sign-in|sign-up|verify-email|forgot-password|reset-password|goodbye).*)',
+        '/((?!^$|api|ph|_next/static|_next/image|favicon.ico|sign-in|sign-up|verify-email|forgot-password|reset-password|goodbye).*)',
       missing: [
         { type: 'header', key: 'next-action' },
         { type: 'header', key: 'x-action' },

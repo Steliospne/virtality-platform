@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Accordion,
   AccordionContent,
@@ -33,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 type Questioner = { title: string; url: string }
 
@@ -102,6 +105,9 @@ const controlGroupList: Questioner[] = [
 ]
 
 const FormsPage = () => {
+  usePageViewTracking({
+    props: { route_group: 'user' },
+  })
   return (
     <div className='h-screen-with-header'>
       <Accordion

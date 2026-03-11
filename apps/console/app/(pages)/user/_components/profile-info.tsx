@@ -20,6 +20,7 @@ import {
   CONSOLE_URL_LOCAL,
   CONSOLE_URL_STAGING,
 } from '@virtality/shared/types'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 // import {
 //   Dialog,
 //   DialogClose,
@@ -55,6 +56,9 @@ interface ProfileInfoProps {
 }
 
 const ProfileInfo = ({ user }: ProfileInfoProps) => {
+  usePageViewTracking({
+    props: { route_group: 'user', tab_view: 'user-profile' },
+  })
   const { i18n } = useClientT()
   const [formState, formAction, pending] = useActionState(
     updateUserAction,

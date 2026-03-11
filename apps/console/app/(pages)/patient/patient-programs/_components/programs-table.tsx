@@ -23,6 +23,7 @@ import {
   usePatientPrograms,
   useDeleteProgram,
 } from '@virtality/react-query'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface ProgramsTableProps {
   columns: ColumnDef<CompletePatientProgram>[]
@@ -31,6 +32,9 @@ interface ProgramsTableProps {
 }
 
 export function ProgramsTable({ columns, patientId }: ProgramsTableProps) {
+  usePageViewTracking({
+    props: { route_group: 'patient', tab_view: 'patient-programs' },
+  })
   const queryClient = getQueryClient()
   const orpc = useORPC()
   const router = useRouter()

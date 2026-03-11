@@ -35,6 +35,7 @@ import DeviceCardSkeleton from './_components/device-card-skeleton'
 import { v4 as uuid } from 'uuid'
 import { useDeviceContext } from '@/context/device-context'
 import useIsAuthed from '@/hooks/use-is-authed'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 const defaultValues: DeviceForm = {
   name: '',
@@ -43,6 +44,9 @@ const defaultValues: DeviceForm = {
 
 const Devices = () => {
   const { isPending } = useIsAuthed()
+  usePageViewTracking({
+    props: { route_group: 'device' },
+  })
   const [isDialogOpen, setDialogOpen] = useState(false)
   const { devices, isLoading, createDevice } = useDeviceContext()
 

@@ -20,6 +20,11 @@ import { Flag, Sidebar as SidebarIcon } from 'lucide-react'
 import useMounted from '@/hooks/use-mounted'
 import { cn } from '@/lib/utils'
 import useIsAuthed from '@/hooks/use-is-authed'
+import {
+  AnalyticsEventProps,
+  CommonEventProps,
+  trackAnalyticsEvent,
+} from '@/lib/analytics-contract'
 
 const RootSidebar = () => {
   const { isMobile, open } = useSidebar()
@@ -87,10 +92,15 @@ const RootSidebar = () => {
                   asChild
                   className='text-base'
                   tooltip={item.title}
+                  onClick={() => {
+                    trackAnalyticsEvent('nav_item_clicked', {
+                      item: item.title as AnalyticsEventProps<'nav_item_clicked'>['item'],
+                    })
+                  }}
                 >
                   <Link href={item.url}>
                     <item.icon />
-                    <span>{item.title}</span>
+                    <span className='capitalize'>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

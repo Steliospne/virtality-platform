@@ -3,8 +3,19 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import posthog from 'posthog-js'
+import { usePathname } from 'next/navigation'
+
+const hiddenRoutes = [
+  '/sign-in',
+  '/sign-up',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/goodbye',
+]
 
 export default function CookieBanner() {
+  const pathname = usePathname()
   const [consentGiven, setConsentGiven] = useState<
     'granted' | 'denied' | 'pending'
   >('denied')
@@ -17,15 +28,21 @@ export default function CookieBanner() {
 
   const handleAcceptConsent = () => {
     posthog.opt_in_capturing()
+    localStorage.setItem('analytics:consent', 'granted')
     setConsentGiven('granted')
   }
 
   const handleDeclineConsent = () => {
     posthog.opt_out_capturing()
+    localStorage.setItem('analytics:consent', 'denied')
     setConsentGiven('denied')
   }
 
-  if (consentGiven !== 'pending' || !posthog.__loaded) {
+  const isHiddenRoute = hiddenRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  )
+
+  if (isHiddenRoute || consentGiven !== 'pending' || !posthog.__loaded) {
     return null
   }
 

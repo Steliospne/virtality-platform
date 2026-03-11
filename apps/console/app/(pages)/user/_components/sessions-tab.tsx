@@ -7,6 +7,7 @@ import { Monitor, Smartphone, Trash2 } from 'lucide-react'
 import { H3, P } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface SessionsTabProps {
   sessions: Session[]
@@ -14,6 +15,9 @@ interface SessionsTabProps {
 }
 
 const SessionsTab = ({ sessions, currentSessionToken }: SessionsTabProps) => {
+  usePageViewTracking({
+    props: { route_group: 'user', tab_view: 'user-sessions' },
+  })
   return (
     <Card>
       <CardContent>

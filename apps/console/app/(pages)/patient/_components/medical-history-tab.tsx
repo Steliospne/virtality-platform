@@ -16,6 +16,7 @@ import { useRef, useState } from 'react'
 import { HumanState } from '@/data/static/human-body'
 import useBeforeUnload from '@/hooks/use-before-unload'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 /** Compare by which parts are active; null and all-inactive are treated as equal. */
 function bodyAreasHaveSameSelection(a: BodyAreas, b: BodyAreas): boolean {
@@ -59,6 +60,10 @@ const MedicalHistory = ({
   onBodyAreasChange,
   medHistoryDeltas,
 }: MedicalHistoryProps) => {
+  usePageViewTracking({
+    props: { route_group: 'patient', tab_view: 'patient-medical-history' },
+  })
+
   const {
     anamnesesDeltas,
     complaintsDeltas,

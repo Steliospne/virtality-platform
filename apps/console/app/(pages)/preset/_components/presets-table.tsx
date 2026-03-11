@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { PlusSquare } from 'lucide-react'
 import { Preset } from '@virtality/db'
 import { usePresets } from '@virtality/react-query'
+import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface PresetTableProps {
   columns: ColumnDef<Preset>[]
@@ -24,6 +25,9 @@ interface PresetTableProps {
 }
 
 export default function PresetTable({ columns }: PresetTableProps) {
+  usePageViewTracking({
+    props: { route_group: 'preset', tab_view: 'virtality-presets' },
+  })
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
