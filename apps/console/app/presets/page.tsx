@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import PresetsTable from '@/app/(pages)/preset/_components/presets-table'
-import UserPresetsTable from '@/app/(pages)/preset/_components/user-presets-table'
-import { presetColumns } from '@/app/(pages)/preset/_components/preset-column'
+import PresetsTable from './_components/presets-table'
+import UserPresetsTable from './_components/user-presets-table'
+import { presetColumns } from './_components/preset-column'
 
 const PresetsPage = async () => {
   return (

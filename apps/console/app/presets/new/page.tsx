@@ -1,4 +1,4 @@
-import PresetForm from '@/app/(pages)/preset/preset-form'
+import PresetForm from './_components/preset-form'
 import { Button } from '@/components/ui/button'
 import { H2 } from '@/components/ui/typography'
 import { ExerciseLibraryProvider } from '@/context/exercise-library-context'

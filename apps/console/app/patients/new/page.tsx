@@ -1,4 +1,4 @@
-import PatientForm from '@/app/(pages)/patient/new-patient/patient-form'
+import PatientForm from './_components/patient-form'
 
 const CreatePatient = async () => {
   return <PatientForm />

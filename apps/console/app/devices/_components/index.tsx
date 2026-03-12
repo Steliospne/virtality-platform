@@ -24,14 +24,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import DeviceCard from '@/app/(pages)/device/_components/device-card'
+import DeviceCard from './device-card'
 import { DeviceSchema } from '@/lib/definitions'
 import { DeviceForm } from '@/types/models'
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Plus } from 'lucide-react'
-import DeviceCardSkeleton from './_components/device-card-skeleton'
+import DeviceCardSkeleton from './device-card-skeleton'
 import { v4 as uuid } from 'uuid'
 import { useDeviceContext } from '@/context/device-context'
 import useIsAuthed from '@/hooks/use-is-authed'

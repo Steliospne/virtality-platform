@@ -1,5 +1,5 @@
-import { columns } from '@/app/(pages)/patient/patient-programs/_components/columns'
-import { ProgramsTable } from '@/app/(pages)/patient/patient-programs/_components/programs-table'
+import { columns } from './_components/columns'
+import { ProgramsTable } from './_components/programs-table'
 
 const ProgramsPage = async (
   props: PageProps<'/patients/[patientId]/programs'>,

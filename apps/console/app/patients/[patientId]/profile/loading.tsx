@@ -1,4 +1,4 @@
-import { PatientProfileSkeleton } from '@/app/(pages)/patient/_components/patient-profile-skeleton'
+import { PatientProfileSkeleton } from './_components/patient-profile-skeleton'
 
 const Loading = () => {
   return <PatientProfileSkeleton />

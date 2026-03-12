@@ -1,4 +1,4 @@
-import Devices from '@/app/(pages)/device'
+import Devices from './_components'
 import { DeviceContextProvider } from '@/context/device-context'
 
 const DevicesPage = async () => {

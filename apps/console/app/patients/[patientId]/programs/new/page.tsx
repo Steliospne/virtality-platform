@@ -1,4 +1,4 @@
-import ProgramForm from '@/app/(pages)/patient/patient-programs/program-form'
+import ProgramForm from './_components/program-form'
 import { ExerciseLibraryProvider } from '@/context/exercise-library-context'
 
 const CreateProgramFormPage = async (

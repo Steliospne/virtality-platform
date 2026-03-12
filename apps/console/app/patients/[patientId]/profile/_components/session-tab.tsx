@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import { subDays } from 'date-fns'
-import SessionsTable from '../_components/sessions-table'
-import { SessionsOverview } from '../_components/sessions-overview'
+import SessionsTable from './sessions-table'
+import { SessionsOverview } from './sessions-overview'
 import { usePatientSession, usePatientSessions } from '@virtality/react-query'
-import SessionCard from '../_components/session-card'
+import SessionCard from './session-card'
 import type { DateRangePreset } from '@/lib/session-metrics'
 import { filterSessionsByDateRange } from '@/lib/session-metrics'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'

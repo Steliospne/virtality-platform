@@ -10,7 +10,7 @@ import { UserLocalData } from '@/types/models'
 import { useEffect, useState } from 'react'
 
 import useIsAuthed from '@/hooks/use-is-authed'
-import AdminTool from '../_components/admin-tool'
+import AdminTool from './admin-tool'
 
 const Dashboard = ({ isImpersonating }: { isImpersonating?: boolean }) => {
   const { data } = useIsAuthed()

@@ -1,4 +1,4 @@
-import PatientFormEdit from '@/app/(pages)/patient/patient-profile/patient-form-edit'
+import PatientFormEdit from './_components/patient-form-edit'
 
 const PatientProfilePage = async (
   props: PageProps<'/patients/[patientId]/profile'>,

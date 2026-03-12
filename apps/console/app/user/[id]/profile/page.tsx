@@ -4,8 +4,8 @@ import { authClient } from '@/auth-client'
 import { headers } from 'next/headers'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Building, Key, UserIcon } from 'lucide-react'
-import SessionsTab from '@/app/(pages)/user/_components/sessions-tab'
-import ProfileInfo from '@/app/(pages)/user/_components/profile-info'
+import SessionsTab from './_components/sessions-tab'
+import ProfileInfo from './_components/profile-info'
 
 const ProfilePage = async () => {
   const data = await getUserAndSession()

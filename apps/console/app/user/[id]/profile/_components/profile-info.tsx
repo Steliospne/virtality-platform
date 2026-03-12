@@ -10,33 +10,14 @@ import {
 } from '@/lib/actions'
 import { Button } from '@/components/ui/button'
 import SuccessToasty from '@/components/ui/SuccessToasty'
-import { authClient, type Session, type User } from '@/auth-client'
+import { authClient, type User } from '@/auth-client'
 import { useClientT } from '@/i18n/use-client-t'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Building, Key, UserIcon } from 'lucide-react'
-import SessionsTab from '../_components/sessions-tab'
 import {
   CONSOLE_URL,
   CONSOLE_URL_LOCAL,
   CONSOLE_URL_STAGING,
 } from '@virtality/shared/types'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
-// import {
-//   Dialog,
-//   DialogClose,
-//   DialogContent,
-//   DialogDescription,
-//   DialogFooter,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-// } from '@/components/ui/dialog';
-// import {
-//   InputOTP,
-//   InputOTPGroup,
-//   InputOTPSeparator,
-//   InputOTPSlot,
-// } from '../ui/input-otp';
 
 const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
@@ -66,7 +47,6 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
   )
   const [userFormData, setUserFormData] = useState<User>(user)
   const [isPending, setPending] = useState(false)
-  // const [code, setCode] = useState('');
 
   const initialUserData = useRef<User>(user)
 
@@ -222,61 +202,6 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
             >
               Save
             </Button>
-            {/* <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            type='button'
-            disabled={
-              pending ||
-              initialUserData.current.phoneNumberVerified ||
-              userFormData.phoneNumber === '' ||
-              initialUserData.current['phoneNumber'] ===
-                userFormData.phoneNumber
-            }
-            onClick={async () =>
-              await handleSendOTP(userFormData.phoneNumber ?? '')
-            }
-          >
-            Verify
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Hello</DialogTitle>
-            <DialogDescription>{`Provide the OTP you receive at ${userFormData.phoneNumber}`}</DialogDescription>
-          </DialogHeader>
-          <InputOTP maxLength={6} onChange={setCode}>
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-            </InputOTPGroup>
-            <InputOTPSeparator />
-            <InputOTPGroup>
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-          <DialogFooter>
-            <DialogClose>Cancel</DialogClose>
-            <Button
-              type='button'
-              onClick={async () => {
-                const data = await handlePhoneVerification({
-                  phoneNumber: userFormData.phoneNumber ?? '',
-                  code,
-                });
-                console.log(data);
-                if (data && data.status)
-                  console.log('success: ', data);
-              }}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
           </footer>
         </form>
       </div>

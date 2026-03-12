@@ -14,102 +14,106 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { type PresetForm } from '@/types/models'
 import { PresetFormSchema } from '@/lib/definitions'
 import capitalize from 'lodash.capitalize'
-import ComboSelect from '@/app/(pages)/patient/patient-programs/_components/combo-select'
+import ComboSelect from '@/components/ui/combo-select'
 import { pathologies } from '@/data/static/program-form/data'
 import { P } from '@/components/ui/typography'
+import { PresetExercise } from '@virtality/db'
 import ExerciseLibraryList from '@/components/ui/exercise-library-list'
 import LoadingScreen from '@/components/ui/loading-screen'
-import { toast } from 'react-toastify'
-import { useRouter } from 'next/navigation'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
+import { useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useClientT } from '@/i18n/use-client-t'
-import { generateUUID } from '@virtality/shared/utils'
-import useIsAuthed from '@/hooks/use-is-authed'
 import {
   getQueryClient,
+  usePreset,
+  useUpdatePreset,
+  useUpdatePresetExercises,
   useORPC,
-  useCreatePreset,
-  useCreatePresetExercises,
 } from '@virtality/react-query'
-
-const PresetForm = () => {
+import { withRom } from '@/lib/with-rom'
+const PresetEditForm = ({ id }: { id: string }) => {
   const queryClient = getQueryClient()
   const orpc = useORPC()
-  const { data } = useIsAuthed()
   const router = useRouter()
   const { t } = useClientT('common')
-  const { state } = useExerciseLibrary()
+  const { state, handler } = useExerciseLibrary()
   const { selectedExercises } = state
-  const user = data?.user
+  const { updateExercises } = handler
 
-  const isEmptyList = selectedExercises.length === 0
+  const { data: presetData } = usePreset({ id })
 
-  const { mutateAsync: createPreset, isPending: isCreating } = useCreatePreset({
-    onSuccess: () => {
-      form.reset()
+  const preset = useMemo(() => {
+    if (presetData) {
+      const { presetExercise, ...presetInfo } = presetData
+      return presetInfo
+    }
+  }, [presetData])
 
-      Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: orpc.preset.list.key(),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: orpc.preset.listUser.key(),
-        }),
-      ])
+  const presetExercise = useMemo(() => {
+    if (presetData) {
+      const { presetExercise, ...presetInfo } = presetData
+      return presetExercise
+    }
+    return []
+  }, [presetData])
 
-      router.push(`/presets`)
-    },
-  })
+  useEffect(() => {
+    if (preset) updateExercises(withRom(presetExercise))
+  }, [preset])
 
-  const { mutateAsync: createPresetExercises } = useCreatePresetExercises({})
+  const { mutate: updatePresetMutation, isPending: isUpdating } =
+    useUpdatePreset({
+      onSuccess: () => {
+        form.reset()
+        router.push(`/presets`)
+        return Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: orpc.preset.find.key({ input: { id } }),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: orpc.preset.listUser.key(),
+          }),
+        ])
+      },
+    })
+
+  const { mutate: updatePresetExercises } = useUpdatePresetExercises({})
 
   const form = useForm<PresetForm>({
     resolver: zodResolver(PresetFormSchema),
     defaultValues: { presetName: '', start: '', end: '', description: '' },
+    values: preset,
   })
 
-  const onSubmit = async (values: PresetForm) => {
-    if (!user) return
+  const onSubmit = (values: PresetForm) => {
+    const mappedEx = selectedExercises.map((ex) => {
+      return { ...ex, presetId: id, optional: false }
+    }) as PresetExercise[]
 
-    if (isEmptyList)
-      return toast.error('You need to add at least one exercise.')
+    if (!preset) return
 
-    const newPreset = {
-      id: generateUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: user.id,
-      deletedAt: null,
-      ...values,
+    let updatedExercises = [] as PresetExercise[]
+    if (mappedEx.length === 0) {
+      updatedExercises = []
+    } else {
+      updatedExercises = mappedEx
     }
 
-    const exercises = selectedExercises.map((ex) => {
-      return {
-        id: generateUUID(),
-        presetId: newPreset.id,
-        exerciseId: ex.exerciseId,
-        sets: ex.sets,
-        reps: ex.reps,
-        restTime: ex.restTime,
-        holdTime: ex.holdTime,
-        speed: ex.speed,
-        optional: false,
-      }
-    })
+    updatePresetMutation({ ...preset, ...values })
 
-    await createPreset(newPreset)
-    await createPresetExercises({ presetId: newPreset.id, exercises })
+    updatePresetExercises({ presetId: id, exercises: updatedExercises })
   }
 
-  if (isCreating) return <LoadingScreen />
+  if (isUpdating) return <LoadingScreen />
 
   return (
-    <div className='container mx-auto mt-10 grid grid-cols-[auto_1fr] grid-rows-[100%] overflow-hidden max-2xl:flex max-2xl:flex-col max-2xl:gap-6'>
+    <div className='grid grid-cols-2 grid-rows-[100%] overflow-hidden max-xl:flex max-xl:flex-col max-xl:gap-6'>
       <Form {...form}>
         <form
           id='presetForm'
           onSubmit={form.handleSubmit(onSubmit)}
-          className='max-w-lg space-y-4 px-8 max-2xl:px-0'
+          className='max-w-lg space-y-4'
         >
           <FormField
             name='presetName'
@@ -135,7 +139,7 @@ const PresetForm = () => {
             control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{capitalize(field.name)}</FormLabel>
+                <FormLabel>{capitalize(t(`form.${field.name}`))}</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
@@ -213,4 +217,4 @@ const PresetForm = () => {
   )
 }
 
-export default PresetForm
+export default PresetEditForm

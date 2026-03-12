@@ -26,7 +26,7 @@ import {
 import { H1, H2, H3, P } from '@/components/ui/typography'
 import { CircleQuestionMark } from 'lucide-react'
 import { ReactNode } from 'react'
-import Instructions from '@/app/(pages)/form/instructions.mdx'
+import Instructions from './_components/instructions.mdx'
 import {
   Table,
   TableBody,

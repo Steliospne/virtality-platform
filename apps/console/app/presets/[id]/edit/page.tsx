@@ -1,4 +1,4 @@
-import PresetEditForm from '@/app/(pages)/preset/preset-edit-form/index'
+import PresetEditForm from './_components/preset-edit-form'
 import { H2 } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'

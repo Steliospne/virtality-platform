@@ -1,4 +1,4 @@
-import Dashboard from '@/app/(pages)/user/user-dashboard/dashboard'
+import Dashboard from '@/app/_components/dashboard'
 import { cookies } from 'next/headers'
 
 const env = process.env.ENV || 'development'
