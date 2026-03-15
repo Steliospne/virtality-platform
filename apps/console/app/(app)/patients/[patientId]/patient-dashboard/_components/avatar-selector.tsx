@@ -45,12 +45,20 @@ const AvatarSelector = () => {
     setSelectedAvatar(null)
   }
 
+  const defaultValue = () => {
+    setSelectedAvatar(avatars?.[1] ?? null)
+    return '1'
+  }
+
   const isProgramActive = programState === 'started'
   const isProgramPaused = programState === 'paused'
 
   return (
     <div className='relative'>
-      <Select value={selectedAvatar?.id ?? ''} onValueChange={avatarChange}>
+      <Select
+        value={selectedAvatar?.id ?? defaultValue()}
+        onValueChange={avatarChange}
+      >
         <SelectTrigger
           disabled={isProgramActive || isProgramPaused}
           className='w-full border dark:border-zinc-600 dark:bg-zinc-900'

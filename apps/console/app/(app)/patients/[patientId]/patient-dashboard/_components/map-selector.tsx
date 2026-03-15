@@ -45,12 +45,20 @@ const MapSelector = () => {
     setSelectedMap(null)
   }
 
+  const defaultValue = () => {
+    setSelectedMap(maps?.[0] ?? null)
+    return '0'
+  }
+
   const isProgramActive = programState === 'started'
   const isProgramPaused = programState === 'paused'
 
   return (
     <div className='relative'>
-      <Select value={selectedMap?.id ?? ''} onValueChange={mapChange}>
+      <Select
+        value={selectedMap?.id ?? defaultValue()}
+        onValueChange={mapChange}
+      >
         <SelectTrigger
           disabled={isProgramActive || isProgramPaused}
           className='w-full border dark:dark:border-zinc-600 dark:bg-zinc-900'

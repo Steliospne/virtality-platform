@@ -27,6 +27,7 @@ import {
   useORPC,
   useCompleteSession,
 } from '@virtality/react-query'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
 const SessionDialog = () => {
   const queryClient = getQueryClient()
@@ -50,15 +51,37 @@ const SessionDialog = () => {
   })
 
   const { mutateAsync: createSupplementalTherapyRel } =
-    useCreateSupplementalTherapyRelMutation({})
-  const { mutate: deletePatientSession } = useDeletePatientSession({})
+    useCreateSupplementalTherapyRelMutation({
+      onSuccess: (_, variables) => {
+        trackAnalyticsEvent('supplemental_therapy_selected', {
+          session_id: patientSessionId.current,
+          therapy_count: variables.methods?.length ?? 0,
+          includes_other: !!variables.otherEnabled,
+        })
+      },
+    })
+
+  const { mutate: deletePatientSession } = useDeletePatientSession({
+    onSuccess: () => {
+      trackAnalyticsEvent('session_deleted_without_save', {
+        session_id: patientSessionId.current,
+      })
+    },
+  })
+
   const { mutateAsync: updatePatientSession } = useUpdatePatientSession({
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    onSuccess: (_, variables) => {
+      trackAnalyticsEvent('session_notes_saved', {
+        session_id: patientSessionId.current,
+        notes_length: variables.notes?.length ?? 0,
+      })
+
+      return queryClient.invalidateQueries({
         queryKey: orpc.patientSession.find.key({
           input: { where: { id: patientSessionId.current } },
         }),
-      }),
+      })
+    },
   })
 
   const form = useForm({

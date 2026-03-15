@@ -1,4 +1,4 @@
-import PatientDashboard from './_components'
+import PatientDashboard from './_components/patient-dashboard'
 import { PatientDashboardProvider } from '@/context/patient-dashboard-context'
 import { DeviceContextProvider } from '@/context/device-context'
 

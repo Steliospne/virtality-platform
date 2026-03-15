@@ -33,6 +33,7 @@ import {
   useUpdatePatient,
   useORPC,
 } from '@virtality/react-query'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
 const defaultValues: PatientFormType = {
   name: '',
@@ -129,8 +130,11 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
   const submittedValues = useRef<PatientFormType | null>(null)
 
   const { mutate: updatePatient, isPending: isFormPending } = useUpdatePatient({
-    onSuccess: async () => {
-      return await Promise.all([
+    onSuccess: (_, variables) => {
+      trackAnalyticsEvent('patient_profile_updated', {
+        patient_id: variables.data.patient.id,
+      })
+      return Promise.all([
         queryClient.invalidateQueries({
           queryKey: orpc.patient.find.key(),
         }),

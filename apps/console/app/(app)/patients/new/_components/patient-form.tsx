@@ -22,6 +22,7 @@ import { MedicalHistory as MedicalHistoryType, Patient } from '@virtality/db'
 import useMounted from '@/hooks/use-mounted'
 import useIsAuthed from '@/hooks/use-is-authed'
 import { getQueryClient, useNewPatient, useORPC } from '@virtality/react-query'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
 const defaultValues: PatientFormType = {
   name: '',
@@ -57,7 +58,8 @@ const PatientForm = () => {
   }
 
   const { mutate: createPatient, isPending: isFormPending } = useNewPatient({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      trackAnalyticsEvent('patient_created', { patient_id: data.id })
       queryClient.invalidateQueries({
         queryKey: orpc.patient.list.key(),
       })

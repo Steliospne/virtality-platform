@@ -15,7 +15,7 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Button } from '@/components/ui/button'
-import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react'
+import { Check, ChevronsUpDown, Dumbbell, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePatient, usePatientPrograms } from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
@@ -79,6 +79,19 @@ const ProgramSelector = ({ className }: { className?: string }) => {
   }
 
   const quickStartHandler = () => {
+    if (!patient) return
+    updatePatientDashboardState({
+      selectedProgram: null,
+      exercises: [],
+      activeExerciseData: {
+        id: null,
+        currentRep: 0,
+        currentSet: 0,
+        totalReps: 0,
+        totalSets: 0,
+      },
+    })
+    store?.delCell('patients', patient.id, 'lastProgram')
     setInQuickStart(!inQuickStart)
   }
 
@@ -89,7 +102,7 @@ const ProgramSelector = ({ className }: { className?: string }) => {
           variant='outline'
           role='combobox'
           className={cn(
-            'hover:bg-card justify-between text-zinc-900 dark:border-zinc-600 dark:text-zinc-200',
+            'hover:bg-card justify-start text-zinc-900 md:max-lg:w-[204px]! dark:border-zinc-600 dark:text-zinc-200',
             className,
           )}
         >
@@ -97,33 +110,25 @@ const ProgramSelector = ({ className }: { className?: string }) => {
             <Loader2 className='animate-spin' />
           ) : (
             <>
-              <span className='min-w-5 overflow-hidden text-ellipsis'>
+              <Dumbbell />
+              <span className='min-w-5 overflow-hidden text-ellipsis max-md:hidden'>
                 {selectedProgram ? (
                   selectedProgram.name
                 ) : (
-                  <div className='flex items-center gap-2'>
-                    <span>Select program</span>
-                    <span>or</span>
-                    <div
-                      role='button'
-                      onClick={quickStartHandler}
-                      className='text-vital-blue-700 flex items-center justify-between hover:underline'
-                    >
-                      Quick start
-                    </div>
-                  </div>
+                  <SelectionOptions quickStartHandler={quickStartHandler} />
                 )}
               </span>
-              <div className='flex items-center gap-2'>
+              <div className='flex flex-1 items-center justify-end gap-2'>
                 {selectedProgram && (
                   <div
                     role='button'
-                    className='hover:bg-accent rounded p-0.5'
+                    className='hover:bg-accent rounded p-0.5 max-md:hidden'
                     onClick={programSelectionClear}
                   >
                     <X />
                   </div>
                 )}
+
                 <ChevronsUpDown className='opacity-50' />
               </div>
             </>
@@ -131,12 +136,18 @@ const ProgramSelector = ({ className }: { className?: string }) => {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className='w-(--radix-popover-trigger-width) p-0 dark:border-zinc-600'>
+      <PopoverContent className='p-0 dark:border-zinc-600'>
         <Command>
           <CommandInput placeholder='Search program...' className='h-9' />
           <CommandList>
             <CommandEmpty>No program found.</CommandEmpty>
             <CommandGroup>
+              <CommandItem>
+                <SelectionOptions
+                  quickStartHandler={quickStartHandler}
+                  onlyQuickStart
+                />
+              </CommandItem>
               {programs?.map((program) => (
                 <CommandItem
                   key={program.id}
@@ -163,3 +174,27 @@ const ProgramSelector = ({ className }: { className?: string }) => {
 }
 
 export default ProgramSelector
+
+function SelectionOptions({
+  quickStartHandler,
+  className,
+  onlyQuickStart,
+}: {
+  quickStartHandler: () => void
+  className?: string
+  onlyQuickStart?: boolean
+}) {
+  return (
+    <div className={cn('flex items-center gap-2', className)}>
+      {!onlyQuickStart && <span>Select program</span>}
+      {!onlyQuickStart && <span>or</span>}
+      <div
+        role='button'
+        onClick={quickStartHandler}
+        className='text-vital-blue-700 flex items-center justify-between hover:underline'
+      >
+        Quick start
+      </div>
+    </div>
+  )
+}

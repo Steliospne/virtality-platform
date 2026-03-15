@@ -46,6 +46,8 @@ import {
   useCreateProgramExercises,
 } from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
+import useNow from '@/hooks/use-now'
 
 // Types
 interface ProgramFormProps {
@@ -69,12 +71,20 @@ const ProgramForm = ({ patientId }: ProgramFormProps) => {
 
   const { t } = useClientT('common')
 
+  const { ts, now } = useNow()
+
   const { mutateAsync: createProgram, isPending: isCreating } =
     useCreateProgram({})
 
   const { mutate: createProgramExercise, isPending: isCreatingExercise } =
     useCreateProgramExercises({
-      onSuccess: () => {
+      onSuccess: (_, variables) => {
+        trackAnalyticsEvent('program_creation_completed', {
+          program_id: variables.programId,
+          time_spent_sec: (now() - ts.current) / 1000,
+          exercise_count: variables.exercises.length,
+        })
+
         queryClient.invalidateQueries({
           queryKey: orpc.program.list.key(),
         })
@@ -116,9 +126,16 @@ const ProgramForm = ({ patientId }: ProgramFormProps) => {
   const handleBack = () => {
     form.setValue('name', '')
     setCurrentStep((s) => s - 1)
+
+    trackAnalyticsEvent('program_creation_abandoned', {
+      step: currentStep - 1,
+      time_spent_sec: (now() - ts.current) / 1000,
+    })
   }
 
-  const handleCancel = () => router.push(`/patients/${patientId}/programs`)
+  const handleCancel = () => {
+    router.push(`/patients/${patientId}/programs`)
+  }
 
   const fromPreset = (value: string) => {
     if (!presets || !userPresets) return
@@ -141,12 +158,14 @@ const ProgramForm = ({ patientId }: ProgramFormProps) => {
       })
 
       updateExercises(withRom(mapped))
+      trackAnalyticsEvent('program_creation_started', { start_type: 'preset' })
     }
   }
 
   const fromBlank = () => {
     handleNext()
     updateExercises([])
+    trackAnalyticsEvent('program_creation_started', { start_type: 'blank' })
   }
 
   const sortedPresets = presets?.sort((a, b) =>

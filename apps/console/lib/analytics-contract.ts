@@ -26,11 +26,11 @@ export const analyticsEventNames = [
   'session_ended',
   'exercise_skipped',
   'scene_setting_changed',
-  'casting_toggled',
+  'casting_started',
+  'casting_stopped',
   'session_notes_saved',
   'supplemental_therapy_selected',
   'session_deleted_without_save',
-  'program_assigned_to_patient',
   'ui_error_shown',
   'api_request_failed',
   'validation_error_shown',
@@ -102,32 +102,23 @@ export type AnalyticsEventPayloadMap = {
     query_length: number
     results_count?: number
   }
-  patient_created: CommonEventProps & {
-    patient_id: string
-  }
+  patient_created: CommonEventProps
   patient_profile_updated: CommonEventProps & {
-    patient_id: string
     updated_fields?: string[]
   }
-  patient_dashboard_opened: CommonEventProps & {
-    patient_id: string
-  }
-  patient_deleted: CommonEventProps & {
-    patient_id: string
-  }
+  patient_dashboard_opened: CommonEventProps
+  patient_deleted: CommonEventProps
   program_creation_started: CommonEventProps & {
-    patient_id?: string
     start_type: StartType
     source_preset_id?: string
   }
   program_creation_completed: CommonEventProps & {
-    patient_id?: string
     program_id: string
     exercise_count: number
+    time_spent_sec: number
     source_preset_id?: string
   }
   program_creation_abandoned: CommonEventProps & {
-    patient_id?: string
     step: number
     time_spent_sec: number
   }
@@ -142,7 +133,6 @@ export type AnalyticsEventPayloadMap = {
   preset_applied_to_program: CommonEventProps & {
     preset_id: string
     program_id?: string
-    patient_id?: string
   }
   device_selected: CommonEventProps & {
     device_id: string
@@ -154,28 +144,24 @@ export type AnalyticsEventPayloadMap = {
     state: ConnectionState
   }
   session_started: CommonEventProps & {
-    patient_id: string
     session_id?: string
     program_id?: string
     mode: SessionMode
     device_id?: string
   }
   session_paused: CommonEventProps & {
-    patient_id: string
     session_id?: string
     program_id?: string
     mode?: SessionMode
     device_id?: string
   }
   session_resumed: CommonEventProps & {
-    patient_id: string
     session_id?: string
     program_id?: string
     mode?: SessionMode
     device_id?: string
   }
   session_ended: CommonEventProps & {
-    patient_id: string
     session_id?: string
     program_id?: string
     duration_sec?: number
@@ -183,41 +169,37 @@ export type AnalyticsEventPayloadMap = {
     device_id?: string
   }
   exercise_skipped: CommonEventProps & {
-    patient_id?: string
     session_id?: string
     exercise_id: string
     direction: SkipDirection
   }
   scene_setting_changed: CommonEventProps & {
-    patient_id?: string
     session_id?: string
     setting: SceneSetting
     value?: string | boolean
   }
-  casting_toggled: CommonEventProps & {
+  casting_started: CommonEventProps & {
     enabled: boolean
-    patient_id?: string
     session_id?: string
+    device_id?: string
+  }
+  casting_stopped: CommonEventProps & {
+    enabled: boolean
+    duration_sec?: number
+    session_id?: string
+    device_id?: string
   }
   session_notes_saved: CommonEventProps & {
-    patient_id: string
     session_id: string
     notes_length: number
-    has_supplemental_therapy: boolean
   }
   supplemental_therapy_selected: CommonEventProps & {
-    patient_id: string
     session_id: string
     therapy_count: number
     includes_other: boolean
   }
   session_deleted_without_save: CommonEventProps & {
-    patient_id: string
     session_id: string
-  }
-  program_assigned_to_patient: CommonEventProps & {
-    patient_id: string
-    program_id: string
   }
   ui_error_shown: CommonEventProps & {
     error_type: string
