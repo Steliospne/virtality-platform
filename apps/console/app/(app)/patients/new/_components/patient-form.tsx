@@ -59,7 +59,7 @@ const PatientForm = () => {
 
   const { mutate: createPatient, isPending: isFormPending } = useNewPatient({
     onSuccess: (data) => {
-      trackAnalyticsEvent('patient_created', { patient_id: data.id })
+      trackAnalyticsEvent('patient_created', {})
       queryClient.invalidateQueries({
         queryKey: orpc.patient.list.key(),
       })

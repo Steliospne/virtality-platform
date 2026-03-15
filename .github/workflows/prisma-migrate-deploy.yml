@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy-production-migrations:
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' && github.repository == 'Virtality-app/virtality-platform'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,12 +32,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy production migrations
+        working-directory: packages/db
         env:
-          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-        run: pnpm prisma migrate deploy
+          CONSOLE_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: pnpm run migrate:deploy
 
   deploy-staging-migrations:
-    if: github.ref_name == 'dev'
+    if: github.ref_name == 'dev' && github.repository == 'Virtality-app/virtality-platform'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -58,6 +59,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy staging migrations
+        working-directory: packages/db
         env:
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-        run: pnpm prisma migrate deploy
+          CONSOLE_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: pnpm run migrate:deploy
