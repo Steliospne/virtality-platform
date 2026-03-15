@@ -128,10 +128,12 @@ const usePatientDashboardState = ({
     )
 
     if (avatar) setSelectedAvatar(avatar)
-
+    else setSelectedAvatar(avatars?.[0] ?? null)
     const map = maps?.find((map) => map.id === patientLocalData.lastMap)
 
     if (map) setSelectedMap(map)
+    else setSelectedMap(maps?.[0] ?? null)
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatars, maps, patientLocalData, dispatch, programs])
 

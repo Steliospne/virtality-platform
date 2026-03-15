@@ -19,6 +19,7 @@ import {
   useORPC,
   useUpdatePatientSession,
 } from '@virtality/react-query'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
 interface SessionNotesCardProps {
   className?: string
@@ -36,8 +37,13 @@ const SessionNotesCard = ({ className }: SessionNotesCardProps) => {
   })
 
   const { mutate: updatePatientSession, isPending } = useUpdatePatientSession({
-    onSuccess: () =>
-      Promise.all([
+    onSuccess: (_, variables) => {
+      trackAnalyticsEvent('session_notes_saved', {
+        session_id: variables.id!,
+        notes_length: variables.notes?.length ?? 0,
+      })
+
+      return Promise.all([
         queryClient.invalidateQueries({
           queryKey: orpc.patientSession.list.key({
             input: { where: { patientId } },
@@ -48,7 +54,8 @@ const SessionNotesCard = ({ className }: SessionNotesCardProps) => {
             input: { where: { id: patientSessionId.current } },
           }),
         }),
-      ]),
+      ])
+    },
   })
 
   const onSubmit = (values: SessionNotes) => {

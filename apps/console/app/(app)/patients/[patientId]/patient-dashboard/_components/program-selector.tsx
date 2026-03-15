@@ -186,8 +186,10 @@ function SelectionOptions({
 }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      {!onlyQuickStart && <span>Select program</span>}
-      {!onlyQuickStart && <span>or</span>}
+      {!onlyQuickStart && (
+        <span className='md:max-lg:hidden'>Select program</span>
+      )}
+      {!onlyQuickStart && <span className='md:max-lg:hidden'>or</span>}
       <div
         role='button'
         onClick={quickStartHandler}

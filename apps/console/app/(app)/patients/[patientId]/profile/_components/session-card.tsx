@@ -57,6 +57,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Exercise } from '@virtality/db'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
+import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
 interface SessionCardProps {
   session: ExtendedPatientSession
@@ -82,6 +83,12 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
   const { mutate: updatePatientSession, isPending } = useUpdatePatientSession({
     onSuccess: () => {
       toast.success('Notes updated successfully.')
+
+      trackAnalyticsEvent('session_notes_saved', {
+        session_id: session.id,
+        notes_length: notes.length,
+      })
+
       return Promise.all([
         queryClient.invalidateQueries({
           queryKey: orpc.patientSession.list.key({
