@@ -3,7 +3,7 @@ import { ColumnHeader } from '@/components/tables/header-cell'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import ExerciseInputPill from '@/components/ui/exercise-input-pill'
-import useExerciseList from '@/hooks/use-exercise'
+import { useExercise } from '@virtality/react-query'
 import { getDisplayName } from '@/lib/utils'
 import { PresetExercise } from '@virtality/db'
 import { ColumnDef } from '@tanstack/react-table'
@@ -51,7 +51,7 @@ export const columns: ColumnDef<PresetExercise>[] = [
       <ColumnHeader column={column} title={'Exercise Name'} />
     ),
     cell: function ExerciseCell({ cell }) {
-      const { data, isPending } = useExerciseList()
+      const { data, isPending } = useExercise()
 
       const id = cell.getValue()
 

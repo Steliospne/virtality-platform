@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import useExerciseList from '@/hooks/use-exercise'
+import { useExercise } from '@virtality/react-query'
 import { getDisplayName, getUUID } from '@/lib/utils'
 import { PresetExercise } from '@virtality/db'
 import {
@@ -98,7 +98,7 @@ const PresetExerciseTable = ({
     },
   })
 
-  const { data: exerciseList } = useExerciseList()
+  const { data: exerciseList } = useExercise()
 
   const categories = useMemo(() => {
     return (

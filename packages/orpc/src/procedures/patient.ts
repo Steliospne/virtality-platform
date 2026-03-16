@@ -8,6 +8,10 @@ import { authed } from '../middleware/auth.ts'
 import { generateImageFile } from '@virtality/shared/utils'
 import { CDN_URL } from '@virtality/shared/types'
 
+const PatientListInputSchema = PatientFindManyZodSchema.merge(
+  z.object({ listAll: z.boolean().optional() }),
+).optional()
+
 const CombinedPatientSchema = z.object({
   data: z.object({
     patient: PatientSchema.omit({ userId: true, image: true }).extend({
@@ -19,11 +23,15 @@ const CombinedPatientSchema = z.object({
 
 const listPatients = authed
   .route({ path: '/patient/list', method: 'GET', inputStructure: 'detailed' })
-  .input(PatientFindManyZodSchema.optional())
+  .input(PatientListInputSchema)
   .handler(async ({ context, input }) => {
     const { prisma, user } = context
+    const listAll = input?.listAll === true
+    const baseWhere = listAll
+      ? { deletedAt: null }
+      : { userId: user.id, AND: [{ deletedAt: null }] }
     const patients = await prisma.patient.findMany({
-      where: { userId: user.id, AND: [{ deletedAt: null }], ...input?.where },
+      where: { ...baseWhere, ...input?.where },
       take: input?.take,
       skip: input?.skip,
       cursor: input?.cursor,

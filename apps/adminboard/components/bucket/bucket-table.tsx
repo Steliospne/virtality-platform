@@ -13,7 +13,7 @@ import {
   DataTableFooter,
   DataTableHeader,
 } from '@/components/tables/data-table'
-import useBucket from '@/hooks/use-bucket'
+import { useBucket, useORPC } from '@virtality/react-query'
 import { columns } from './columns'
 import useMounted from '@/hooks/use-mounted'
 import { Button } from '@/components/ui/button'
@@ -53,7 +53,7 @@ interface BucketTableProps {
 }
 
 const BucketTable = ({ data, columns }: BucketTableProps) => {
-  const queryClient = getQueryClient()
+  const orpc = useORPC()
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
@@ -78,7 +78,9 @@ const BucketTable = ({ data, columns }: BucketTableProps) => {
   const { mutate: removeImage, isPending: removeImagePending } = useMutation({
     mutationFn: (key: string) => deleteFileAction(key),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bucket'] })
+      getQueryClient().invalidateQueries({
+        queryKey: orpc.bucket.list.key(),
+      })
     },
   })
 

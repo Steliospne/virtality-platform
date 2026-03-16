@@ -1,18 +1,9 @@
 import BucketTableDAL from '@/components/bucket/bucket-table'
-import HydrationBoundary from '@/components/shared/hydration-boundary'
-import { createBucketQuery } from '@/data/client/bucket'
-import { getQueryClient } from '@/react-query'
 
-const Images = async () => {
-  const queryClient = getQueryClient()
+export const dynamic = 'force-dynamic'
 
-  queryClient.prefetchQuery(createBucketQuery())
-
-  return (
-    <HydrationBoundary client={queryClient}>
-      <BucketTableDAL />
-    </HydrationBoundary>
-  )
+const Images = () => {
+  return <BucketTableDAL />
 }
 
 export default Images

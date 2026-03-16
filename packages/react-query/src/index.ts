@@ -11,6 +11,7 @@ export type { QueryProviderProps } from './provider.js'
 // User queries
 export { useUserName } from './hooks/queries/user/use-user-name.js'
 export { useIsUserVerified } from './hooks/queries/user/use-is-user-verified.js'
+export { useUsers } from './hooks/queries/user/use-users.js'
 
 // Preset queries
 export { usePreset } from './hooks/queries/preset/use-preset.js'
@@ -53,6 +54,12 @@ export { useDeviceCore } from './hooks/queries/use-device.js'
 // Waitlist queries
 export { useWaitlist } from './hooks/queries/waitlist/use-waitlist.js'
 
+// Referral queries
+export { useReferralCodes } from './hooks/queries/referral/use-referral-codes.js'
+
+// Bucket queries
+export { useBucket } from './hooks/queries/bucket/use-bucket.js'
+
 // Mutation hooks
 
 // Program mutations
@@ -93,8 +100,12 @@ export { useResetDeviceId } from './hooks/mutations/device/use-reset-device-id.j
 // Waitlist mutations
 export { useCreateWaitlist } from './hooks/mutations/waitlist/use-create-waitlist.js'
 
+// Referral mutations
+export { useCreateReferralCode } from './hooks/mutations/referral/use-create-referral-code.js'
+export { useDeleteReferralCode } from './hooks/mutations/referral/use-delete-referral-code.js'
+
 // Email mutations
-export { useSendThankYouEmail } from './hooks/mutations/email/useSendThankYouEmail.js'
+export { useSendThankYouEmail } from './hooks/mutations/email/use-send-thank-you-email.js'
 export {
   useEmailTemplates,
   useEmailTemplate,

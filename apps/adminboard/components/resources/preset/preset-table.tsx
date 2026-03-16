@@ -15,11 +15,12 @@ import { useState } from 'react'
 import PresetPopover from './preset-popover'
 import { columns } from '@/app/resources/preset/columns'
 import { tableDefaults } from '@/tanstack-tables'
-import useSuspensePreset from '@/hooks/use-suspense-preset'
+import { usePresets } from '@virtality/react-query'
 
 const PresetTableDAL = () => {
-  const { data } = useSuspensePreset()
-  return <PresetTable columns={columns} data={data} />
+  const { data, isPending } = usePresets()
+  if (isPending) return <div className='p-8'>Loading...</div>
+  return <PresetTable columns={columns} data={data ?? []} />
 }
 
 export default PresetTableDAL

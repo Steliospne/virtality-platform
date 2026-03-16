@@ -16,6 +16,8 @@ import { patientSessionExercise } from './procedures/patient-session-exercise.ts
 import { user } from './procedures/user.ts'
 import { waitlist } from './procedures/waitlist.ts'
 import { email } from './procedures/email.ts'
+import { referral } from './procedures/referral.ts'
+import { bucket } from './procedures/bucket.ts'
 
 export const router = {
   me,
@@ -36,6 +38,8 @@ export const router = {
   patientSessionExercise,
   waitlist,
   email,
+  referral,
+  bucket,
 }
 
 export type Router = typeof router

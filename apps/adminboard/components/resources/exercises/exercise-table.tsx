@@ -13,13 +13,14 @@ import {
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import { columns } from '@/components/resources/exercises/columns'
-import useSuspenseExercise from '@/hooks/use-suspense-exercise'
+import { useExercise } from '@virtality/react-query'
 import { tableDefaults } from '@/tanstack-tables'
 import FilterBadge from '@/components/ui/filter-badge'
 
 const ExerciseTableDAL = () => {
-  const { data } = useSuspenseExercise()
-  return <ExerciseTable columns={columns} data={data} />
+  const { data, isPending } = useExercise({ includeDisabled: true })
+  if (isPending) return <div className='p-8'>Loading...</div>
+  return <ExerciseTable columns={columns} data={data ?? []} />
 }
 
 export default ExerciseTableDAL

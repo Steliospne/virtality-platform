@@ -1,5 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3'
-import { deleteFile, uploadFile } from './utils.ts'
+import { deleteFile, listFiles, uploadFile } from './utils.ts'
 
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
@@ -29,6 +29,8 @@ class VirtalityS3 extends S3Client {
   uploadFile = uploadFile.bind(this)
 
   deleteFile = deleteFile.bind(this)
+
+  listFiles = listFiles.bind(this)
 }
 
 export const s3 = new S3Client({

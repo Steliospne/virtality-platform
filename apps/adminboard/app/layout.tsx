@@ -3,8 +3,22 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
 import Navbar from '@/components/layout/navbar'
-import QueryProvider from '@/context/query-context'
+import { QueryProvider, ORPCProvider } from '@virtality/react-query'
 import { Toaster } from '@/components/ui/sonner'
+import {
+  ORPC_PREFIX,
+  SERVER_URL,
+  SERVER_URL_LOCAL,
+  SERVER_URL_STAGING,
+} from '@virtality/shared/types'
+const env = process.env.ENV || 'development'
+
+const baseURL =
+  env === 'production'
+    ? SERVER_URL
+    : env === 'preview'
+      ? SERVER_URL_STAGING
+      : SERVER_URL_LOCAL
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,18 +46,20 @@ const RootLayout = async ({
         className={`${geistSans.variable} ${geistMono.variable} min-h-svh antialiased`}
       >
         <QueryProvider>
-          <ThemeProvider
-            defaultTheme='system'
-            attribute='class'
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Navbar />
-            <main className='min-h-screen-with-header bg-background text-foreground h-full'>
-              {children}
-            </main>
-            <Toaster />
-          </ThemeProvider>
+          <ORPCProvider url={baseURL + ORPC_PREFIX} credentials='include'>
+            <ThemeProvider
+              defaultTheme='system'
+              attribute='class'
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Navbar />
+              <main className='min-h-screen-with-header bg-background text-foreground h-full'>
+                {children}
+              </main>
+              <Toaster />
+            </ThemeProvider>
+          </ORPCProvider>
         </QueryProvider>
       </body>
     </html>

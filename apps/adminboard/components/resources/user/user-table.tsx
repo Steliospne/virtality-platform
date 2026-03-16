@@ -13,13 +13,15 @@ import {
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import { tableDefaults } from '@/tanstack-tables'
-import useUserList from '@/hooks/use-users'
+import { UserWithRole } from 'better-auth/plugins/admin'
+import { useUsers } from '@virtality/react-query'
 import { columns } from './columns'
 
 const UserTableDAL = () => {
-  const { data } = useUserList()
+  const { data } = useUsers()
+  const users = (data?.data?.users ?? []) as UserWithRole[]
 
-  return <UserTable data={data?.data?.users ?? []} columns={columns} />
+  return <UserTable data={users} columns={columns} />
 }
 
 export default UserTableDAL

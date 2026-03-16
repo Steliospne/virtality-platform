@@ -1,17 +1,9 @@
-import { getExercises } from '@/lib/actions/exerciseActions'
-import { getQueryClient } from '@/react-query'
 import ExerciseTableDAL from '@/components/resources/exercises/exercise-table'
-import Boundary from '@/components/shared/hydration-boundary'
 
-const ExercisePage = async () => {
-  const queryClient = getQueryClient()
-  queryClient.prefetchQuery({ queryKey: ['exercises'], queryFn: getExercises })
+export const dynamic = 'force-dynamic'
 
-  return (
-    <Boundary client={queryClient}>
-      <ExerciseTableDAL />;
-    </Boundary>
-  )
+const ExercisePage = () => {
+  return <ExerciseTableDAL />
 }
 
 export default ExercisePage

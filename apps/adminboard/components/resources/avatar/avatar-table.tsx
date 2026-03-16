@@ -14,10 +14,10 @@ import {
 import { useState } from 'react'
 import { tableDefaults } from '@/tanstack-tables'
 import { columns } from './columns'
-import useAvatarList from '@/hooks/use-avatar'
+import { useAvatar } from '@virtality/react-query'
 
 const AvatarTableDAL = () => {
-  const { data } = useAvatarList()
+  const { data } = useAvatar()
   return <AvatarTable columns={columns} data={data} />
 }
 

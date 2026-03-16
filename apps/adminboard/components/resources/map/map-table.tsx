@@ -14,10 +14,10 @@ import {
 import { useState } from 'react'
 import { tableDefaults } from '@/tanstack-tables'
 import { columns } from './columns'
-import useMapList from '@/hooks/use-map'
+import { useMap } from '@virtality/react-query'
 
 const MapTableDAL = () => {
-  const { data } = useMapList()
+  const { data } = useMap()
   return <MapTable columns={columns} data={data} />
 }
 

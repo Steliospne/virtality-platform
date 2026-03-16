@@ -14,10 +14,10 @@ import {
 import { useState } from 'react'
 import { columns } from './columns'
 import { tableDefaults } from '@/tanstack-tables'
-import usePatientList from '@/hooks/use-patient'
+import { usePatients } from '@virtality/react-query'
 
 const PatientTableDAL = () => {
-  const { data } = usePatientList()
+  const { data } = usePatients({ listAll: true })
   return <PatientTable columns={columns} data={data ?? []} />
 }
 

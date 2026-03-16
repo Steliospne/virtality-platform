@@ -13,24 +13,28 @@ import {
 import { useState } from 'react'
 import { columns } from '@/components/referral/columns'
 import { tableDefaults } from '@/tanstack-tables'
-import useReferralCode from '@/hooks/use-referral-code'
+import {
+  useReferralCodes,
+  useCreateReferralCode,
+  useORPC,
+} from '@virtality/react-query'
 import { Button } from '@/components/ui/button'
 import { PlusSquare } from 'lucide-react'
-import useCreateReferralCode from '@/hooks/use-create-referral-code'
 import { toast } from 'sonner'
 import { getQueryClient } from '@/react-query'
-import { referralKeys } from '@/data/client/referral'
 
 const ReferralTableDAL = () => {
-  const queryClient = getQueryClient()
-  const { data, isLoading } = useReferralCode()
+  const orpc = useORPC()
+  const { data, isLoading } = useReferralCodes()
   const { mutate: createReferralCode, isPending } = useCreateReferralCode()
 
   const handleGenerate = () => {
     createReferralCode(undefined, {
       onSuccess: () => {
         toast.success('Referral code generated successfully')
-        return queryClient.invalidateQueries({ queryKey: referralKeys.all })
+        return getQueryClient().invalidateQueries({
+          queryKey: orpc.referral.list.key(),
+        })
       },
       onError: (error) => {
         toast.error('Failed to generate referral code')
