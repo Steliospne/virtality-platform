@@ -8,6 +8,7 @@ model Exercise {
   direction       String
   item            String?
   image           String?
+  video           String?
   description     String
   enabled         Boolean           @default(false)
   isNew           Boolean           @default(false)
