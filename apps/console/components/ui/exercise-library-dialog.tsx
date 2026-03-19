@@ -2,7 +2,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -18,15 +17,12 @@ const ExerciseLibraryDialog = () => {
 
   return (
     <Dialog open={isLibraryOpen} onOpenChange={setLibraryOpen}>
-      <DialogContent className='z-1000 h-full max-h-[calc(100svh-40px)] max-w-[calc(100svw-40px)]! grid-rows-[auto_auto_1fr_auto]'>
+      <DialogContent className='z-1000 h-full max-h-[calc(100svh-40px)] max-w-[calc(100svw-40px)]! grid-rows-[auto_auto_1fr]'>
         <DialogHeader>
-          <DialogTitle>Exercises</DialogTitle>
+          <DialogTitle>Exercise Library</DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          Comprehensive library of exercises.
-        </DialogDescription>
         <ExerciseGrid />
-        <DialogFooter>
+        <DialogFooter className='self'>
           <DialogClose asChild>
             <Button>Confirm</Button>
           </DialogClose>

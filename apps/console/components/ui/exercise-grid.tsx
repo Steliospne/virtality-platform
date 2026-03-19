@@ -1,5 +1,5 @@
 import { getDisplayName, getUUID } from '@/lib/utils'
-import { X } from 'lucide-react'
+import { Star, X } from 'lucide-react'
 import FlipCard from '@/components//ui/flip-card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,6 +9,7 @@ import sortedUniq from 'lodash.sorteduniq'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import { useExercise } from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
+import { useFeatureFlagResult } from 'posthog-js/react'
 
 const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,6 +19,8 @@ const ExerciseGrid = () => {
   const { state, handler } = useExerciseLibrary()
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
+
+  const filtersEnabled = useFeatureFlagResult('exercise_filters')
 
   const categories = useMemo(() => {
     return (
@@ -81,7 +84,7 @@ const ExerciseGrid = () => {
       {categories.map((category, index) => (
         <TabsContent key={index} value={category} className='overflow-auto p-2'>
           {/* Search bar */}
-          <div className='sticky top-0 z-10 m-2 w-[calc(100%-16px)]'>
+          <div className='sticky top-0 z-10 m-2 w-[calc(100%-16px)] space-y-2'>
             <Input
               id='searchTerm'
               name='searchTerm'
@@ -102,9 +105,33 @@ const ExerciseGrid = () => {
                 <X />
               </Button>
             )}
+            {filtersEnabled && (
+              <div className='flex w-full items-center gap-2 rounded-md'>
+                <Button size='sm' variant='default'>
+                  <Star fill='yellow' />
+                  Favorites
+                </Button>
+                <div>
+                  <Button
+                    size='sm'
+                    variant='default'
+                    className='rounded-r-none'
+                  >
+                    Left
+                  </Button>
+                  <Button
+                    size='sm'
+                    variant='default'
+                    className='rounded-l-none'
+                  >
+                    Right
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className='grid justify-items-center gap-4 md:grid-cols-3 2xl:grid-cols-5'>
+          <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
             {exercises
               ?.filter((ex) => ex.category === category)
               .filter((ex) =>

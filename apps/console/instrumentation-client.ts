@@ -10,7 +10,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
   ui_host: 'https://eu.posthog.com',
   persistence: 'localStorage+cookie',
   cookieless_mode: 'on_reject',
-
+  autocapture: { url_ignorelist: ['http:localhost:3001'] },
   loaded: async (posthogClient) => {
     try {
       const { data } = await authClient.getSession()

@@ -111,6 +111,16 @@
     },
     "type-check": {
       "dependsOn": ["^type-check"]
-    }
+    },
+    "@virtality/db#generate": {
+      "outputs": ["console/prisma/generated/**"]
+    },
+    "@virtality/db#migrate:dev": {
+      "outputs": ["console/prisma/generated/**"]
+    },
+    "@virtality/db#migrate:deploy": {
+      "outputs": ["console/prisma/generated/**"]
+    },
+    "@virtality/db#studio": {}
   }
 }
