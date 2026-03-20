@@ -20,7 +20,7 @@ const ExerciseGrid = () => {
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
 
-  const filtersEnabled = useFeatureFlagResult('exercise_filters')
+  const filtersFlag = useFeatureFlagResult('exercise_filters')
 
   const categories = useMemo(() => {
     return (
@@ -105,7 +105,7 @@ const ExerciseGrid = () => {
                 <X />
               </Button>
             )}
-            {filtersEnabled && (
+            {filtersFlag?.enabled && filtersFlag.payload === false ? null : (
               <div className='flex w-full items-center gap-2 rounded-md'>
                 <Button size='sm' variant='default'>
                   <Star fill='yellow' />

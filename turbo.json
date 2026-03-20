@@ -80,6 +80,17 @@
       "persistent": true,
       "interactive": true
     },
+    "dev:apps": {
+      "with": [
+        "@virtality/console#dev",
+        "@virtality/adminboard#dev",
+        "@virtality/website#dev",
+        "@virtality/server#dev"
+      ],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
     "dev:console": {
       "with": [
         "@virtality/console#dev",
