@@ -232,7 +232,7 @@ const EmailDashboard = () => {
                     </label>
                     <Input
                       id='recipient-email'
-                      type='email'
+                      type='text'
                       placeholder='recipient@example.com'
                       value={recipientEmail}
                       onChange={(e) => setRecipientEmail(e.target.value)}

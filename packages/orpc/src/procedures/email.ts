@@ -7,6 +7,14 @@ import {
   getTemplateById,
 } from '@virtality/ui/template-registry'
 import { reactToHTML } from '@virtality/ui/components/email/react-to-html'
+
+const emailSchema = z.string().email()
+
+const parseRecipientEmails = (value: string) =>
+  value
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean)
 const sendThankYouEmailProcedure = base
   .route({ path: '/email/send-thank-you', method: 'POST' })
   .input(z.object({ email: z.string() }))
@@ -60,7 +68,19 @@ const sendTemplateProcedure = authed
   .input(
     z.object({
       templateId: z.string(),
-      recipientEmail: z.string().email(),
+      recipientEmail: z.string().refine(
+        (value) => {
+          const recipients = parseRecipientEmails(value)
+          return (
+            recipients.length > 0 &&
+            recipients.every((email) => emailSchema.safeParse(email).success)
+          )
+        },
+        {
+          message:
+            'recipientEmail must be a valid email or comma-separated list of valid emails',
+        },
+      ),
     }),
   )
   .handler(async ({ input }) => {
@@ -75,8 +95,10 @@ const sendTemplateProcedure = authed
     html = await reactToHTML(template.render(template.sampleProps))
     subject = template.meta.subject
 
+    const recipients = parseRecipientEmails(input.recipientEmail)
+
     await sendEmail({
-      to: input.recipientEmail,
+      to: recipients.join(', '),
       subject,
       html,
     })

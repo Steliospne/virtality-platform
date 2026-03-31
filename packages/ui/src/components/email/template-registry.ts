@@ -5,6 +5,7 @@ import DeleteUserEmail from './delete-user-email.js'
 import WaitingListEmail from './waitinglist-email.js'
 import MeetVirtality from './meet-virtality.js'
 import ProductUpdate from './product-update.js'
+import ProductUpdateV0109 from './product-update-v0-1-09.js'
 
 export type EmailTemplateMeta = {
   id: string
@@ -114,6 +115,21 @@ export const EMAIL_TEMPLATES: {
     },
     render: (p) =>
       ProductUpdate({
+        companyName: p.companyName as string,
+      }),
+  },
+  {
+    meta: {
+      id: 'product-update-v0-1-09',
+      title: 'Product Update - Patch v0.1.09',
+      category: 'marketing',
+      subject: 'Product Update - Patch v0.1.09',
+    },
+    sampleProps: {
+      companyName: 'Virtality',
+    },
+    render: (p) =>
+      ProductUpdateV0109({
         companyName: p.companyName as string,
       }),
   },
