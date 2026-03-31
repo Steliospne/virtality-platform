@@ -25,11 +25,17 @@ const ExerciseGrid = () => {
     input: { where: { direction: direction ?? undefined } },
   })
 
+  const { data: favorites } = useFavoriteExercise()
+
   const { state, handler } = useExerciseLibrary()
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
 
   const filtersFlag = useFeatureFlagResult('exercise_filters')
+
+  const displayedExercises = toggledFavorites
+    ? exercises?.filter((e) => favorites?.some((f) => f.exerciseId === e.id))
+    : exercises
 
   const categories = useMemo(() => {
     return (
@@ -86,18 +92,25 @@ const ExerciseGrid = () => {
     setDirection(direction)
   }
 
-  const { data: favorites } = useFavoriteExercise(toggledFavorites)
-
-  const displayedExercises = toggledFavorites
-    ? exercises?.filter((e) => favorites?.some((f) => f.exerciseId === e.id))
-    : exercises
+  if (isLoading) {
+    return (
+      <div className='grid justify-items-center gap-4 p-4 sm:grid-cols-3 2xl:grid-cols-5'>
+        {Array.from({ length: 15 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <Tabs
       defaultValue={categories[0]}
       className='overflow-hidden rounded-lg border p-2'
     >
-      <TabsList className='flex h-fit flex-wrap'>
+      <TabsList className='flex h-fit flex-wrap gap-2'>
         {categories.map((category, index) => (
           <TabsTrigger key={index} value={category} className='size-fit'>
             {category}
@@ -179,53 +192,31 @@ const ExerciseGrid = () => {
           </div>
 
           <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
-            {isLoading ? (
-              <>
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-                <Skeleton className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]' />
-              </>
-            ) : (
-              displayedExercises
-                ?.filter((ex) => ex.category === category)
-                .filter((ex) =>
-                  getDisplayName(ex)
-                    ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase()),
-                )
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((exercise) => (
-                  <FlipCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    isSelected={isSelected?.[exercise.id] ?? false}
-                    toggledFavorites={toggledFavorites}
-                    favoriteExerciseId={
-                      favorites?.find((f) => f.exerciseId === exercise.id)
-                        ?.id ?? null
-                    }
-                    onSelect={
-                      isSelected?.[exercise.id]
-                        ? _removeExercise
-                        : _selectExercise
-                    }
-                  />
-                ))
-            )}
+            {displayedExercises
+              ?.filter((ex) => ex.category === category)
+              .filter((ex) =>
+                getDisplayName(ex)
+                  ?.toLowerCase()
+                  .includes(searchTerm.toLowerCase()),
+              )
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((exercise) => (
+                <FlipCard
+                  key={exercise.id}
+                  exercise={exercise}
+                  isSelected={isSelected?.[exercise.id] ?? false}
+                  toggledFavorites={toggledFavorites}
+                  favoriteExerciseId={
+                    favorites?.find((f) => f.exerciseId === exercise.id)?.id ??
+                    null
+                  }
+                  onSelect={
+                    isSelected?.[exercise.id]
+                      ? _removeExercise
+                      : _selectExercise
+                  }
+                />
+              ))}
           </div>
         </TabsContent>
       ))}
