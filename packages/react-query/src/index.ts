@@ -26,6 +26,7 @@ export { useMap } from './hooks/queries/use-map.js'
 
 // Exercise queries
 export { useExercise } from './hooks/queries/use-exercise.js'
+export { useExerciseCategories } from './hooks/queries/use-exercise-categories.js'
 
 // Medical history queries
 export { useMedicalHistory } from './hooks/queries/use-medical-history.js'

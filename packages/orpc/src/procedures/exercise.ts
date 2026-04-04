@@ -20,6 +20,22 @@ const listExercise = authed
     })
   })
 
+const listExerciseCategories = authed
+  .route({ path: '/exercise/categories', method: 'GET' })
+  .handler(async ({ context }) => {
+    const { prisma } = context
+
+    const rows = await prisma.exercise.findMany({
+      where: { enabled: true },
+      select: { category: true },
+      distinct: ['category'],
+      orderBy: { category: 'asc' },
+    })
+
+    return rows.map((row) => row.category)
+  })
+
 export const exercise = {
   list: listExercise,
+  listCategories: listExerciseCategories,
 }

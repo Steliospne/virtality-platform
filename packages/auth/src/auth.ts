@@ -45,6 +45,9 @@ export const auth = betterAuth({
       sendDeleteAccountVerification,
     },
   },
+  session: {
+    expiresIn: 14 * 60 * 60 * 24,
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

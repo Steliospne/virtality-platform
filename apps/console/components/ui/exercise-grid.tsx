@@ -4,10 +4,13 @@ import FlipCard from '@/components//ui/flip-card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from './button'
-import { ChangeEvent, MouseEvent, useMemo, useState } from 'react'
-import sortedUniq from 'lodash.sorteduniq'
+import { ChangeEvent, MouseEvent, useState } from 'react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
-import { useExercise, useFavoriteExercise } from '@virtality/react-query'
+import {
+  useExercise,
+  useExerciseCategories,
+  useFavoriteExercise,
+} from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
 import { useFeatureFlagResult } from 'posthog-js/react'
 import { Exercise } from '@virtality/db'
@@ -25,6 +28,8 @@ const ExerciseGrid = () => {
     input: { where: { direction: direction ?? undefined } },
   })
 
+  const { data: categories } = useExerciseCategories()
+
   const { data: favorites } = useFavoriteExercise()
 
   const { state, handler } = useExerciseLibrary()
@@ -36,16 +41,6 @@ const ExerciseGrid = () => {
   const displayedExercises = toggledFavorites
     ? exercises?.filter((e) => favorites?.some((f) => f.exerciseId === e.id))
     : exercises
-
-  const categories = useMemo(() => {
-    return (
-      sortedUniq(
-        exercises
-          ?.sort((prev, curr) => prev.category!.localeCompare(curr.category!))
-          .map((e) => e.category),
-      ) ?? []
-    )
-  }, [exercises])
 
   const _selectExercise = (e: MouseEvent) => {
     const { id } = e.currentTarget
@@ -92,32 +87,19 @@ const ExerciseGrid = () => {
     setDirection(direction)
   }
 
-  if (isLoading) {
-    return (
-      <div className='grid justify-items-center gap-4 p-4 sm:grid-cols-3 2xl:grid-cols-5'>
-        {Array.from({ length: 15 }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
-          />
-        ))}
-      </div>
-    )
-  }
-
   return (
     <Tabs
-      defaultValue={categories[0]}
+      defaultValue={categories?.[0]}
       className='overflow-hidden rounded-lg border p-2'
     >
       <TabsList className='flex h-fit flex-wrap gap-2'>
-        {categories.map((category, index) => (
+        {categories?.map((category, index) => (
           <TabsTrigger key={index} value={category} className='size-fit'>
             {category}
           </TabsTrigger>
         ))}
       </TabsList>
-      {categories.map((category, index) => (
+      {categories?.map((category, index) => (
         <TabsContent key={index} value={category} className='overflow-auto p-2'>
           {/* Search bar */}
           <div className='sticky top-0 z-10 m-2 w-[calc(100%-16px)] space-y-2'>
@@ -192,31 +174,42 @@ const ExerciseGrid = () => {
           </div>
 
           <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
-            {displayedExercises
-              ?.filter((ex) => ex.category === category)
-              .filter((ex) =>
-                getDisplayName(ex)
-                  ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase()),
-              )
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((exercise) => (
-                <FlipCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  isSelected={isSelected?.[exercise.id] ?? false}
-                  toggledFavorites={toggledFavorites}
-                  favoriteExerciseId={
-                    favorites?.find((f) => f.exerciseId === exercise.id)?.id ??
-                    null
-                  }
-                  onSelect={
-                    isSelected?.[exercise.id]
-                      ? _removeExercise
-                      : _selectExercise
-                  }
-                />
-              ))}
+            {isLoading ? (
+              <div className='grid justify-items-center gap-4 p-4 sm:grid-cols-3 2xl:grid-cols-5'>
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
+                  />
+                ))}
+              </div>
+            ) : (
+              displayedExercises
+                ?.filter((ex) => ex.category === category)
+                .filter((ex) =>
+                  getDisplayName(ex)
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase()),
+                )
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((exercise) => (
+                  <FlipCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    isSelected={isSelected?.[exercise.id] ?? false}
+                    toggledFavorites={toggledFavorites}
+                    favoriteExerciseId={
+                      favorites?.find((f) => f.exerciseId === exercise.id)
+                        ?.id ?? null
+                    }
+                    onSelect={
+                      isSelected?.[exercise.id]
+                        ? _removeExercise
+                        : _selectExercise
+                    }
+                  />
+                ))
+            )}
           </div>
         </TabsContent>
       ))}
