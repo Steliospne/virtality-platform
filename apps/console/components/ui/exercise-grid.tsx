@@ -4,7 +4,7 @@ import FlipCard from '@/components//ui/flip-card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from './button'
-import { ChangeEvent, MouseEvent, useState } from 'react'
+import { ChangeEvent, MouseEvent, useEffect, useState } from 'react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import {
   useExercise,
@@ -23,6 +23,7 @@ const ExerciseGrid = () => {
   const [direction, setDirection] = useState<Exercise['direction'] | undefined>(
     undefined,
   )
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
 
   const { data: exercises, isLoading } = useExercise({
     input: { where: { direction: direction ?? undefined } },
@@ -41,6 +42,13 @@ const ExerciseGrid = () => {
   const displayedExercises = toggledFavorites
     ? exercises?.filter((e) => favorites?.some((f) => f.exerciseId === e.id))
     : exercises
+
+  useEffect(() => {
+    if (categories?.[0] && !activeTab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(categories[0])
+    }
+  }, [categories, activeTab])
 
   const _selectExercise = (e: MouseEvent) => {
     const { id } = e.currentTarget
@@ -89,7 +97,8 @@ const ExerciseGrid = () => {
 
   return (
     <Tabs
-      defaultValue={categories?.[0]}
+      value={activeTab}
+      onValueChange={setActiveTab}
       className='overflow-hidden rounded-lg border p-2'
     >
       <TabsList className='flex h-fit flex-wrap gap-2'>
@@ -175,14 +184,14 @@ const ExerciseGrid = () => {
 
           <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
             {isLoading ? (
-              <div className='grid justify-items-center gap-4 p-4 sm:grid-cols-3 2xl:grid-cols-5'>
+              <>
                 {Array.from({ length: 15 }).map((_, i) => (
                   <Skeleton
                     key={i}
                     className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
                   />
                 ))}
-              </div>
+              </>
             ) : (
               displayedExercises
                 ?.filter((ex) => ex.category === category)
