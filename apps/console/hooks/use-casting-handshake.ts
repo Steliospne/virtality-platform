@@ -1,8 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CASTING_EVENT } from '@/types/models'
 import type { SocketWithQuery } from '@/types/models'
+import {
+  createDeviceEmitter,
+  subscribeToCastingEvents,
+} from '@/lib/device-event-controller'
 
 export type CastingStatus =
   | 'idle'
@@ -21,9 +24,11 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
 
+  const emitter = socket ? createDeviceEmitter(socket) : null
+
   const handleOffer = useCallback(
     async (offerJson: unknown) => {
-      if (!socket) return
+      if (!socket || !emitter) return
       try {
         setStatus('negotiating')
         const offerDesc =
@@ -78,34 +83,36 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
 
         const answerDesc = pc.localDescription
         if (answerDesc) {
-          socket.emit(CASTING_EVENT.Answer['name'], answerDesc)
+          emitter.sendCastingAnswer(answerDesc)
         }
       } catch (e) {
         console.error('[casting] Error handling offer:', e)
         setStatus('error')
       }
     },
-    [socket],
+    [socket, emitter],
   )
 
   useEffect(() => {
     if (!socket) return
-    socket.on(CASTING_EVENT.Offer['name'], handleOffer)
+    const unsubscribe = subscribeToCastingEvents(socket, {
+      onOffer: handleOffer,
+    })
     return () => {
-      socket.off(CASTING_EVENT.Offer['name'], handleOffer)
-      socket.emit(CASTING_EVENT.StopCasting['name'])
+      unsubscribe()
+      emitter?.stopCasting()
     }
-  }, [socket, handleOffer])
+  }, [socket, handleOffer, emitter])
 
   const startCasting = useCallback(() => {
-    if (!socket?.connected) {
+    if (!socket?.connected || !emitter) {
       console.warn('[casting] Socket not connected')
       setStatus('error')
       return
     }
     setStatus('requesting')
-    socket.emit(CASTING_EVENT.RequestOffer['name'])
-  }, [socket])
+    emitter.requestCastingOffer()
+  }, [socket, emitter])
 
   const stopCasting = useCallback(() => {
     const pc = pcRef.current
@@ -119,8 +126,8 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
       videoRef.current.srcObject = null
     }
     setStatus('idle')
-    socket?.emit(CASTING_EVENT.StopCasting['name'])
-  }, [socket])
+    emitter?.stopCasting()
+  }, [emitter])
 
   useEffect(() => {
     return () => {

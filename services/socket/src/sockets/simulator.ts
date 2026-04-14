@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io'
-import { _EVENT } from '../types/models'
+import { PROGRAM_EVENT } from '@virtality/shared/types'
 
 type Exercise = {
   id: string
@@ -42,7 +42,7 @@ export default class Simulation {
       )
 
       socket.emit(
-        _EVENT.RepEnd.name,
+        PROGRAM_EVENT.RepEnd,
         JSON.stringify({
           previousRep: this.currentRep,
           progress: Math.random(),
@@ -54,14 +54,14 @@ export default class Simulation {
         this.currentRep = 0
 
         socket.emit(
-          _EVENT.SetEnd.name,
+          PROGRAM_EVENT.SetEnd,
           JSON.stringify({ previousSet: this.currentSet }),
         )
 
         if (isLastSet) {
           if (isLastExercise) {
             socket.emit(
-              _EVENT.ChangeExercise.name,
+              PROGRAM_EVENT.ChangeExercise,
               this.exercises[this.currentExercise].id,
             )
             this.currentExercise++
@@ -69,7 +69,7 @@ export default class Simulation {
             this.currentSet = 0
           } else {
             console.log('programEnded')
-            socket.emit(_EVENT.End.name)
+            socket.emit(PROGRAM_EVENT.End)
             this.end()
           }
         }

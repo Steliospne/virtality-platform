@@ -1,8 +1,8 @@
 import { Server, ServerOptions } from 'socket.io'
 import express from 'express'
 import { createServer } from 'http'
-import { _EVENT, CONNECTION_EVENT } from './types/models'
-import { connectionHandler } from './sockets/prod-server'
+import { CONNECTION_EVENT } from '@virtality/shared/types'
+import { connectionHandler } from './sockets/device-event-controller'
 // Initialize Socket.IO
 const app = express()
 

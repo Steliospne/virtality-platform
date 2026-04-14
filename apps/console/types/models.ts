@@ -30,6 +30,28 @@ import { Delta } from 'quill'
 import { HumanState } from '@/data/static/human-body'
 import { Socket } from 'socket.io-client'
 
+export {
+  CONNECTION_EVENT,
+  PROGRAM_EVENT,
+  ROOM_EVENT,
+  GAME_EVENT,
+  CASTING_EVENT,
+  SYSTEM_EVENT,
+} from '@virtality/shared/types'
+
+export type {
+  ConnectionEventKey,
+  ProgramEventKey,
+  RoomEventKey,
+  GameEventKey,
+  CastingEventKey,
+  SystemEventKey,
+  ProgramStartPayload,
+  WarmupPayload,
+  VRPayloadSettings,
+  ExercisePayload,
+} from '@virtality/shared/types'
+
 export type SignUpForm = z.infer<typeof SignUpSchema>
 
 export interface Organization extends z.infer<typeof OrganizationSchema> {
@@ -76,75 +98,9 @@ export const ProgramStatus = {
 
 export type ProgramStatus = (typeof ProgramStatus)[keyof typeof ProgramStatus]
 
-export const PROGRAM_EVENT = {
-  Start: 'programStart',
-  StartAck: 'programStartAck',
-  Pause: 'programPause',
-  PauseAck: 'programPauseAck',
-  End: 'programEnd',
-  EndAck: 'programEndAck',
-  ChangeExercise: 'onChangeExercise',
-  ChangeExerciseAck: 'onChangeExerciseAck',
-  RepEnd: 'onRepEnd',
-  SetEnd: 'onSetEnd',
-  WarmupStart: 'warmupStart',
-  WarmupEnd: 'warmupEnd',
-  WarmupStartAck: 'warmupStartAck',
-  WarmupEndAck: 'warmupEndAck',
-  SettingsChange: 'exerciseSettingsChange',
-  SettingsChangeAck: 'exerciseSettingsChangeAck',
-  CalibrateHeight: 'calibrateHeight',
-  CalibrateHeightAck: 'calibrateHeightAck',
-  ResetPosition: 'resetPosition',
-  ResetPositionAck: 'resetPositionAck',
-  SittingChange: 'onSittingChange',
-  SittingChangeAck: 'onSittingChangeAck',
-} as const
-
-export type ProgramEvent = keyof typeof PROGRAM_EVENT
-
-export const SYSTEM_EVENT = {
-  NotifyDoctor: 'onNotifyDoctor',
-} as const
-
-export type SystemEventKey = keyof typeof SYSTEM_EVENT
-
-export const CONNECTION_EVENT = {
-  CONNECTION: 'connection',
-  DISCONNECTION: 'disconnect',
-  ERROR: 'onError',
-  DEVICE_STATUS: 'onDeviceStatus',
-} as const
-
-export type ConnectionEventKey = keyof typeof CONNECTION_EVENT
-
-/** WebRTC signaling for VR casting: console requests offer, VR sends offer, console sends answer. */
-export const CASTING_EVENT = {
-  RequestOffer: { name: 'onRequestOffer', payload: false },
-  Offer: { name: 'onOffer', payload: true },
-  Answer: { name: 'onAnswer', payload: true },
-  StopCasting: { name: 'onStopCasting', payload: false },
-} as const
-
-export type CastingEventKey = keyof typeof CASTING_EVENT
-
-export type WarmupPayload = {
-  settings: VRPayloadSettings
-}
-
-export type VRPayloadSettings = {
-  avatarId: string
-  sessionNumber: number
-  mapId: string
-  language?: Patient['language']
-}
-
-export type ProgramStartPayload = {
-  exerciseData: ExerciseData[]
-  settings: VRPayloadSettings
-}
-
 export type ExerciseData = Omit<ProgramExercise, 'exerciseId' | 'programId'>
+
+import type { DeviceEmitter } from '@/lib/device-event-controller'
 
 export type VRDevice = {
   data: Device
@@ -153,43 +109,9 @@ export type VRDevice = {
     setDeviceRoomCode: (roomCode: string) => void
     clearDeviceRoomCode: () => void
   }
-  events: {
-    programStart: (payload: ProgramStartPayload) => void
-    programPause: () => void
-    programEnd: () => void
-    startWarmup: (payload: WarmupPayload) => void
-    endWarmup: () => void
-    settingsChange: (payload: ExerciseData) => void
-    changeExercise: (payload: string) => void
-    calibrateHeight: () => void
-    resetPosition: () => void
-    sittingChange: (payload: boolean) => void
-    gameLoad: (payload: { avatarId: number }) => void
-    gameStart: () => void
-    gameEnd: () => void
-  }
+  events: DeviceEmitter
 }
 
-export const ROOM_EVENT = {
-  MemberLeft: 'memberLeft',
-  RoomComplete: 'roomComplete',
-  RoomJoined: 'roomJoined',
-} as const
-
-export type RoomEvent = keyof typeof ROOM_EVENT
-
-export const GAME_EVENT = {
-  Load: 'onGameLoad',
-  LoadAck: 'onGameLoadAck',
-  Start: 'onGameStart',
-  StartAck: 'onGameStartAck',
-  End: 'onGameEnd',
-  EndAck: 'onGameEndAck',
-  RoundEnd: 'onRoundEnd',
-  OnHit: 'onHit',
-} as const
-
-export type GameEvent = keyof typeof GAME_EVENT
 
 export const IMAGE_TYPE = {
   'image/jpeg': '.jpeg',

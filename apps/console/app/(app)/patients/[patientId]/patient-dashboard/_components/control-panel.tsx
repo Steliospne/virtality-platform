@@ -41,9 +41,9 @@ import { DeviceContextValue, useDeviceContext } from '@/context/device-context'
 import { useRow } from 'tinybase/ui-react'
 import {
   PatientLocalData,
-  PROGRAM_EVENT,
-  ProgramStartPayload,
 } from '@/types/models'
+import type { ProgramStartPayload } from '@virtality/shared/types'
+import { subscribeToDashboardEvents } from '@/lib/device-event-controller'
 import ErrorToasty from '@/components/ui/ErrorToasty'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
 import ProgramSelector from './program-selector'
@@ -451,23 +451,18 @@ const SceneSettings = ({
     selectedDevice?.events.sittingChange(value)
   }
 
-  const sittingChangeSocketHandler = (payload: 'False' | 'True') => {
+  const sittingChangeSocketHandler = (payload: string) => {
     setSitting(payload === 'True')
   }
 
   useEffect(() => {
-    const sittingChangeAckSocketHandler = () => {
-      setSitting((prev) => !prev)
-    }
     const socket = selectedDevice?.socket
     if (!socket) return
-    socket.on(PROGRAM_EVENT.SittingChange, sittingChangeSocketHandler)
-    socket.on(PROGRAM_EVENT.SittingChangeAck, sittingChangeAckSocketHandler)
 
-    return () => {
-      socket.off(PROGRAM_EVENT.SittingChange, sittingChangeSocketHandler)
-      socket.off(PROGRAM_EVENT.SittingChangeAck, sittingChangeAckSocketHandler)
-    }
+    return subscribeToDashboardEvents(socket, {
+      onSittingChange: sittingChangeSocketHandler,
+      onSittingChangeAck: () => setSitting((prev) => !prev),
+    })
   }, [selectedDevice])
 
   return (

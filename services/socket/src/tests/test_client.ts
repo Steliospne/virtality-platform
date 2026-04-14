@@ -1,5 +1,5 @@
 import { io, ManagerOptions, SocketOptions } from 'socket.io-client'
-import { _EVENT } from '../types/models'
+import { PROGRAM_EVENT, ROOM_EVENT } from '@virtality/shared/types'
 
 const { ROOM_CODE } = process.env
 
@@ -21,9 +21,9 @@ socket.on('connect', () => {
   console.log(`[TEST_CLIENT] connected as ${socket.id}`)
 })
 
-socket.on('roomComplete', () => {
+socket.on(ROOM_EVENT.RoomComplete, () => {
   setTimeout(() => {
-    socket.emit(_EVENT.SendDeviceId.name, '1752642287897')
+    socket.emit(PROGRAM_EVENT.SendDeviceId, '1752642287897')
   }, 2000)
 })
 

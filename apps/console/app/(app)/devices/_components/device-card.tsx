@@ -25,6 +25,7 @@ import { H3, P } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
 import useDevice from '@/hooks/use-device'
 import { getQueryClient, useORPC, useSetDeviceId } from '@virtality/react-query'
+import { subscribeToPairingEvents } from '@/lib/device-event-controller'
 
 interface DeviceProps {
   device: VRDevice
@@ -61,7 +62,7 @@ const DeviceCard = ({ device }: DeviceProps) => {
 
   const { mutate: setDeviceId } = useSetDeviceId({
     onSuccess: () => {
-      device?.socket.emit('sendDeviceIdAck')
+      device?.events.sendDeviceIdAck()
       setTimeout(() => device?.socket.disconnect(), 1000)
       return queryClient.invalidateQueries({ queryKey: orpc.device.list.key() })
     },
@@ -79,10 +80,7 @@ const DeviceCard = ({ device }: DeviceProps) => {
   }
 
   useEffect(() => {
-    const onDisconnect = () => {
-      if (status === 'paired') return
-      resetState()
-    }
+    if (!device) return
 
     const handleSendDeviceId = async (payload: string) => {
       if (payload && status === 'pairing') {
@@ -95,13 +93,15 @@ const DeviceCard = ({ device }: DeviceProps) => {
       }
     }
 
-    device?.socket.on('disconnect', onDisconnect)
-    device?.socket.on('sendDeviceId', handleSendDeviceId)
-
-    return () => {
-      device?.socket.off('sendDeviceId', handleSendDeviceId)
-      device?.socket.off('disconnect', onDisconnect)
+    const onDisconnect = () => {
+      if (status === 'paired') return
+      resetState()
     }
+
+    return subscribeToPairingEvents(device.socket, {
+      onSendDeviceId: handleSendDeviceId,
+      onDisconnect,
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [device, status])
 

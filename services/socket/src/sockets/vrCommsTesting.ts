@@ -1,61 +1,61 @@
 import { Socket } from 'socket.io'
 import Simulation from './simulator'
-import { _EVENT } from '../types/models'
+import { PROGRAM_EVENT } from '@virtality/shared/types'
 
 const sim = new Simulation()
 
 const vrCommSim = {
   programStart: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.Start.name, (data) => {
-      socket.emit(_EVENT.StartAck.name)
+    socket.on(PROGRAM_EVENT.Start, (data) => {
+      socket.emit(PROGRAM_EVENT.StartAck)
       const { exerciseData } = data
       sim.exercises = exerciseData
       sim.start(socket)
     })
   },
   programPause: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.Pause.name, () => {
-      console.log(_EVENT.Pause.name)
+    socket.on(PROGRAM_EVENT.Pause, () => {
+      console.log(PROGRAM_EVENT.Pause)
       sim.pause(socket)
-      socket.emit(_EVENT.PauseAck.name)
+      socket.emit(PROGRAM_EVENT.PauseAck)
     })
   },
   programEnd: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.End.name, () => {
-      console.log(_EVENT.End.name)
+    socket.on(PROGRAM_EVENT.End, () => {
+      console.log(PROGRAM_EVENT.End)
       sim.end()
-      socket.emit(_EVENT.EndAck.name)
+      socket.emit(PROGRAM_EVENT.EndAck)
     })
   },
   onChangeExercise: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.ChangeExercise.name, (exerciseId) => {
-      console.log(_EVENT.ChangeExercise.name, exerciseId)
+    socket.on(PROGRAM_EVENT.ChangeExercise, (exerciseId) => {
+      console.log(PROGRAM_EVENT.ChangeExercise, exerciseId)
       sim.changeExercise(socket, exerciseId)
-      socket.emit(_EVENT.ChangeExerciseAck.name)
+      socket.emit(PROGRAM_EVENT.ChangeExerciseAck)
     })
   },
   onSettingsChange: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.SettingsChange.name, (data) => {
-      console.log(_EVENT.SettingsChange.name, data)
-      socket.emit(_EVENT.SettingsChangeAck.name)
+    socket.on(PROGRAM_EVENT.SettingsChange, (data) => {
+      console.log(PROGRAM_EVENT.SettingsChange, data)
+      socket.emit(PROGRAM_EVENT.SettingsChangeAck)
     })
   },
   warmupStart: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.WarmupStart.name, () => {
-      console.log(_EVENT.WarmupStart.name)
-      socket.emit(_EVENT.WarmupStartAck.name)
+    socket.on(PROGRAM_EVENT.WarmupStart, () => {
+      console.log(PROGRAM_EVENT.WarmupStart)
+      socket.emit(PROGRAM_EVENT.WarmupStartAck)
     })
   },
   warmupEnd: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.WarmupEnd.name, () => {
-      console.log(_EVENT.WarmupEnd.name)
-      socket.emit(_EVENT.WarmupEndAck.name)
+    socket.on(PROGRAM_EVENT.WarmupEnd, () => {
+      console.log(PROGRAM_EVENT.WarmupEnd)
+      socket.emit(PROGRAM_EVENT.WarmupEndAck)
     })
   },
   sittingChange: (roomCode: string | string[], socket: Socket) => {
-    socket.on(_EVENT.SittingChange.name, (data) => {
-      console.log(_EVENT.SittingChange.name, data)
-      socket.emit(_EVENT.SittingChangeAck.name)
+    socket.on(PROGRAM_EVENT.SittingChange, (data) => {
+      console.log(PROGRAM_EVENT.SittingChange, data)
+      socket.emit(PROGRAM_EVENT.SittingChangeAck)
     })
   },
 }
