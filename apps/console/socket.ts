@@ -1,7 +1,7 @@
 'use client'
 import { io, SocketOptions, ManagerOptions } from 'socket.io-client'
 import { SocketWithQuery } from './types/models'
-import { SOCKET_URL, SOCKET_URL_LOCAL } from '@virtality/shared/types'
+import { SOCKET_URL, SOCKET_URL_LOCAL, ROOM_EVENT } from '@virtality/shared/types'
 
 const env = process.env.NEXT_PUBLIC_ENV || 'development'
 
@@ -23,9 +23,9 @@ export function createSocket(): SocketWithQuery {
     ...socketOptions,
   })
 
-  socket.on('memberLeft', (payload) => console.log('member left:', payload))
-  socket.on('roomJoined', (payload) => console.log('room joined:', payload))
-  socket.on('roomComplete', (payload) => console.log('room complete:', payload))
+  socket.on(ROOM_EVENT.MemberLeft, (payload) => console.log('member left:', payload))
+  socket.on(ROOM_EVENT.RoomJoined, (payload) => console.log('room joined:', payload))
+  socket.on(ROOM_EVENT.RoomComplete, (payload) => console.log('room complete:', payload))
 
   return socket as SocketWithQuery
 }

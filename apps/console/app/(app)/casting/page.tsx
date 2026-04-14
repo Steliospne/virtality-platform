@@ -15,8 +15,10 @@ import {
 } from '@/context/device-context'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { useCastingHandshake } from '@/hooks/use-casting-handshake'
-import { ROOM_EVENT, VRDevice } from '@/types/models'
+import { VRDevice } from '@/types/models'
 import { cn } from '@/lib/utils'
+import { subscribe } from '@/lib/device-event-controller'
+import { ROOM_EVENT } from '@virtality/shared/types'
 
 function CastingContent() {
   const { devices, isLoading } = useDeviceContext()
@@ -32,19 +34,11 @@ function CastingContent() {
     const socket = selectedDevice?.socket
     if (!socket) return
 
-    const handleRoomComplete = () => setConnectionLoading(false)
-    const handleMemberLeft = () => {}
-    const handleRoomJoined = () => setConnectionLoading(false)
-
-    socket.on(ROOM_EVENT.RoomComplete, handleRoomComplete)
-    socket.on(ROOM_EVENT.MemberLeft, handleMemberLeft)
-    socket.on(ROOM_EVENT.RoomJoined, handleRoomJoined)
-
-    return () => {
-      socket.off(ROOM_EVENT.RoomComplete, handleRoomComplete)
-      socket.off(ROOM_EVENT.MemberLeft, handleMemberLeft)
-      socket.off(ROOM_EVENT.RoomJoined, handleRoomJoined)
-    }
+    return subscribe(socket, ROOM_EVENT, {
+      RoomComplete: () => setConnectionLoading(false),
+      MemberLeft: () => {},
+      RoomJoined: () => setConnectionLoading(false),
+    })
   }, [selectedDevice])
 
   const handleConnect = () => {

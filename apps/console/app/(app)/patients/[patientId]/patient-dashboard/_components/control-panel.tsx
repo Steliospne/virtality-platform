@@ -39,11 +39,12 @@ import useSocketConnection from '@/hooks/use-socket-connection'
 import { cn } from '@/lib/utils'
 import { DeviceContextValue, useDeviceContext } from '@/context/device-context'
 import { useRow } from 'tinybase/ui-react'
+import { PatientLocalData } from '@/types/models'
 import {
-  PatientLocalData,
   PROGRAM_EVENT,
-  ProgramStartPayload,
-} from '@/types/models'
+  type ProgramStartPayload,
+} from '@virtality/shared/types'
+import { subscribe } from '@/lib/device-event-controller'
 import ErrorToasty from '@/components/ui/ErrorToasty'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
 import ProgramSelector from './program-selector'
@@ -147,14 +148,14 @@ const ControlPanel = ({
         totalSets: dispatchedData[0].sets,
       })
 
-      selectedDevice?.events.programStart(payload)
+      selectedDevice?.events.program.Start(payload)
     } else {
-      selectedDevice?.events.programPause()
+      selectedDevice?.events.program.Pause()
     }
   }
 
   const programEnd = () => {
-    selectedDevice?.events.programEnd()
+    selectedDevice?.events.program.End()
   }
 
   const skipExercise = (e: MouseEvent) => {
@@ -182,7 +183,7 @@ const ControlPanel = ({
     }
     currExercise.current = nextExercise
     const payload = exercises[nextExercise].exerciseId
-    selectedDevice?.events.changeExercise(payload)
+    selectedDevice?.events.program.ChangeExercise(payload)
     setActiveExerciseData({
       id: exercises[nextExercise].exerciseId,
       currentRep: 0,
@@ -205,8 +206,9 @@ const ControlPanel = ({
         mapId: selectedMap!.id,
       },
     }
-    if (programState !== 'started') selectedDevice?.events.startWarmup(payload)
-    else selectedDevice?.events.endWarmup()
+    if (programState !== 'started')
+      selectedDevice?.events.program.WarmupStart(payload)
+    else selectedDevice?.events.program.WarmupEnd()
   }
 
   const isProgramActive = programState === 'started'
@@ -436,11 +438,11 @@ const SceneSettings = ({
   const [isSitting, setSitting] = useState(false)
 
   const handleCalibrateHeight = () => {
-    selectedDevice?.events.calibrateHeight()
+    selectedDevice?.events.program.CalibrateHeight()
   }
 
   const handleResetPosition = () => {
-    selectedDevice?.events.resetPosition()
+    selectedDevice?.events.program.ResetPosition()
   }
 
   const handleScenePopover = () => {
@@ -448,26 +450,21 @@ const SceneSettings = ({
   }
 
   const sittingChangeHandler = (value: boolean) => {
-    selectedDevice?.events.sittingChange(value)
+    selectedDevice?.events.program.SittingChange(value)
   }
 
-  const sittingChangeSocketHandler = (payload: 'False' | 'True') => {
+  const sittingChangeSocketHandler = (payload: string) => {
     setSitting(payload === 'True')
   }
 
   useEffect(() => {
-    const sittingChangeAckSocketHandler = () => {
-      setSitting((prev) => !prev)
-    }
     const socket = selectedDevice?.socket
     if (!socket) return
-    socket.on(PROGRAM_EVENT.SittingChange, sittingChangeSocketHandler)
-    socket.on(PROGRAM_EVENT.SittingChangeAck, sittingChangeAckSocketHandler)
 
-    return () => {
-      socket.off(PROGRAM_EVENT.SittingChange, sittingChangeSocketHandler)
-      socket.off(PROGRAM_EVENT.SittingChangeAck, sittingChangeAckSocketHandler)
-    }
+    return subscribe(socket, PROGRAM_EVENT, {
+      SittingChange: sittingChangeSocketHandler,
+      SittingChangeAck: () => setSitting((prev) => !prev),
+    })
   }, [selectedDevice])
 
   return (

@@ -7,13 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select'
-import { CONNECTION_EVENT, ROOM_EVENT, VRDevice } from '@/types/models'
+import { VRDevice } from '@/types/models'
 import { useEffect, useState, MouseEvent } from 'react'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { useStore } from 'tinybase/ui-react'
 import ErrorToasty from './ErrorToasty'
 import { cn } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
+import { subscribe, createDeviceEmitter } from '@/lib/device-event-controller'
+import { ROOM_EVENT } from '@virtality/shared/types'
 
 const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
   const { state, handler, patientId } = usePatientDashboard()
@@ -55,31 +57,20 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
     store?.delCell('patients', patientId, 'lastHeadset')
   }
 
-  const handleRoomComplete = () => setDeviceConnected(true)
-
-  const handleMemberLeft = () => setDeviceConnected(false)
-
-  const handleRoomJoined = () => setConnectionLoading(false)
-
   useEffect(() => {
     const socket = selectedDevice?.socket
     if (!socket) return
 
-    socket.on(ROOM_EVENT.RoomComplete, handleRoomComplete)
-    socket.on(ROOM_EVENT.MemberLeft, handleMemberLeft)
-    socket.on(ROOM_EVENT.RoomJoined, handleRoomJoined)
-
-    const deviceStatusACK = (res: { status: 'active' | 'inactive' }) => {
+    const emitter = createDeviceEmitter(socket)
+    emitter.checkDeviceStatus((res) => {
       setDeviceConnected(res.status === 'active')
-    }
+    })
 
-    socket.emit(CONNECTION_EVENT.DEVICE_STATUS, undefined, deviceStatusACK)
-
-    return () => {
-      socket.off(ROOM_EVENT.RoomComplete, handleRoomComplete)
-      socket.off(ROOM_EVENT.MemberLeft, handleMemberLeft)
-      socket.off(ROOM_EVENT.RoomJoined, handleRoomJoined)
-    }
+    return subscribe(socket, ROOM_EVENT, {
+      RoomComplete: () => setDeviceConnected(true),
+      MemberLeft: () => setDeviceConnected(false),
+      RoomJoined: () => setConnectionLoading(false),
+    })
   }, [selectedDevice])
 
   return (

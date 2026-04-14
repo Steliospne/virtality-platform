@@ -1,12 +1,15 @@
 import {
   PatientLocalData,
-  PROGRAM_EVENT,
   ProgramStatus,
   ProgressData,
   ProgressDataPoint,
+} from '@/types/models'
+import { subscribe } from '@/lib/device-event-controller'
+import {
+  PROGRAM_EVENT,
   ROOM_EVENT,
   SYSTEM_EVENT,
-} from '@/types/models'
+} from '@virtality/shared/types'
 import { RefObject, useEffect, useRef } from 'react'
 import { Store } from 'tinybase'
 import useDashboardState from './use-patient-dashboard-state'
@@ -351,39 +354,34 @@ const usePatientDashboardSocketSetup = ({
   }
 
   useEffect(() => {
-    socket?.on(PROGRAM_EVENT.StartAck, handleStartAck)
-    socket?.on(PROGRAM_EVENT.PauseAck, handlePauseAck)
-    socket?.on(PROGRAM_EVENT.End, handleEnd)
-    socket?.on(PROGRAM_EVENT.EndAck, handleEndAck)
-    socket?.on(PROGRAM_EVENT.ChangeExercise, handleChangeExercise)
-    socket?.on(PROGRAM_EVENT.ChangeExerciseAck, handleChangeExerciseAck)
-    socket?.on(PROGRAM_EVENT.RepEnd, handleRepEnd)
-    socket?.on(PROGRAM_EVENT.SetEnd, handleSetEnd)
-    socket?.on(PROGRAM_EVENT.WarmupStartAck, handleWarmupStartAck)
-    socket?.on(PROGRAM_EVENT.WarmupEndAck, handleWarmupEndAck)
-    socket?.on(PROGRAM_EVENT.CalibrateHeightAck, handleCalibrateHeightAck)
-    socket?.on(PROGRAM_EVENT.ResetPositionAck, handleResetPositionAck)
-    socket?.on(PROGRAM_EVENT.SettingsChangeAck, handleSettingsChangeAck)
-    socket?.on(ROOM_EVENT.MemberLeft, memberLeft)
-    socket?.on(SYSTEM_EVENT.NotifyDoctor, handleNotifyDoctor)
+    if (!socket) return
 
-    return () => {
-      socket?.off(PROGRAM_EVENT.StartAck, handleStartAck)
-      socket?.off(PROGRAM_EVENT.PauseAck, handlePauseAck)
-      socket?.off(PROGRAM_EVENT.End, handleEnd)
-      socket?.off(PROGRAM_EVENT.EndAck, handleEndAck)
-      socket?.off(PROGRAM_EVENT.ChangeExercise, handleChangeExercise)
-      socket?.off(PROGRAM_EVENT.ChangeExerciseAck, handleChangeExerciseAck)
-      socket?.off(PROGRAM_EVENT.RepEnd, handleRepEnd)
-      socket?.off(PROGRAM_EVENT.SetEnd, handleSetEnd)
-      socket?.off(PROGRAM_EVENT.WarmupStartAck, handleWarmupStartAck)
-      socket?.off(PROGRAM_EVENT.WarmupEndAck, handleWarmupEndAck)
-      socket?.off(PROGRAM_EVENT.CalibrateHeightAck, handleCalibrateHeightAck)
-      socket?.off(PROGRAM_EVENT.ResetPositionAck, handleResetPositionAck)
-      socket?.off(PROGRAM_EVENT.SettingsChangeAck, handleSettingsChangeAck)
-      socket?.off(ROOM_EVENT.MemberLeft, memberLeft)
-      socket?.off(SYSTEM_EVENT.NotifyDoctor, handleNotifyDoctor)
-    }
+    return subscribe(
+      socket,
+      { ...PROGRAM_EVENT, ...ROOM_EVENT, ...SYSTEM_EVENT },
+      {
+        // PROGRAM_EVENT
+        StartAck: handleStartAck,
+        PauseAck: handlePauseAck,
+        End: handleEnd,
+        EndAck: handleEndAck,
+        ChangeExercise: handleChangeExercise,
+        ChangeExerciseAck: handleChangeExerciseAck,
+        RepEnd: handleRepEnd,
+        SetEnd: handleSetEnd,
+        WarmupStartAck: handleWarmupStartAck,
+        WarmupEndAck: handleWarmupEndAck,
+        CalibrateHeightAck: handleCalibrateHeightAck,
+        ResetPositionAck: handleResetPositionAck,
+        SettingsChangeAck: handleSettingsChangeAck,
+
+        // ROOM_EVENT
+        MemberLeft: memberLeft,
+
+        // SYSTEM_EVENT
+        NotifyDoctor: handleNotifyDoctor,
+      },
+    )
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, socket])

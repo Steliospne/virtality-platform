@@ -67,7 +67,7 @@ const ExerciseList = ({ className }: { className?: string }) => {
       })
     }
 
-    selectedDevice?.events.settingsChange(payload)
+    selectedDevice?.events.program.SettingsChange(payload)
   }
 
   const moveExerciseUp = (index: number) => {
@@ -164,7 +164,9 @@ const ExerciseList = ({ className }: { className?: string }) => {
                       <p
                         className='flex-1 truncate overflow-x-hidden hover:cursor-pointer'
                         onClick={() => {
-                          selectedDevice?.events.changeExercise(ex.exerciseId)
+                          selectedDevice?.events.program.ChangeExercise(
+                            ex.exerciseId,
+                          )
                           currExercise.current = index
                         }}
                       >
