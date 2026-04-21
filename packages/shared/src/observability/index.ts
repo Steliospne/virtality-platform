@@ -1,7 +1,10 @@
 import { SeverityNumber } from '@opentelemetry/api-logs'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
-import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs'
+import {
+  BatchLogRecordProcessor,
+  LoggerProvider,
+} from '@opentelemetry/sdk-logs'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
@@ -64,10 +67,12 @@ function resolveLogLevel(value?: string): LogLevel {
 }
 
 function getDeploymentEnvironment() {
-  return process.env.OTEL_DEPLOYMENT_ENVIRONMENT ??
+  return (
+    process.env.OTEL_DEPLOYMENT_ENVIRONMENT ??
     process.env.ENV ??
     process.env.NODE_ENV ??
     'development'
+  )
 }
 
 function shouldEmit(level: LogLevel, minLevel: LogLevel) {
@@ -79,7 +84,11 @@ function normalizeAttributeValue(
 ): PrimitiveLogValue | PrimitiveLogValue[] | undefined {
   if (value === undefined) return undefined
   if (value === null) return 'null'
-  if (typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
+  if (
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    typeof value === 'string'
+  ) {
     return value
   }
 
@@ -178,6 +187,7 @@ function writeStdoutLog(
   attributes: LogAttributes,
 ) {
   const payload = {
+    ...attributes,
     ts: new Date().toISOString(),
     level,
     event,
@@ -186,7 +196,6 @@ function writeStdoutLog(
     'service.namespace': runtime.serviceNamespace,
     'service.version': runtime.serviceVersion,
     'deployment.environment.name': runtime.deploymentEnvironment,
-    ...attributes,
   }
 
   const line = JSON.stringify(payload)
@@ -229,8 +238,8 @@ function emitOtelLog(
     body: message ?? event,
     timestamp: Date.now(),
     attributes: {
-      event,
       ...attributes,
+      event,
     },
   })
 }
@@ -261,10 +270,14 @@ function buildLogger(
   }
 
   return {
-    debug: (event, attributes, message) => emit('debug', event, attributes, message),
-    info: (event, attributes, message) => emit('info', event, attributes, message),
-    warn: (event, attributes, message) => emit('warn', event, attributes, message),
-    error: (event, attributes, message) => emit('error', event, attributes, message),
+    debug: (event, attributes, message) =>
+      emit('debug', event, attributes, message),
+    info: (event, attributes, message) =>
+      emit('info', event, attributes, message),
+    warn: (event, attributes, message) =>
+      emit('warn', event, attributes, message),
+    error: (event, attributes, message) =>
+      emit('error', event, attributes, message),
     child: (attributes) =>
       buildLogger(runtime, {
         ...defaultAttributes,

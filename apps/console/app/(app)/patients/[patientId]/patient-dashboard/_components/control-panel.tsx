@@ -453,8 +453,8 @@ const SceneSettings = ({
     selectedDevice?.events.program.SittingChange(value)
   }
 
-  const sittingChangeSocketHandler = (payload: string) => {
-    setSitting(payload === 'True')
+  const sittingChangeSocketHandler = (payload: boolean) => {
+    setSitting(payload)
   }
 
   useEffect(() => {

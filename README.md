@@ -31,6 +31,6 @@
 - `infra/github`
 - `infra/docker`
 - `infra/scripts`
-- `infra/docker/observability.md`
+- `infra/docker/observability/observability.md`
 
 ## Notes

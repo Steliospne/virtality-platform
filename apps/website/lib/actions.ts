@@ -31,7 +31,6 @@ export const submitContactMsg = async (
   const { firstName, lastName, email, phone, message } = entries
 
   logger.info('website.contact_submit.requested', {
-    email,
     hasPhone: Boolean(phone),
     messageLength: message.length,
   })

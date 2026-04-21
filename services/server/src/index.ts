@@ -100,27 +100,30 @@ app.use('/api/v1/devices/:deviceId', async (c) => {
 
 app.use(`${ORPC_PREFIX}/*`, authMiddleware, orpcMiddleware)
 
+let server: ReturnType<typeof serve> | undefined
+
 if (process.env.NODE_ENV !== 'production') {
   logger.info('service.start', {
     host: '0.0.0.0',
     port: 8080,
     mode: 'node-server',
   })
-  serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
+  server = serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
 }
 
 export default app
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
-    logger.info('service.shutdown', {
-      signal,
-      service: 'server',
-    })
-
-    void shutdownObservability().finally(() => {
-      process.exit(0)
-    })
+    logger.info('service.shutdown', { signal, service: 'server' })
+    const closeServer = () =>
+      new Promise<void>((resolve) => {
+        if (!server) return resolve()
+        server.close(() => resolve())
+      })
+    void closeServer()
+      .finally(() => shutdownObservability())
+      .finally(() => process.exit(0))
   })
 }
 

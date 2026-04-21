@@ -22,7 +22,6 @@ export const createEventHandler = (
       roomCode,
       socketId: socket.id,
       hasPayload: payload !== undefined,
-      payload,
     })
 
     socket
