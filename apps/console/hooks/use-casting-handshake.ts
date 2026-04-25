@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SocketWithQuery } from '@/types/models'
 import { createDeviceEmitter, subscribe } from '@/lib/device-event-controller'
 import { CASTING_EVENT } from '@virtality/shared/types'
@@ -21,8 +21,16 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   const [status, setStatus] = useState<CastingStatus>('idle')
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
+  const emitterRef = useRef<ReturnType<typeof createDeviceEmitter> | null>(null)
 
-  const emitter = socket ? createDeviceEmitter(socket) : null
+  const emitter = useMemo(
+    () => (socket ? createDeviceEmitter(socket) : null),
+    [socket],
+  )
+
+  useEffect(() => {
+    emitterRef.current = emitter
+  }, [emitter])
 
   const handleOffer = useCallback(
     async (offerJson: unknown) => {
@@ -98,9 +106,8 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
     })
     return () => {
       unsubscribe()
-      emitter?.casting.StopCasting()
     }
-  }, [socket, handleOffer, emitter])
+  }, [socket, handleOffer])
 
   const startCasting = useCallback(() => {
     if (!socket?.connected || !emitter) {
@@ -131,6 +138,7 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
     return () => {
       pcRef.current?.close()
       pcRef.current = null
+      emitterRef.current?.casting.StopCasting()
     }
   }, [])
 
