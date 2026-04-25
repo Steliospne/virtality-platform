@@ -32,5 +32,6 @@
 - `infra/docker`
 - `infra/scripts`
 - `infra/docker/observability/observability.md`
+- `infra/docker/observability/logging-spec.md`
 
 ## Notes

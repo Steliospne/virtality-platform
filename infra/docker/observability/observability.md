@@ -129,3 +129,11 @@ Recommended production shape:
 4. Keep the same resource attributes everywhere: `service.name`, `service.namespace`, `service.version`, and `deployment.environment.name`.
 
 That keeps phase 1 logs usable now and avoids reworking naming or ingestion when traces and metrics are added later.
+
+## Logging Contract
+
+The canonical structured logging contract is documented in:
+
+- `infra/docker/observability/logging-spec.md`
+
+Use this document as the implementation guide for any new producers (including Unity) that must integrate with the Grafana/Loki/OTel pipeline.
