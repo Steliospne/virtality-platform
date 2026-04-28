@@ -22,10 +22,10 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
   const { selectedDevice } = state
   const { setSelectedDevice } = handler
   const [deviceConnected, setDeviceConnected] = useState(false)
-  const [connectionLoading, setConnectionLoading] = useState(false)
 
   const store = useStore()
-  const connected = useSocketConnection({ device: selectedDevice })
+  const { connected, connectionState, reconnectAttempt, connect, disconnect } =
+    useSocketConnection({ device: selectedDevice })
 
   const handleVRConnection = async () => {
     const deviceId = selectedDevice?.data.deviceId
@@ -36,11 +36,17 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
 
     if (!connected) {
       selectedDevice.mutations.setDeviceRoomCode(deviceId)
-
-      selectedDevice.socket.connect()
-      setConnectionLoading(true)
+      try {
+        await connect({ timeoutMs: 10_500 })
+      } catch (error) {
+        ErrorToasty(
+          error instanceof Error
+            ? error.message
+            : 'Unable to connect to device.',
+        )
+      }
     } else {
-      selectedDevice.socket.disconnect()
+      disconnect()
       setDeviceConnected(false)
     }
   }
@@ -69,7 +75,6 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
     return subscribe(socket, ROOM_EVENT, {
       RoomComplete: () => setDeviceConnected(true),
       MemberLeft: () => setDeviceConnected(false),
-      RoomJoined: () => setConnectionLoading(false),
     })
   }, [selectedDevice])
 
@@ -80,18 +85,24 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
         <h4>Client:</h4>
         <span
           className={cn(
-            connectionLoading
+            connectionState === 'connecting'
               ? 'text-amber-500'
-              : connected
-                ? 'text-green-500'
-                : 'text-red-500',
+              : connectionState === 'reconnecting'
+                ? 'text-amber-500'
+                : connected
+                  ? 'text-green-500'
+                  : 'text-red-500',
           )}
         >
-          {connectionLoading
+          {connectionState === 'connecting'
             ? 'Connecting...'
-            : connected
-              ? 'Online'
-              : 'Offline'}
+            : connectionState === 'reconnecting'
+              ? `Reconnecting (${reconnectAttempt}/5)...`
+              : connectionState === 'failed'
+                ? 'Connection failed'
+                : connected
+                  ? 'Online'
+                  : 'Offline'}
         </span>
       </div>
       <div className='flex gap-2'>
@@ -141,7 +152,11 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
 
       <div className='flex flex-col gap-4'>
         <Button variant='primary' onClick={handleVRConnection}>
-          {connected ? 'Disconnect' : 'Connect'}
+          {connected
+            ? 'Disconnect'
+            : connectionState === 'failed'
+              ? 'Retry'
+              : 'Connect'}
         </Button>
       </div>
     </div>

@@ -92,7 +92,7 @@ function CastingContent({ className }: { className?: string }) {
   const { state } = usePatientDashboard()
   const { ts, now, setNow } = useNow()
   const { selectedDevice } = state
-  const connected = useSocketConnection({ device: selectedDevice })
+  const { connected } = useSocketConnection({ device: selectedDevice })
 
   const { startCasting, stopCasting, videoRef, status } = useCastingHandshake(
     selectedDevice?.socket ?? null,

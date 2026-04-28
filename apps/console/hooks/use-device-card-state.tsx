@@ -7,6 +7,7 @@ import {
   useResetDeviceId,
   getQueryClient,
 } from '@virtality/react-query'
+import useSocketConnection from './use-socket-connection'
 
 type State = {
   status: 'paired' | 'pairing' | 'unpaired'
@@ -59,15 +60,15 @@ const stateReducer = (state: State, action: Action): State => {
 
 interface useDeviceCardStateProps {
   device: VRDevice
-  connected: boolean
 }
 
-const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
+const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
   const queryClient = getQueryClient()
   const orpc = useORPC()
   const store = useStore()
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const socket = device.socket
+  const { connected, connect } = useSocketConnection({ device })
 
   const devicesLocalData = useRow('devices', device.data.id) as State & {
     expirationTimestamp: number
@@ -106,9 +107,22 @@ const useDeviceCardState = ({ device, connected }: useDeviceCardStateProps) => {
 
   const VRConnection = async () => {
     if (!connected) {
-      if (device.data.deviceId)
+      if (device.data.deviceId) {
         device.mutations.setDeviceRoomCode(device.data.deviceId)
-      socket.connect()
+      }
+
+      try {
+        await connect({ timeoutMs: 10_000 })
+      } catch (error) {
+        dispatch({
+          type: 'setError',
+          payload:
+            error instanceof Error
+              ? error.message
+              : 'Unable to connect to socket server.',
+        })
+        throw error
+      }
     }
   }
 

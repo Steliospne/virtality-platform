@@ -36,12 +36,11 @@ const DeviceCard = ({ device }: DeviceProps) => {
   const queryClient = getQueryClient()
   const orpc = useORPC()
 
-  const connected = useSocketConnection({ device })
+  const { connected } = useSocketConnection({ device })
   const { removeDevice } = useDevice()
 
   const { state, handler } = useDeviceCardState({
     device,
-    connected,
   })
 
   const {

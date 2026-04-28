@@ -87,7 +87,7 @@ const ControlPanel = ({
   const { setSelectedMode, setSelectedDevice, setActiveExerciseData } = handler
   // const { t } = getClientT(['patient-dashboard', 'common']);
 
-  const connected = useSocketConnection({ device: selectedDevice })
+  const { connected } = useSocketConnection({ device: selectedDevice })
 
   const missingSettings = !selectedAvatar || !selectedMap
 

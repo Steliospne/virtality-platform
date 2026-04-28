@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -17,40 +17,40 @@ import useSocketConnection from '@/hooks/use-socket-connection'
 import { useCastingHandshake } from '@/hooks/use-casting-handshake'
 import { VRDevice } from '@/types/models'
 import { cn } from '@/lib/utils'
-import { subscribe } from '@/lib/device-event-controller'
-import { ROOM_EVENT } from '@virtality/shared/types'
+import ErrorToasty from '@/components/ui/ErrorToasty'
 
 function CastingContent() {
   const { devices, isLoading } = useDeviceContext()
   const [selectedDevice, setSelectedDevice] = useState<VRDevice | null>(null)
-  const [connectionLoading, setConnectionLoading] = useState(false)
 
-  const connected = useSocketConnection({ device: selectedDevice })
+  const {
+    connected,
+    connectionState,
+    reconnectAttempt,
+    connect,
+    disconnect,
+  } = useSocketConnection({ device: selectedDevice })
   const { startCasting, stopCasting, videoRef, status } = useCastingHandshake(
     selectedDevice?.socket ?? null,
   )
 
-  useEffect(() => {
-    const socket = selectedDevice?.socket
-    if (!socket) return
-
-    return subscribe(socket, ROOM_EVENT, {
-      RoomComplete: () => setConnectionLoading(false),
-      MemberLeft: () => {},
-      RoomJoined: () => setConnectionLoading(false),
-    })
-  }, [selectedDevice])
-
-  const handleConnect = () => {
+  const handleConnect = async () => {
     const deviceId = selectedDevice?.data.deviceId
     if (!selectedDevice || !deviceId) return
 
     if (!connected) {
       selectedDevice.mutations.setDeviceRoomCode(deviceId)
-      selectedDevice.socket.connect()
-      setConnectionLoading(true)
+      try {
+        await connect({ timeoutMs: 10_000 })
+      } catch (error) {
+        ErrorToasty(
+          error instanceof Error
+            ? error.message
+            : 'Unable to connect to casting room.',
+        )
+      }
     } else {
-      selectedDevice.socket.disconnect()
+      disconnect()
     }
   }
 
@@ -97,25 +97,35 @@ function CastingContent() {
           disabled={!selectedDevice || !selectedDevice.data.deviceId}
           variant={connected ? 'destructive' : 'default'}
         >
-          {connectionLoading
+          {connectionState === 'connecting'
             ? 'Connecting…'
             : connected
               ? 'Disconnect'
-              : 'Connect to room'}
+              : connectionState === 'failed'
+                ? 'Retry connection'
+                : 'Connect to room'}
         </Button>
 
         <span
           className={cn(
             'text-sm',
-            connectionLoading
+            connectionState === 'connecting'
               ? 'text-amber-500'
+              : connectionState === 'reconnecting'
+                ? 'text-amber-500'
+                : connectionState === 'failed'
+                  ? 'text-red-500'
               : connected
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-muted-foreground',
           )}
         >
-          {connectionLoading
+          {connectionState === 'connecting'
             ? 'Connecting…'
+            : connectionState === 'reconnecting'
+              ? `Reconnecting (${reconnectAttempt}/5)...`
+              : connectionState === 'failed'
+                ? 'Connection failed'
             : connected
               ? 'In room'
               : 'Not connected'}
