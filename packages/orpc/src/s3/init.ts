@@ -1,5 +1,11 @@
-import { S3Client } from '@aws-sdk/client-s3'
-import { deleteFile, listFiles, uploadFile } from './utils.ts'
+import {
+  S3Client,
+  DeleteObjectCommand,
+  DeleteObjectCommandInput,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  PutObjectCommandInput,
+} from '@aws-sdk/client-s3'
 
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
@@ -9,6 +15,11 @@ if (!accessKeyId || !secretAccessKey || !region) {
   throw new Error('AWS credentials are missing')
 }
 
+const Bucket = process.env.AWS_S3_BUCKET
+
+if (!Bucket) {
+  throw new Error('AWS_S3_BUCKET is missing')
+}
 class VirtalityS3 extends S3Client {
   constructor({
     credentials,
@@ -26,11 +37,47 @@ class VirtalityS3 extends S3Client {
     })
   }
 
-  uploadFile = uploadFile.bind(this)
+  listFiles = async (): Promise<string[]> => {
+    try {
+      const response = await this.send(new ListObjectsV2Command({ Bucket }))
+      return (
+        (response.Contents?.map((item) => item.Key).filter(
+          Boolean,
+        ) as string[]) ?? []
+      )
+    } catch (error) {
+      console.error('Error listing S3 bucket objects:', error)
+      return []
+    }
+  }
 
-  deleteFile = deleteFile.bind(this)
+  uploadFile = async ({
+    ContentType,
+    Body,
+    Key,
+  }: Pick<PutObjectCommandInput, 'ContentType' | 'Body' | 'Key'>) => {
+    try {
+      const input: PutObjectCommandInput = {
+        Bucket,
+        Key,
+        Body,
+        ...(ContentType !== undefined && { ContentType }),
+      }
+      return await this.send(new PutObjectCommand(input))
+    } catch (error) {
+      console.log(error)
+      return null
+    }
+  }
 
-  listFiles = listFiles.bind(this)
+  deleteFile = async ({ Key }: Pick<DeleteObjectCommandInput, 'Key'>) => {
+    try {
+      return await this.send(new DeleteObjectCommand({ Key, Bucket }))
+    } catch (error) {
+      console.log(error)
+      return null
+    }
+  }
 }
 
 export const s3 = new S3Client({

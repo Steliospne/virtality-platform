@@ -25,3 +25,6 @@ generated*
 # Cursor Plans
 .cursor/plans/
 .vercel
+
+#Dev Tool
+.fallow
