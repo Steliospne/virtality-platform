@@ -47,7 +47,7 @@
     "@tanstack/react-query-devtools": "5.91.3",
     "@tanstack/react-table": "8.21.3",
     "@trpc/client": "11.10.0",
-    "@trpc/tanstack-react-query": "^11.10.0",
+    "@trpc/tanstack-react-query": "11.10.0",
     "@types/mdx": "2.0.13",
     "@virtality/db": "workspace:*",
     "@virtality/orpc": "workspace:*",

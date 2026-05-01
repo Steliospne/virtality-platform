@@ -198,7 +198,7 @@ function writeStdoutLog(
     'deployment.environment.name': runtime.deploymentEnvironment,
   }
 
-  const line = JSON.stringify(payload)
+  const line = JSON.stringify(payload, null, 2)
 
   switch (level) {
     case 'debug':
