@@ -3,7 +3,7 @@ import { createSocket } from '@/socket'
 import { VRDevice } from '@/types/models'
 import { useEffect, useState } from 'react'
 import { useDeviceCore } from '@virtality/react-query'
-import { createDeviceEmitter } from '@/lib/device-event-controller'
+import { EventController } from '@virtality/shared/utils'
 
 export type useDeviceData = ReturnType<typeof useDevice>
 
@@ -37,7 +37,7 @@ const useDevice = () => {
               socket.io.opts.query.roomCode = ''
             },
           },
-          events: createDeviceEmitter(socket),
+          events: EventController(socket).emitter,
         }
       }),
     )

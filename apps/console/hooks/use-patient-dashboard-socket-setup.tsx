@@ -4,7 +4,7 @@ import {
   ProgressData,
   ProgressDataPoint,
 } from '@/types/models'
-import { subscribe } from '@/lib/device-event-controller'
+import { EventController } from '@virtality/shared/utils'
 import {
   PROGRAM_EVENT,
   ROOM_EVENT,
@@ -356,32 +356,32 @@ const usePatientDashboardSocketSetup = ({
   useEffect(() => {
     if (!socket) return
 
-    return subscribe(
-      socket,
-      { ...PROGRAM_EVENT, ...ROOM_EVENT, ...SYSTEM_EVENT },
-      {
-        // PROGRAM_EVENT
-        StartAck: handleStartAck,
-        PauseAck: handlePauseAck,
-        End: handleEnd,
-        EndAck: handleEndAck,
-        ChangeExercise: handleChangeExercise,
-        ChangeExerciseAck: handleChangeExerciseAck,
-        RepEnd: handleRepEnd,
-        SetEnd: handleSetEnd,
-        WarmupStartAck: handleWarmupStartAck,
-        WarmupEndAck: handleWarmupEndAck,
-        CalibrateHeightAck: handleCalibrateHeightAck,
-        ResetPositionAck: handleResetPositionAck,
-        SettingsChangeAck: handleSettingsChangeAck,
+    const { subscribe } = EventController(socket)
 
-        // ROOM_EVENT
-        MemberLeft: memberLeft,
+    const unsubscribe = subscribe({
+      // PROGRAM_EVENT
+      StartAck: handleStartAck,
+      PauseAck: handlePauseAck,
+      End: handleEnd,
+      EndAck: handleEndAck,
+      ChangeExercise: handleChangeExercise,
+      ChangeExerciseAck: handleChangeExerciseAck,
+      RepEnd: handleRepEnd,
+      SetEnd: handleSetEnd,
+      WarmupStartAck: handleWarmupStartAck,
+      WarmupEndAck: handleWarmupEndAck,
+      CalibrateHeightAck: handleCalibrateHeightAck,
+      ResetPositionAck: handleResetPositionAck,
+      SettingsChangeAck: handleSettingsChangeAck,
 
-        // SYSTEM_EVENT
-        NotifyDoctor: handleNotifyDoctor,
-      },
-    )
+      // ROOM_EVENT
+      MemberLeft: memberLeft,
+
+      // SYSTEM_EVENT
+      // NotifyDoctor: handleNotifyDoctor,
+    })
+
+    return unsubscribe
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, socket])

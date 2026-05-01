@@ -44,7 +44,7 @@ import {
   PROGRAM_EVENT,
   type ProgramStartPayload,
 } from '@virtality/shared/types'
-import { subscribe } from '@/lib/device-event-controller'
+import { EventController } from '@virtality/shared/utils'
 import ErrorToasty from '@/components/ui/ErrorToasty'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
 import ProgramSelector from './program-selector'
@@ -461,10 +461,14 @@ const SceneSettings = ({
     const socket = selectedDevice?.socket
     if (!socket) return
 
-    return subscribe(socket, PROGRAM_EVENT, {
+    const { subscribe } = EventController(socket)
+
+    const unsubscribe = subscribe({
       SittingChange: sittingChangeSocketHandler,
       SittingChangeAck: () => setSitting((prev) => !prev),
     })
+
+    return unsubscribe
   }, [selectedDevice])
 
   return (

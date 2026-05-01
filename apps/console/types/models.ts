@@ -28,7 +28,7 @@ import { z } from 'zod/v4'
 import { Delta } from 'quill'
 import { HumanState } from '@/data/static/human-body'
 import { Socket } from 'socket.io-client'
-import type { DeviceEmitter } from '@/lib/device-event-controller'
+import type { DeviceEmitter } from '@virtality/shared/utils'
 
 export type SignUpForm = z.infer<typeof SignUpSchema>
 

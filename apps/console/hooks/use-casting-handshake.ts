@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SocketWithQuery } from '@/types/models'
-import { createDeviceEmitter, subscribe } from '@/lib/device-event-controller'
+import { EventController } from '@virtality/shared/utils'
 import { CASTING_EVENT } from '@virtality/shared/types'
+import type { DeviceEmitter } from '@virtality/shared/utils'
 
 export type CastingStatus =
   | 'idle'
@@ -21,20 +22,13 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   const [status, setStatus] = useState<CastingStatus>('idle')
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
-  const emitterRef = useRef<ReturnType<typeof createDeviceEmitter> | null>(null)
+  const emitterRef = useRef<DeviceEmitter | null>(null)
 
-  const emitter = useMemo(
-    () => (socket ? createDeviceEmitter(socket) : null),
-    [socket],
-  )
-
-  useEffect(() => {
-    emitterRef.current = emitter
-  }, [emitter])
+  const controller = socket ? EventController(socket) : null
 
   const handleOffer = useCallback(
     async (offerJson: unknown) => {
-      if (!socket || !emitter) return
+      if (!socket || !controller) return
       try {
         setStatus('negotiating')
         const offerDesc =
@@ -89,37 +83,32 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
 
         const answerDesc = pc.localDescription
         if (answerDesc) {
-          emitter.casting.Answer(answerDesc)
+          controller.emitter.casting.Answer(answerDesc)
         }
       } catch (e) {
         console.error('[casting] Error handling offer:', e)
         setStatus('error')
       }
     },
-    [socket, emitter],
+    [socket, controller],
   )
 
-  useEffect(() => {
-    if (!socket) return
-    const unsubscribe = subscribe(socket, CASTING_EVENT, {
-      Offer: handleOffer,
-    })
-    return () => {
-      unsubscribe()
-    }
-  }, [socket, handleOffer])
-
   const startCasting = useCallback(() => {
-    if (!socket?.connected || !emitter) {
+    if (!socket?.connected) {
       console.warn('[casting] Socket not connected')
       setStatus('error')
       return
     }
+
+    if (!controller) return
+
     setStatus('requesting')
-    emitter.casting.RequestOffer()
-  }, [socket, emitter])
+    controller.emitter.casting.RequestOffer()
+  }, [socket, controller])
 
   const stopCasting = useCallback(() => {
+    if (!controller) return
+
     const pc = pcRef.current
     if (pc) {
       pc.close()
@@ -131,8 +120,16 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
       videoRef.current.srcObject = null
     }
     setStatus('idle')
-    emitter?.casting.StopCasting()
-  }, [emitter])
+    controller.emitter.casting.StopCasting()
+  }, [controller])
+
+  useEffect(() => {
+    if (!socket) return
+    const unsubscribe = controller?.subscribe({
+      Offer: handleOffer,
+    })
+    return unsubscribe
+  }, [socket, controller])
 
   useEffect(() => {
     return () => {

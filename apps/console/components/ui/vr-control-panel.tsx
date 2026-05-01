@@ -8,14 +8,13 @@ import {
   SelectValue,
 } from './select'
 import { VRDevice } from '@/types/models'
-import { useEffect, useState, MouseEvent } from 'react'
+import { useEffect, useState, MouseEvent, useCallback, useMemo } from 'react'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { useStore } from 'tinybase/ui-react'
 import ErrorToasty from './ErrorToasty'
 import { cn } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
-import { subscribe, createDeviceEmitter } from '@/lib/device-event-controller'
-import { ROOM_EVENT } from '@virtality/shared/types'
+import { EventController } from '@virtality/shared/utils'
 
 const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
   const { state, handler, patientId } = usePatientDashboard()
@@ -67,15 +66,18 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
     const socket = selectedDevice?.socket
     if (!socket) return
 
-    const emitter = createDeviceEmitter(socket)
+    const { subscribe, emitter } = EventController(socket)
+
     emitter.checkDeviceStatus((res) => {
       setDeviceConnected(res.status === 'active')
     })
 
-    return subscribe(socket, ROOM_EVENT, {
+    const unsubscribe = subscribe({
       RoomComplete: () => setDeviceConnected(true),
       MemberLeft: () => setDeviceConnected(false),
     })
+
+    return unsubscribe
   }, [selectedDevice])
 
   return (

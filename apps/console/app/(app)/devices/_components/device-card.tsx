@@ -25,8 +25,7 @@ import { H3, P } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
 import useDevice from '@/hooks/use-device'
 import { getQueryClient, useORPC, useSetDeviceId } from '@virtality/react-query'
-import { subscribe } from '@/lib/device-event-controller'
-import { CONNECTION_EVENT, DEVICE_EVENT } from '@virtality/shared/types'
+import { EventController } from '@virtality/shared/utils'
 
 interface DeviceProps {
   device: VRDevice
@@ -82,6 +81,8 @@ const DeviceCard = ({ device }: DeviceProps) => {
   useEffect(() => {
     if (!device) return
 
+    const { subscribe, emitter } = EventController(device.socket)
+
     const handleSendDeviceId = async (payload: string) => {
       if (payload && status === 'pairing') {
         setDeviceId({ id: device.data.id, deviceId: payload })
@@ -98,15 +99,12 @@ const DeviceCard = ({ device }: DeviceProps) => {
       resetState()
     }
 
-    return subscribe(
-      device.socket,
-      { ...DEVICE_EVENT, ...CONNECTION_EVENT },
-      {
-        SendDeviceId: handleSendDeviceId,
-        DISCONNECTION: onDisconnect,
-      },
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const unsubscribe = subscribe({
+      SendDeviceId: handleSendDeviceId,
+      DISCONNECTION: onDisconnect,
+    })
+
+    return unsubscribe
   }, [device, status])
 
   const [countdown, setCountdown] = useState(300)
