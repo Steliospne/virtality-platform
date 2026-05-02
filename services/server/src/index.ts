@@ -14,6 +14,13 @@ import { orpcMiddleware } from './middleware/orpc.ts'
 import { findDeviceByDeviceId } from './data/device.ts'
 import { ORPC_PREFIX } from '@virtality/shared/types'
 
+const ENV =
+  process.env.ENV === 'production'
+    ? 'production'
+    : process.env.ENV === 'preview'
+      ? 'preview'
+      : 'development'
+
 const app = new Hono<AppContext>()
 const logger = createAppLogger({
   serviceName: 'server',
@@ -102,7 +109,7 @@ app.use(`${ORPC_PREFIX}/*`, authMiddleware, orpcMiddleware)
 
 let server: ReturnType<typeof serve> | undefined
 
-if (process.env.NODE_ENV !== 'production') {
+if (ENV === 'development') {
   logger.info('service.start', {
     host: '0.0.0.0',
     port: 8080,
