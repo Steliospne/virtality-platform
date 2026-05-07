@@ -5,7 +5,6 @@ import { PatientsPerDocChart } from '@/components/dashboard/patients-per-doc-cha
 import { SessionsPerPatientChart } from '@/components/dashboard/sessions-per-patient-chart'
 import { SessionsPerWeekChart } from '@/components/dashboard/sessions-per-week-chart'
 import {
-  usePatientSessionsPerDatePerUser,
   useTotalPatientSessions,
   useUniquePatientsPerPhysio,
   useSessionsPerPatient,
@@ -23,17 +22,12 @@ const StartPage = () => {
     useUniquePatientsPerPhysio()
   const { data: sessionsPerPatient, isLoading: isLoadingSessionsPerPatient } =
     useSessionsPerPatient()
-  const {
-    data: patientSessionsPerWeekPerUser,
-    isLoading: isLoadingPatientSessionsPerWeekPerUser,
-  } = usePatientSessionsPerDatePerUser()
 
   if (
     isLoadingTotalPatients ||
     isLoadingTotalPatientSessions ||
     isLoadingPatientsPerDoc ||
-    isLoadingSessionsPerPatient ||
-    isLoadingPatientSessionsPerWeekPerUser
+    isLoadingSessionsPerPatient
   ) {
     return <div>Loading...</div>
   }
@@ -75,7 +69,7 @@ const StartPage = () => {
         <SessionsPerPatientChart data={sessionsPerPatient ?? []} />
 
         {/* Sessions per Week Chart */}
-        <SessionsPerWeekChart data={patientSessionsPerWeekPerUser ?? []} />
+        <SessionsPerWeekChart />
       </div>
     </div>
   )

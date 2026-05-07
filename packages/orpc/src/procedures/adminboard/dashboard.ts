@@ -1,4 +1,5 @@
 import { authed } from '../../middleware/auth.ts'
+import { z } from 'zod'
 
 const FAKE_PATIENT = {
   name: { contains: 'test' },
@@ -18,6 +19,78 @@ const INTERNAL_USERS = [
   '9RMfagtuXvlxXVgc0VpBOw2gPq5yISRQ', //Ξανθίππη Κοντογιάννη
   '0glxtznlckihDNxjZAszARJQVLOOhrBp', // Nikos
 ]
+
+const MIN_WINDOW_DAYS = 3
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+type SessionsGranularity = 'day' | 'week'
+
+const SessionsPerDateInput = z.object({
+  from: z.coerce.date(),
+  to: z.coerce.date(),
+  granularity: z.enum(['day', 'week']).default('week'),
+})
+
+const sessionsPerDateInputSchema = SessionsPerDateInput.superRefine(
+  (value, ctx) => {
+    const fromDay = getUTCDayStart(value.from)
+    const toDay = getUTCDayStart(value.to)
+
+    if (fromDay.getTime() > toDay.getTime()) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['to'],
+        message: '"to" must be on or after "from".',
+      })
+      return
+    }
+
+    const daysInWindow = getInclusiveDaysBetween(fromDay, toDay)
+
+    if (daysInWindow < MIN_WINDOW_DAYS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['from'],
+        message: `Date window must be at least ${MIN_WINDOW_DAYS} days.`,
+      })
+    }
+  },
+).optional()
+
+const getUTCDayStart = (date: Date): Date => {
+  const year = date.getUTCFullYear()
+  const month = date.getUTCMonth()
+  const day = date.getUTCDate()
+
+  return new Date(Date.UTC(year, month, day))
+}
+
+const getUTCDayAfter = (date: Date): Date => {
+  const nextDay = new Date(date)
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1)
+  return nextDay
+}
+
+const toISODate = (date: Date): string => date.toISOString().slice(0, 10)
+
+const getInclusiveDaysBetween = (from: Date, to: Date): number =>
+  Math.floor((to.getTime() - from.getTime()) / ONE_DAY_MS) + 1
+
+const getISOWeekStartUTC = (date: Date): Date => {
+  const dayStart = getUTCDayStart(date)
+  const dayOfWeek = dayStart.getUTCDay() || 7
+  const weekStart = new Date(dayStart)
+  weekStart.setUTCDate(dayStart.getUTCDate() - dayOfWeek + 1)
+  return weekStart
+}
+
+const getCurrentWeekWindowUTC = (): { from: Date; to: Date } => {
+  const todayStart = getUTCDayStart(new Date())
+  const from = getISOWeekStartUTC(todayStart)
+  const to = new Date(from)
+  to.setUTCDate(from.getUTCDate() + 6)
+  return { from, to }
+}
 
 const getTotalUniquePatients = authed
   .route({ path: '/dashboard/analytics/total-unique-patients', method: 'GET' })
@@ -169,14 +242,24 @@ const getPatientSessionsPerDatePerUser = authed
     path: '/dashboard/analytics/patient-sessions-per-week-per-user',
     method: 'GET',
   })
-  .handler(async ({ context }) => {
+  .input(sessionsPerDateInputSchema)
+  .handler(async ({ context, input }) => {
     const { prisma } = context
+
+    const defaultWindow = getCurrentWeekWindowUTC()
+    const from = input ? getUTCDayStart(input.from) : defaultWindow.from
+    const to = input ? getUTCDayStart(input.to) : defaultWindow.to
+    const granularity: SessionsGranularity = input?.granularity ?? 'week'
 
     const sessions = await prisma.patientSession.findMany({
       where: {
         NOT: [{ patient: FAKE_PATIENT }],
         AND: [
           {
+            createdAt: {
+              gte: from,
+              lt: getUTCDayAfter(to),
+            },
             patient: {
               userId: {
                 notIn: INTERNAL_USERS,
@@ -195,52 +278,46 @@ const getPatientSessionsPerDatePerUser = authed
       },
     })
 
-    // Helper function to get ISO week number and year
-    const getWeekNumber = (date: Date): { week: number; year: number } => {
-      const d = new Date(
-        Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-      )
-      const dayNum = d.getUTCDay() || 7
-      d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-      const week = Math.ceil(
-        ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
-      )
-      return { week, year: d.getUTCFullYear() }
+    const getBucketStart = (date: Date): Date => {
+      if (granularity === 'day') {
+        return getUTCDayStart(date)
+      }
+      return getISOWeekStartUTC(date)
     }
 
-    // Group sessions by userId, then by week/year
-    const grouped = sessions.reduce(
-      (acc, session) => {
-        if (!session.patient.userId) return acc
+    // Group sessions by userId, then by day/week bucket start date
+    type GroupedSessions = Record<
+      string,
+      Record<string, { bucketStart: string; count: number }>
+    >
 
-        const date = new Date(session.createdAt)
-        const { week, year } = getWeekNumber(date)
-        const userId = session.patient.userId
+    const grouped: GroupedSessions = sessions.reduce((acc, session) => {
+      if (!session.patient.userId) return acc
 
-        if (!acc[userId]) {
-          acc[userId] = {}
+      const date = new Date(session.createdAt)
+      const userId = session.patient.userId
+      const bucketStart = getBucketStart(date)
+      const bucketKey = toISODate(bucketStart)
+
+      if (!acc[userId]) {
+        acc[userId] = {}
+      }
+
+      if (!acc[userId][bucketKey]) {
+        acc[userId][bucketKey] = {
+          count: 0,
+          bucketStart: bucketKey,
         }
+      }
 
-        const weekKey = `${year}_${week}`
-        if (!acc[userId][weekKey]) {
-          acc[userId][weekKey] = {
-            count: 0,
-            week,
-            year,
-          }
-        }
-        acc[userId][weekKey].count++
-        return acc
-      },
-      {} as Record<
-        string,
-        Record<string, { week: number; year: number; count: number }>
-      >,
-    )
+      acc[userId][bucketKey].count++
+
+      return acc
+    }, {} as GroupedSessions)
 
     // Get unique user IDs and fetch user names
     const userIds = Object.keys(grouped)
+
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { name: true, id: true },
@@ -253,12 +330,9 @@ const getPatientSessionsPerDatePerUser = authed
       return {
         userId,
         userName: users.find((user) => user.id === userId)?.name ?? '',
-        sessions: userSessions.sort((a, b) => {
-          if (a.year !== b.year) {
-            return b.year - a.year
-          }
-          return b.week - a.week
-        }),
+        sessions: userSessions.sort((a, b) =>
+          a.bucketStart.localeCompare(b.bucketStart),
+        ),
       }
     })
 
