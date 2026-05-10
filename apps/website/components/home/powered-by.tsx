@@ -8,8 +8,8 @@ import chiropracticCenter from '@/public/the-chiropractic-center-logo.png'
 import { cn } from '@/lib/utils'
 
 const PRIMARY_LOGOS = [
-  { src: piraeus, alt: 'Piraeus', className: '' },
-  { src: pos4work, alt: 'Pos4Work', className: 'px-8' },
+  { src: piraeus, alt: 'Piraeus', className: 'px-4' },
+  { src: pos4work, alt: 'Pos4Work', className: 'px-4' },
 ]
 
 const SECONDARY_LOGOS = [
