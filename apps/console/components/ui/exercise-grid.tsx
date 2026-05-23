@@ -15,6 +15,8 @@ import { withRom } from '@/lib/with-rom'
 import { useFeatureFlagResult } from 'posthog-js/react'
 import { Exercise } from '@virtality/db'
 import { Skeleton } from './skeleton'
+import { BodyGroupKey, bodyGroups } from '@/data/static/body-groups'
+import Image from 'next/image'
 
 const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -101,10 +103,21 @@ const ExerciseGrid = () => {
       onValueChange={setActiveTab}
       className='overflow-hidden rounded-lg border p-2'
     >
-      <TabsList className='flex h-fit flex-wrap gap-2'>
+      <TabsList className='flex h-fit flex-wrap gap-4 p-4'>
         {categories?.map((category, index) => (
-          <TabsTrigger key={index} value={category} className='size-fit'>
-            {category}
+          <TabsTrigger
+            key={index}
+            value={category}
+            className='data-[state=active]:ring-cyan-highlight flex size-fit flex-col items-center bg-white dark:bg-zinc-950'
+          >
+            <Image
+              src={bodyGroups[category as BodyGroupKey].image}
+              alt={category}
+              width={20}
+              height={20}
+              className='size-24'
+            />
+            <span className='w-full border-t capitalize'>{category}</span>
           </TabsTrigger>
         ))}
       </TabsList>
