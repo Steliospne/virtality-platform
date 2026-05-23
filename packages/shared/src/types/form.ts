@@ -9,7 +9,7 @@ export type FieldMeta<T extends FieldValues> = {
     description?: string
     hint?: string
   }
-}[Extract<keyof T, string>]
+}
 
 type CamelCaseToWords<S extends string> = S extends `${infer C}${infer R}`
   ? R extends Uncapitalize<R>

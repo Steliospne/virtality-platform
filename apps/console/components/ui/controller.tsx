@@ -16,12 +16,15 @@ import {
 } from './field'
 import { FieldMeta } from '@virtality/shared/types'
 
+type FieldMetaPath<TFieldValues extends FieldValues> = FieldPath<TFieldValues> &
+  keyof FieldMeta<TFieldValues>
+
 type ControllerFieldProps<
   TFieldValues extends FieldValues,
-  TName extends FieldPath<TFieldValues>,
+  TName extends FieldMetaPath<TFieldValues>,
 > = {
   name: TName
-  meta: FieldMeta<TFieldValues>
+  meta: FieldMeta<TFieldValues>[TName]
   control: Control<TFieldValues>
   children: (props: {
     field: ControllerRenderProps<TFieldValues, TName>
@@ -29,15 +32,19 @@ type ControllerFieldProps<
   }) => React.ReactElement
 }
 
-export const ControllerField = <
+type ControllerFieldFn = <
   TFieldValues extends FieldValues,
-  TName extends FieldPath<TFieldValues>,
->({
+  TName extends FieldMetaPath<TFieldValues>,
+>(
+  props: ControllerFieldProps<TFieldValues, TName>,
+) => React.ReactElement
+
+export const ControllerField: ControllerFieldFn = ({
   name,
   control,
   meta,
   children,
-}: ControllerFieldProps<TFieldValues, TName>) => {
+}) => {
   return (
     <Controller
       name={name}

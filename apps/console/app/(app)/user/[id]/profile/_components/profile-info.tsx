@@ -78,7 +78,7 @@ const basicInfoFormFields = {
     description: 'Please enter your phone number.',
     hint: 'A code will be sent to verify.',
   },
-} satisfies Record<keyof UserForm, FieldMeta<UserForm>>
+} satisfies FieldMeta<UserForm>
 
 const emailFormField = {
   email: {
@@ -88,7 +88,7 @@ const emailFormField = {
       'Your primary email will be used for account-related notifications.',
     hint: 'Emails must be verified to be used as primary email.',
   },
-} satisfies Record<keyof EmailForm, FieldMeta<EmailForm>>
+} satisfies FieldMeta<EmailForm>
 
 type SessionUser = NonNullable<
   ReturnType<typeof authClient.useSession>['data']
