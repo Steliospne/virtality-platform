@@ -21,10 +21,11 @@ export function filterExercisesByEquipment<T extends WithNullableItem>(
 export function formatExerciseEquipmentChipLabel(key: string): string {
   return key
     .split('_')
-    .map((segment) =>
-      segment.length === 0
-        ? ''
-        : segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase(),
-    )
+    .map((segment) => {
+      if (segment.length === 0) return ''
+      return (
+        segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase()
+      )
+    })
     .join(' ')
 }

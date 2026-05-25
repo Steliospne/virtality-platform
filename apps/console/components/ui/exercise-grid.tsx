@@ -20,6 +20,12 @@ import {
 import { withRom } from '@/lib/with-rom'
 import { Skeleton } from './skeleton'
 
+function toggleStringInList(prev: string[], value: string): string[] {
+  return prev.includes(value)
+    ? prev.filter((entry) => entry !== value)
+    : [...prev, value]
+}
+
 const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [toggledFavorites, setToggledFavorites] = useState(false)
@@ -40,17 +46,11 @@ const ExerciseGrid = () => {
   const { selectExercise, removeExercise } = handler
 
   const toggleBodyPart = (category: string) => {
-    setSelectedBodyParts((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category],
-    )
+    setSelectedBodyParts((prev) => toggleStringInList(prev, category))
   }
 
   const toggleEquipmentKey = (key: string) => {
-    setSelectedEquipmentKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    )
+    setSelectedEquipmentKeys((prev) => toggleStringInList(prev, key))
   }
 
   const displayedExercises = useMemo(() => {
@@ -81,7 +81,7 @@ const ExerciseGrid = () => {
     searchTerm,
   ])
 
-  const _selectExercise = (e: MouseEvent) => {
+  const handleSelectExercise = (e: MouseEvent) => {
     const { id } = e.currentTarget
     if (!id) return
     const exerciseToAdd = exercises?.find((ex) => ex.id === id)
@@ -100,8 +100,8 @@ const ExerciseGrid = () => {
     }
   }
 
-  const _removeExercise = (e: MouseEvent) => {
-    const { id } = e.currentTarget as HTMLElement
+  const handleRemoveExercise = (e: MouseEvent) => {
+    const { id } = e.currentTarget
     if (!id) return
     const exerciseToRemove = exercises?.find((ex) => ex.id === id)
 
@@ -142,16 +142,14 @@ const ExerciseGrid = () => {
               )}
             >
               {iconSrc ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- static body-group SVGs from /public */}
-                  <img
-                    src={iconSrc}
-                    alt=''
-                    width={24}
-                    height={24}
-                    className='size-6 shrink-0'
-                  />
-                </>
+                // eslint-disable-next-line @next/next/no-img-element -- static body-group SVGs from /public
+                <img
+                  src={iconSrc}
+                  alt=''
+                  width={24}
+                  height={24}
+                  className='size-6 shrink-0'
+                />
               ) : null}
               <span>{category}</span>
             </Button>
@@ -202,30 +200,26 @@ const ExerciseGrid = () => {
             <X />
           </Button>
         )}
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            size='sm'
-            variant='default'
-            onClick={toggleFavorites}
-            className={cn(toggledFavorites && 'ring-cyan-highlight')}
-          >
-            <Star fill='yellow' />
-            Favorites
-          </Button>
-        </div>
+        <Button
+          type='button'
+          size='sm'
+          variant='default'
+          onClick={toggleFavorites}
+          className={cn(toggledFavorites && 'ring-cyan-highlight')}
+        >
+          <Star fill='yellow' />
+          Favorites
+        </Button>
       </div>
 
       <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
         {isLoading ? (
-          <>
-            {Array.from({ length: 15 }).map((_, i) => (
-              <Skeleton
-                key={i}
-                className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
-              />
-            ))}
-          </>
+          Array.from({ length: 15 }).map((_, i) => (
+            <Skeleton
+              key={i}
+              className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
+            />
+          ))
         ) : (
           displayedExercises?.map((exercise) => (
             <FlipCard
@@ -238,7 +232,9 @@ const ExerciseGrid = () => {
                 null
               }
               onSelect={
-                isSelected?.[exercise.id] ? _removeExercise : _selectExercise
+                isSelected?.[exercise.id]
+                  ? handleRemoveExercise
+                  : handleSelectExercise
               }
             />
           ))
