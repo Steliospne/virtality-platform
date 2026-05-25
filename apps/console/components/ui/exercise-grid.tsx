@@ -1,9 +1,6 @@
-'use client'
-
 import { cn, getUUID } from '@/lib/utils'
 import { bodyGroupIconSrcForCategory } from '@/lib/body-group-icon'
-import { filterExercises } from '@/lib/filter-exercises'
-import { formatExerciseEquipmentChipLabel } from '@/lib/exercise-equipment-label'
+import { filterExercisesForLibrary } from '@virtality/shared/utils'
 import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
 import { Input } from '@/components/ui/input'
@@ -19,17 +16,20 @@ import {
 import { withRom } from '@/lib/with-rom'
 import { Skeleton } from './skeleton'
 
-function toggleStringInList(prev: string[], value: string): string[] {
-  return prev.includes(value)
-    ? prev.filter((entry) => entry !== value)
-    : [...prev, value]
+function equipmentChipLabel(key: string): string {
+  return key
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
 }
 
 const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [selectedBodyParts, setSelectedBodyParts] = useState<string[]>([])
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
+  const [selectedEquipmentKeys, setSelectedEquipmentKeys] = useState<string[]>(
+    [],
+  )
 
   const { data: exercises, isLoading } = useExercise()
 
@@ -68,26 +68,31 @@ const ExerciseGrid = () => {
   }
 
   const toggleEquipment = (key: string) => {
-    setSelectedEquipment((prev) =>
+    setSelectedEquipmentKeys((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     )
   }
 
+  const favoriteExerciseIds = useMemo(
+    () => favorites?.map((f) => f.exerciseId) ?? [],
+    [favorites],
+  )
+
   const displayedExercises = useMemo(() => {
     if (!exercises) return undefined
-    return filterExercises(exercises, {
+    return filterExercisesForLibrary(exercises, {
       selectedBodyParts,
-      selectedEquipment,
+      selectedEquipmentKeys,
       searchTerm,
-      favoritesOnly,
+      favoritesOnly: toggledFavorites,
       favoriteExerciseIds,
     })
   }, [
     exercises,
     selectedBodyParts,
-    selectedEquipment,
+    selectedEquipmentKeys,
     searchTerm,
-    favoritesOnly,
+    toggledFavorites,
     favoriteExerciseIds,
   ])
 
@@ -132,8 +137,8 @@ const ExerciseGrid = () => {
     setFavoritesOnly((prev) => !prev)
   }
 
-  const showEmptyFiltered =
-    !isLoading && displayedExercises && displayedExercises.length === 0
+  const showEmptyState =
+    !isLoading && exercises && displayedExercises?.length === 0
 
   return (
     <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto rounded-lg border p-2'>
@@ -180,42 +185,20 @@ const ExerciseGrid = () => {
               size='sm'
               variant='outline'
               aria-pressed={selected}
-              onClick={() => toggleEquipmentKey(key)}
-              className={cn(
-                'h-auto py-1.5',
-                selected && 'ring-cyan-highlight ring-2',
-              )}
-            >
-              {formatExerciseEquipmentChipLabel(key)}
-            </Button>
-          )
-        })}
-      </div>
-
-      <div className='mb-3 flex flex-wrap gap-2'>
-        {equipmentKeys?.map((key) => {
-          const selected = selectedEquipment.includes(key)
-          return (
-            <Button
-              key={key}
-              type='button'
-              size='sm'
-              variant='outline'
-              aria-pressed={selected}
               onClick={() => toggleEquipment(key)}
               className={cn(
                 'h-auto py-1.5',
                 selected && 'ring-cyan-highlight ring-2',
               )}
             >
-              {formatExerciseEquipmentChipLabel(key)}
+              {equipmentChipLabel(key)}
             </Button>
           )
         })}
       </div>
 
-      <div className='mb-3 flex w-full max-w-md items-start gap-2'>
-        <div className='relative min-w-0 flex-1'>
+      <div className='mb-3 flex max-w-md flex-wrap items-start gap-2'>
+        <div className='relative min-w-[12rem] flex-1'>
           <Input
             id='searchTerm'
             name='searchTerm'
@@ -223,7 +206,7 @@ const ExerciseGrid = () => {
             placeholder='Search...'
             value={searchTerm}
             onChange={changeSearchInput}
-            className='w-full bg-zinc-100 pr-8 dark:bg-zinc-950!'
+            className='bg-zinc-100 pr-8 dark:bg-zinc-950!'
           />
           {searchTerm !== '' && (
             <Button
@@ -241,21 +224,25 @@ const ExerciseGrid = () => {
           type='button'
           size='icon'
           variant='outline'
-          aria-pressed={favoritesOnly}
+          aria-pressed={toggledFavorites}
           aria-label='Show favorites only'
-          onClick={toggleFavoritesOnly}
+          onClick={toggleFavorites}
           className={cn(
-            'shrink-0',
-            favoritesOnly && 'ring-cyan-highlight ring-2',
+            'mt-0 shrink-0',
+            toggledFavorites && 'ring-cyan-highlight ring-2',
           )}
         >
-          <Star
-            className={cn(favoritesOnly && 'fill-yellow-400 text-yellow-400')}
-          />
+          <Star className={cn(toggledFavorites && 'fill-yellow-400')} />
         </Button>
       </div>
 
-      <div className='grid min-h-0 flex-1 auto-rows-min justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
+      {showEmptyState ? (
+        <p className='text-muted-foreground py-6 text-center text-sm'>
+          No exercises match your filters.
+        </p>
+      ) : null}
+
+      <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
         {isLoading ? (
           <>
             {Array.from({ length: 15 }).map((_, i) => (

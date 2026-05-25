@@ -1,5 +1,5 @@
 import { z } from 'zod/v4'
-import { normalizeExerciseEquipmentItem } from '@virtality/shared/utils'
+import { normalizeExerciseEquipmentKey } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { ExerciseFindManyZodSchema } from '@virtality/db/definitions'
 
@@ -48,7 +48,7 @@ const listExerciseItems = authed
 
     const keys = new Set<string>()
     for (const row of rows) {
-      keys.add(normalizeExerciseEquipmentItem(row.item))
+      keys.add(normalizeExerciseEquipmentKey(row.item))
     }
 
     return [...keys].sort((a, b) => a.localeCompare(b))

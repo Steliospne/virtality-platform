@@ -27,9 +27,9 @@
     "observability:down": "docker compose -f infra/docker/observability/compose.observability.yml down",
     "observability:logs": "docker compose -f infra/docker/observability/compose.observability.yml logs -f",
     "lint": "turbo run lint",
-    "test": "npx pnpm@10.23.0 exec turbo run test",
-    "typecheck": "npx pnpm@10.23.0 exec turbo run type-check",
-    "type-check": "turbo run type-check",
+    "type-check": "PATH=\"$PWD/node_modules/.bin:$PATH\" turbo run type-check",
+    "typecheck": "PATH=\"$PWD/node_modules/.bin:$PATH\" turbo run type-check",
+    "test": "npm --prefix packages/shared run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "sandcastle": "pnpx tsx .sandcastle/main.mts"
@@ -38,6 +38,7 @@
     "@ai-hero/sandcastle": "file:~/Projects/virtality/toolbox/ai-hero-sandcastle-0.5.10.tgz",
     "prettier": "3.8.1",
     "prettier-plugin-tailwindcss": "0.7.2",
+    "pnpm": "10.23.0",
     "rimraf": "6.1.2",
     "turbo": "2.8.11"
   }
