@@ -1,5 +1,5 @@
 export * from './diff-by-id.ts'
-export * from './exercise-equipment-filter-key.ts'
+export * from './exercise-equipment-item.ts'
 export * from './generate-img-file.ts'
 export * from './random.ts'
 export * from './uuid.ts'

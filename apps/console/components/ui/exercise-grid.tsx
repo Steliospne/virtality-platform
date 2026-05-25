@@ -1,10 +1,9 @@
-import { cn, getDisplayName, getUUID } from '@/lib/utils'
+'use client'
+
+import { cn, getUUID } from '@/lib/utils'
 import { bodyGroupIconSrcForCategory } from '@/lib/body-group-icon'
-import { filterExercisesByBodyParts } from '@/lib/filter-exercises-by-body-parts'
-import {
-  filterExercisesByEquipment,
-  formatExerciseEquipmentChipLabel,
-} from '@/lib/filter-exercises-by-equipment'
+import { filterExercises } from '@/lib/filter-exercises'
+import { formatExerciseEquipmentChipLabel } from '@/lib/exercise-equipment-label'
 import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
 import { Input } from '@/components/ui/input'
@@ -30,13 +29,12 @@ const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [toggledFavorites, setToggledFavorites] = useState(false)
   const [selectedBodyParts, setSelectedBodyParts] = useState<string[]>([])
-  const [selectedEquipmentKeys, setSelectedEquipmentKeys] = useState<
-    string[]
-  >([])
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
 
   const { data: exercises, isLoading } = useExercise()
 
   const { data: categories } = useExerciseCategories()
+
   const { data: equipmentKeys } = useExerciseItems()
 
   const { data: favorites } = useFavoriteExercise()
@@ -45,40 +43,41 @@ const ExerciseGrid = () => {
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
 
+  const favoriteExerciseIds = useMemo(
+    () => favorites?.map((f) => f.exerciseId) ?? [],
+    [favorites],
+  )
+
   const toggleBodyPart = (category: string) => {
-    setSelectedBodyParts((prev) => toggleStringInList(prev, category))
+    setSelectedBodyParts((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    )
   }
 
-  const toggleEquipmentKey = (key: string) => {
-    setSelectedEquipmentKeys((prev) => toggleStringInList(prev, key))
+  const toggleEquipment = (key: string) => {
+    setSelectedEquipment((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    )
   }
 
   const displayedExercises = useMemo(() => {
     if (!exercises) return undefined
-    const byBody = filterExercisesByBodyParts(exercises, selectedBodyParts)
-    const byEquipment = filterExercisesByEquipment(
-      byBody,
-      selectedEquipmentKeys,
-    )
-    const byFav = toggledFavorites
-      ? byEquipment.filter((e) =>
-          favorites?.some((f) => f.exerciseId === e.id),
-        )
-      : byEquipment
-    return byFav
-      .filter((ex) =>
-        getDisplayName(ex)
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()),
-      )
-      .sort((a, b) => a.name.localeCompare(b.name))
+    return filterExercises(exercises, {
+      selectedBodyParts,
+      selectedEquipment,
+      searchTerm,
+      favoritesOnly: toggledFavorites,
+      favoriteExerciseIds,
+    })
   }, [
     exercises,
     selectedBodyParts,
-    selectedEquipmentKeys,
-    toggledFavorites,
-    favorites,
+    selectedEquipment,
     searchTerm,
+    toggledFavorites,
+    favoriteExerciseIds,
   ])
 
   const handleSelectExercise = (e: MouseEvent) => {
@@ -122,8 +121,11 @@ const ExerciseGrid = () => {
     setToggledFavorites((prev) => !prev)
   }
 
+  const showEmptyFiltered =
+    !isLoading && displayedExercises && displayedExercises.length === 0
+
   return (
-    <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-lg border p-2'>
+    <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto rounded-lg border p-2'>
       <div className='mb-3 flex flex-wrap gap-2'>
         {categories?.map((category) => {
           const selected = selectedBodyParts.includes(category)
@@ -138,7 +140,7 @@ const ExerciseGrid = () => {
               onClick={() => toggleBodyPart(category)}
               className={cn(
                 'h-auto gap-2 py-1.5',
-                selected && 'ring-2 ring-cyan-highlight',
+                selected && 'ring-cyan-highlight ring-2',
               )}
             >
               {iconSrc ? (
@@ -170,7 +172,7 @@ const ExerciseGrid = () => {
               onClick={() => toggleEquipmentKey(key)}
               className={cn(
                 'h-auto py-1.5',
-                selected && 'ring-2 ring-cyan-highlight',
+                selected && 'ring-cyan-highlight ring-2',
               )}
             >
               {formatExerciseEquipmentChipLabel(key)}
@@ -179,57 +181,93 @@ const ExerciseGrid = () => {
         })}
       </div>
 
-      <div className='relative mb-3 w-full max-w-md space-y-2'>
-        <Input
-          id='searchTerm'
-          name='searchTerm'
-          type='text'
-          placeholder='Search...'
-          value={searchTerm}
-          onChange={changeSearchInput}
-          className='bg-zinc-100 pr-8 dark:bg-zinc-950!'
-        />
-        {searchTerm !== '' && (
-          <Button
-            type='button'
-            size='icon'
-            variant='ghost'
-            className='absolute top-1.5 right-2 size-6'
-            onClick={clearSearchTerm}
-          >
-            <X />
-          </Button>
-        )}
+      <div className='mb-3 flex flex-wrap gap-2'>
+        {equipmentKeys?.map((key) => {
+          const selected = selectedEquipment.includes(key)
+          return (
+            <Button
+              key={key}
+              type='button'
+              size='sm'
+              variant='outline'
+              aria-pressed={selected}
+              onClick={() => toggleEquipment(key)}
+              className={cn(
+                'h-auto py-1.5',
+                selected && 'ring-cyan-highlight ring-2',
+              )}
+            >
+              {formatExerciseEquipmentChipLabel(key)}
+            </Button>
+          )
+        })}
+      </div>
+
+      <div className='mb-3 flex w-full max-w-md items-start gap-2'>
+        <div className='relative min-w-0 flex-1'>
+          <Input
+            id='searchTerm'
+            name='searchTerm'
+            type='text'
+            placeholder='Search...'
+            value={searchTerm}
+            onChange={changeSearchInput}
+            className='w-full bg-zinc-100 pr-8 dark:bg-zinc-950!'
+          />
+          {searchTerm !== '' && (
+            <Button
+              type='button'
+              size='icon'
+              variant='ghost'
+              className='absolute top-1.5 right-2 size-6'
+              onClick={clearSearchTerm}
+            >
+              <X />
+            </Button>
+          )}
+        </div>
         <Button
           type='button'
-          size='sm'
-          variant='default'
+          size='icon'
+          variant='outline'
+          aria-pressed={toggledFavorites}
+          aria-label='Show favorites only'
           onClick={toggleFavorites}
-          className={cn(toggledFavorites && 'ring-cyan-highlight')}
+          className={cn(
+            'shrink-0',
+            toggledFavorites && 'ring-cyan-highlight ring-2',
+          )}
         >
-          <Star fill='yellow' />
-          Favorites
+          <Star
+            className={cn(
+              toggledFavorites && 'fill-yellow-400 text-yellow-400',
+            )}
+          />
         </Button>
       </div>
 
-      <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
+      <div className='grid min-h-0 flex-1 auto-rows-min justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
         {isLoading ? (
-          Array.from({ length: 15 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
-            />
-          ))
+          <>
+            {Array.from({ length: 15 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className='aspect-4/5 w-full sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]'
+              />
+            ))}
+          </>
+        ) : showEmptyFiltered ? (
+          <p className='text-muted-foreground col-span-full py-8 text-center text-sm'>
+            No exercises match your filters.
+          </p>
         ) : (
           displayedExercises?.map((exercise) => (
             <FlipCard
               key={exercise.id}
               exercise={exercise}
               isSelected={isSelected?.[exercise.id] ?? false}
-              toggledFavorites={toggledFavorites}
               favoriteExerciseId={
-                favorites?.find((f) => f.exerciseId === exercise.id)?.id ??
-                null
+                favorites?.find((f) => f.exerciseId === exercise.id)?.id ?? null
               }
               onSelect={
                 isSelected?.[exercise.id]

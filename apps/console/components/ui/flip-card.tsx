@@ -26,7 +26,6 @@ interface FlipCardProps {
   exercise: Exercise
   className?: string
   isSelected: boolean
-  toggledFavorites: boolean
   favoriteExerciseId?: string | null
   onSelect: (e: MouseEvent) => void
 }
