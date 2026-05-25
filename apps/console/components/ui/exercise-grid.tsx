@@ -27,7 +27,7 @@ function toggleStringInList(prev: string[], value: string): string[] {
 
 const ExerciseGrid = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [toggledFavorites, setToggledFavorites] = useState(false)
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [selectedBodyParts, setSelectedBodyParts] = useState<string[]>([])
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
 
@@ -47,6 +47,17 @@ const ExerciseGrid = () => {
     () => favorites?.map((f) => f.exerciseId) ?? [],
     [favorites],
   )
+
+  /** Favorite row id by exercise id (first list entry wins, same as `Array#find`). */
+  const favoriteIdByExerciseId = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const row of favorites ?? []) {
+      if (!map.has(row.exerciseId)) {
+        map.set(row.exerciseId, row.id)
+      }
+    }
+    return map
+  }, [favorites])
 
   const toggleBodyPart = (category: string) => {
     setSelectedBodyParts((prev) =>
@@ -68,7 +79,7 @@ const ExerciseGrid = () => {
       selectedBodyParts,
       selectedEquipment,
       searchTerm,
-      favoritesOnly: toggledFavorites,
+      favoritesOnly,
       favoriteExerciseIds,
     })
   }, [
@@ -76,7 +87,7 @@ const ExerciseGrid = () => {
     selectedBodyParts,
     selectedEquipment,
     searchTerm,
-    toggledFavorites,
+    favoritesOnly,
     favoriteExerciseIds,
   ])
 
@@ -117,8 +128,8 @@ const ExerciseGrid = () => {
     setSearchTerm('')
   }
 
-  const toggleFavorites = () => {
-    setToggledFavorites((prev) => !prev)
+  const toggleFavoritesOnly = () => {
+    setFavoritesOnly((prev) => !prev)
   }
 
   const showEmptyFiltered =
@@ -230,18 +241,16 @@ const ExerciseGrid = () => {
           type='button'
           size='icon'
           variant='outline'
-          aria-pressed={toggledFavorites}
+          aria-pressed={favoritesOnly}
           aria-label='Show favorites only'
-          onClick={toggleFavorites}
+          onClick={toggleFavoritesOnly}
           className={cn(
             'shrink-0',
-            toggledFavorites && 'ring-cyan-highlight ring-2',
+            favoritesOnly && 'ring-cyan-highlight ring-2',
           )}
         >
           <Star
-            className={cn(
-              toggledFavorites && 'fill-yellow-400 text-yellow-400',
-            )}
+            className={cn(favoritesOnly && 'fill-yellow-400 text-yellow-400')}
           />
         </Button>
       </div>
@@ -267,7 +276,7 @@ const ExerciseGrid = () => {
               exercise={exercise}
               isSelected={isSelected?.[exercise.id] ?? false}
               favoriteExerciseId={
-                favorites?.find((f) => f.exerciseId === exercise.id)?.id ?? null
+                favoriteIdByExerciseId.get(exercise.id) ?? null
               }
               onSelect={
                 isSelected?.[exercise.id]

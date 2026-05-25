@@ -35,7 +35,7 @@ export function filterExercises<T extends ExerciseFilterable>(
   const search = params.searchTerm.trim().toLowerCase()
   const favoriteSet = new Set(params.favoriteExerciseIds)
 
-  let out = exercises as T[]
+  let out: T[] = [...exercises]
 
   if (params.selectedBodyParts.length > 0) {
     const body = new Set(params.selectedBodyParts)

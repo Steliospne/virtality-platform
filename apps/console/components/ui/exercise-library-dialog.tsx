@@ -21,8 +21,10 @@ const ExerciseLibraryDialog = () => {
   const [gridKey, setGridKey] = useState(0)
   const wasOpenRef = useRef(false)
 
+  // Remount the grid whenever the library becomes open (including `setLibraryOpen(true)` from outside this dialog).
   useEffect(() => {
     if (isLibraryOpen && !wasOpenRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional remount counter tied to open transition
       setGridKey((k) => k + 1)
     }
     wasOpenRef.current = isLibraryOpen
