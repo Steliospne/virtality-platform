@@ -15,6 +15,7 @@ import {
 } from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
 import { Skeleton } from './skeleton'
+import Image from 'next/image'
 
 function equipmentChipLabel(key: string): string {
   return key
@@ -42,11 +43,6 @@ const ExerciseGrid = () => {
   const { state, handler } = useExerciseLibrary()
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
-
-  const favoriteExerciseIds = useMemo(
-    () => favorites?.map((f) => f.exerciseId) ?? [],
-    [favorites],
-  )
 
   /** Favorite row id by exercise id (first list entry wins, same as `Array#find`). */
   const favoriteIdByExerciseId = useMemo(() => {
@@ -92,7 +88,7 @@ const ExerciseGrid = () => {
       selectedBodyParts,
       selectedEquipmentKeys,
       searchTerm,
-      favoritesOnly: toggledFavorites,
+      favoritesOnly,
       favoriteExerciseIds,
     })
   }, [
@@ -100,7 +96,7 @@ const ExerciseGrid = () => {
     selectedBodyParts,
     selectedEquipmentKeys,
     searchTerm,
-    toggledFavorites,
+    favoritesOnly,
     favoriteExerciseIds,
   ])
 
@@ -150,59 +146,64 @@ const ExerciseGrid = () => {
 
   return (
     <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto rounded-lg border p-2'>
-      <div className='mb-3 flex flex-wrap gap-2'>
-        {categories?.map((category) => {
-          const selected = selectedBodyParts.includes(category)
-          const iconSrc = bodyGroupIconSrcForCategory(category)
-          return (
-            <Button
-              key={category}
-              type='button'
-              size='sm'
-              variant='outline'
-              aria-pressed={selected}
-              onClick={() => toggleBodyPart(category)}
-              className={cn(
-                'h-auto gap-2 py-1.5',
-                selected && 'ring-cyan-highlight ring-2',
-              )}
-            >
-              {iconSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element -- static body-group SVGs from /public
-                <img
-                  src={iconSrc}
-                  alt=''
-                  width={24}
-                  height={24}
-                  className='size-6 shrink-0'
-                />
-              ) : null}
-              <span>{category}</span>
-            </Button>
-          )
-        })}
+      <div className='flex flex-col gap-2'>
+        <h2>Select By Body Part</h2>
+        <div className='mb-3 flex flex-wrap gap-2'>
+          {categories?.map((category) => {
+            const selected = selectedBodyParts.includes(category)
+            const iconSrc = bodyGroupIconSrcForCategory(category)
+            return (
+              <Button
+                key={category}
+                type='button'
+                size='sm'
+                variant='outline'
+                aria-pressed={selected}
+                onClick={() => toggleBodyPart(category)}
+                className={cn(
+                  'flex h-auto flex-col items-center gap-2 py-1.5',
+                  selected && 'ring-cyan-highlight ring-2',
+                )}
+              >
+                {iconSrc ? (
+                  <Image
+                    src={iconSrc}
+                    alt={category}
+                    width={24}
+                    height={24}
+                    className='size-18 shrink-0'
+                  />
+                ) : null}
+                <span>{category}</span>
+              </Button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className='mb-3 flex flex-wrap gap-2'>
-        {equipmentKeys?.map((key) => {
-          const selected = selectedEquipmentKeys.includes(key)
-          return (
-            <Button
-              key={key}
-              type='button'
-              size='sm'
-              variant='outline'
-              aria-pressed={selected}
-              onClick={() => toggleEquipment(key)}
-              className={cn(
-                'h-auto py-1.5',
-                selected && 'ring-cyan-highlight ring-2',
-              )}
-            >
-              {equipmentChipLabel(key)}
-            </Button>
-          )
-        })}
+      <div className='flex flex-col gap-2'>
+        <h2>Select By Equipment</h2>
+        <div className='mb-3 flex flex-wrap gap-2'>
+          {equipmentKeys?.map((key) => {
+            const selected = selectedEquipmentKeys.includes(key)
+            return (
+              <Button
+                key={key}
+                type='button'
+                size='sm'
+                variant='outline'
+                aria-pressed={selected}
+                onClick={() => toggleEquipment(key)}
+                className={cn(
+                  'h-auto py-1.5',
+                  selected && 'ring-cyan-highlight ring-2',
+                )}
+              >
+                {equipmentChipLabel(key)}
+              </Button>
+            )
+          })}
+        </div>
       </div>
 
       <div className='mb-3 flex max-w-md flex-wrap items-start gap-2'>
@@ -232,23 +233,17 @@ const ExerciseGrid = () => {
           type='button'
           size='icon'
           variant='outline'
-          aria-pressed={toggledFavorites}
+          aria-pressed={favoritesOnly}
           aria-label='Show favorites only'
-          onClick={toggleFavorites}
+          onClick={toggleFavoritesOnly}
           className={cn(
             'mt-0 shrink-0',
-            toggledFavorites && 'ring-cyan-highlight ring-2',
+            favoritesOnly && 'ring-cyan-highlight ring-2',
           )}
         >
-          <Star className={cn(toggledFavorites && 'fill-yellow-400')} />
+          <Star className={cn(favoritesOnly && 'fill-yellow-400')} />
         </Button>
       </div>
-
-      {showEmptyState ? (
-        <p className='text-muted-foreground py-6 text-center text-sm'>
-          No exercises match your filters.
-        </p>
-      ) : null}
 
       <div className='grid justify-items-center gap-4 sm:grid-cols-3 2xl:grid-cols-5'>
         {isLoading ? (
@@ -260,7 +255,7 @@ const ExerciseGrid = () => {
               />
             ))}
           </>
-        ) : showEmptyFiltered ? (
+        ) : showEmptyState ? (
           <p className='text-muted-foreground col-span-full py-8 text-center text-sm'>
             No exercises match your filters.
           </p>

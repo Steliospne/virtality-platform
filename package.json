@@ -29,7 +29,7 @@
     "lint": "turbo run lint",
     "type-check": "PATH=\"$PWD/node_modules/.bin:$PATH\" turbo run type-check",
     "typecheck": "PATH=\"$PWD/node_modules/.bin:$PATH\" turbo run type-check",
-    "test": "npm --prefix packages/shared run test",
+    "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "sandcastle": "pnpx tsx .sandcastle/main.mts"

@@ -1,4 +1,4 @@
-import { normalizeExerciseEquipmentItem } from '@virtality/shared/utils'
+import { normalizeExerciseEquipmentKey } from '@virtality/shared/utils'
 
 /** Fields required for client-side exercise library filtering. */
 export type ExerciseFilterable = {
@@ -44,9 +44,7 @@ export function filterExercises<T extends ExerciseFilterable>(
 
   if (params.selectedEquipment.length > 0) {
     const equip = new Set(params.selectedEquipment)
-    out = out.filter((e) =>
-      equip.has(normalizeExerciseEquipmentItem(e.item)),
-    )
+    out = out.filter((e) => equip.has(normalizeExerciseEquipmentKey(e.item)))
   }
 
   if (search.length > 0) {

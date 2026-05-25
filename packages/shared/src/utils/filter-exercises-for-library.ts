@@ -10,7 +10,9 @@ export type ExerciseLibraryFilterRow = {
   direction: string
 }
 
-export function exerciseLibrarySearchText(row: ExerciseLibraryFilterRow): string {
+export function exerciseLibrarySearchText(
+  row: ExerciseLibraryFilterRow,
+): string {
   return `${row.displayName} ${row.direction}`.toLowerCase()
 }
 
