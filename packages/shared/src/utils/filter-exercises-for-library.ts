@@ -40,10 +40,7 @@ export function filterExercisesForLibrary<T extends ExerciseLibraryFilterRow>(
     favoriteExerciseIds,
   }: ExerciseLibraryFilterParams,
 ): T[] {
-  const favoriteSet =
-    favoriteExerciseIds instanceof Set
-      ? favoriteExerciseIds
-      : new Set(favoriteExerciseIds)
+  const favoriteSet = new Set(favoriteExerciseIds)
 
   const search = searchTerm.trim().toLowerCase()
 

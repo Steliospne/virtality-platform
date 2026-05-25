@@ -78,6 +78,14 @@ const ExerciseGrid = () => {
     [favorites],
   )
 
+  const favoriteRowIdByExerciseId = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const f of favorites ?? []) {
+      if (!map.has(f.exerciseId)) map.set(f.exerciseId, f.id)
+    }
+    return map
+  }, [favorites])
+
   const displayedExercises = useMemo(() => {
     if (!exercises) return undefined
     return filterExercisesForLibrary(exercises, {
@@ -263,7 +271,7 @@ const ExerciseGrid = () => {
               exercise={exercise}
               isSelected={isSelected?.[exercise.id] ?? false}
               favoriteExerciseId={
-                favoriteIdByExerciseId.get(exercise.id) ?? null
+                favoriteRowIdByExerciseId.get(exercise.id) ?? null
               }
               onSelect={
                 isSelected?.[exercise.id]
