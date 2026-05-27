@@ -282,6 +282,10 @@ const ExerciseGrid = () => {
               isSelected,
             )
             const rep = family.representative
+            const familyFavoriteTargets = selectionMembers.map((m) => ({
+              exerciseId: m.id,
+              favoriteRowId: favoriteRowIdByExerciseId.get(m.id) ?? null,
+            }))
             return (
               <FlipCard
                 key={family.familyKey}
@@ -293,9 +297,7 @@ const ExerciseGrid = () => {
                     : undefined
                 }
                 isSelected={allSelected}
-                favoriteExerciseId={
-                  favoriteRowIdByExerciseId.get(rep.id) ?? null
-                }
+                familyFavoriteTargets={familyFavoriteTargets}
                 onSelect={() => handleFamilyToggle(family)}
               />
             )

@@ -27,7 +27,10 @@ interface FlipCardProps {
   exercise: Exercise
   className?: string
   isSelected: boolean
+  /** Favorite row id for `exercise.id` when not using `familyFavoriteTargets`. */
   favoriteExerciseId?: string | null
+  /** When set, favorite add/remove applies to every variant (e.g. bilateral family). */
+  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
   onSelect: (e: MouseEvent) => void
   /** When set, footer shows this title (e.g. family `displayName`) instead of `displayName + direction`. */
   footerTitle?: string
@@ -40,6 +43,7 @@ const FlipCard = ({
   className,
   isSelected,
   favoriteExerciseId,
+  familyFavoriteTargets,
   onSelect,
   footerTitle,
   directionBadges,
@@ -106,6 +110,7 @@ const FlipCard = ({
           videoRef={videoRef}
           isFlipped={isFlipped}
           favoriteExerciseId={favoriteExerciseId}
+          familyFavoriteTargets={familyFavoriteTargets}
           footerTitle={footerTitle}
           directionBadges={directionBadges}
           handleFlip={handleFlip}
@@ -132,6 +137,7 @@ interface CardFrontProps {
   isTouchDevice: boolean
   isFlipped: boolean
   favoriteExerciseId?: string | null
+  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
   footerTitle?: string
   directionBadges?: DirectionBadgeHighlight[]
   handleFlip: (e: MouseEvent) => void
@@ -146,6 +152,7 @@ function CardFront({
   isTouchDevice,
   isFlipped,
   favoriteExerciseId,
+  familyFavoriteTargets,
   footerTitle,
   directionBadges,
   videoRef,
@@ -202,6 +209,7 @@ function CardFront({
             <CardActions
               exercise={exercise}
               favoriteExerciseId={favoriteExerciseId}
+              familyFavoriteTargets={familyFavoriteTargets}
               handleFlip={handleFlip}
             />
             <Button
@@ -287,12 +295,14 @@ function CardBack({
 interface CardActionsProps {
   exercise: Exercise
   favoriteExerciseId?: string | null
+  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
   handleFlip: (e: MouseEvent) => void
 }
 
 function CardActions({
   exercise,
   favoriteExerciseId,
+  familyFavoriteTargets,
   handleFlip,
 }: CardActionsProps) {
   const queryClient = getQueryClient()
@@ -312,13 +322,29 @@ function CardActions({
       })
     },
   })
+  const favoriteTargets =
+    familyFavoriteTargets && familyFavoriteTargets.length > 0
+      ? familyFavoriteTargets
+      : [
+          {
+            exerciseId: exercise.id,
+            favoriteRowId: favoriteExerciseId ?? null,
+          },
+        ]
+
+  const anyFavorited = favoriteTargets.some((t) => t.favoriteRowId != null)
+
   const handleFavoriteMutation = (e: MouseEvent) => {
     e.stopPropagation()
 
-    if (favoriteExerciseId) {
-      removeFavoriteExercise({ id: favoriteExerciseId })
+    if (anyFavorited) {
+      for (const t of favoriteTargets) {
+        if (t.favoriteRowId) removeFavoriteExercise({ id: t.favoriteRowId })
+      }
     } else {
-      addFavoriteExercise({ exerciseId: exercise.id })
+      for (const t of favoriteTargets) {
+        addFavoriteExercise({ exerciseId: t.exerciseId })
+      }
     }
   }
   return (
@@ -334,7 +360,7 @@ function CardActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent className='z-9999'>
         <DropdownMenuItem onClick={handleFavoriteMutation}>
-          {favoriteExerciseId ? (
+          {anyFavorited ? (
             <>
               <Star fill='yellow' />
               Remove from Favorites
