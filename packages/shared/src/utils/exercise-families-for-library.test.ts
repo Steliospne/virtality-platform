@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  familyMembersForLibrarySelection,
   filterExerciseFamiliesForLibrary,
   groupExercisesIntoFamiliesByDisplayName,
   parseNearTermDirection,
@@ -25,6 +26,61 @@ describe('parseNearTermDirection', () => {
     expect(parseNearTermDirection('Left')).toBe('Left')
     expect(parseNearTermDirection('RIGHT')).toBe('Right')
     expect(parseNearTermDirection(' Bilateral ')).toBeNull()
+  })
+})
+
+describe('familyMembersForLibrarySelection', () => {
+  it('returns only Left/Right members when family is bilateral', () => {
+    const rows = [
+      ex({
+        id: 'pl',
+        name: 'press left',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Left',
+      }),
+      ex({
+        id: 'pr',
+        name: 'press right',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Right',
+      }),
+      ex({
+        id: 'pb',
+        name: 'press bilateral',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Bilateral',
+      }),
+    ]
+    const [family] = groupExercisesIntoFamiliesByDisplayName(rows)
+    expect(family).toBeDefined()
+    const sel = familyMembersForLibrarySelection(family!)
+    expect(sel.map((m) => m.id).sort()).toEqual(['pl', 'pr'])
+  })
+
+  it('returns all members when family is not bilateral', () => {
+    const rows = [
+      ex({
+        id: 'only',
+        name: 'curl',
+        category: 'wrist',
+        displayName: 'Curl',
+        direction: 'Left',
+      }),
+      ex({
+        id: 'other',
+        name: 'curl alt',
+        category: 'wrist',
+        displayName: 'Curl',
+        direction: 'Bilateral',
+      }),
+    ]
+    const [family] = groupExercisesIntoFamiliesByDisplayName(rows)
+    expect(family).toBeDefined()
+    const sel = familyMembersForLibrarySelection(family!)
+    expect(sel.map((m) => m.id).sort()).toEqual(['only', 'other'])
   })
 })
 

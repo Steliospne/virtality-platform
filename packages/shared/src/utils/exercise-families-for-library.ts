@@ -35,6 +35,29 @@ export function parseNearTermDirection(
   return null
 }
 
+/**
+ * Variants to add/remove when toggling a family card in the library (PRD #5,
+ * GitHub #7). When both Left and Right exist in the family, Dual-Side Auto-Add
+ * applies to near-term directions only; other directions on the same
+ * `displayName` are not bundled into that one click.
+ */
+export function familyMembersForLibrarySelection<
+  T extends ExerciseLibraryFilterRow,
+>(
+  family: Pick<
+    ExerciseFamilyForLibrary<T>,
+    'members' | 'availableDirections'
+  >,
+): readonly T[] {
+  const bilateral =
+    family.availableDirections.includes('Left') &&
+    family.availableDirections.includes('Right')
+  if (!bilateral) return family.members
+  return family.members.filter(
+    (m) => parseNearTermDirection(m.direction) !== null,
+  )
+}
+
 function collectNearTermDirections<T extends ExerciseLibraryFilterRow>(
   members: readonly T[],
 ): NearTermDirection[] {

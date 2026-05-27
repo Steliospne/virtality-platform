@@ -1,6 +1,7 @@
 import { cn, getUUID } from '@/lib/utils'
 import { bodyGroupIconSrcForCategory } from '@/lib/body-group-icon'
 import {
+  familyMembersForLibrarySelection,
   filterExerciseFamiliesForLibrary,
   type ExerciseFamilyForLibrary,
   type ExerciseLibraryFilterRow,
@@ -105,14 +106,15 @@ const ExerciseGrid = () => {
     family: ExerciseFamilyForLibrary<ExerciseLibraryFilterRow>,
   ) => {
     if (!exercises) return
-    const allSelected = familyEveryMemberSelected(family.members, isSelected)
+    const selectionMembers = familyMembersForLibrarySelection(family)
+    const allSelected = familyEveryMemberSelected(selectionMembers, isSelected)
     if (allSelected) {
-      for (const m of family.members) {
+      for (const m of selectionMembers) {
         removeExercise(m.id)
       }
       return
     }
-    for (const m of family.members) {
+    for (const m of selectionMembers) {
       if (isSelected?.[m.id]) continue
       const exerciseToAdd = exercises.find((ex) => ex.id === m.id)
       if (!exerciseToAdd) continue
@@ -274,8 +276,9 @@ const ExerciseGrid = () => {
           </p>
         ) : (
           displayedFamilies?.map((family) => {
+            const selectionMembers = familyMembersForLibrarySelection(family)
             const allSelected = familyEveryMemberSelected(
-              family.members,
+              selectionMembers,
               isSelected,
             )
             const rep = family.representative
