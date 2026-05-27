@@ -1,10 +1,13 @@
 import { cn, getUUID } from '@/lib/utils'
 import { bodyGroupIconSrcForCategory } from '@/lib/body-group-icon'
 import {
+  familyMemberForNearTermDirection,
   familyMembersForLibrarySelection,
   filterExerciseFamiliesForLibrary,
+  libraryFamilySelectionState,
   type ExerciseFamilyForLibrary,
   type ExerciseLibraryFilterRow,
+  type NearTermDirection,
 } from '@virtality/shared/utils'
 import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
@@ -102,6 +105,24 @@ const ExerciseGrid = () => {
     favoriteExerciseIds,
   ])
 
+  const addLibraryVariant = (exerciseId: string) => {
+    if (!exercises) return
+    const exerciseToAdd = exercises.find((ex) => ex.id === exerciseId)
+    if (!exerciseToAdd || isSelected?.[exerciseId]) return
+    selectExercise(
+      withRom({
+        exerciseId: exerciseToAdd.id,
+        id: getUUID(),
+        reps: 10,
+        sets: 3,
+        restTime: 5,
+        holdTime: 1,
+        speed: 1.0,
+        exercise: exerciseToAdd,
+      }),
+    )
+  }
+
   const handleFamilyToggle = (
     family: ExerciseFamilyForLibrary<ExerciseLibraryFilterRow>,
   ) => {
@@ -115,21 +136,21 @@ const ExerciseGrid = () => {
       return
     }
     for (const m of selectionMembers) {
-      if (isSelected?.[m.id]) continue
-      const exerciseToAdd = exercises.find((ex) => ex.id === m.id)
-      if (!exerciseToAdd) continue
-      const preppedExercise = {
-        exerciseId: exerciseToAdd.id,
-        id: getUUID(),
-        reps: 10,
-        sets: 3,
-        restTime: 5,
-        holdTime: 1,
-        speed: 1.0,
-        exercise: exerciseToAdd,
-      }
-      selectExercise(withRom(preppedExercise))
+      addLibraryVariant(m.id)
     }
+  }
+
+  const handleDirectionToggle = (
+    family: ExerciseFamilyForLibrary<ExerciseLibraryFilterRow>,
+    side: NearTermDirection,
+  ) => {
+    const member = familyMemberForNearTermDirection(family, side)
+    if (!member) return
+    if (isSelected?.[member.id]) {
+      removeExercise(member.id)
+      return
+    }
+    addLibraryVariant(member.id)
   }
 
   const changeSearchInput = (e: ChangeEvent<HTMLInputElement>) => {
@@ -277,10 +298,12 @@ const ExerciseGrid = () => {
         ) : (
           displayedFamilies?.map((family) => {
             const selectionMembers = familyMembersForLibrarySelection(family)
-            const allSelected = familyEveryMemberSelected(
+            const selectionState = libraryFamilySelectionState(
               selectionMembers,
-              isSelected,
+              isSelected ?? undefined,
             )
+            const allSelected = selectionState === 'full'
+            const partiallySelected = selectionState === 'partial'
             const rep = family.representative
             const familyFavoriteTargets = selectionMembers.map((m) => ({
               exerciseId: m.id,
@@ -288,7 +311,15 @@ const ExerciseGrid = () => {
             }))
             const directionBadges =
               family.directionBadges.length > 0
-                ? family.directionBadges
+                ? family.directionBadges.map((b) => {
+                    const member = familyMemberForNearTermDirection(family, b.side)
+                    return {
+                      ...b,
+                      selected: member
+                        ? Boolean(isSelected?.[member.id])
+                        : false,
+                    }
+                  })
                 : undefined
             return (
               <FlipCard
@@ -297,7 +328,11 @@ const ExerciseGrid = () => {
                 footerTitle={family.familyKey}
                 directionBadges={directionBadges}
                 isSelected={allSelected}
+                isPartiallySelected={partiallySelected}
                 familyFavoriteTargets={familyFavoriteTargets}
+                onDirectionBadgeClick={(side) =>
+                  handleDirectionToggle(family, side)
+                }
                 onSelect={() => handleFamilyToggle(family)}
               />
             )

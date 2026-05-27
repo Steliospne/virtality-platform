@@ -11,7 +11,9 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { cn, getDisplayName } from '@/lib/utils'
+import { cn, getDisplayName, getUUID } from '@/lib/utils'
+import { withRom } from '@/lib/with-rom'
+import { insertBilateralSiblingRow } from '@/lib/program-list-bilateral-insert'
 import ExerciseSettings from '@/components/ui/exercise-settings'
 import { CompleteExercise, ExerciseWithSettings } from '@/types/models'
 import ExerciseLibraryDialog from '@/components/ui/exercise-library-dialog'
@@ -25,9 +27,12 @@ import {
 } from '@/lib/program-exercise-pair-fields'
 import { removalDiscardsDivergentBilateralWork } from '@/lib/program-list-removal-safety'
 import {
+  parseNearTermDirection,
   segmentProgramExerciseRowsByAdjacentBilateralFamilies,
+  type NearTermDirection,
   type ProgramExerciseListSegment,
 } from '@virtality/shared/utils'
+import type { Exercise } from '@virtality/db'
 
 interface ExerciseLibraryListProps {
   className?: string
@@ -66,6 +71,42 @@ function segmentCheckboxChecked(
   return false
 }
 
+const NEAR_TERM_SIDES: NearTermDirection[] = ['Left', 'Right']
+
+function catalogHasBilateralDirections(
+  catalog: Exercise[] | undefined,
+  displayName: string,
+): boolean {
+  const dirs = new Set<NearTermDirection>()
+  for (const e of catalog ?? []) {
+    if (e.displayName !== displayName) continue
+    const d = parseNearTermDirection(e.direction)
+    if (d) dirs.add(d)
+  }
+  return dirs.has('Left') && dirs.has('Right')
+}
+
+function catalogVariantForDirection(
+  catalog: Exercise[] | undefined,
+  displayName: string,
+  side: NearTermDirection,
+): Exercise | undefined {
+  return catalog?.find(
+    (e) =>
+      e.displayName === displayName &&
+      parseNearTermDirection(e.direction) === side,
+  )
+}
+
+function programMemberForDirection(
+  members: readonly CompleteExercise[],
+  side: NearTermDirection,
+): CompleteExercise | undefined {
+  return members.find(
+    (m) => parseNearTermDirection(m.exercise?.direction ?? '') === side,
+  )
+}
+
 const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const { state, handler } = useExerciseLibrary()
   const { data: defaultExercises } = useExercise()
@@ -81,6 +122,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     setToggledSettings,
     updateExercises,
     updateFormState,
+    removeExercise,
   } = handler
 
   const commitSelectedItems = (nextSelectedItems: string[]) => {
@@ -170,6 +212,53 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     updateExercises(reordered.flat())
   }
 
+  const toggleProgramDirection = (
+    side: NearTermDirection,
+    displayName: string,
+    anchorIndex: number,
+    members: CompleteExercise[],
+    isPair: boolean,
+    splitSides: boolean,
+    primary: CompleteExercise,
+    secondary: CompleteExercise | undefined,
+  ) => {
+    const inProgram = programMemberForDirection(members, side)
+    if (inProgram) {
+      if (
+        isPair &&
+        splitSides &&
+        secondary &&
+        programExerciseFieldsDiverge(primary, secondary)
+      ) {
+        const ok = window.confirm(
+          'Remove this side? Side-specific settings for the Left/Right pair will be discarded.',
+        )
+        if (!ok) return
+      }
+      removeExercise(inProgram.exerciseId)
+      return
+    }
+    const catalogEx = catalogVariantForDirection(
+      defaultExercises,
+      displayName,
+      side,
+    )
+    if (!catalogEx) return
+    const newRow = withRom({
+      exerciseId: catalogEx.id,
+      id: getUUID(),
+      reps: 10,
+      sets: 3,
+      restTime: 5,
+      holdTime: 1,
+      speed: 1.0,
+      exercise: catalogEx,
+    })
+    updateExercises(
+      insertBilateralSiblingRow(selectedExercises, anchorIndex, side, newRow),
+    )
+  }
+
   const handlePairSplitSidesChange = (
     pairKey: string,
     primaryIndex: number,
@@ -255,12 +344,18 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
               (de) => de.id === primary.exerciseId,
             )
 
+            const familyDisplayName =
+              primary.exercise?.displayName ??
+              primaryCatalog?.displayName ??
+              ''
+            const showDirectionToggles = catalogHasBilateralDirections(
+              defaultExercises,
+              familyDisplayName,
+            )
+
             let rowTitle: string
             if (isPair) {
-              rowTitle =
-                primary.exercise?.displayName ??
-                primaryCatalog?.displayName ??
-                'Exercise'
+              rowTitle = familyDisplayName || 'Exercise'
             } else {
               rowTitle =
                 getDisplayName(
@@ -348,10 +443,41 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                     />
                     <div className='flex flex-1 flex-col'>
                       <p>{rowTitle}</p>
-                      {isPair ? (
-                        <p className='text-muted-foreground text-xs'>
-                          Left &amp; Right
-                        </p>
+                      {showDirectionToggles ? (
+                        <div className='mt-0.5 flex flex-wrap gap-1'>
+                          {NEAR_TERM_SIDES.map((side) => {
+                            const inProgram = Boolean(
+                              programMemberForDirection(members, side),
+                            )
+                            return (
+                              <button
+                                key={side}
+                                type='button'
+                                aria-pressed={inProgram}
+                                aria-label={`${inProgram ? 'Remove' : 'Add'} ${side} variant`}
+                                className={cn(
+                                  'text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium',
+                                  inProgram &&
+                                    'text-foreground border-cyan-500/60 bg-cyan-500/20',
+                                )}
+                                onClick={() =>
+                                  toggleProgramDirection(
+                                    side,
+                                    familyDisplayName,
+                                    primaryIndex,
+                                    members,
+                                    isPair,
+                                    splitSides,
+                                    primary,
+                                    secondary,
+                                  )
+                                }
+                              >
+                                {side}
+                              </button>
+                            )
+                          })}
+                        </div>
                       ) : null}
                       {isPair ? (
                         <div className='mt-1 flex w-full max-w-md items-center justify-between gap-2'>

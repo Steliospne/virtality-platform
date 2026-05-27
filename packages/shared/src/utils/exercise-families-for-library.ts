@@ -12,6 +12,8 @@ export type DirectionBadgeHighlight = {
   side: NearTermDirection
   /** True when the active search term references this side (word-boundary match). */
   emphasized: boolean
+  /** True when this variant is in the program draft (library cards, GitHub #13). */
+  selected?: boolean
 }
 
 export type ExerciseFamilyForLibrary<T extends ExerciseLibraryFilterRow> = {
@@ -41,6 +43,33 @@ export function parseNearTermDirection(
  * applies to near-term directions only; other directions on the same
  * `displayName` are not bundled into that one click.
  */
+export function familyMemberForNearTermDirection<
+  T extends ExerciseLibraryFilterRow,
+>(
+  family: Pick<ExerciseFamilyForLibrary<T>, 'members'>,
+  side: NearTermDirection,
+): T | undefined {
+  return family.members.find((m) => parseNearTermDirection(m.direction) === side)
+}
+
+/**
+ * Whether a family card should show full, partial, or no selection highlight when
+ * toggling variants individually (PRD #5, GitHub #13).
+ */
+export function libraryFamilySelectionState(
+  members: readonly { id: string }[],
+  isSelected: Readonly<Record<string, boolean>> | null | undefined,
+): 'none' | 'partial' | 'full' {
+  if (members.length === 0) return 'none'
+  let selected = 0
+  for (const m of members) {
+    if (isSelected?.[m.id]) selected++
+  }
+  if (selected === 0) return 'none'
+  if (selected === members.length) return 'full'
+  return 'partial'
+}
+
 export function familyMembersForLibrarySelection<
   T extends ExerciseLibraryFilterRow,
 >(

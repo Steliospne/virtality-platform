@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  familyMemberForNearTermDirection,
   familyMembersForLibrarySelection,
   groupExercisesIntoFamiliesByDisplayName,
+  libraryFamilySelectionState,
   segmentProgramExerciseRowsByAdjacentBilateralFamilies,
 } from '@virtality/shared/utils'
 import type { ExerciseLibraryFilterRow } from '@virtality/shared/utils'
@@ -64,5 +66,33 @@ describe('family-first authoring integration', () => {
       })),
     )
     expect(segs).toEqual([{ kind: 'bilateral', startIndex: 0 }])
+  })
+
+  it('supports selecting a single near-term direction before submit', () => {
+    const catalog = [
+      libRow({
+        id: 'pl',
+        name: 'p-l',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Left',
+      }),
+      libRow({
+        id: 'pr',
+        name: 'p-r',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Right',
+      }),
+    ]
+    const [fam] = groupExercisesIntoFamiliesByDisplayName(catalog)
+    const leftOnly = familyMemberForNearTermDirection(fam!, 'Left')!
+    expect(leftOnly.id).toBe('pl')
+    expect(
+      libraryFamilySelectionState(
+        familyMembersForLibrarySelection(fam!),
+        { pl: true, pr: false },
+      ),
+    ).toBe('partial')
   })
 })

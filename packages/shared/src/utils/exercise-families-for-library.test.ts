@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  familyMemberForNearTermDirection,
   familyMembersForLibrarySelection,
   filterExerciseFamiliesForLibrary,
   groupExercisesIntoFamiliesByDisplayName,
+  libraryFamilySelectionState,
   parseNearTermDirection,
 } from './exercise-families-for-library.ts'
 import type { ExerciseLibraryFilterRow } from './filter-exercises-for-library.ts'
@@ -26,6 +28,41 @@ describe('parseNearTermDirection', () => {
     expect(parseNearTermDirection('Left')).toBe('Left')
     expect(parseNearTermDirection('RIGHT')).toBe('Right')
     expect(parseNearTermDirection(' Bilateral ')).toBeNull()
+  })
+})
+
+describe('familyMemberForNearTermDirection', () => {
+  it('returns the member matching a near-term side', () => {
+    const rows = [
+      ex({
+        id: 'pl',
+        name: 'press left',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Left',
+      }),
+      ex({
+        id: 'pr',
+        name: 'press right',
+        category: 'shoulder',
+        displayName: 'Press',
+        direction: 'Right',
+      }),
+    ]
+    const [family] = groupExercisesIntoFamiliesByDisplayName(rows)
+    expect(familyMemberForNearTermDirection(family!, 'Left')?.id).toBe('pl')
+    expect(familyMemberForNearTermDirection(family!, 'Right')?.id).toBe('pr')
+  })
+})
+
+describe('libraryFamilySelectionState', () => {
+  it('reports partial when only one bilateral variant is selected', () => {
+    expect(
+      libraryFamilySelectionState(
+        [{ id: 'pl' }, { id: 'pr' }],
+        { pl: true, pr: false },
+      ),
+    ).toBe('partial')
   })
 })
 

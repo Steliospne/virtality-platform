@@ -21,7 +21,10 @@ import {
   useORPC,
   useRemoveFavoriteExercise,
 } from '@virtality/react-query'
-import type { DirectionBadgeHighlight } from '@virtality/shared/utils'
+import type {
+  DirectionBadgeHighlight,
+  NearTermDirection,
+} from '@virtality/shared/utils'
 
 type FavoriteTargetRow = { exerciseId: string; favoriteRowId: string | null }
 
@@ -54,6 +57,9 @@ interface FlipCardProps {
   footerTitle?: string
   /** Left/Right availability for family cards; `emphasized` reflects direction-aware search. */
   directionBadges?: DirectionBadgeHighlight[]
+  /** Toggle a single near-term variant without dual-side auto-add (GitHub #13). */
+  onDirectionBadgeClick?: (side: NearTermDirection, e: MouseEvent) => void
+  isPartiallySelected?: boolean
 }
 
 const FlipCard = ({
@@ -65,6 +71,8 @@ const FlipCard = ({
   onSelect,
   footerTitle,
   directionBadges,
+  onDirectionBadgeClick,
+  isPartiallySelected,
 }: FlipCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
@@ -111,6 +119,9 @@ const FlipCard = ({
         'perspective-1000 relative w-full max-w-[260px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]',
         isSelected &&
           'scale-[1.01] drop-shadow-[0_0_16px_rgba(34,211,238,0.55)] transition-transform duration-200',
+        isPartiallySelected &&
+          !isSelected &&
+          'ring-cyan-highlight/70 scale-[1.005] ring-2 transition-transform duration-200',
         className,
       )}
     >
@@ -131,6 +142,7 @@ const FlipCard = ({
           familyFavoriteTargets={familyFavoriteTargets}
           footerTitle={footerTitle}
           directionBadges={directionBadges}
+          onDirectionBadgeClick={onDirectionBadgeClick}
           handleFlip={handleFlip}
           handlePreviewToggle={handlePreviewToggle}
         />
@@ -158,6 +170,7 @@ interface CardFrontProps {
   familyFavoriteTargets?: FavoriteTargetRow[]
   footerTitle?: string
   directionBadges?: DirectionBadgeHighlight[]
+  onDirectionBadgeClick?: (side: NearTermDirection, e: MouseEvent) => void
   handleFlip: (e: MouseEvent) => void
   handlePreviewToggle: (e: MouseEvent) => void
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -173,6 +186,7 @@ function CardFront({
   familyFavoriteTargets,
   footerTitle,
   directionBadges,
+  onDirectionBadgeClick,
   videoRef,
   handleFlip,
   handlePreviewToggle,
@@ -252,18 +266,37 @@ function CardFront({
         <P className='text-sm'>{primaryLabel}</P>
         {directionBadges?.length ? (
           <div className='flex flex-wrap justify-center gap-1'>
-            {directionBadges.map((b) => (
-              <span
-                key={b.side}
-                className={cn(
-                  'text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium',
-                  b.emphasized &&
-                    'text-foreground ring-cyan-highlight bg-cyan-500/15 ring-2',
-                )}
-              >
-                {b.side}
-              </span>
-            ))}
+            {directionBadges.map((b) => {
+              const badgeClass = cn(
+                'text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium',
+                b.selected &&
+                  'text-foreground border-cyan-500/60 bg-cyan-500/20',
+                b.emphasized &&
+                  'text-foreground ring-cyan-highlight bg-cyan-500/15 ring-2',
+              )
+              if (onDirectionBadgeClick) {
+                return (
+                  <button
+                    key={b.side}
+                    type='button'
+                    aria-pressed={Boolean(b.selected)}
+                    aria-label={`${b.selected ? 'Remove' : 'Add'} ${b.side} variant`}
+                    className={cn(badgeClass, 'hover:bg-cyan-500/25')}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDirectionBadgeClick(b.side, e)
+                    }}
+                  >
+                    {b.side}
+                  </button>
+                )
+              }
+              return (
+                <span key={b.side} className={badgeClass}>
+                  {b.side}
+                </span>
+              )
+            })}
           </div>
         ) : null}
       </CardFooter>
