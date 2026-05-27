@@ -23,6 +23,24 @@ import {
 } from '@virtality/react-query'
 import type { DirectionBadgeHighlight } from '@virtality/shared/utils'
 
+type FavoriteTargetRow = { exerciseId: string; favoriteRowId: string | null }
+
+function resolveFavoriteTargets(
+  exercise: Exercise,
+  favoriteExerciseId: string | null | undefined,
+  familyFavoriteTargets: FavoriteTargetRow[] | undefined,
+): FavoriteTargetRow[] {
+  if (familyFavoriteTargets && familyFavoriteTargets.length > 0) {
+    return familyFavoriteTargets
+  }
+  return [
+    {
+      exerciseId: exercise.id,
+      favoriteRowId: favoriteExerciseId ?? null,
+    },
+  ]
+}
+
 interface FlipCardProps {
   exercise: Exercise
   className?: string
@@ -30,7 +48,7 @@ interface FlipCardProps {
   /** Favorite row id for `exercise.id` when not using `familyFavoriteTargets`. */
   favoriteExerciseId?: string | null
   /** When set, favorite add/remove applies to every variant (e.g. bilateral family). */
-  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
+  familyFavoriteTargets?: FavoriteTargetRow[]
   onSelect: (e: MouseEvent) => void
   /** When set, footer shows this title (e.g. family `displayName`) instead of `displayName + direction`. */
   footerTitle?: string
@@ -137,7 +155,7 @@ interface CardFrontProps {
   isTouchDevice: boolean
   isFlipped: boolean
   favoriteExerciseId?: string | null
-  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
+  familyFavoriteTargets?: FavoriteTargetRow[]
   footerTitle?: string
   directionBadges?: DirectionBadgeHighlight[]
   handleFlip: (e: MouseEvent) => void
@@ -295,7 +313,7 @@ function CardBack({
 interface CardActionsProps {
   exercise: Exercise
   favoriteExerciseId?: string | null
-  familyFavoriteTargets?: { exerciseId: string; favoriteRowId: string | null }[]
+  familyFavoriteTargets?: FavoriteTargetRow[]
   handleFlip: (e: MouseEvent) => void
 }
 
@@ -322,16 +340,11 @@ function CardActions({
       })
     },
   })
-  const favoriteTargets =
-    familyFavoriteTargets && familyFavoriteTargets.length > 0
-      ? familyFavoriteTargets
-      : [
-          {
-            exerciseId: exercise.id,
-            favoriteRowId: favoriteExerciseId ?? null,
-          },
-        ]
-
+  const favoriteTargets = resolveFavoriteTargets(
+    exercise,
+    favoriteExerciseId,
+    familyFavoriteTargets,
+  )
   const anyFavorited = favoriteTargets.some((t) => t.favoriteRowId != null)
 
   const handleFavoriteMutation = (e: MouseEvent) => {

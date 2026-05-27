@@ -286,16 +286,16 @@ const ExerciseGrid = () => {
               exerciseId: m.id,
               favoriteRowId: favoriteRowIdByExerciseId.get(m.id) ?? null,
             }))
+            const directionBadges =
+              family.directionBadges.length > 0
+                ? family.directionBadges
+                : undefined
             return (
               <FlipCard
                 key={family.familyKey}
                 exercise={rep}
                 footerTitle={family.familyKey}
-                directionBadges={
-                  family.directionBadges.length > 0
-                    ? family.directionBadges
-                    : undefined
-                }
+                directionBadges={directionBadges}
                 isSelected={allSelected}
                 familyFavoriteTargets={familyFavoriteTargets}
                 onSelect={() => handleFamilyToggle(family)}

@@ -1,4 +1,4 @@
-import { MouseEvent, useMemo, useState } from 'react'
+import { MouseEvent, useMemo, useState, type ReactNode } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -56,6 +56,16 @@ function membersForSegment(
   ]
 }
 
+/** Radix checkbox `checked` when a segment is all, partly, or not selected. */
+function segmentCheckboxChecked(
+  allMembersSelected: boolean,
+  someMembersSelected: boolean,
+): boolean | 'indeterminate' {
+  if (allMembersSelected) return true
+  if (someMembersSelected) return 'indeterminate'
+  return false
+}
+
 const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const { state, handler } = useExerciseLibrary()
   const { data: defaultExercises } = useExercise()
@@ -72,6 +82,13 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     updateExercises,
     updateFormState,
   } = handler
+
+  const commitSelectedItems = (nextSelectedItems: string[]) => {
+    updateFormState({
+      selectedItems: nextSelectedItems,
+      globalCheck: nextSelectedItems.length === selectedExercises.length,
+    })
+  }
 
   const segments = useMemo(
     () =>
@@ -93,39 +110,20 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     const itemExists = selectedItems.find((item) => item === exercise.id)
 
     if (itemExists) {
-      const newSelectedItems = selectedItems.filter(
-        (item) => item !== exercise.id,
-      )
-      updateFormState({
-        selectedItems: newSelectedItems,
-        globalCheck: newSelectedItems.length === selectedExercises.length,
-      })
+      commitSelectedItems(selectedItems.filter((item) => item !== exercise.id))
     } else {
-      const newSelectedItems = [...selectedItems, exercise.id]
-      updateFormState({
-        selectedItems: newSelectedItems,
-        globalCheck: newSelectedItems.length === selectedExercises.length,
-      })
+      commitSelectedItems([...selectedItems, exercise.id])
     }
   }
 
   const pairCheckboxChange = (memberIds: readonly string[]) => {
     const allIn = memberIds.every((id) => selectedItems.includes(id))
     if (allIn) {
-      const newSelectedItems = selectedItems.filter(
-        (id) => !memberIds.includes(id),
+      commitSelectedItems(
+        selectedItems.filter((id) => !memberIds.includes(id)),
       )
-      updateFormState({
-        selectedItems: newSelectedItems,
-        globalCheck: newSelectedItems.length === selectedExercises.length,
-      })
     } else {
-      const next = new Set([...selectedItems, ...memberIds])
-      const arr = [...next]
-      updateFormState({
-        selectedItems: arr,
-        globalCheck: arr.length === selectedExercises.length,
-      })
+      commitSelectedItems([...new Set([...selectedItems, ...memberIds])])
     }
   }
 
@@ -257,16 +255,70 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
               (de) => de.id === primary.exerciseId,
             )
 
-            const title = isPair
-              ? (primary.exercise?.displayName ??
+            let rowTitle: string
+            if (isPair) {
+              rowTitle =
+                primary.exercise?.displayName ??
                 primaryCatalog?.displayName ??
-                'Exercise')
-              : (getDisplayName(
+                'Exercise'
+            } else {
+              rowTitle =
+                getDisplayName(
                   defaultExercises?.find((de) => de.id === primary.exerciseId),
-                ) ?? 'Exercise')
+                ) ?? 'Exercise'
+            }
 
             const listKey = isPair ? `${primary.id}:${secondary!.id}` : primary.id
             const splitSides = splitSidesByPairKey[listKey] ?? false
+
+            const rowSettingsOpen = Boolean(toggledSettings?.[primary.id])
+            let expandedSettings: ReactNode = null
+            if (rowSettingsOpen) {
+              if (isPair && splitSides) {
+                expandedSettings = (
+                  <div className='flex w-full flex-col gap-4'>
+                    <div className='space-y-1'>
+                      <p className='text-muted-foreground text-xs font-medium'>
+                        Left
+                      </p>
+                      <ExerciseSettings
+                        key={`${primary.id}-left`}
+                        ex={primary}
+                        exercises={selectedExercises}
+                        selectedItems={selectedItems}
+                        index={primaryIndex}
+                        setExercises={updateExercises}
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <p className='text-muted-foreground text-xs font-medium'>
+                        Right
+                      </p>
+                      <ExerciseSettings
+                        key={`${secondary!.id}-right`}
+                        ex={secondary!}
+                        exercises={selectedExercises}
+                        selectedItems={selectedItems}
+                        index={secondaryIndex!}
+                        setExercises={updateExercises}
+                      />
+                    </div>
+                  </div>
+                )
+              } else {
+                expandedSettings = (
+                  <ExerciseSettings
+                    key={primary.id}
+                    ex={primary}
+                    exercises={selectedExercises}
+                    selectedItems={selectedItems}
+                    index={primaryIndex}
+                    unifiedSiblingIndex={secondaryIndex}
+                    setExercises={updateExercises}
+                  />
+                )
+              }
+            }
 
             return (
               <li key={listKey} className='space-y-2'>
@@ -284,13 +336,10 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                 >
                   <div className='flex items-center gap-2'>
                     <Checkbox
-                      checked={
-                        allMembersSelected
-                          ? true
-                          : someMembersSelected
-                            ? 'indeterminate'
-                            : false
-                      }
+                      checked={segmentCheckboxChecked(
+                        allMembersSelected,
+                        someMembersSelected,
+                      )}
                       onCheckedChange={() =>
                         isPair
                           ? pairCheckboxChange(memberIds)
@@ -298,7 +347,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                       }
                     />
                     <div className='flex flex-1 flex-col'>
-                      <p>{title}</p>
+                      <p>{rowTitle}</p>
                       {isPair ? (
                         <p className='text-muted-foreground text-xs'>
                           Left &amp; Right
@@ -357,49 +406,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                         <ChevronDown />
                       </Button>
                     </div>
-                    <div className='flex-1'>
-                      {toggledSettings?.[primary.id] &&
-                        (isPair && splitSides ? (
-                          <div className='flex w-full flex-col gap-4'>
-                            <div className='space-y-1'>
-                              <p className='text-muted-foreground text-xs font-medium'>
-                                Left
-                              </p>
-                              <ExerciseSettings
-                                key={`${primary.id}-left`}
-                                ex={primary}
-                                exercises={selectedExercises}
-                                selectedItems={selectedItems}
-                                index={primaryIndex}
-                                setExercises={updateExercises}
-                              />
-                            </div>
-                            <div className='space-y-1'>
-                              <p className='text-muted-foreground text-xs font-medium'>
-                                Right
-                              </p>
-                              <ExerciseSettings
-                                key={`${secondary!.id}-right`}
-                                ex={secondary!}
-                                exercises={selectedExercises}
-                                selectedItems={selectedItems}
-                                index={secondaryIndex!}
-                                setExercises={updateExercises}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <ExerciseSettings
-                            key={primary.id}
-                            ex={primary}
-                            exercises={selectedExercises}
-                            selectedItems={selectedItems}
-                            index={primaryIndex}
-                            unifiedSiblingIndex={secondaryIndex}
-                            setExercises={updateExercises}
-                          />
-                        ))}
-                    </div>
+                    <div className='flex-1'>{expandedSettings}</div>
                   </div>
 
                   {groupIdx === segments.length - 1 ? null : (

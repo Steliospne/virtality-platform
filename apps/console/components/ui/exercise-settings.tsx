@@ -55,6 +55,42 @@ const applyUnifiedPairUpdate = (
   )
 }
 
+/** Shared path for unified bilateral rows, bulk selection, or a single row. */
+function patchExerciseSettingsField(
+  exercises: CompleteExercise[],
+  {
+    fieldName,
+    rowIndex,
+    value,
+    unifiedSiblingIndex,
+    selectedItems,
+  }: {
+    fieldName: string
+    rowIndex: number
+    value: string | number
+    unifiedSiblingIndex?: number
+    selectedItems?: string[]
+  },
+): CompleteExercise[] {
+  if (unifiedSiblingIndex != null) {
+    return applyUnifiedPairUpdate(
+      exercises,
+      rowIndex,
+      unifiedSiblingIndex,
+      fieldName,
+      value,
+    )
+  }
+  const currentExercise = exercises[rowIndex]
+  const hasBulkUpdates = selectedItems
+    ? selectedItems.length !== 0 && selectedItems.includes(currentExercise.id)
+    : false
+  if (hasBulkUpdates) {
+    return applyBulkUpdate(exercises, selectedItems!, fieldName, value)
+  }
+  return applyUpdate(exercises, rowIndex, fieldName, value)
+}
+
 interface ExerciseSettingsProps {
   ex: CompleteExercise
   exercises: PatientDashboardValue['state']['exercises']
@@ -88,32 +124,19 @@ const ExerciseSettings = ({
     if (!exercises) return
     const { id, value } = target
     const numericalInput = ['sets', 'reps', 'restTime', 'holdTime', 'speed']
-    const [name, index] = id.split(',')
+    const [name, rowIndexStr] = id.split(',')
     const parsedValue = numericalInput.includes(name) ? Number(value) : value
-    const currentExercise = exercises[+index]
-    const hasBulkUpdates = selectedItems
-      ? selectedItems.length !== 0 && selectedItems.includes(currentExercise.id)
-      : false
+    const rowIndex = +rowIndexStr
 
-    if (unifiedSiblingIndex != null) {
-      return setExercises(
-        applyUnifiedPairUpdate(
-          exercises,
-          +index,
-          unifiedSiblingIndex,
-          name,
-          parsedValue,
-        ),
-      )
-    }
-
-    if (hasBulkUpdates) {
-      return setExercises(
-        applyBulkUpdate(exercises, selectedItems!, name, parsedValue),
-      )
-    }
-
-    setExercises(applyUpdate(exercises, +index, name, parsedValue))
+    setExercises(
+      patchExerciseSettingsField(exercises, {
+        fieldName: name,
+        rowIndex,
+        value: parsedValue,
+        unifiedSiblingIndex,
+        selectedItems,
+      }),
+    )
   }
 
   const sliderChangeHandler = (value: number[]) => {
@@ -121,32 +144,18 @@ const ExerciseSettings = ({
     if (!target || !exercises) return
 
     const { id } = target
-    const [name, index] = id.split(',')
+    const [name, rowIndexStr] = id.split(',')
+    const rowIndex = +rowIndexStr
 
-    const currentExercise = exercises[+index]
-    const hasBulkUpdates = selectedItems
-      ? selectedItems.length !== 0 && selectedItems.includes(currentExercise.id)
-      : false
-
-    if (unifiedSiblingIndex != null) {
-      return setExercises(
-        applyUnifiedPairUpdate(
-          exercises,
-          +index,
-          unifiedSiblingIndex,
-          name,
-          value[0],
-        ),
-      )
-    }
-
-    if (hasBulkUpdates) {
-      return setExercises(
-        applyBulkUpdate(exercises, selectedItems!, name, value[0]),
-      )
-    }
-
-    setExercises(applyUpdate(exercises, +index, name, value[0]))
+    setExercises(
+      patchExerciseSettingsField(exercises, {
+        fieldName: name,
+        rowIndex,
+        value: value[0],
+        unifiedSiblingIndex,
+        selectedItems,
+      }),
+    )
   }
 
   const romModeChangeHandler = (value: boolean) => {
@@ -154,32 +163,19 @@ const ExerciseSettings = ({
     if (!target || !exercises) return
 
     const { id } = target
-    const [name, index] = id.split(',')
+    const [name, rowIndexStr] = id.split(',')
+    const rowIndex = +rowIndexStr
+    const numericValue = value ? 1 : 0
 
-    const currentExercise = exercises[+index]
-    const hasBulkUpdates = selectedItems
-      ? selectedItems.length !== 0 && selectedItems.includes(currentExercise.id)
-      : false
-
-    if (unifiedSiblingIndex != null) {
-      return setExercises(
-        applyUnifiedPairUpdate(
-          exercises,
-          +index,
-          unifiedSiblingIndex,
-          name,
-          value ? 1 : 0,
-        ),
-      )
-    }
-
-    if (hasBulkUpdates) {
-      return setExercises(
-        applyBulkUpdate(exercises, selectedItems!, name, value ? 1 : 0),
-      )
-    }
-
-    setExercises(applyUpdate(exercises, +index, name, value ? 1 : 0))
+    setExercises(
+      patchExerciseSettingsField(exercises, {
+        fieldName: name,
+        rowIndex,
+        value: numericValue,
+        unifiedSiblingIndex,
+        selectedItems,
+      }),
+    )
   }
 
   return (
