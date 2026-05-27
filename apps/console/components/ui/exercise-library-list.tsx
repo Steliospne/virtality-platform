@@ -1,4 +1,4 @@
-import { MouseEvent, useMemo } from 'react'
+import { MouseEvent, useMemo, useState } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -6,6 +6,8 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
@@ -17,6 +19,10 @@ import { P } from './typography'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import { motion } from 'motion/react'
 import { useExercise } from '@virtality/react-query'
+import {
+  copyProgramExerciseFields,
+  programExerciseFieldsDiverge,
+} from '@/lib/program-exercise-pair-fields'
 import {
   segmentProgramExerciseRowsByAdjacentBilateralFamilies,
   type ProgramExerciseListSegment,
@@ -54,6 +60,10 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const { data: defaultExercises } = useExercise()
   const { selectedExercises, globalCheck, toggledSettings, selectedItems } =
     state
+
+  const [splitSidesByPairKey, setSplitSidesByPairKey] = useState<
+    Record<string, boolean>
+  >({})
 
   const {
     setLibraryOpen,
@@ -148,6 +158,28 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     updateExercises(reordered.flat())
   }
 
+  const handlePairSplitSidesChange = (
+    pairKey: string,
+    primaryIndex: number,
+    secondaryIndex: number,
+    split: boolean,
+  ) => {
+    setSplitSidesByPairKey((prev) => ({ ...prev, [pairKey]: split }))
+    if (!split) {
+      const primary = selectedExercises[primaryIndex]!
+      const secondary = selectedExercises[secondaryIndex]!
+      if (programExerciseFieldsDiverge(primary, secondary)) {
+        updateExercises(
+          selectedExercises.map((ex, i) =>
+            i === secondaryIndex
+              ? copyProgramExerciseFields(secondary, primary)
+              : ex,
+          ),
+        )
+      }
+    }
+  }
+
   const isListEmpty = selectedExercises.length === 0
 
   return (
@@ -220,6 +252,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                 ) ?? 'Exercise')
 
             const listKey = isPair ? `${primary.id}:${secondary!.id}` : primary.id
+            const splitSides = splitSidesByPairKey[listKey] ?? false
 
             return (
               <li key={listKey} className='space-y-2'>
@@ -257,6 +290,28 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                           Left &amp; Right
                         </p>
                       ) : null}
+                      {isPair ? (
+                        <div className='mt-1 flex w-full max-w-md items-center justify-between gap-2'>
+                          <Label
+                            htmlFor={`split-${listKey}`}
+                            className='text-muted-foreground cursor-pointer text-xs font-normal'
+                          >
+                            Edit sides separately
+                          </Label>
+                          <Switch
+                            id={`split-${listKey}`}
+                            checked={splitSides}
+                            onCheckedChange={(c) =>
+                              handlePairSplitSidesChange(
+                                listKey,
+                                primaryIndex,
+                                secondaryIndex!,
+                                Boolean(c),
+                              )
+                            }
+                          />
+                        </div>
+                      ) : null}
                     </div>
                     <Button
                       id={primary.id}
@@ -289,17 +344,47 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                       </Button>
                     </div>
                     <div className='flex-1'>
-                      {toggledSettings?.[primary.id] && (
-                        <ExerciseSettings
-                          key={primary.id}
-                          ex={primary}
-                          exercises={selectedExercises}
-                          selectedItems={selectedItems}
-                          index={primaryIndex}
-                          unifiedSiblingIndex={secondaryIndex}
-                          setExercises={updateExercises}
-                        />
-                      )}
+                      {toggledSettings?.[primary.id] &&
+                        (isPair && splitSides ? (
+                          <div className='flex w-full flex-col gap-4'>
+                            <div className='space-y-1'>
+                              <p className='text-muted-foreground text-xs font-medium'>
+                                Left
+                              </p>
+                              <ExerciseSettings
+                                key={`${primary.id}-left`}
+                                ex={primary}
+                                exercises={selectedExercises}
+                                selectedItems={selectedItems}
+                                index={primaryIndex}
+                                setExercises={updateExercises}
+                              />
+                            </div>
+                            <div className='space-y-1'>
+                              <p className='text-muted-foreground text-xs font-medium'>
+                                Right
+                              </p>
+                              <ExerciseSettings
+                                key={`${secondary!.id}-right`}
+                                ex={secondary!}
+                                exercises={selectedExercises}
+                                selectedItems={selectedItems}
+                                index={secondaryIndex!}
+                                setExercises={updateExercises}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <ExerciseSettings
+                            key={primary.id}
+                            ex={primary}
+                            exercises={selectedExercises}
+                            selectedItems={selectedItems}
+                            index={primaryIndex}
+                            unifiedSiblingIndex={secondaryIndex}
+                            setExercises={updateExercises}
+                          />
+                        ))}
                     </div>
                   </div>
 
