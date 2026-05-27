@@ -55,6 +55,24 @@ const applyUnifiedPairUpdate = (
   )
 }
 
+function applyFieldFromControlId(
+  exercises: CompleteExercise[],
+  controlId: string,
+  value: string | number,
+  options: {
+    unifiedSiblingIndex?: number
+    selectedItems?: string[]
+  },
+): CompleteExercise[] {
+  const [fieldName, rowIndexStr] = controlId.split(',')
+  return patchExerciseSettingsField(exercises, {
+    fieldName,
+    rowIndex: +rowIndexStr,
+    value,
+    ...options,
+  })
+}
+
 /** Shared path for unified bilateral rows, bulk selection, or a single row. */
 function patchExerciseSettingsField(
   exercises: CompleteExercise[],
@@ -124,15 +142,13 @@ const ExerciseSettings = ({
     if (!exercises) return
     const { id, value } = target
     const numericalInput = ['sets', 'reps', 'restTime', 'holdTime', 'speed']
-    const [name, rowIndexStr] = id.split(',')
-    const parsedValue = numericalInput.includes(name) ? Number(value) : value
-    const rowIndex = +rowIndexStr
+    const [fieldName] = id.split(',')
+    const parsedValue = numericalInput.includes(fieldName)
+      ? Number(value)
+      : value
 
     setExercises(
-      patchExerciseSettingsField(exercises, {
-        fieldName: name,
-        rowIndex,
-        value: parsedValue,
+      applyFieldFromControlId(exercises, id, parsedValue, {
         unifiedSiblingIndex,
         selectedItems,
       }),
@@ -144,14 +160,9 @@ const ExerciseSettings = ({
     if (!target || !exercises) return
 
     const { id } = target
-    const [name, rowIndexStr] = id.split(',')
-    const rowIndex = +rowIndexStr
 
     setExercises(
-      patchExerciseSettingsField(exercises, {
-        fieldName: name,
-        rowIndex,
-        value: value[0],
+      applyFieldFromControlId(exercises, id, value[0], {
         unifiedSiblingIndex,
         selectedItems,
       }),
@@ -163,15 +174,9 @@ const ExerciseSettings = ({
     if (!target || !exercises) return
 
     const { id } = target
-    const [name, rowIndexStr] = id.split(',')
-    const rowIndex = +rowIndexStr
-    const numericValue = value ? 1 : 0
 
     setExercises(
-      patchExerciseSettingsField(exercises, {
-        fieldName: name,
-        rowIndex,
-        value: numericValue,
+      applyFieldFromControlId(exercises, id, value ? 1 : 0, {
         unifiedSiblingIndex,
         selectedItems,
       }),

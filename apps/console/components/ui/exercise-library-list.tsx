@@ -107,6 +107,82 @@ function programMemberForDirection(
   )
 }
 
+type ProgramDirectionToggleParams = {
+  side: NearTermDirection
+  displayName: string
+  anchorIndex: number
+  members: CompleteExercise[]
+  isPair: boolean
+  splitSides: boolean
+  primary: CompleteExercise
+  secondary: CompleteExercise | undefined
+}
+
+function segmentExpandedSettings({
+  open,
+  isPair,
+  splitSides,
+  primary,
+  secondary,
+  primaryIndex,
+  secondaryIndex,
+  selectedExercises,
+  selectedItems,
+  updateExercises,
+}: {
+  open: boolean
+  isPair: boolean
+  splitSides: boolean
+  primary: CompleteExercise
+  secondary: CompleteExercise | undefined
+  primaryIndex: number
+  secondaryIndex: number | undefined
+  selectedExercises: CompleteExercise[]
+  selectedItems: string[]
+  updateExercises: (exercises: CompleteExercise[]) => void
+}): ReactNode {
+  if (!open) return null
+  if (isPair && splitSides && secondary != null && secondaryIndex != null) {
+    return (
+      <div className='flex w-full flex-col gap-4'>
+        <div className='space-y-1'>
+          <p className='text-muted-foreground text-xs font-medium'>Left</p>
+          <ExerciseSettings
+            key={`${primary.id}-left`}
+            ex={primary}
+            exercises={selectedExercises}
+            selectedItems={selectedItems}
+            index={primaryIndex}
+            setExercises={updateExercises}
+          />
+        </div>
+        <div className='space-y-1'>
+          <p className='text-muted-foreground text-xs font-medium'>Right</p>
+          <ExerciseSettings
+            key={`${secondary.id}-right`}
+            ex={secondary}
+            exercises={selectedExercises}
+            selectedItems={selectedItems}
+            index={secondaryIndex}
+            setExercises={updateExercises}
+          />
+        </div>
+      </div>
+    )
+  }
+  return (
+    <ExerciseSettings
+      key={primary.id}
+      ex={primary}
+      exercises={selectedExercises}
+      selectedItems={selectedItems}
+      index={primaryIndex}
+      unifiedSiblingIndex={secondaryIndex}
+      setExercises={updateExercises}
+    />
+  )
+}
+
 const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const { state, handler } = useExerciseLibrary()
   const { data: defaultExercises } = useExercise()
@@ -212,16 +288,16 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
     updateExercises(reordered.flat())
   }
 
-  const toggleProgramDirection = (
-    side: NearTermDirection,
-    displayName: string,
-    anchorIndex: number,
-    members: CompleteExercise[],
-    isPair: boolean,
-    splitSides: boolean,
-    primary: CompleteExercise,
-    secondary: CompleteExercise | undefined,
-  ) => {
+  const toggleProgramDirection = ({
+    side,
+    displayName,
+    anchorIndex,
+    members,
+    isPair,
+    splitSides,
+    primary,
+    secondary,
+  }: ProgramDirectionToggleParams) => {
     const inProgram = programMemberForDirection(members, side)
     if (inProgram) {
       if (
@@ -353,67 +429,25 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
               familyDisplayName,
             )
 
-            let rowTitle: string
-            if (isPair) {
-              rowTitle = familyDisplayName || 'Exercise'
-            } else {
-              rowTitle =
-                getDisplayName(
-                  defaultExercises?.find((de) => de.id === primary.exerciseId),
-                ) ?? 'Exercise'
-            }
+            const rowTitle = isPair
+              ? familyDisplayName || 'Exercise'
+              : (getDisplayName(primaryCatalog) ?? 'Exercise')
 
             const listKey = isPair ? `${primary.id}:${secondary!.id}` : primary.id
             const splitSides = splitSidesByPairKey[listKey] ?? false
 
-            const rowSettingsOpen = Boolean(toggledSettings?.[primary.id])
-            let expandedSettings: ReactNode = null
-            if (rowSettingsOpen) {
-              if (isPair && splitSides) {
-                expandedSettings = (
-                  <div className='flex w-full flex-col gap-4'>
-                    <div className='space-y-1'>
-                      <p className='text-muted-foreground text-xs font-medium'>
-                        Left
-                      </p>
-                      <ExerciseSettings
-                        key={`${primary.id}-left`}
-                        ex={primary}
-                        exercises={selectedExercises}
-                        selectedItems={selectedItems}
-                        index={primaryIndex}
-                        setExercises={updateExercises}
-                      />
-                    </div>
-                    <div className='space-y-1'>
-                      <p className='text-muted-foreground text-xs font-medium'>
-                        Right
-                      </p>
-                      <ExerciseSettings
-                        key={`${secondary!.id}-right`}
-                        ex={secondary!}
-                        exercises={selectedExercises}
-                        selectedItems={selectedItems}
-                        index={secondaryIndex!}
-                        setExercises={updateExercises}
-                      />
-                    </div>
-                  </div>
-                )
-              } else {
-                expandedSettings = (
-                  <ExerciseSettings
-                    key={primary.id}
-                    ex={primary}
-                    exercises={selectedExercises}
-                    selectedItems={selectedItems}
-                    index={primaryIndex}
-                    unifiedSiblingIndex={secondaryIndex}
-                    setExercises={updateExercises}
-                  />
-                )
-              }
-            }
+            const expandedSettings = segmentExpandedSettings({
+              open: Boolean(toggledSettings?.[primary.id]),
+              isPair,
+              splitSides,
+              primary,
+              secondary,
+              primaryIndex,
+              secondaryIndex,
+              selectedExercises,
+              selectedItems,
+              updateExercises,
+            })
 
             return (
               <li key={listKey} className='space-y-2'>
@@ -461,16 +495,16 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                                     'text-foreground border-cyan-500/60 bg-cyan-500/20',
                                 )}
                                 onClick={() =>
-                                  toggleProgramDirection(
+                                  toggleProgramDirection({
                                     side,
-                                    familyDisplayName,
-                                    primaryIndex,
+                                    displayName: familyDisplayName,
+                                    anchorIndex: primaryIndex,
                                     members,
                                     isPair,
                                     splitSides,
                                     primary,
                                     secondary,
-                                  )
+                                  })
                                 }
                               >
                                 {side}

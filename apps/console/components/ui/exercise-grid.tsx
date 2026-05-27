@@ -5,6 +5,7 @@ import {
   familyMembersForLibrarySelection,
   filterExerciseFamiliesForLibrary,
   libraryFamilySelectionState,
+  type DirectionBadgeHighlight,
   type ExerciseFamilyForLibrary,
   type ExerciseLibraryFilterRow,
   type NearTermDirection,
@@ -33,11 +34,20 @@ function equipmentChipLabel(key: string): string {
     .join(' ')
 }
 
-function familyEveryMemberSelected(
-  members: readonly { id: string }[],
+function directionBadgesWithSelection<
+  T extends ExerciseLibraryFilterRow,
+>(
+  family: ExerciseFamilyForLibrary<T>,
   isSelected: Record<string, boolean> | null | undefined,
-): boolean {
-  return members.every((m) => (isSelected?.[m.id] ?? false))
+): DirectionBadgeHighlight[] | undefined {
+  if (family.directionBadges.length === 0) return undefined
+  return family.directionBadges.map((badge) => {
+    const member = familyMemberForNearTermDirection(family, badge.side)
+    return {
+      ...badge,
+      selected: member ? Boolean(isSelected?.[member.id]) : false,
+    }
+  })
 }
 
 const ExerciseGrid = () => {
@@ -128,8 +138,7 @@ const ExerciseGrid = () => {
   ) => {
     if (!exercises) return
     const selectionMembers = familyMembersForLibrarySelection(family)
-    const allSelected = familyEveryMemberSelected(selectionMembers, isSelected)
-    if (allSelected) {
+    if (libraryFamilySelectionState(selectionMembers, isSelected) === 'full') {
       for (const m of selectionMembers) {
         removeExercise(m.id)
       }
@@ -302,33 +311,19 @@ const ExerciseGrid = () => {
               selectionMembers,
               isSelected ?? undefined,
             )
-            const allSelected = selectionState === 'full'
-            const partiallySelected = selectionState === 'partial'
             const rep = family.representative
             const familyFavoriteTargets = selectionMembers.map((m) => ({
               exerciseId: m.id,
               favoriteRowId: favoriteRowIdByExerciseId.get(m.id) ?? null,
             }))
-            const directionBadges =
-              family.directionBadges.length > 0
-                ? family.directionBadges.map((b) => {
-                    const member = familyMemberForNearTermDirection(family, b.side)
-                    return {
-                      ...b,
-                      selected: member
-                        ? Boolean(isSelected?.[member.id])
-                        : false,
-                    }
-                  })
-                : undefined
             return (
               <FlipCard
                 key={family.familyKey}
                 exercise={rep}
                 footerTitle={family.familyKey}
-                directionBadges={directionBadges}
-                isSelected={allSelected}
-                isPartiallySelected={partiallySelected}
+                directionBadges={directionBadgesWithSelection(family, isSelected)}
+                isSelected={selectionState === 'full'}
+                isPartiallySelected={selectionState === 'partial'}
                 familyFavoriteTargets={familyFavoriteTargets}
                 onDirectionBadgeClick={(side) =>
                   handleDirectionToggle(family, side)
