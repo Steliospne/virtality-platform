@@ -227,6 +227,8 @@ setInterval(
 
 setInterval(
   () => {
+    if (activeRooms.size === 0) return
+
     logger.debug('socket.rooms.snapshot', {
       activeRoomCount: activeRooms.size,
       rooms: [...activeRooms.entries()],
