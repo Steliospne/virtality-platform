@@ -9,7 +9,7 @@ import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
 import { Input } from '@/components/ui/input'
 import { Button } from './button'
-import { ChangeEvent, MouseEvent, useMemo, useState } from 'react'
+import { ChangeEvent, useMemo, useState } from 'react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import {
   useExercise,
@@ -27,6 +27,13 @@ function equipmentChipLabel(key: string): string {
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ')
+}
+
+function familyEveryMemberSelected(
+  members: readonly { id: string }[],
+  isSelected: Record<string, boolean> | null | undefined,
+): boolean {
+  return members.every((m) => (isSelected?.[m.id] ?? false))
 }
 
 const ExerciseGrid = () => {
@@ -95,11 +102,10 @@ const ExerciseGrid = () => {
   ])
 
   const handleFamilyToggle = (
-    _e: MouseEvent,
     family: ExerciseFamilyForLibrary<ExerciseLibraryFilterRow>,
   ) => {
     if (!exercises) return
-    const allSelected = family.members.every((m) => isSelected?.[m.id])
+    const allSelected = familyEveryMemberSelected(family.members, isSelected)
     if (allSelected) {
       for (const m of family.members) {
         removeExercise(m.id)
@@ -268,8 +274,9 @@ const ExerciseGrid = () => {
           </p>
         ) : (
           displayedFamilies?.map((family) => {
-            const allSelected = family.members.every(
-              (m) => isSelected?.[m.id] ?? false,
+            const allSelected = familyEveryMemberSelected(
+              family.members,
+              isSelected,
             )
             const rep = family.representative
             return (
@@ -286,7 +293,7 @@ const ExerciseGrid = () => {
                 favoriteExerciseId={
                   favoriteRowIdByExerciseId.get(rep.id) ?? null
                 }
-                onSelect={(e) => handleFamilyToggle(e, family)}
+                onSelect={() => handleFamilyToggle(family)}
               />
             )
           })

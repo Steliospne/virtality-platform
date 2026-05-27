@@ -89,7 +89,10 @@ export function groupExercisesIntoFamiliesByDisplayName<
       members: sorted,
       availableDirections,
       representative: sorted[0]!,
-      directionBadges: buildDirectionBadges(availableDirections, ''),
+      directionBadges: availableDirections.map((side) => ({
+        side,
+        emphasized: false,
+      })),
     })
   }
   return out.sort((a, b) =>
@@ -159,12 +162,13 @@ export function filterExerciseFamiliesForLibrary<
   const search = searchTerm.trim().toLowerCase()
   const families = groupExercisesIntoFamiliesByDisplayName(exercises)
   return families
-    .filter((f) => familyMatchesBody(f, selectedBodyParts))
-    .filter((f) => familyMatchesEquipment(f, selectedEquipmentKeys))
-    .filter((f) =>
-      familyMatchesFavorites(f, favoritesOnly, favoriteExerciseIds),
+    .filter(
+      (f) =>
+        familyMatchesBody(f, selectedBodyParts) &&
+        familyMatchesEquipment(f, selectedEquipmentKeys) &&
+        familyMatchesFavorites(f, favoritesOnly, favoriteExerciseIds) &&
+        familyMatchesSearch(f, search),
     )
-    .filter((f) => familyMatchesSearch(f, search))
     .map((f) => ({
       ...f,
       directionBadges: buildDirectionBadges(f.availableDirections, searchTerm),

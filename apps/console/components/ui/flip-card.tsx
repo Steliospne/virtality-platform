@@ -224,7 +224,7 @@ function CardFront({
       </div>
       <CardFooter className='flex flex-col items-center justify-center gap-1.5 p-2 text-center'>
         <P className='text-sm'>{primaryLabel}</P>
-        {directionBadges && directionBadges.length > 0 ? (
+        {directionBadges?.length ? (
           <div className='flex flex-wrap justify-center gap-1'>
             {directionBadges.map((b) => (
               <span
@@ -252,7 +252,13 @@ interface CardBackProps {
   handleFlip: (e: MouseEvent) => void
 }
 
-function CardBack({ exercise, isSelected, footerTitle, handleFlip }: CardBackProps) {
+function CardBack({
+  exercise,
+  isSelected,
+  footerTitle,
+  handleFlip,
+}: CardBackProps) {
+  const primaryLabel = footerTitle ?? getDisplayName(exercise)
   return (
     <Card
       className={cn(
@@ -262,7 +268,7 @@ function CardBack({ exercise, isSelected, footerTitle, handleFlip }: CardBackPro
       )}
     >
       <CardHeader className='p-2 text-center'>
-        <P>{footerTitle ?? getDisplayName(exercise)}</P>
+        <P>{primaryLabel}</P>
       </CardHeader>
       <Separator />
       <CardContent className='flex-1 overflow-auto p-2'>
