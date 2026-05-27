@@ -87,75 +87,91 @@ const copyToWorktree = ['node_modules']
 // Main loop
 // ---------------------------------------------------------------------------
 
+// Generate a unique branch name for this loop.
+const branch = `sandcastle/sequential-reviewer/${Date.now()}`
+
+// Create a single sandbox that both the implementer and reviewer share.
+// This gives both agents a real, named branch that persists across phases.
+const sandbox = await sandcastle.createSandbox({
+  branch,
+  cwd: REPO_ROOT,
+  sandbox: docker({ imageName: DOCKER_IMAGE }),
+  hooks,
+  copyToWorktree,
+})
+
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`)
 
-  // Generate a unique branch name for this iteration.
-  const branch = `sandcastle/sequential-reviewer/${Date.now()}`
-
-  // Create a single sandbox that both the implementer and reviewer share.
-  // This gives both agents a real, named branch that persists across phases.
-  const sandbox = await sandcastle.createSandbox({
-    branch,
-    cwd: REPO_ROOT,
-    sandbox: docker({ imageName: DOCKER_IMAGE }),
-    hooks,
-    copyToWorktree,
-  })
-
-  try {
-    // -----------------------------------------------------------------------
-    // Phase 1: Implement
-    //
-    // A sonnet agent picks the next open issue, writes the
-    // implementation (using RGR: Red → Green → Repeat → Refactor), and
-    // commits the result.
-    //
-    // The agent signals completion via <promise>COMPLETE</promise> when done.
-    // -----------------------------------------------------------------------
-    const implement = await runWithCursorRetries('implementer', () =>
-      sandbox.run({
-        name: 'implementer',
-        maxIterations: 100,
-        agent: cursorAgent(),
-        promptFile: './implement-prompt.md',
-        completionSignal: '<promise>COMPLETE</promise>',
-      }),
-    )
-
-    if (!implement?.commits.length) {
-      console.log('Implementation agent made no commits. Skipping review.')
-      continue
-    }
-
-    console.log(`\nImplementation complete on branch: ${branch}`)
-    console.log(`Commits: ${implement.commits.length}`)
-
-    // -----------------------------------------------------------------------
-    // Phase 2: Review
-    //
-    // A second sonnet agent reviews the diff of the branch produced by
-    // Phase 1. It uses the {{BRANCH}} prompt argument to inspect the right
-    // branch, and either approves or makes corrections directly on the branch.
-    // -----------------------------------------------------------------------
-    const review = await runWithCursorRetries('reviewer', () =>
-      sandbox.run({
-        name: 'reviewer',
-        maxIterations: 1,
-        agent: cursorAgent(),
-        promptFile: './review-prompt.md',
-        promptArgs: {
-          BRANCH: branch,
+  // -----------------------------------------------------------------------
+  // Phase 1: Implement
+  //
+  // A sonnet agent picks the next open issue, writes the
+  // implementation (using RGR: Red → Green → Repeat → Refactor), and
+  // commits the result.
+  //
+  // The agent signals completion via <promise>COMPLETE</promise> when done.
+  // -----------------------------------------------------------------------
+  const implement = await runWithCursorRetries('implementer', () =>
+    sandbox.run({
+      name: 'implementer',
+      maxIterations: 100,
+      agent: cursorAgent(),
+      promptFile: './implement-prompt.md',
+      completionSignal: '<promise>COMPLETE</promise>',
+      logging: {
+        type: 'file',
+        path: `./logs/${branch.replace('/', '-')}-implementer.log`,
+        onAgentStreamEvent: (event) => {
+          if (event.type === 'text') {
+            console.log(event.message)
+          }
         },
-      }),
-    )
+      },
+    }),
+  )
 
-    if (review) {
-      console.log('\nReview complete.')
-    }
-  } finally {
-    await sandbox.close()
+  if (!implement?.commits.length) {
+    console.log('Implementation agent made no commits. Skipping review.')
+    continue
+  }
+
+  console.log(`\nImplementation complete on branch: ${branch}`)
+  console.log(`Commits: ${implement.commits.length}`)
+
+  // -----------------------------------------------------------------------
+  // Phase 2: Review
+  //
+  // A second sonnet agent reviews the diff of the branch produced by
+  // Phase 1. It uses the {{BRANCH}} prompt argument to inspect the right
+  // branch, and either approves or makes corrections directly on the branch.
+  // -----------------------------------------------------------------------
+  const review = await runWithCursorRetries('reviewer', () =>
+    sandbox.run({
+      name: 'reviewer',
+      maxIterations: 1,
+      agent: cursorAgent(),
+      promptFile: './review-prompt.md',
+      promptArgs: {
+        BRANCH: branch,
+      },
+      logging: {
+        type: 'file',
+        path: `./logs/${branch.replace('/', '-')}-reviewer.log`,
+        onAgentStreamEvent: (event) => {
+          if (event.type === 'text') {
+            console.log(event.message)
+          }
+        },
+      },
+    }),
+  )
+
+  if (review) {
+    console.log('\nReview complete.')
   }
 }
+
+await sandbox.close()
 
 console.log('\nAll done.')
