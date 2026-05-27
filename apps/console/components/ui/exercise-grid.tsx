@@ -1,6 +1,10 @@
 import { cn, getUUID } from '@/lib/utils'
 import { bodyGroupIconSrcForCategory } from '@/lib/body-group-icon'
-import { filterExercisesForLibrary } from '@virtality/shared/utils'
+import {
+  filterExerciseFamiliesForLibrary,
+  type ExerciseFamilyForLibrary,
+  type ExerciseLibraryFilterRow,
+} from '@virtality/shared/utils'
 import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
 import { Input } from '@/components/ui/input'
@@ -45,17 +49,6 @@ const ExerciseGrid = () => {
   const { isSelected } = state
   const { selectExercise, removeExercise } = handler
 
-  /** Favorite row id by exercise id (first list entry wins, same as `Array#find`). */
-  const favoriteIdByExerciseId = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const row of favorites ?? []) {
-      if (!map.has(row.exerciseId)) {
-        map.set(row.exerciseId, row.id)
-      }
-    }
-    return map
-  }, [favorites])
-
   const toggleBodyPart = (category: string) => {
     setSelectedBodyParts((prev) =>
       prev.includes(category)
@@ -83,9 +76,9 @@ const ExerciseGrid = () => {
     return map
   }, [favorites])
 
-  const displayedExercises = useMemo(() => {
+  const displayedFamilies = useMemo(() => {
     if (!exercises) return undefined
-    return filterExercisesForLibrary(exercises, {
+    return filterExerciseFamiliesForLibrary(exercises, {
       selectedBodyParts,
       selectedEquipmentKeys,
       searchTerm,
@@ -101,11 +94,22 @@ const ExerciseGrid = () => {
     favoriteExerciseIds,
   ])
 
-  const handleSelectExercise = (e: MouseEvent) => {
-    const { id } = e.currentTarget
-    if (!id) return
-    const exerciseToAdd = exercises?.find((ex) => ex.id === id)
-    if (exerciseToAdd && !isSelected?.[exerciseToAdd.id]) {
+  const handleFamilyToggle = (
+    _e: MouseEvent,
+    family: ExerciseFamilyForLibrary<ExerciseLibraryFilterRow>,
+  ) => {
+    if (!exercises) return
+    const allSelected = family.members.every((m) => isSelected?.[m.id])
+    if (allSelected) {
+      for (const m of family.members) {
+        removeExercise(m.id)
+      }
+      return
+    }
+    for (const m of family.members) {
+      if (isSelected?.[m.id]) continue
+      const exerciseToAdd = exercises.find((ex) => ex.id === m.id)
+      if (!exerciseToAdd) continue
       const preppedExercise = {
         exerciseId: exerciseToAdd.id,
         id: getUUID(),
@@ -118,15 +122,6 @@ const ExerciseGrid = () => {
       }
       selectExercise(withRom(preppedExercise))
     }
-  }
-
-  const handleRemoveExercise = (e: MouseEvent) => {
-    const { id } = e.currentTarget
-    if (!id) return
-    const exerciseToRemove = exercises?.find((ex) => ex.id === id)
-
-    if (!exerciseToRemove) return
-    removeExercise(exerciseToRemove.id)
   }
 
   const changeSearchInput = (e: ChangeEvent<HTMLInputElement>) => {
@@ -143,7 +138,7 @@ const ExerciseGrid = () => {
   }
 
   const showEmptyState =
-    !isLoading && exercises && displayedExercises?.length === 0
+    !isLoading && exercises && displayedFamilies?.length === 0
 
   return (
     <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-2'>
@@ -272,21 +267,29 @@ const ExerciseGrid = () => {
             No exercises match your filters.
           </p>
         ) : (
-          displayedExercises?.map((exercise) => (
-            <FlipCard
-              key={exercise.id}
-              exercise={exercise}
-              isSelected={isSelected?.[exercise.id] ?? false}
-              favoriteExerciseId={
-                favoriteRowIdByExerciseId.get(exercise.id) ?? null
-              }
-              onSelect={
-                isSelected?.[exercise.id]
-                  ? handleRemoveExercise
-                  : handleSelectExercise
-              }
-            />
-          ))
+          displayedFamilies?.map((family) => {
+            const allSelected = family.members.every(
+              (m) => isSelected?.[m.id] ?? false,
+            )
+            const rep = family.representative
+            return (
+              <FlipCard
+                key={family.familyKey}
+                exercise={rep}
+                footerTitle={family.familyKey}
+                directionBadges={
+                  family.directionBadges.length > 0
+                    ? family.directionBadges
+                    : undefined
+                }
+                isSelected={allSelected}
+                favoriteExerciseId={
+                  favoriteRowIdByExerciseId.get(rep.id) ?? null
+                }
+                onSelect={(e) => handleFamilyToggle(e, family)}
+              />
+            )
+          })
         )}
       </div>
     </div>

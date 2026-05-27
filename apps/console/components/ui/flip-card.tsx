@@ -21,6 +21,7 @@ import {
   useORPC,
   useRemoveFavoriteExercise,
 } from '@virtality/react-query'
+import type { DirectionBadgeHighlight } from '@virtality/shared/utils'
 
 interface FlipCardProps {
   exercise: Exercise
@@ -28,6 +29,10 @@ interface FlipCardProps {
   isSelected: boolean
   favoriteExerciseId?: string | null
   onSelect: (e: MouseEvent) => void
+  /** When set, footer shows this title (e.g. family `displayName`) instead of `displayName + direction`. */
+  footerTitle?: string
+  /** Left/Right availability for family cards; `emphasized` reflects direction-aware search. */
+  directionBadges?: DirectionBadgeHighlight[]
 }
 
 const FlipCard = ({
@@ -36,6 +41,8 @@ const FlipCard = ({
   isSelected,
   favoriteExerciseId,
   onSelect,
+  footerTitle,
+  directionBadges,
 }: FlipCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
@@ -99,6 +106,8 @@ const FlipCard = ({
           videoRef={videoRef}
           isFlipped={isFlipped}
           favoriteExerciseId={favoriteExerciseId}
+          footerTitle={footerTitle}
+          directionBadges={directionBadges}
           handleFlip={handleFlip}
           handlePreviewToggle={handlePreviewToggle}
         />
@@ -106,6 +115,7 @@ const FlipCard = ({
         <CardBack
           exercise={exercise}
           isSelected={isSelected}
+          footerTitle={footerTitle}
           handleFlip={handleFlip}
         />
       </div>
@@ -122,6 +132,8 @@ interface CardFrontProps {
   isTouchDevice: boolean
   isFlipped: boolean
   favoriteExerciseId?: string | null
+  footerTitle?: string
+  directionBadges?: DirectionBadgeHighlight[]
   handleFlip: (e: MouseEvent) => void
   handlePreviewToggle: (e: MouseEvent) => void
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -134,10 +146,13 @@ function CardFront({
   isTouchDevice,
   isFlipped,
   favoriteExerciseId,
+  footerTitle,
+  directionBadges,
   videoRef,
   handleFlip,
   handlePreviewToggle,
 }: CardFrontProps) {
+  const primaryLabel = footerTitle ?? getDisplayName(exercise)
   return (
     <Card
       className={cn(
@@ -150,7 +165,7 @@ function CardFront({
           <>
             <Image
               src={exercise.image ?? '/placeholder.svg'}
-              alt={getDisplayName(exercise) + ' image'}
+              alt={primaryLabel + ' image'}
               fill
               className='object-contain'
               sizes='(max-width: 640px) 90vw, (max-width: 1024px) 220px, 260px'
@@ -207,8 +222,24 @@ function CardFront({
           </>
         )}
       </div>
-      <CardFooter className='justify-center p-2 text-center'>
-        <P className='text-sm'>{getDisplayName(exercise)}</P>
+      <CardFooter className='flex flex-col items-center justify-center gap-1.5 p-2 text-center'>
+        <P className='text-sm'>{primaryLabel}</P>
+        {directionBadges && directionBadges.length > 0 ? (
+          <div className='flex flex-wrap justify-center gap-1'>
+            {directionBadges.map((b) => (
+              <span
+                key={b.side}
+                className={cn(
+                  'text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium',
+                  b.emphasized &&
+                    'text-foreground ring-cyan-highlight bg-cyan-500/15 ring-2',
+                )}
+              >
+                {b.side}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </CardFooter>
     </Card>
   )
@@ -217,10 +248,11 @@ function CardFront({
 interface CardBackProps {
   exercise: Exercise
   isSelected: boolean
+  footerTitle?: string
   handleFlip: (e: MouseEvent) => void
 }
 
-function CardBack({ exercise, isSelected, handleFlip }: CardBackProps) {
+function CardBack({ exercise, isSelected, footerTitle, handleFlip }: CardBackProps) {
   return (
     <Card
       className={cn(
@@ -230,7 +262,7 @@ function CardBack({ exercise, isSelected, handleFlip }: CardBackProps) {
       )}
     >
       <CardHeader className='p-2 text-center'>
-        <P>{getDisplayName(exercise)}</P>
+        <P>{footerTitle ?? getDisplayName(exercise)}</P>
       </CardHeader>
       <Separator />
       <CardContent className='flex-1 overflow-auto p-2'>

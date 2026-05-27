@@ -1,4 +1,5 @@
 export * from './diff-by-id.ts'
+export * from './exercise-families-for-library.ts'
 export * from './filter-exercises-for-library.ts'
 export * from './generate-img-file.ts'
 export * from './normalize-exercise-equipment-key.ts'
