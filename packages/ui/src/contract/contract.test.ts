@@ -33,6 +33,10 @@ describe('shared UI contract', () => {
     ])
   })
 
+  it('completes phase 1 when every batch component is promoted', () => {
+    expect([...PROMOTED_COMPONENTS]).toEqual([...PHASE_1_COMPONENTS])
+  })
+
   it('builds canonical shared import paths', () => {
     expect(canonicalSharedImport('label')).toBe(
       '@virtality/ui/components/label',

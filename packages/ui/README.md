@@ -12,9 +12,10 @@ Shared UI Bucket (`components/`) and React Email templates (`components/email/`)
 ```ts
 import { PHASE_1_COMPONENTS, canonicalSharedImport } from '@virtality/ui/contract'
 import { cn } from '@virtality/ui/lib/cn'
-// After promotion:
 import { Label } from '@virtality/ui/components/label'
 ```
+
+Phase 1 (`PHASE_1_COMPONENTS`) is fully promoted — see [CONTRACT.md](./CONTRACT.md#phase-1-delivery-complete).
 
 ## Scripts
 

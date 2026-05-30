@@ -2,6 +2,8 @@
 
 Shared UI language for reusable components consumed by multiple apps.
 
+**Phase 1 (PRD #14)** is complete: `label`, `spinner`, `input`, `textarea`, `separator`, `badge`, and `card` live in `@virtality/ui` with canonical import enforcement. See `CONTRACT.md`.
+
 ## Language
 
 **Shared UI Bucket**:

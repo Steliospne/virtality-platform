@@ -73,6 +73,28 @@ Breaking API convergence is allowed during phase 1 when needed for a single cano
 
 Enforcement (GitHub #20): ESLint `no-restricted-imports` in app configs (`@virtality/eslint-config/shared-ui`) plus contract tests in `packages/ui/src/contract/enforcement.test.ts` guard canonical imports and deprecated re-export-only shims.
 
+## Phase 1 delivery (complete)
+
+Parent PRD GitHub #14. Implementation slices #15–#20:
+
+| Slice | Issue | Deliverable |
+| --- | --- | --- |
+| Contract + tokens | #15 | `CONTRACT.md`, semantic token baseline, `PHASE_1_COMPONENTS` |
+| label, spinner | #16 | Shared primitives + consumer rewiring |
+| input, textarea | #17 | API convergence + behavior tests |
+| separator, badge | #18 | Token-aligned promotions |
+| card | #19 | App-agnostic composite |
+| Import enforcement | #20 | `@virtality/eslint-config/shared-ui` + enforcement tests |
+
+`PROMOTED_COMPONENTS` matches `PHASE_1_COMPONENTS`. Console, website, and adminboard retain **Deprecated Local UI Component** re-export shims until a later cleanup phase. Further promotion uses the same Promotion Gate; overlay/select/menu classes remain deferred per PRD.
+
+### Phase 1 verification
+
+- [x] All phase-1 components listed in `PROMOTED_COMPONENTS`
+- [x] Canonical imports enforced (ESLint + contract tests)
+- [x] Deprecated re-export shims in all three consumer apps
+- [x] Monorepo type-check and test suite green
+
 ## Implementer checklist
 
 - [ ] Component passes Promotion Gate
