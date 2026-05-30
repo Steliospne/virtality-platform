@@ -1,6 +1,6 @@
 import { Badge } from '@virtality/ui/components/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card } from '@virtality/ui/components/card'
 import Image from 'next/image'
 import Link from 'next/link'
 import placeholder from '@/public/placeholder.svg'

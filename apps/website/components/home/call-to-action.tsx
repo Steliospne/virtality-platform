@@ -1,7 +1,7 @@
 'use client'
 import { Users, TrendingUp, Clock } from 'lucide-react'
 import { useWaitlist } from '@virtality/react-query'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@virtality/ui/components/card'
 import { Spinner } from '@virtality/ui/components/spinner'
 import WaitlistForm from '../call-to-action/waitlist-form'
 

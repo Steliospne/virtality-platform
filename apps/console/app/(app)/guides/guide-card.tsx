@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@virtality/ui/components/card'
 import { H2, P } from '@/components/ui/typography'
 import Video from '@/components/ui/video'
 import { Guide } from '@/data/static/guides'

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
 import type { CSSProperties, ReactNode } from 'react'
 import { CalendarDays, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'

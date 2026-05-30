@@ -5,7 +5,7 @@ import {
   DataTableHeader,
 } from '@/components/tables/data-table'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@virtality/ui/components/card'
 import {
   Dialog,
   DialogClose,

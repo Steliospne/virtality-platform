@@ -11,7 +11,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import Link from 'next/link'
 import { Input } from '@virtality/ui/components/input'
 import {

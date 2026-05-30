@@ -5,7 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/ui/form-v2'
 import { useForm } from 'react-hook-form'

@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import {
   FormControl,
   FormField,

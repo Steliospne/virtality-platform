@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 
 import SignInCardBody from '@/components/auth/sign-in-card-body'
 

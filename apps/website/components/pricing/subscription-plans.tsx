@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import { Badge } from '@virtality/ui/components/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'

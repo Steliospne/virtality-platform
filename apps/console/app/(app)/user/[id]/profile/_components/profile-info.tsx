@@ -15,7 +15,7 @@ import {
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@virtality/ui/components/card'
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
 import { Separator } from '@virtality/ui/components/separator'
 import { UserSchema } from '@virtality/db/definitions'

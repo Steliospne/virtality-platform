@@ -35,7 +35,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../ui/card'
+} from '@virtality/ui/components/card'
 import Link from 'next/link'
 import { authClient } from '@/auth-client'
 

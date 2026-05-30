@@ -7,7 +7,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import { Separator } from '@virtality/ui/components/separator'
 import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'

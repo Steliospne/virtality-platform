@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import Chart from '@/components/ui/progress-chart'
 import { Separator } from '@virtality/ui/components/separator'
 import { Textarea } from '@virtality/ui/components/textarea'

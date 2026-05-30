@@ -3,7 +3,7 @@ import { Fragment } from 'react'
 import { cn, getDisplayName } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import ExerciseDescriptionCard from '@/components/ui/exercise-description-card'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
 import {
   Item,
   ItemActions,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@virtality/ui/components/card'
 import { Badge } from '@virtality/ui/components/badge'
 import { Wifi, WifiOff } from 'lucide-react'
 import { VRDevice } from '@/types/models'

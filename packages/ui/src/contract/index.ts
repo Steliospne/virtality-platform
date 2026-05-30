@@ -28,6 +28,7 @@ export const PROMOTED_COMPONENTS: readonly Phase1Component[] = [
   'textarea',
   'separator',
   'badge',
+  'card',
 ]
 
 export type PromotedComponent = (typeof PROMOTED_COMPONENTS)[number]

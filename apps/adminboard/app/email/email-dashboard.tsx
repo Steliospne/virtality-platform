@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@virtality/ui/components/card'
 import { Mail, Send } from 'lucide-react'
 import { useState } from 'react'
 import { Input } from '@virtality/ui/components/input'

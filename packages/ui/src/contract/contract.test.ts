@@ -29,6 +29,7 @@ describe('shared UI contract', () => {
       'textarea',
       'separator',
       'badge',
+      'card',
     ])
   })
 

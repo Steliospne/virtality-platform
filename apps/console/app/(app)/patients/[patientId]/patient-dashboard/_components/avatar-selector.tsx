@@ -1,4 +1,4 @@
-import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardTitle } from '@virtality/ui/components/card'
 import {
   Select,
   SelectContent,
