@@ -11,9 +11,9 @@ import {
   FieldError,
   FieldLabel,
 } from './field'
-import { Input } from './input'
+import { Input } from '@virtality/ui/components/input'
 import React, { ChangeEventHandler, ReactNode } from 'react'
-import { Textarea } from './textarea'
+import { Textarea } from '@virtality/ui/components/textarea'
 import { Select, SelectContent, SelectTrigger, SelectValue } from './select'
 import { Checkbox } from './checkbox'
 

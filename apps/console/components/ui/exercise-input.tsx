@@ -1,5 +1,5 @@
 import { ChangeEventHandler, MouseEventHandler, useEffect } from 'react'
-import { Input } from './input'
+import { Input } from '@virtality/ui/components/input'
 
 interface ExerciseInputProps extends React.ComponentProps<'input'> {
   onSetValue: (target: { name: string; value: string; id: string }) => void

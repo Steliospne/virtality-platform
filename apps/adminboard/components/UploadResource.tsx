@@ -1,5 +1,5 @@
 'use client'
-import { Input } from './ui/input'
+import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
 import Image from 'next/image'
 import placeHolderImage from '@/public/placeholder.svg'

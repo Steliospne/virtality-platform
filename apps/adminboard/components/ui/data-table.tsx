@@ -35,7 +35,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Input } from './input'
+import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
 import { Check, MoreHorizontal } from 'lucide-react'
 import {
