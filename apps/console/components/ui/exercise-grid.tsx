@@ -13,7 +13,7 @@ import {
 import { Star, X } from 'lucide-react'
 import FlipCard from '@/components/ui/flip-card'
 import { Input } from '@virtality/ui/components/input'
-import { Button } from './button'
+import { Button } from '@virtality/ui/components/button'
 import { ChangeEvent, useMemo, useState } from 'react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import {
@@ -34,9 +34,7 @@ function equipmentChipLabel(key: string): string {
     .join(' ')
 }
 
-function directionBadgesWithSelection<
-  T extends ExerciseLibraryFilterRow,
->(
+function directionBadgesWithSelection<T extends ExerciseLibraryFilterRow>(
   family: ExerciseFamilyForLibrary<T>,
   isSelected: Record<string, boolean> | null | undefined,
 ): DirectionBadgeHighlight[] | undefined {
@@ -321,7 +319,10 @@ const ExerciseGrid = () => {
                 key={family.familyKey}
                 exercise={rep}
                 footerTitle={family.familyKey}
-                directionBadges={directionBadgesWithSelection(family, isSelected)}
+                directionBadges={directionBadgesWithSelection(
+                  family,
+                  isSelected,
+                )}
                 isSelected={selectionState === 'full'}
                 isPartiallySelected={selectionState === 'partial'}
                 familyFavoriteTargets={familyFavoriteTargets}

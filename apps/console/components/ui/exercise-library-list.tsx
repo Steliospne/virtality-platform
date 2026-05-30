@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { Label } from '@virtality/ui/components/label'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@virtality/ui/components/separator'
 import { cn, getDisplayName, getUUID } from '@/lib/utils'
@@ -237,9 +237,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const pairCheckboxChange = (memberIds: readonly string[]) => {
     const allIn = memberIds.every((id) => selectedItems.includes(id))
     if (allIn) {
-      commitSelectedItems(
-        selectedItems.filter((id) => !memberIds.includes(id)),
-      )
+      commitSelectedItems(selectedItems.filter((id) => !memberIds.includes(id)))
     } else {
       commitSelectedItems([...new Set([...selectedItems, ...memberIds])])
     }
@@ -277,9 +275,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
   const reorderSegmentGroups = (groupIndex: number, delta: -1 | 1) => {
     const j = groupIndex + delta
     if (j < 0 || j >= segments.length) return
-    const groups = segments.map((s) =>
-      membersForSegment(selectedExercises, s),
-    )
+    const groups = segments.map((s) => membersForSegment(selectedExercises, s))
     const reordered = [...groups]
     ;[reordered[groupIndex], reordered[j]] = [
       reordered[j]!,
@@ -421,9 +417,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
             )
 
             const familyDisplayName =
-              primary.exercise?.displayName ??
-              primaryCatalog?.displayName ??
-              ''
+              primary.exercise?.displayName ?? primaryCatalog?.displayName ?? ''
             const showDirectionToggles = catalogHasBilateralDirections(
               defaultExercises,
               familyDisplayName,
@@ -433,7 +427,9 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
               ? familyDisplayName || 'Exercise'
               : (getDisplayName(primaryCatalog) ?? 'Exercise')
 
-            const listKey = isPair ? `${primary.id}:${secondary!.id}` : primary.id
+            const listKey = isPair
+              ? `${primary.id}:${secondary!.id}`
+              : primary.id
             const splitSides = splitSidesByPairKey[listKey] ?? false
 
             const expandedSettings = segmentExpandedSettings({

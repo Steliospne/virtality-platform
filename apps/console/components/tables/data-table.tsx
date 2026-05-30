@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { MouseEvent, ReactNode } from 'react'
 import { Input } from '@virtality/ui/components/input'
 import {

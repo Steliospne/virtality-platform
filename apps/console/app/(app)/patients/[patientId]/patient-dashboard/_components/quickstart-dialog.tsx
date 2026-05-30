@@ -8,11 +8,16 @@ import {
 } from '@/components/ui/dialog'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import ExerciseLibraryList from '@/components/ui/exercise-library-list'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight, Save, Zap } from 'lucide-react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
-import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExerciseWithSettings } from '@/types/models'

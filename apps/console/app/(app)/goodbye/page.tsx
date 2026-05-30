@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Card } from '@virtality/ui/components/card'
 import Image from 'next/image'
 import Link from 'next/link'

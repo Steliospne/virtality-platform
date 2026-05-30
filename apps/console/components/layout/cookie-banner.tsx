@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import posthog from 'posthog-js'
 import { usePathname } from 'next/navigation'
 

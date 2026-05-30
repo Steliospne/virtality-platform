@@ -2,8 +2,6 @@
 
 Shared UI language for reusable components consumed by multiple apps.
 
-**Phase 1 (PRD #14)** is complete: `label`, `spinner`, `input`, `textarea`, `separator`, `badge`, and `card` live in `@virtality/ui` with canonical import enforcement. See `CONTRACT.md`.
-
 ## Language
 
 **Shared UI Bucket**:
@@ -15,29 +13,28 @@ UI components that remain app-specific and stay within an individual app context
 _Avoid_: Shared component, universal component
 
 **Promotion Gate**:
-The rule for moving a component from **Local App UI** to the **Shared UI Bucket**: used by at least two apps, free of app-domain logic, and differing only by theme-token styling.
+The rule for moving a component from **Local App UI** to the **Shared UI Bucket**: used by at least two apps, free of app-domain logic.
 _Avoid_: Ad-hoc move, opportunistic copy
 
-**Deprecated Local UI Component**:
-A renamed local component retained temporarily during migration after a shared replacement exists in `packages/ui`.
-_Avoid_: Permanent fallback, legacy default
+## Primitive Migration Triage
 
-**Shared UI Ownership**:
-Joint ownership by the console and website contexts for behavior and visual contract decisions in `packages/ui`.
-_Avoid_: Single-app ownership, ownerless shared layer
+Current duplicate UI primitives with conflicts (not zero-conflict yet):
 
-**Canonical Shared UI Import**:
-The required app import path for promoted shared components is `@virtality/ui/components/<name>` instead of local `@/components/ui/<name>` paths.
-_Avoid_: Local wrapper indirection, mixed import strategy
-
-**Token Contract**:
-The documented set of semantic styling tokens that shared components rely on, while each app keeps concrete token values in its own `globals.css`.
-_Avoid_: Hardcoded app colors in shared components, undocumented token dependency
-
-**Priority App Pair**:
-The primary UX-preservation targets for shared-component decisions are the console and website apps; adminboard may adapt visually.
-_Avoid_: Equal visual priority across all apps
-
-**Phase-1 Shared Batch**:
-The first promotion set for the Shared UI Bucket: `label`, `spinner`, `input`, `textarea`, `separator`, `badge`, and `card`.
-_Avoid_: Big-bang migration of all common components at once
+- `button`
+- `calendar`
+- `chart`
+- `checkbox`
+- `combo-select`
+- `command`
+- `dialog`
+- `dropdown-menu`
+- `exercise-input-pill`
+- `field`
+- `form`
+- `navigation-menu`
+- `popover`
+- `select`
+- `skeleton`
+- `switch`
+- `table`
+- `tabs`

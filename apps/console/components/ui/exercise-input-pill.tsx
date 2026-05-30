@@ -1,5 +1,5 @@
 import { ChangeEventHandler, MouseEventHandler } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Input } from '@virtality/ui/components/input'
 import { Minus, Plus } from 'lucide-react'
 

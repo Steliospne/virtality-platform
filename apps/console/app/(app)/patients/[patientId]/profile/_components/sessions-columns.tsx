@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
@@ -16,7 +16,9 @@ import { PatientSession } from '@virtality/db'
 import { getSessionDurationMinutes } from '@/lib/session-metrics'
 import type { ExtendedPatientSession } from '@/types/models'
 
-export const sessionsColumns: ColumnDef<PatientSession & { sessionData?: unknown[]; sessionExercise?: unknown[] }>[] = [
+export const sessionsColumns: ColumnDef<
+  PatientSession & { sessionData?: unknown[]; sessionExercise?: unknown[] }
+>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -80,7 +82,11 @@ export const sessionsColumns: ColumnDef<PatientSession & { sessionData?: unknown
     cell: ({ row }) => {
       const session = row.original as ExtendedPatientSession
       const min = getSessionDurationMinutes(session)
-      return min != null ? <span className="tabular-nums">{min.toFixed(1)} min</span> : '—'
+      return min != null ? (
+        <span className='tabular-nums'>{min.toFixed(1)} min</span>
+      ) : (
+        '—'
+      )
     },
   },
   {

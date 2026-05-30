@@ -1,6 +1,6 @@
 import PresetEditForm from './_components/preset-edit-form'
 import { H2 } from '@/components/ui/typography'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import Link from 'next/link'
 import { ExerciseLibraryProvider } from '@/context/exercise-library-context'
 import { getServerT } from '@/i18n/get-server-t'

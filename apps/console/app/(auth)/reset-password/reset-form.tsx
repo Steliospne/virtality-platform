@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { isValidPassword } from '@/lib/utils'
 import { z } from 'zod/v4'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import {
   Card,
   CardContent,

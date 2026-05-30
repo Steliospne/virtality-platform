@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 
 // ─── Variants ────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,8 @@ type ErrorIconType = keyof typeof ERROR_ICONS
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ErrorDisplayProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof errorDisplayVariants> {
   /** Main error heading */
   title?: string
@@ -136,7 +137,11 @@ function BannerError({
   const [expanded, setExpanded] = React.useState(false)
   const Icon = ERROR_ICONS[icon]
   const errorDetails =
-    error instanceof Error ? error.message : typeof error === 'string' ? error : null
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : null
 
   return (
     <motion.div
@@ -156,7 +161,9 @@ function BannerError({
         </span>
 
         <div className='flex-1 space-y-0.5'>
-          <p className='text-sm font-medium text-red-800 dark:text-red-300'>{title}</p>
+          <p className='text-sm font-medium text-red-800 dark:text-red-300'>
+            {title}
+          </p>
           {message && (
             <p className='text-xs leading-relaxed text-red-600/80 dark:text-red-400/70'>
               {message}
@@ -214,7 +221,7 @@ function BannerError({
             className='overflow-hidden'
           >
             <div className='border-t border-red-200/70 px-4 py-2 dark:border-red-900/40'>
-              <pre className='overflow-x-auto text-nowrap font-mono text-xs text-red-600/70 dark:text-red-400/60'>
+              <pre className='overflow-x-auto font-mono text-xs text-nowrap text-red-600/70 dark:text-red-400/60'>
                 {errorDetails}
               </pre>
             </div>
@@ -240,7 +247,11 @@ function CardError({
   const [expanded, setExpanded] = React.useState(false)
   const Icon = ERROR_ICONS[icon]
   const errorDetails =
-    error instanceof Error ? error.message : typeof error === 'string' ? error : null
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : null
 
   return (
     <motion.div
@@ -261,7 +272,9 @@ function CardError({
         </div>
 
         <div className='flex-1 space-y-1'>
-          <p className='text-sm font-semibold text-zinc-900 dark:text-zinc-100'>{title}</p>
+          <p className='text-sm font-semibold text-zinc-900 dark:text-zinc-100'>
+            {title}
+          </p>
           <p className='text-sm text-zinc-500 dark:text-zinc-400'>{message}</p>
         </div>
       </div>
@@ -372,7 +385,7 @@ function PageError({
     <div
       role='alert'
       className={cn(
-        'flex min-h-screen-with-header flex-col items-center justify-center px-4',
+        'min-h-screen-with-header flex flex-col items-center justify-center px-4',
         className,
       )}
     >
@@ -386,7 +399,10 @@ function PageError({
         <motion.div variants={itemVariants} className='relative mb-6'>
           <div className='absolute inset-0 rounded-full bg-red-100/60 blur-xl dark:bg-red-950/60' />
           <div className='relative flex size-20 items-center justify-center rounded-full border border-red-100 bg-red-50 shadow-sm ring-4 ring-red-50 dark:border-red-900/40 dark:bg-red-950/40 dark:ring-red-950/40'>
-            <Icon className='size-9 text-red-500 dark:text-red-400' strokeWidth={1.5} />
+            <Icon
+              className='size-9 text-red-500 dark:text-red-400'
+              strokeWidth={1.5}
+            />
           </div>
         </motion.div>
 
@@ -409,11 +425,14 @@ function PageError({
         {/* Vital-blue accent divider */}
         <motion.div
           variants={itemVariants}
-          className='my-6 h-px w-16 bg-linear-to-r from-transparent via-vital-blue-400 to-transparent dark:via-vital-blue-600'
+          className='via-vital-blue-400 dark:via-vital-blue-600 my-6 h-px w-16 bg-linear-to-r from-transparent to-transparent'
         />
 
         {/* Actions */}
-        <motion.div variants={itemVariants} className='flex flex-wrap items-center justify-center gap-3'>
+        <motion.div
+          variants={itemVariants}
+          className='flex flex-wrap items-center justify-center gap-3'
+        >
           {onRetry && (
             <Button onClick={onRetry} variant='outline' className='gap-2'>
               <RefreshCw className='size-4' />
@@ -421,7 +440,11 @@ function PageError({
             </Button>
           )}
           {action && (
-            <Button onClick={action.onClick} variant='ghost' className='text-zinc-500'>
+            <Button
+              onClick={action.onClick}
+              variant='ghost'
+              className='text-zinc-500'
+            >
               {action.label}
             </Button>
           )}

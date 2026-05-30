@@ -3,7 +3,7 @@ import Image from 'next/image'
 import placeholder from '@/public/placeholder.svg'
 import { Input } from '@virtality/ui/components/input'
 import { ChangeEvent, Fragment, useCallback, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { toast } from 'react-toastify'
 import { authClient } from '@/auth-client'
 import {

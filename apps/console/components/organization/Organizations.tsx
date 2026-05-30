@@ -7,7 +7,7 @@ import Link from 'next/link'
 import placeholder from '@/public/placeholder.svg'
 
 import { ChangeEvent, useActionState, useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/button'
+import { Button } from '@virtality/ui/components/button'
 
 interface OrganizationProps {
   userOrganizations: Organization[]

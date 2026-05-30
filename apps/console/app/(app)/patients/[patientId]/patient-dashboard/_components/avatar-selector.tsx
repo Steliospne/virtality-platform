@@ -1,4 +1,9 @@
-import { Card, CardContent, CardFooter, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import {
   Select,
   SelectContent,
@@ -19,7 +24,7 @@ import Image from 'next/image'
 import placeholder from '@/public/placeholder.svg'
 import { MouseEvent } from 'react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { usePatient, useAvatar } from '@virtality/react-query'
 
 const AvatarSelector = () => {

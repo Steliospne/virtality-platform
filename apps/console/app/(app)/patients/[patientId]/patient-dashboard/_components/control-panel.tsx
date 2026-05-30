@@ -31,7 +31,7 @@ import {
   PatientDashboardValue,
   usePatientDashboard,
 } from '@/context/patient-dashboard-context'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Id, toast } from 'react-toastify'
 // import { getClientT } from '@/i18n/get-client-t';
 import VRControlPanel from '@/components/ui/vr-control-panel'

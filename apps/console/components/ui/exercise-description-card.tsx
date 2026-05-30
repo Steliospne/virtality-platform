@@ -6,12 +6,17 @@ import {
   TooltipContent,
   TooltipArrow,
 } from '@/components/ui/tooltip'
-import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import { Info, Pause, Play } from 'lucide-react'
 import { getDisplayName } from '@/lib/utils'
 import { MouseEvent, useRef, useState } from 'react'
 import { Exercise } from '@virtality/db'
-import { Button } from './button'
+import { Button } from '@virtality/ui/components/button'
 
 interface ExerciseDescriptionCardProps {
   exercise: Exercise

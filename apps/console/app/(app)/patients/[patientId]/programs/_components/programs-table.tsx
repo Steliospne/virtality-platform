@@ -14,7 +14,7 @@ import {
 } from '@/components/tables/data-table'
 import { CompletePatientProgram } from '@/types/models'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import Link from 'next/link'
 import { PlusSquare, Trash2 } from 'lucide-react'
 import {

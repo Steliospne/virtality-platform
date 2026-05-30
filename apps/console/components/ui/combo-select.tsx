@@ -12,7 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { MouseEvent, useState } from 'react'
 import { cn } from '@/lib/utils'
 

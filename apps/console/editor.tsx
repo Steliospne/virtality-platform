@@ -2,7 +2,7 @@
 import { RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Quill, { Delta, EmitterSource, Range } from 'quill'
 import 'quill/dist/quill.snow.css' // Import Quill styles
-import { Button } from './components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { ChevronDown } from 'lucide-react'
 import { cn } from './lib/utils'
 

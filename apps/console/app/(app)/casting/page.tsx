@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import {
   Select,
   SelectContent,
@@ -23,13 +23,8 @@ function CastingContent() {
   const { devices, isLoading } = useDeviceContext()
   const [selectedDevice, setSelectedDevice] = useState<VRDevice | null>(null)
 
-  const {
-    connected,
-    connectionState,
-    reconnectAttempt,
-    connect,
-    disconnect,
-  } = useSocketConnection({ device: selectedDevice })
+  const { connected, connectionState, reconnectAttempt, connect, disconnect } =
+    useSocketConnection({ device: selectedDevice })
   const { startCasting, stopCasting, videoRef, status } = useCastingHandshake(
     selectedDevice?.socket ?? null,
   )
@@ -115,9 +110,9 @@ function CastingContent() {
                 ? 'text-amber-500'
                 : connectionState === 'failed'
                   ? 'text-red-500'
-              : connected
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-muted-foreground',
+                  : connected
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-muted-foreground',
           )}
         >
           {connectionState === 'connecting'
@@ -126,9 +121,9 @@ function CastingContent() {
               ? `Reconnecting (${reconnectAttempt}/5)...`
               : connectionState === 'failed'
                 ? 'Connection failed'
-            : connected
-              ? 'In room'
-              : 'Not connected'}
+                : connected
+                  ? 'In room'
+                  : 'Not connected'}
         </span>
       </div>
 

@@ -1,11 +1,16 @@
 'use client'
 import { UAParser } from 'ua-parser-js'
 import { authClient, Session } from '@/auth-client'
-import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import { Badge } from '@virtality/ui/components/badge'
 import { Monitor, Smartphone, Trash2 } from 'lucide-react'
 import { H3, P } from '@/components/ui/typography'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { useRouter } from 'next/navigation'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 

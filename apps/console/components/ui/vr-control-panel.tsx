@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { Button } from './button'
+import { Button } from '@virtality/ui/components/button'
 import {
   Select,
   SelectContent,

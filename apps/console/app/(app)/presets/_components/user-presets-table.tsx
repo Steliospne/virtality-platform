@@ -22,7 +22,7 @@ import {
   DataTableFooter,
   DataTableHeader,
 } from '@/components/tables/data-table'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import DeleteConfirmDialog from '@/components/ui/delete-confirm-dialog'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 

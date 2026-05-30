@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@virtality/ui/components/card'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { FormTextarea } from '@/components/ui/form-v2'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

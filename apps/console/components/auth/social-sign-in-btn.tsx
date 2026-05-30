@@ -1,7 +1,7 @@
 'use client'
 import { SiGoogle, SiGoogleHex } from '@icons-pack/react-simple-icons'
 import { authClient } from '@/auth-client'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import {
   CONSOLE_URL,
   CONSOLE_URL_LOCAL,

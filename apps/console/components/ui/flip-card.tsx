@@ -2,8 +2,13 @@
 
 import { useEffect, useRef, useState, MouseEvent } from 'react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader } from '@virtality/ui/components/card'
+import { Button } from '@virtality/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@virtality/ui/components/card'
 import { Ellipsis, Info, Pause, Play, RotateCcw, Star } from 'lucide-react'
 import { cn, getDisplayName } from '@/lib/utils'
 import { Separator } from '@virtality/ui/components/separator'

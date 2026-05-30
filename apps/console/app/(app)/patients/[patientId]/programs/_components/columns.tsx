@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,

@@ -4,7 +4,7 @@ import { type Organization } from '@/lib/definitions'
 import { X } from 'lucide-react'
 import { Session } from 'better-auth'
 import { ChangeEvent, useRef, useState } from 'react'
-import { Button } from '../ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Input } from '@virtality/ui/components/input'
 
 interface DeleteOrgProps {

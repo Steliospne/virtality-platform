@@ -1,6 +1,6 @@
 'use client'
 import { Input } from '@virtality/ui/components/input'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Card, CardContent } from '@virtality/ui/components/card'
 import {
   Dialog,

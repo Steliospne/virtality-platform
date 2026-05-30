@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import ExerciseGrid from '@/components/ui/exercise-grid'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 
 const ExerciseLibraryDialog = () => {

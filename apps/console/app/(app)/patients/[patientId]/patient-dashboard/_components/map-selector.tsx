@@ -1,4 +1,9 @@
-import { Card, CardContent, CardFooter, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import {
   Select,
   SelectContent,
@@ -19,7 +24,7 @@ import placeholder from '@/public/placeholder.svg'
 import { Map } from '@virtality/db'
 import { MouseEvent } from 'react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { usePatient, useMap } from '@virtality/react-query'
 
 const MapSelector = () => {

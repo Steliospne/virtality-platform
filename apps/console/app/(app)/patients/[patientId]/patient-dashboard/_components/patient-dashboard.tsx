@@ -7,12 +7,17 @@ import QuickStartDialog from './quickstart-dialog'
 import { ExerciseLibraryProvider } from '@/context/exercise-library-context'
 import SessionNotesCard from './session-notes-card'
 import useIsAuthed from '@/hooks/use-is-authed'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { useCastingHandshake } from '@/hooks/use-casting-handshake'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import { cn } from '@/lib/utils'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 import useNow from '@/hooks/use-now'

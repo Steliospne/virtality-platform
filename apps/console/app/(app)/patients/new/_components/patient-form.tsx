@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Separator } from '@virtality/ui/components/separator'
 import { useForm } from 'react-hook-form'
 import {

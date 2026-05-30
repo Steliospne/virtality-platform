@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { ReactNode, useState } from 'react'
 
 interface DeleteConfirmDialogProps {

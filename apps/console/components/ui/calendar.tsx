@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@virtality/ui/components/button'
 import { cn } from '@/lib/utils'
 import { differenceInCalendarDays } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'

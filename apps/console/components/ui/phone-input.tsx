@@ -9,7 +9,7 @@ import {
   Country,
 } from 'react-phone-number-input'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
-import { Button } from './button'
+import { Button } from '@virtality/ui/components/button'
 import {
   Command,
   CommandEmpty,

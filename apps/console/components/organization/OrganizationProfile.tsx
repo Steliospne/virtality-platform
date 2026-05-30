@@ -10,7 +10,7 @@ import capitalize from 'lodash.capitalize'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Input } from '@virtality/ui/components/input'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { type OrganizationWithMembers } from '@/lib/definitions'
 
 interface OrganizationProfileProps {

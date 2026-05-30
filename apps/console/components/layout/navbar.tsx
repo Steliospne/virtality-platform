@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Avatar from '@/components/layout/avatar'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Sidebar } from 'lucide-react'
 

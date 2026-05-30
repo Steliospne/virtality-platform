@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { PatientProgramFormSchema, PatientProgramForm } from '@/lib/definitions'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

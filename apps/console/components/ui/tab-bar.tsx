@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import Link, { LinkProps } from 'next/link'
 import { usePathname } from 'next/navigation'
 import { HTMLAttributes, ReactNode } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { usePatient } from '@virtality/react-query'
 
 type TabBarProps = {

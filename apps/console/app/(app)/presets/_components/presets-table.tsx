@@ -12,7 +12,7 @@ import {
   DataTableFooter,
   DataTableHeader,
 } from '@/components/tables/data-table'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import Link from 'next/link'
 import { PlusSquare } from 'lucide-react'
 import { Preset } from '@virtality/db'
