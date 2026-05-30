@@ -51,7 +51,7 @@ import ProgramSelector from './program-selector'
 import { Item } from '@/components/ui/item'
 import { usePatient, usePatientSessions } from '@virtality/react-query'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { useFeatureFlagResult } from 'posthog-js/react'
 
 let wakeLock: WakeLockSentinel | null = null

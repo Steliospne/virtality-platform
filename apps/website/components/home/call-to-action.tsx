@@ -2,7 +2,7 @@
 import { Users, TrendingUp, Clock } from 'lucide-react'
 import { useWaitlist } from '@virtality/react-query'
 import { Card, CardContent } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/spinner'
+import { Spinner } from '@virtality/ui/components/spinner'
 import WaitlistForm from '../call-to-action/waitlist-form'
 
 const CallToAction = () => {

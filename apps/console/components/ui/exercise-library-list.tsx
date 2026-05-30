@@ -6,7 +6,7 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'

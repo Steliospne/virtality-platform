@@ -1,7 +1,7 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'

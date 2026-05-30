@@ -1,6 +1,6 @@
 'use client'
 import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { Label } from '@virtality/ui/components/label'
 import Image from 'next/image'
 import placeHolderImage from '@/public/placeholder.svg'
 import { Camera, X } from 'lucide-react'

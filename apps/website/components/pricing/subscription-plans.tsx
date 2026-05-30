@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { plans } from '@/data/plans'

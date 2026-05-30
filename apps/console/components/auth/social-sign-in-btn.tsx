@@ -9,7 +9,7 @@ import {
 } from '@virtality/shared/types'
 import { useCallback, useState } from 'react'
 import useTimeout from '@/hooks/use-timeout'
-import { Spinner } from '@/components/ui/spinner'
+import { Spinner } from '@virtality/ui/components/spinner'
 import { markPendingSocketWarmUp } from '@/hooks/use-warm-up-socket-on-sign-in'
 import { warmUpSocketServer } from '@/lib/warm-up-socket-server'
 

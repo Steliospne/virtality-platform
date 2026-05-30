@@ -19,7 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useClientT } from '@/i18n/use-client-t'
 import { Loader2 } from 'lucide-react'
 import SignupForm from '@/components/auth/sign-up-form'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Input } from '@/components/ui/input'
 import {
   CONSOLE_URL,

@@ -964,6 +964,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@radix-ui/react-label':
+        specifier: 2.1.8
+        version: 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@react-email/components':
         specifier: 0.0.41
         version: 0.0.41(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -973,6 +976,9 @@ importers:
       clsx:
         specifier: 2.1.1
         version: 2.1.1
+      lucide-react:
+        specifier: 0.544.0
+        version: 0.544.0(react@19.2.3)
       tailwind-merge:
         specifier: 3.3.0
         version: 3.3.0

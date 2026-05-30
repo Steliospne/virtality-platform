@@ -10,7 +10,7 @@ import {
 } from '@/lib/session-metrics'
 import type { ExtendedPatientSession } from '@/types/models'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {

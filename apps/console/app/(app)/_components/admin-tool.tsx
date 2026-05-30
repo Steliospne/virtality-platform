@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from '@/components/ui/popover'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import { Input } from '@/components/ui/input'
 import { ChangeEvent, useState } from 'react'
 import { authClient } from '@/auth-client'

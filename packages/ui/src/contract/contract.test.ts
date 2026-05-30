@@ -21,8 +21,8 @@ describe('shared UI contract', () => {
     ])
   })
 
-  it('starts with no promoted components until migration slices land', () => {
-    expect([...PROMOTED_COMPONENTS]).toEqual([])
+  it('lists promoted phase-1 components after migration slices land', () => {
+    expect([...PROMOTED_COMPONENTS]).toEqual(['label', 'spinner'])
   })
 
   it('builds canonical shared import paths', () => {

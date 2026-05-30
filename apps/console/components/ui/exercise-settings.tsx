@@ -1,6 +1,6 @@
 import { Slider } from '@/components/ui/slider'
 import ExerciseInput from '@/components/ui/exercise-input'
-import { Label } from '@/components/ui/label'
+import { Label } from '@virtality/ui/components/label'
 import ExerciseInputPill from '@/components/ui/exercise-input-pill'
 import { CompleteExercise } from '@/types/models'
 import { useRef } from 'react'

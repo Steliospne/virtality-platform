@@ -19,9 +19,12 @@ export type Phase1Component = (typeof PHASE_1_COMPONENTS)[number]
 
 /**
  * Components that have completed promotion and must use canonical shared imports.
- * Updated by each promotion slice; empty until the first promotion lands.
+ * Updated by each promotion slice as components complete migration.
  */
-export const PROMOTED_COMPONENTS: readonly Phase1Component[] = []
+export const PROMOTED_COMPONENTS: readonly Phase1Component[] = [
+  'label',
+  'spinner',
+]
 
 export type PromotedComponent = (typeof PROMOTED_COMPONENTS)[number]
 

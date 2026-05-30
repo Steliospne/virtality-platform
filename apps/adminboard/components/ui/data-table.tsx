@@ -36,7 +36,7 @@ import {
   useState,
 } from 'react'
 import { Input } from './input'
-import { Label } from './label'
+import { Label } from '@virtality/ui/components/label'
 import { Check, MoreHorizontal } from 'lucide-react'
 import {
   Select,
