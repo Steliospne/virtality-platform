@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   PROMOTED_COMPONENTS,
+  isPromotedComponent,
   type PromotedComponent,
 } from './index.ts'
 import {
@@ -43,8 +44,9 @@ function isPromotedShimFile(filePath: string): PromotedComponent | null {
     if (!filePath.startsWith(prefix)) continue
     const base = filePath.slice(prefix.length)
     const match = /^([a-z]+)\.tsx$/.exec(base)
-    if (match && PROMOTED_COMPONENTS.includes(match[1] as PromotedComponent)) {
-      return match[1] as PromotedComponent
+    const name = match?.[1]
+    if (name && isPromotedComponent(name)) {
+      return name
     }
   }
   return null

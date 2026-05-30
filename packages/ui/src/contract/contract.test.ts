@@ -6,6 +6,7 @@ import {
   SHARED_UI_PACKAGE,
   canonicalSharedImport,
   isPhase1Component,
+  isPromotedComponent,
 } from './index.ts'
 
 describe('shared UI contract', () => {
@@ -21,19 +22,7 @@ describe('shared UI contract', () => {
     ])
   })
 
-  it('lists promoted phase-1 components after migration slices land', () => {
-    expect([...PROMOTED_COMPONENTS]).toEqual([
-      'label',
-      'spinner',
-      'input',
-      'textarea',
-      'separator',
-      'badge',
-      'card',
-    ])
-  })
-
-  it('completes phase 1 when every batch component is promoted', () => {
+  it('promotes every phase-1 component', () => {
     expect([...PROMOTED_COMPONENTS]).toEqual([...PHASE_1_COMPONENTS])
   })
 
@@ -43,9 +32,11 @@ describe('shared UI contract', () => {
     )
   })
 
-  it('identifies phase-1 component names', () => {
+  it('identifies phase-1 and promoted component names', () => {
     expect(isPhase1Component('badge')).toBe(true)
     expect(isPhase1Component('dialog')).toBe(false)
+    expect(isPromotedComponent('card')).toBe(true)
+    expect(isPromotedComponent('dialog')).toBe(false)
   })
 
   it('uses the shared UI package name', () => {

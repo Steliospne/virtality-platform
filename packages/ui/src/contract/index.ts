@@ -19,7 +19,7 @@ export type Phase1Component = (typeof PHASE_1_COMPONENTS)[number]
 
 /**
  * Components that have completed promotion and must use canonical shared imports.
- * Updated by each promotion slice as components complete migration.
+ * After phase 1 (#14) this matches {@link PHASE_1_COMPONENTS}; append as later promotions land.
  */
 export const PROMOTED_COMPONENTS: readonly Phase1Component[] = [
   'label',
@@ -35,6 +35,10 @@ export type PromotedComponent = (typeof PROMOTED_COMPONENTS)[number]
 
 export function isPhase1Component(name: string): name is Phase1Component {
   return (PHASE_1_COMPONENTS as readonly string[]).includes(name)
+}
+
+export function isPromotedComponent(name: string): name is PromotedComponent {
+  return (PROMOTED_COMPONENTS as readonly string[]).includes(name)
 }
 
 /** Canonical Shared UI Import path for a promoted component. */
