@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import {
   Popover,
   PopoverArrow,

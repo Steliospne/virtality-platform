@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'
 import { Check } from 'lucide-react'

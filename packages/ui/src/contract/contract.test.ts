@@ -27,6 +27,8 @@ describe('shared UI contract', () => {
       'spinner',
       'input',
       'textarea',
+      'separator',
+      'badge',
     ])
   })
 

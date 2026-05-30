@@ -17,7 +17,7 @@ import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import { UserSchema } from '@virtality/db/definitions'
 import {
   useListAccounts,
@@ -27,7 +27,7 @@ import {
 import z from 'zod/v4'
 import { Trash2, UserIcon, X } from 'lucide-react'
 import { SOCIAL_PROVIDERS } from '@/data/static/providers'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import { useQueryClient } from '@tanstack/react-query'
 import { ControllerField } from '@/components/ui/controller'
 import { Account } from 'better-auth'

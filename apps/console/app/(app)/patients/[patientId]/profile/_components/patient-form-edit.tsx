@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import { useForm } from 'react-hook-form'
 import {
   PatientFormSchema,

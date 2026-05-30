@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Ellipsis, Info, Pause, Play, RotateCcw, Star } from 'lucide-react'
 import { cn, getDisplayName } from '@/lib/utils'
-import { Separator } from './separator'
+import { Separator } from '@virtality/ui/components/separator'
 import { P } from './typography'
 import { Exercise } from '@virtality/db'
 import {

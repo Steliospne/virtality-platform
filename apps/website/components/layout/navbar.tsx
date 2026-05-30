@@ -1,6 +1,6 @@
 import { NavigationMenu } from '@/components/ui/navigation-menu'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import Link from 'next/link'
 import Image from 'next/image'
 import {

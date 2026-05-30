@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import Chart from '@/components/ui/progress-chart'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import { Textarea } from '@virtality/ui/components/textarea'
 
 import { getDisplayName } from '@/lib/utils'

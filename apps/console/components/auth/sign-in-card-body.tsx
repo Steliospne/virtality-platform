@@ -2,7 +2,7 @@
 
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '@virtality/ui/components/separator'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import EmailSignIn from '@/components/auth/email-sign-in'

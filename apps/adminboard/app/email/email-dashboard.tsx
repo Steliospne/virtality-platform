@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import {
   Card,
   CardContent,

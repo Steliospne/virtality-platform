@@ -2,7 +2,7 @@
 import { UAParser } from 'ua-parser-js'
 import { authClient, Session } from '@/auth-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import { Monitor, Smartphone, Trash2 } from 'lucide-react'
 import { H3, P } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'

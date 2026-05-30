@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@virtality/ui/components/badge'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
