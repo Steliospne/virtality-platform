@@ -1,5 +1,5 @@
 'use client'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { useRef, useEffect } from 'react'
 
 const ButtonToAction = () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@virtality/ui/components/card'
 import { Badge } from '@virtality/ui/components/badge'
-import { Switch } from '@/components/ui/switch'
+import { Switch } from '@virtality/ui/components/switch'
 import { Label } from '@virtality/ui/components/label'
 import { Check } from 'lucide-react'
 import { useState } from 'react'

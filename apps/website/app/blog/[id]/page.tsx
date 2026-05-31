@@ -1,5 +1,5 @@
 'use client'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Card, CardContent } from '@virtality/ui/components/card'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -9,7 +9,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from '@virtality/ui/components/popover'
 import {
   SiFacebook,
   SiLinkedin,

@@ -17,7 +17,7 @@ import {
 } from '@virtality/ui/components/card'
 import { Label } from '@virtality/ui/components/label'
 import { Button } from '@virtality/ui/components/button'
-import { Calendar } from '@/components/ui/calendar'
+import { Calendar } from '@virtality/ui/components/calendar'
 import {
   Popover,
   PopoverContent,

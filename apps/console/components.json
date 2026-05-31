@@ -12,8 +12,8 @@
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
+    "utils": "@virtality/ui/src/lib/utils",
+    "ui": "@virtality/ui/src/components",
     "lib": "@/lib/utils",
     "hooks": "@/hooks"
   },

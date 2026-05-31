@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { Input } from '@virtality/ui/components/input'
 import { useForm } from 'react-hook-form'
 import { WaitlistFormType } from '@/types/models'
@@ -70,7 +70,8 @@ const WaitlistForm = () => {
                     />
                     <Button
                       type='submit'
-                      className='h-14 px-6 text-base font-semibold bg-vital-blue-700 hover:bg-vital-blue-800 shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all rounded-xl group'
+                      variant='primary'
+                      className='h-14 px-6 text-base font-semibold shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all rounded-xl group'
                     >
                       {isCreating || isSending
                         ? 'Submitting...'

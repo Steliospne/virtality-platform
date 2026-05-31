@@ -6,7 +6,7 @@ const Footer = () => {
       <div className='container mx-auto px-4 md:px-8'>
         <div className='text-center mb-8'>
           <p className='text-slate-600 dark:text-gray-400 text-sm font-medium mb-2'>
-            © 2025 Virtality. All rights reserved.
+            © {new Date().getFullYear()} Virtality. All rights reserved.
           </p>
           <p className='text-slate-500 dark:text-gray-500 text-xs'>
             Transforming patient recovery through evidence-based virtual reality

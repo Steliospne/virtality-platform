@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button } from '@virtality/ui/components/button'
 import { ArrowRight, Activity } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { splitText } from '@/lib/utils'
@@ -73,7 +73,8 @@ const HeroTitle = () => {
       <div className='flex flex-col sm:flex-row gap-4 pt-4'>
         <Button
           asChild
-          className='h-auto px-6 py-4 text-base font-semibold bg-vital-blue-700 hover:bg-vital-blue-800 shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all'
+          variant='primary'
+          className='h-auto px-6 py-4 text-base font-semibold shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all'
         >
           <Link
             href='https://cal.com/virtality'
@@ -81,7 +82,7 @@ const HeroTitle = () => {
             target='_blank'
           >
             Request Clinical Demo
-            <ArrowRight className='w-5 h-5 group-hover:translate-x-1 transition-transform' />
+            <ArrowRight className='size-5 group-hover:translate-x-1 transition-transform' />
           </Link>
         </Button>
 

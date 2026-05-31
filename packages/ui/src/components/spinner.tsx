@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { Loader2Icon } from 'lucide-react'
 
-import { cn } from '../lib/cn.ts'
+import { cn } from '@virtality/ui/lib/utils'
 
 function Spinner({ className, ...props }: ComponentProps<'svg'>) {
   return (
