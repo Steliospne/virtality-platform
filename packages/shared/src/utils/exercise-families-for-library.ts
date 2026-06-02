@@ -49,7 +49,9 @@ export function familyMemberForNearTermDirection<
   family: Pick<ExerciseFamilyForLibrary<T>, 'members'>,
   side: NearTermDirection,
 ): T | undefined {
-  return family.members.find((m) => parseNearTermDirection(m.direction) === side)
+  return family.members.find(
+    (m) => parseNearTermDirection(m.direction) === side,
+  )
 }
 
 /**
@@ -73,10 +75,7 @@ export function libraryFamilySelectionState(
 export function familyMembersForLibrarySelection<
   T extends ExerciseLibraryFilterRow,
 >(
-  family: Pick<
-    ExerciseFamilyForLibrary<T>,
-    'members' | 'availableDirections'
-  >,
+  family: Pick<ExerciseFamilyForLibrary<T>, 'members' | 'availableDirections'>,
 ): readonly T[] {
   const bilateral =
     family.availableDirections.includes('Left') &&
@@ -114,8 +113,7 @@ function buildDirectionBadges(
   const mentionR = searchMentionsRight(searchTerm)
   return available.map((side) => ({
     side,
-    emphasized:
-      (side === 'Left' && mentionL) || (side === 'Right' && mentionR),
+    emphasized: (side === 'Left' && mentionL) || (side === 'Right' && mentionR),
   }))
 }
 

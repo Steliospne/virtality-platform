@@ -57,11 +57,8 @@ const ExerciseGrid = () => {
   )
 
   const { data: exercises, isLoading } = useExercise()
-
   const { data: categories } = useExerciseCategories()
-
   const { data: equipmentKeys } = useExerciseItems()
-
   const { data: favorites } = useFavoriteExercise()
 
   const { state, handler } = useExerciseLibrary()
@@ -177,7 +174,7 @@ const ExerciseGrid = () => {
     !isLoading && exercises && displayedFamilies?.length === 0
 
   return (
-    <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-2'>
+    <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto p-2'>
       <div className='flex flex-col gap-2'>
         <h2 className='text-lg font-bold'>Select By Body Part</h2>
         <div className='mb-3 flex flex-wrap gap-2'>
@@ -249,8 +246,8 @@ const ExerciseGrid = () => {
         </div>
       </div>
 
-      <div className='mb-3 flex max-w-md flex-wrap items-start gap-2'>
-        <div className='relative min-w-[12rem] flex-1'>
+      <div className='mb-3 flex max-w-lg flex-wrap items-start gap-2'>
+        <div className='relative min-w-48 flex-1'>
           <Input
             id='searchTerm'
             name='searchTerm'
@@ -274,7 +271,6 @@ const ExerciseGrid = () => {
         </div>
         <Button
           type='button'
-          size='icon'
           variant='outline'
           aria-pressed={favoritesOnly}
           aria-label='Show favorites only'
@@ -285,6 +281,7 @@ const ExerciseGrid = () => {
           )}
         >
           <Star className={cn(favoritesOnly && 'fill-yellow-400')} />
+          <span>Favorites</span>
         </Button>
       </div>
 

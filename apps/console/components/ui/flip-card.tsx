@@ -121,7 +121,7 @@ const FlipCard = ({
       id={exercise.id}
       onClick={onSelect}
       className={cn(
-        'perspective-1000 relative w-full max-w-[260px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:max-w-[200px] md:max-w-[220px] lg:max-w-[240px] xl:max-w-[260px]',
+        'perspective-1000 relative w-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
         isSelected &&
           'scale-[1.01] drop-shadow-[0_0_16px_rgba(34,211,238,0.55)] transition-transform duration-200',
         isPartiallySelected &&
@@ -267,7 +267,7 @@ function CardFront({
           </>
         )}
       </div>
-      <CardFooter className='flex flex-col items-center justify-center gap-1.5 p-2 text-center'>
+      <CardFooter className='flex min-h-20 flex-col items-center justify-center gap-1.5 p-2 text-center'>
         <P className='text-sm'>{primaryLabel}</P>
         {directionBadges?.length ? (
           <div className='flex flex-wrap justify-center gap-1'>
@@ -281,19 +281,20 @@ function CardFront({
               )
               if (onDirectionBadgeClick) {
                 return (
-                  <button
+                  <Button
                     key={b.side}
+                    variant='outline'
                     type='button'
                     aria-pressed={Boolean(b.selected)}
                     aria-label={`${b.selected ? 'Remove' : 'Add'} ${b.side} variant`}
-                    className={cn(badgeClass, 'hover:bg-cyan-500/25')}
+                    className={cn(badgeClass, 'px-4 hover:bg-cyan-500/25')}
                     onClick={(e) => {
                       e.stopPropagation()
                       onDirectionBadgeClick(b.side, e)
                     }}
                   >
                     {b.side}
-                  </button>
+                  </Button>
                 )
               }
               return (
