@@ -19,7 +19,7 @@ export function isDeferredRemoval(
 export function markDeferredRemoval(
   deferredRemovalIds: DeferredRemovalIdSet,
   rowId: string,
-): Set<string> {
+): DeferredRemovalIdSet {
   const next = new Set(deferredRemovalIds)
   next.add(rowId)
   return next
@@ -28,7 +28,7 @@ export function markDeferredRemoval(
 export function unmarkDeferredRemoval(
   deferredRemovalIds: DeferredRemovalIdSet,
   rowId: string,
-): Set<string> {
+): DeferredRemovalIdSet {
   const next = new Set(deferredRemovalIds)
   next.delete(rowId)
   return next
@@ -47,9 +47,10 @@ export function bulkSelectableRowIds(
   rows: readonly { id: string }[],
   deferredRemovalIds: DeferredRemovalIdSet,
 ): string[] {
-  return rows
-    .filter((row) => !isDeferredRemoval(deferredRemovalIds, row.id))
-    .map((row) => row.id)
+  return enabledMemberIds(
+    rows.map((row) => row.id),
+    deferredRemovalIds,
+  )
 }
 
 export function enabledMemberIds(

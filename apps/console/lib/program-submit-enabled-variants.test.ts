@@ -4,6 +4,7 @@ import {
   hasEnabledVariantsForSubmit,
   programExercisesForEditSubmit,
 } from './program-submit-enabled-variants'
+
 const variants = [
   { id: 'left', exerciseId: 'squat-left' },
   { id: 'right', exerciseId: 'squat-right' },

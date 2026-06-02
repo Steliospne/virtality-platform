@@ -29,6 +29,7 @@ import {
   segmentCheckboxChecked,
   segmentMembersFullyDeferred,
   toDeferredRemovalIdSet,
+  type DeferredRemovalIdSet,
 } from '@/lib/program-list-deferred-removal'
 
 interface ExerciseLibraryListProps {
@@ -91,6 +92,16 @@ function programMemberForDirection(
   )
 }
 
+function directionToggleAriaLabel(
+  isEnabled: boolean,
+  inProgram: boolean,
+  side: NearTermDirection,
+): string {
+  if (isEnabled) return `Remove ${side} variant`
+  if (inProgram) return `Restore ${side} variant`
+  return `Add ${side} variant`
+}
+
 type ProgramDirectionToggleParams = {
   side: NearTermDirection
   displayName: string
@@ -110,7 +121,7 @@ function segmentExpandedSettings({
   exerciseList,
   selectedItems,
   updateExercises,
-  deferredRemovalIds,
+  deferredRemoval,
 }: {
   isPair: boolean
   primary: CompleteExercise
@@ -120,11 +131,11 @@ function segmentExpandedSettings({
   exerciseList: CompleteExercise[]
   selectedItems: string[]
   updateExercises: (exercises: CompleteExercise[]) => void
-  deferredRemovalIds: ReturnType<typeof toDeferredRemovalIdSet>
+  deferredRemoval: DeferredRemovalIdSet
 }): ReactNode {
-  const primaryDeferred = isDeferredRemoval(deferredRemovalIds, primary.id)
+  const primaryDeferred = isDeferredRemoval(deferredRemoval, primary.id)
   const secondaryDeferred =
-    secondary != null && isDeferredRemoval(deferredRemovalIds, secondary.id)
+    secondary != null && isDeferredRemoval(deferredRemoval, secondary.id)
 
   if (isPair && secondary != null && secondaryIndex != null) {
     return (
@@ -398,7 +409,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
               exerciseList,
               selectedItems,
               updateExercises,
-              deferredRemovalIds: deferredRemoval,
+              deferredRemoval,
             })
 
             return (
@@ -435,17 +446,20 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
                         <div className='mt-0.5 flex flex-wrap gap-1'>
                           {NEAR_TERM_SIDES.map((side) => {
                             const member = programMemberForDirection(members, side)
-                            const inProgram = Boolean(member)
+                            const inProgram = member != null
                             const isEnabled =
                               inProgram &&
-                              member != null &&
                               !isDeferredRemoval(deferredRemoval, member.id)
                             return (
                               <button
                                 key={side}
                                 type='button'
                                 aria-pressed={isEnabled}
-                                aria-label={`${isEnabled ? 'Remove' : inProgram ? 'Restore' : 'Add'} ${side} variant`}
+                                aria-label={directionToggleAriaLabel(
+                                  isEnabled,
+                                  inProgram,
+                                  side,
+                                )}
                                 className={cn(
                                   'text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium',
                                   isEnabled &&

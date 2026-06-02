@@ -1,7 +1,10 @@
 import { CompleteExercise } from '@/types/models'
 import { Exercise } from '@virtality/db'
 import { useReducer } from 'react'
-import { pruneDeferredRemovalIds } from '@/lib/program-list-deferred-removal'
+import {
+  pruneDeferredRemovalIds,
+  toDeferredRemovalIdSet,
+} from '@/lib/program-list-deferred-removal'
 
 type State = {
   selectedExercises: CompleteExercise[]
@@ -100,7 +103,7 @@ const stateReducer = (state: State, action: Action): State => {
         isSelected: getSelected(action.payload),
         toggledSettings: getToggledSettings(action.payload),
         deferredRemovalIds: pruneDeferredRemovalIds(
-          new Set(state.deferredRemovalIds),
+          toDeferredRemovalIdSet(state.deferredRemovalIds),
           existingRowIds,
         ),
       }
