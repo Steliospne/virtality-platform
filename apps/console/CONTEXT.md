@@ -37,8 +37,48 @@ An explicit, always-visible toggle on a **Grouped Family Entry** that lets clini
 _Avoid_: Auto split, implicit divergence
 
 **Stage-Aware Removal**:
-Removal behavior that differs by workflow stage: in library selection, deselect immediately; in the selected-program list, require confirmation only when side-specific settings would be lost.
+Removal behavior that differs by workflow stage: in library selection, deselect immediately; in the selected-program list, require confirmation only when side-specific settings would be lost. Direction toggles can mark an **Exercise Variant** as disabled and defer actual removal until submit.
 _Avoid_: Global confirmation, one-rule removal
+
+**Deferred Direction Removal**:
+When a direction is toggled off in the selected-program list, the **Exercise Variant** remains visible with its settings preserved but read-only until re-enabled; persisted removal happens only on submit in both program creation and program editing flows.
+_Avoid_: Immediate direction delete, hidden pending removal
+
+**Deferred Removal Marker**:
+Client-side pending-removal state for an **Exercise Variant** is keyed by selected-row identity (`CompleteExercise.id`), not catalog identity (`exerciseId`).
+_Avoid_: exerciseId-based pending removal keys
+
+**Bulk Selection Scope**:
+**Exercise Variants** marked for deferred removal are excluded from bulk selection controls (`Select all`, segment checkbox aggregation, and `Remove Selected`).
+_Avoid_: Bulk actions that include pending-removal variants
+
+**Disabled Family Visibility**:
+When both Left and Right **Exercise Variants** of a family are marked for deferred removal, the family row remains visible in a disabled state until submit.
+_Avoid_: Immediate row collapse for fully disabled families
+
+**Deferred Removal Retry Semantics**:
+If submit fails, deferred-removal markers remain unchanged in the UI so clinicians can retry without rebuilding selection intent.
+_Avoid_: Clearing pending-removal state on failed submit
+
+**Deferred Removal Styling**:
+Deferred-removal **Exercise Variants** are communicated with muted styling only (no explicit status badge text).
+_Avoid_: Extra textual pending-removal labels
+
+**Deferred Toggle Reversibility**:
+Re-enabling a deferred-removal **Exercise Variant** restores it exactly as-is, preserving both its prior settings and its position in the selected-program list.
+_Avoid_: Re-enable reset, reinsert-at-end behavior
+
+**Enabled-Only Submit Guard**:
+Submit is blocked when no enabled **Exercise Variants** remain, and validation feedback is shown as a toast.
+_Avoid_: Allowing zero-enabled submit
+
+**Disabled Row Reorder Guard**:
+When a grouped family row is fully in deferred-removal state, its reorder controls are disabled.
+_Avoid_: Reordering fully deferred-removal rows
+
+**Deferred-Removal Scope (Current)**:
+Deferred removal applies to direction-toggle interactions in the selected-program list; `Remove Selected` remains immediate-delete behavior.
+_Avoid_: Broad removal-semantics changes in the same iteration
 
 ## Example Dialogue
 

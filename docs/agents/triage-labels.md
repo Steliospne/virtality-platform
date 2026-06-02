@@ -11,3 +11,10 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+
+## Companion label rule
+
+When applying `ready-for-agent`, always add `Sandcastle` in the same operation.
+
+- Required pair: `ready-for-agent` + `Sandcastle`
+- Do not leave `ready-for-agent` issues without `Sandcastle`
