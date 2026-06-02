@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   enabledVariantsForSubmit,
   hasEnabledVariantsForSubmit,
+  programExercisesForEditSubmit,
 } from './program-submit-enabled-variants'
 const variants = [
   { id: 'left', exerciseId: 'squat-left' },
@@ -27,5 +28,14 @@ describe('program submit enabled variants', () => {
     expect(
       enabledVariantsForSubmit(variants, ['left', 'right', 'solo']),
     ).toEqual([])
+  })
+
+  it('builds program-edit payload with programId on enabled variants only', () => {
+    expect(programExercisesForEditSubmit(variants, ['left'], 'prog-1')).toEqual(
+      [
+        { id: 'right', exerciseId: 'squat-right', programId: 'prog-1' },
+        { id: 'solo', exerciseId: 'march', programId: 'prog-1' },
+      ],
+    )
   })
 })

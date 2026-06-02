@@ -29,6 +29,11 @@ import {
   useUpdateProgramExercises,
 } from '@virtality/react-query'
 import { withRom } from '@/lib/with-rom'
+import { toast } from 'react-toastify'
+import {
+  programExercisesForEditSubmit,
+  ZERO_ENABLED_VARIANTS_MESSAGE,
+} from '@/lib/program-submit-enabled-variants'
 
 // Types
 interface ProgramEditFormProps {
@@ -42,7 +47,7 @@ const ProgramEditForm = ({ patientId, programId }: ProgramEditFormProps) => {
   const router = useRouter()
   const { state, handler } = useExerciseLibrary()
 
-  const { selectedExercises } = state
+  const { selectedExercises, deferredRemovalIds } = state
   const { updateExercises } = handler
 
   // Queries
@@ -80,16 +85,20 @@ const ProgramEditForm = ({ patientId, programId }: ProgramEditFormProps) => {
   const onSubmit = (values: PatientProgramForm) => {
     if (!oldProgram) return
 
+    const exercises = programExercisesForEditSubmit(
+      selectedExercises,
+      deferredRemovalIds,
+      programId,
+    )
+    if (exercises.length === 0) {
+      return toast.error(ZERO_ENABLED_VARIANTS_MESSAGE)
+    }
+
     const program: PatientProgram = {
       ...oldProgram,
       name: values.name === '' ? 'untitled' : values.name,
       updatedAt: new Date(),
     }
-
-    const exercises = selectedExercises.map((ex) => ({
-      ...ex,
-      programId,
-    }))
 
     updateProgram(program)
     updateProgramExercises({ programId, exercises })
