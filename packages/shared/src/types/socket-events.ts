@@ -82,9 +82,11 @@ export type GameEventKey = keyof typeof GAME_EVENT
 
 export const CASTING_EVENT = {
   RequestOffer: 'onRequestOffer',
+  RequestOfferV2: 'onRequestOfferV2',
   Offer: 'onOffer',
   Answer: 'onAnswer',
   StopCasting: 'onStopCasting',
+  Candidate: 'onIceCandidate',
 } as const
 
 export type CastingEventKey = keyof typeof CASTING_EVENT
@@ -151,7 +153,8 @@ export const GAME_RELAY: RelayEventMap = {
 } as const
 
 export const CASTING_RELAY: RelayEventMap = {
-  RequestOffer: { name: CASTING_EVENT.RequestOffer, payload: true },
+  RequestOffer: { name: CASTING_EVENT.RequestOffer, payload: false },
+  RequestOfferV2: { name: CASTING_EVENT.RequestOfferV2, payload: true },
   Offer: { name: CASTING_EVENT.Offer, payload: true },
   Answer: { name: CASTING_EVENT.Answer, payload: true },
   StopCasting: { name: CASTING_EVENT.StopCasting, payload: false },
@@ -268,8 +271,10 @@ export type GameEventPayloads = {
 }
 
 export type CastingEventPayloads = {
-  RequestOffer: [payload: string]
+  RequestOffer: []
+  RequestOfferV2: [payload: string]
   Offer: [offer: unknown]
   Answer: [answer: SDPDescription]
   StopCasting: []
+  Candidate: [candidate: unknown]
 }

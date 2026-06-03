@@ -58,6 +58,7 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const emitterRef = useRef<ReturnType<typeof createDeviceEmitter> | null>(null)
+  const pendingRemoteCandidatesRef = useRef<RTCIceCandidateInit[]>([])
   const iceServersRef = useRef<RTCIceServer[]>([])
 
   const emitter = useMemo(
@@ -68,6 +69,45 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   useEffect(() => {
     emitterRef.current = emitter
   }, [emitter])
+
+  const flushPendingRemoteCandidates = useCallback(async () => {
+    const pc = pcRef.current
+    if (!pc?.remoteDescription) return
+
+    const candidates = pendingRemoteCandidatesRef.current
+    pendingRemoteCandidatesRef.current = []
+
+    for (const candidate of candidates) {
+      try {
+        await pc.addIceCandidate(candidate)
+      } catch (e) {
+        console.warn('[casting] Failed to add queued ICE candidate:', e)
+      }
+    }
+  }, [])
+
+  const handleRemoteCandidate = useCallback(async (candidateJson: unknown) => {
+    try {
+      const candidate =
+        typeof candidateJson === 'string'
+          ? JSON.parse(candidateJson)
+          : candidateJson
+
+      if (!candidate) return
+
+      const pc = pcRef.current
+      if (!pc?.remoteDescription) {
+        pendingRemoteCandidatesRef.current.push(
+          candidate as RTCIceCandidateInit,
+        )
+        return
+      }
+
+      await pc.addIceCandidate(candidate as RTCIceCandidateInit)
+    } catch (e) {
+      console.warn('[casting] Failed to handle remote ICE candidate:', e)
+    }
+  }, [])
 
   const handleOffer = useCallback(
     async (offerJson: unknown) => {
@@ -97,6 +137,7 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
         pc.onicecandidate = (event) => {
           if (event.candidate) {
             console.log('[casting] Local ICE candidate:', event.candidate.type)
+            emitter.casting.Candidate(event.candidate.toJSON())
           }
         }
 
@@ -120,25 +161,10 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
         }
 
         await pc.setRemoteDescription(offerDesc)
+        await flushPendingRemoteCandidates()
+
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
-
-        await new Promise<void>((resolve) => {
-          if (pc.iceGatheringState === 'complete') {
-            resolve()
-            return
-          }
-          const onGatheringStateChange = () => {
-            if (pc.iceGatheringState === 'complete') {
-              pc.removeEventListener(
-                'icegatheringstatechange',
-                onGatheringStateChange,
-              )
-              resolve()
-            }
-          }
-          pc.addEventListener('icegatheringstatechange', onGatheringStateChange)
-        })
 
         const answerDesc = pc.localDescription
         if (answerDesc) {
@@ -151,13 +177,14 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
         setStatus('error')
       }
     },
-    [socket, emitter],
+    [socket, emitter, flushPendingRemoteCandidates],
   )
 
   useEffect(() => {
     if (!socket) return
     const unsubscribe = subscribe(socket, CASTING_EVENT, {
       Offer: handleOffer,
+      Candidate: handleRemoteCandidate,
     })
     return () => {
       unsubscribe()
@@ -170,16 +197,11 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
       setStatus('error')
       return
     }
+    const payload = await getCastingIceServers()
+    iceServersRef.current = payload
     setStatus('requesting')
-    try {
-      const payload = await getCastingIceServers()
-      iceServersRef.current = payload
-      emitter.casting.RequestOffer(JSON.stringify(payload))
-      console.log('[casting] ICE servers:', JSON.stringify(payload))
-    } catch (e) {
-      console.error('[casting] Error getting casting ICE servers:', e)
-      setStatus('error')
-    }
+    emitter.casting.RequestOffer()
+    emitter.casting.RequestOfferV2(JSON.stringify(payload))
   }, [socket, emitter])
 
   const stopCasting = useCallback(() => {
@@ -188,6 +210,7 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
       pc.close()
       pcRef.current = null
     }
+    pendingRemoteCandidatesRef.current = []
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream
       stream.getTracks().forEach((t) => t.stop())
@@ -195,15 +218,14 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
     }
     setStatus('idle')
     emitter?.casting.StopCasting()
-    iceServersRef.current = []
   }, [emitter])
 
   useEffect(() => {
     return () => {
       pcRef.current?.close()
       pcRef.current = null
+      pendingRemoteCandidatesRef.current = []
       emitterRef.current?.casting.StopCasting()
-      iceServersRef.current = []
     }
   }, [])
 
