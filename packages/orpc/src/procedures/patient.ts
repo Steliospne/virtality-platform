@@ -195,6 +195,13 @@ const updatePatient = authed
       where: { id: data.patient.id },
       data: updateData,
     })
+
+    if (data.medicalHistory) {
+      await prisma.medicalHistory.update({
+        where: { id: data.medicalHistory.id },
+        data: data.medicalHistory,
+      })
+    }
   })
 
 export const patient = {
