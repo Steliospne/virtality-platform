@@ -58,7 +58,7 @@ export const SignUpSchema = z.object({
 export type SignUpForm = z.infer<typeof SignUpSchema>
 
 export const PatientProgramFormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: 'Name cannot be empty' }),
 })
 
 export type PatientProgramForm = z.infer<typeof PatientProgramFormSchema>
