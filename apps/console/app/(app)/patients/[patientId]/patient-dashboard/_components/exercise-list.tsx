@@ -27,6 +27,7 @@ import {
 import ExerciseSettings from '@/components/ui/exercise-settings'
 import { motion } from 'motion/react'
 import { useExercise } from '@virtality/react-query'
+import SuccessToasty from '@/components/ui/SuccessToasty'
 
 const ExerciseList = ({ className }: { className?: string }) => {
   const { state, handler, currExercise } = usePatientDashboard()
@@ -63,16 +64,48 @@ const ExerciseList = ({ className }: { className?: string }) => {
     }
 
     if (currExercise.current === index) {
-      updatePatientDashboardState({
-        activeExerciseData: {
-          ...activeExerciseData,
-          totalReps: reps,
-          totalSets: sets,
-        },
-      })
+      try {
+        updatePatientDashboardState({
+          activeExerciseData: {
+            ...activeExerciseData,
+            totalReps: reps,
+            totalSets: sets,
+          },
+        })
+      } catch (error) {
+        console.error(error)
+      } finally {
+        SuccessToasty('Settings applied to current exercise')
+      }
     }
 
-    selectedDevice?.events.program.SettingsChange(payload)
+    if (isProgramActive) selectedDevice?.events.program.SettingsChange(payload)
+  }
+
+  const applySettingsToAllExercises = (index: number) => {
+    if (!exercises.length) return
+
+    const sourceExercise = exercises[index]
+    if (!sourceExercise) return
+
+    const { sets, reps, restTime, holdTime, speed, romMode } = sourceExercise
+    const syncedExercises = exercises.map((exercise) => ({
+      ...exercise,
+      sets,
+      reps,
+      restTime,
+      holdTime,
+      speed,
+      romMode,
+    }))
+
+    try {
+      setExercises(syncedExercises)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      SuccessToasty('Settings applied to all exercises')
+    }
   }
 
   const moveExerciseUp = (index: number) => {
@@ -197,11 +230,18 @@ const ExerciseList = ({ className }: { className?: string }) => {
                               orientation='vertical'
                             />
 
-                            <div className='col-start-3 place-self-end'>
-                              <Button
-                                disabled={isProgramInactive}
-                                onClick={() => applySettings(index)}
-                              >
+                            <div className='col-start-3 flex gap-2 place-self-end'>
+                              {exercises.length > 1 && (
+                                <Button
+                                  variant='outline'
+                                  onClick={() =>
+                                    applySettingsToAllExercises(index)
+                                  }
+                                >
+                                  Apply to all
+                                </Button>
+                              )}
+                              <Button onClick={() => applySettings(index)}>
                                 Apply Changes
                               </Button>
                             </div>
