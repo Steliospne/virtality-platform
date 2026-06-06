@@ -246,6 +246,8 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                       <PopoverContent className='w-auto p-0' align='start'>
                         <Calendar
                           mode='single'
+                          fixedWeeks
+                          captionLayout='dropdown'
                           selected={
                             field.value ? new Date(field.value) : new Date()
                           }
