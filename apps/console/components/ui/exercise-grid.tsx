@@ -200,6 +200,8 @@ const ExerciseGrid = () => {
                     alt={category}
                     width={24}
                     height={24}
+                    preload
+                    loading='eager'
                     className='size-18 shrink-0'
                   />
                 ) : null}
@@ -236,6 +238,8 @@ const ExerciseGrid = () => {
                     alt={key}
                     width={400}
                     height={400}
+                    preload
+                    loading='eager'
                     className='size-18 shrink-0'
                   />
                 ) : null}
