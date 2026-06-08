@@ -22,6 +22,15 @@ export type BucketObjectReferencesOutcome = {
   references: BucketObjectReference[]
 }
 
+export type BucketFolderPreviewOutcome = {
+  sourcePrefix: string
+  objectCount: number
+  referencedObjects: Array<{
+    objectKey: string
+    references: BucketObjectReference[]
+  }>
+}
+
 export type BucketReferenceReader = {
   findExerciseReferences: (
     lookupValues: string[],
@@ -199,4 +208,30 @@ export async function findKnownBucketObjectReferences({
     cdnUrl: bucketCdnUrl(trimmedKey),
     references: sortReferences(references),
   }
+}
+
+export async function findKnownBucketFolderReferences({
+  reader,
+  objectKeys,
+}: {
+  reader: BucketReferenceReader
+  objectKeys: string[]
+}): Promise<BucketFolderPreviewOutcome['referencedObjects']> {
+  const referencedObjects: BucketFolderPreviewOutcome['referencedObjects'] = []
+
+  for (const objectKey of objectKeys) {
+    const outcome = await findKnownBucketObjectReferences({
+      reader,
+      objectKey,
+    })
+
+    if (outcome.references.length > 0) {
+      referencedObjects.push({
+        objectKey: outcome.objectKey,
+        references: outcome.references,
+      })
+    }
+  }
+
+  return referencedObjects
 }

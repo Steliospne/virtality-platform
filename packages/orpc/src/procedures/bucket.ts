@@ -1,10 +1,14 @@
 import { ORPCError } from '@orpc/server'
 import { createAppLogger } from '@virtality/shared/observability'
 import {
+  collectObjectKeysUnderPrefix,
   deleteBucketObject,
+  deleteFolderPrefix,
+  findKnownBucketFolderReferences,
   findKnownBucketObjectReferences,
   formatBucketListPage,
   moveBucketObject,
+  moveFolderPrefix,
   normalizeBucketPrefix,
   replaceBucketObject,
   uploadBucketObjects,
@@ -48,6 +52,19 @@ const BucketReplaceInput = z.object({
 
 const BucketReferencesInput = z.object({
   objectKey: z.string().min(1),
+})
+
+const BucketFolderPreviewInput = z.object({
+  sourcePrefix: z.string().min(1),
+})
+
+const BucketFolderMoveInput = z.object({
+  sourcePrefix: z.string().min(1),
+  destinationPrefix: z.string().min(1),
+})
+
+const BucketFolderDeleteInput = z.object({
+  sourcePrefix: z.string().min(1),
 })
 
 const listBucketPrefix = authed
@@ -227,6 +244,100 @@ const getBucketObjectReferences = authed
     })
   })
 
+const previewBucketFolder = authed
+  .route({ path: '/bucket/folder/preview', method: 'GET' })
+  .input(BucketFolderPreviewInput)
+  .handler(async ({ context, input }) => {
+    const { s3 } = context
+    const sourcePrefix = normalizeBucketPrefix(input.sourcePrefix)
+    const objectKeys = await collectObjectKeysUnderPrefix(s3, sourcePrefix)
+    const referencedObjects = await findKnownBucketFolderReferences({
+      reader: createPrismaBucketReferenceReader(context.prisma),
+      objectKeys,
+    })
+
+    return {
+      sourcePrefix,
+      objectCount: objectKeys.length,
+      referencedObjects,
+    }
+  })
+
+const moveBucketFolder = authed
+  .route({ path: '/bucket/folder/move', method: 'POST' })
+  .input(BucketFolderMoveInput)
+  .handler(async ({ context, input }) => {
+    const { s3, user } = context
+
+    try {
+      const outcome = await moveFolderPrefix({
+        s3,
+        sourcePrefix: input.sourcePrefix,
+        destinationPrefix: input.destinationPrefix,
+      })
+
+      bucketLogger.info('bucket.folder.move.completed', {
+        actorId: user.id,
+        sourcePrefix: outcome.sourcePrefix,
+        destinationPrefix: outcome.destinationPrefix,
+        objectCount: outcome.objectCount,
+        successCount: outcome.successes.length,
+        failureCount: outcome.failures.length,
+        failures: outcome.failures,
+      })
+
+      return outcome
+    } catch (error) {
+      bucketLogger.warn('bucket.folder.move.failed', {
+        actorId: user.id,
+        sourcePrefix: input.sourcePrefix,
+        destinationPrefix: input.destinationPrefix,
+        error,
+      })
+
+      throw new ORPCError('BAD_REQUEST', {
+        message:
+          error instanceof Error ? error.message : 'Folder move failed',
+      })
+    }
+  })
+
+const deleteBucketFolder = authed
+  .route({ path: '/bucket/folder/delete', method: 'DELETE' })
+  .input(BucketFolderDeleteInput)
+  .handler(async ({ context, input }) => {
+    const { s3, user } = context
+
+    try {
+      const outcome = await deleteFolderPrefix({
+        s3,
+        sourcePrefix: input.sourcePrefix,
+      })
+
+      bucketLogger.info('bucket.folder.delete.completed', {
+        actorId: user.id,
+        sourcePrefix: outcome.sourcePrefix,
+        objectCount: outcome.objectCount,
+        successCount: outcome.successes.length,
+        failureCount: outcome.failures.length,
+        failures: outcome.failures,
+      })
+
+      return outcome
+    } catch (error) {
+      bucketLogger.warn('bucket.folder.delete.failed', {
+        actorId: user.id,
+        sourcePrefix: input.sourcePrefix,
+        error,
+      })
+
+      throw new ORPCError('BAD_REQUEST', {
+        message:
+          error instanceof Error ? error.message : 'Folder delete failed',
+      })
+    }
+  })
+
 export const bucket = {
   list: listBucketPrefix,
   upload: uploadBucket,
@@ -234,4 +345,7 @@ export const bucket = {
   delete: deleteBucket,
   replace: replaceBucket,
   references: getBucketObjectReferences,
+  folderPreview: previewBucketFolder,
+  folderMove: moveBucketFolder,
+  folderDelete: deleteBucketFolder,
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBucketReferenceLookupValues,
+  findKnownBucketFolderReferences,
   findKnownBucketObjectReferences,
   type BucketReferenceReader,
 } from './bucket-references.ts'
@@ -198,5 +199,43 @@ describe('bucket mutation invariants', () => {
     })
 
     expect(Object.keys(s3).sort()).toEqual(['deleteFile', 'uploadFile'])
+  })
+})
+
+describe('findKnownBucketFolderReferences', () => {
+  it('returns only folder objects with known references', async () => {
+    const referencedObjects = await findKnownBucketFolderReferences({
+      reader: createReader({
+        findExerciseReferences: async (lookupValues) =>
+          lookupValues.includes('images/folder/referenced.jpg')
+            ? [
+                {
+                  id: 'exercise-1',
+                  displayName: 'Shoulder Press',
+                  image: 'images/folder/referenced.jpg',
+                  video: null,
+                },
+              ]
+            : [],
+      }),
+      objectKeys: [
+        'images/folder/referenced.jpg',
+        'images/folder/unreferenced.jpg',
+      ],
+    })
+
+    expect(referencedObjects).toEqual([
+      {
+        objectKey: 'images/folder/referenced.jpg',
+        references: [
+          {
+            resourceType: 'exercise',
+            resourceId: 'exercise-1',
+            resourceLabel: 'Shoulder Press',
+            field: 'image',
+          },
+        ],
+      },
+    ])
   })
 })

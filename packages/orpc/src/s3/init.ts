@@ -79,6 +79,33 @@ class VirtalityS3 extends S3Client {
     }
   }
 
+  listAllUnderPrefix = async ({
+    prefix = '',
+    continuationToken,
+    maxKeys = 1000,
+  }: {
+    prefix?: string
+    continuationToken?: string
+    maxKeys?: number
+  } = {}) => {
+    const response = await this.send(
+      new ListObjectsV2Command({
+        Bucket,
+        Prefix: prefix || undefined,
+        ContinuationToken: continuationToken,
+        MaxKeys: maxKeys,
+      }),
+    )
+
+    return {
+      objectKeys:
+        (response.Contents?.map((item) => item.Key).filter(
+          Boolean,
+        ) as string[]) ?? [],
+      nextContinuationToken: response.NextContinuationToken ?? null,
+    }
+  }
+
   uploadFile = async ({
     ContentType,
     Body,

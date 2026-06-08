@@ -80,6 +80,32 @@ export type BucketDeleteOutcome = {
   objectKey: string
 }
 
+export type BucketObjectOperationResult = {
+  objectKey: string
+  success: boolean
+  error?: string
+  destinationObjectKey?: string
+}
+
+export type BucketFolderOperationOutcome = {
+  sourcePrefix: string
+  destinationPrefix?: string
+  objectCount: number
+  successes: BucketObjectOperationResult[]
+  failures: BucketObjectOperationResult[]
+}
+
+export type BucketListAllS3Client = {
+  listAllUnderPrefix: (input: {
+    prefix: string
+    continuationToken?: string
+    maxKeys?: number
+  }) => Promise<{
+    objectKeys: string[]
+    nextContinuationToken: string | null
+  }>
+}
+
 export type BucketReplaceS3Client = BucketUploadS3Client & BucketDeleteS3Client
 
 export type BucketReplaceOutcome = {
@@ -534,6 +560,188 @@ export function getBucketBreadcrumbs(
   }
 
   return breadcrumbs
+}
+
+export function getFolderParentPrefix(folderPrefix: string): string {
+  const normalized = normalizeBucketPrefix(folderPrefix)
+  const withoutTrailing = normalized.slice(0, -1)
+  const lastSlash = withoutTrailing.lastIndexOf('/')
+
+  if (lastSlash === -1) {
+    return ''
+  }
+
+  return withoutTrailing.slice(0, lastSlash + 1)
+}
+
+export function buildFolderRenameDestinationPrefix(
+  sourceFolderPrefix: string,
+  newFolderName: string,
+): string {
+  const parentPrefix = getFolderParentPrefix(sourceFolderPrefix)
+  const trimmedName = newFolderName.trim()
+
+  if (!trimmedName) {
+    throw new Error('Folder name cannot be empty')
+  }
+
+  const segmentError = validateBucketTargetPrefix(trimmedName)
+  if (segmentError) {
+    throw new Error(segmentError)
+  }
+
+  return normalizeBucketPrefix(`${parentPrefix}${trimmedName}`)
+}
+
+export function buildFolderDestinationObjectKey(
+  sourcePrefix: string,
+  destinationPrefix: string,
+  sourceObjectKey: string,
+): string {
+  const normalizedSource = normalizeBucketPrefix(sourcePrefix)
+  const normalizedDestination = normalizeBucketPrefix(destinationPrefix)
+
+  if (!sourceObjectKey.startsWith(normalizedSource)) {
+    throw new Error('Object key is not under the source folder prefix')
+  }
+
+  const relativeKey = sourceObjectKey.slice(normalizedSource.length)
+  const destinationObjectKey = `${normalizedDestination}${relativeKey}`
+  const destinationError = validateBucketObjectKey(destinationObjectKey)
+
+  if (destinationError) {
+    throw new Error(destinationError)
+  }
+
+  return destinationObjectKey
+}
+
+export async function collectObjectKeysUnderPrefix(
+  s3: BucketListAllS3Client,
+  prefix: string,
+): Promise<string[]> {
+  const normalizedPrefix = normalizeBucketPrefix(prefix)
+  const objectKeys: string[] = []
+  let continuationToken: string | undefined
+
+  do {
+    const page = await s3.listAllUnderPrefix({
+      prefix: normalizedPrefix,
+      continuationToken,
+    })
+
+    objectKeys.push(
+      ...page.objectKeys.filter(
+        (objectKey) => objectKey !== normalizedPrefix && !objectKey.endsWith('/'),
+      ),
+    )
+    continuationToken = page.nextContinuationToken ?? undefined
+  } while (continuationToken)
+
+  return objectKeys
+}
+
+export async function moveFolderPrefix({
+  s3,
+  sourcePrefix,
+  destinationPrefix,
+}: {
+  s3: BucketListAllS3Client & BucketMoveS3Client
+  sourcePrefix: string
+  destinationPrefix: string
+}): Promise<BucketFolderOperationOutcome> {
+  const normalizedSource = normalizeBucketPrefix(sourcePrefix)
+  const normalizedDestination = normalizeBucketPrefix(destinationPrefix)
+  const destinationError = validateBucketTargetPrefix(
+    normalizedDestination.replace(/\/$/, ''),
+  )
+
+  if (destinationError) {
+    throw new Error(destinationError)
+  }
+
+  if (normalizedSource === normalizedDestination) {
+    throw new Error('Source and destination folder prefixes are the same')
+  }
+
+  const objectKeys = await collectObjectKeysUnderPrefix(s3, normalizedSource)
+  const successes: BucketObjectOperationResult[] = []
+  const failures: BucketObjectOperationResult[] = []
+
+  for (const objectKey of objectKeys) {
+    try {
+      const destinationObjectKey = buildFolderDestinationObjectKey(
+        normalizedSource,
+        normalizedDestination,
+        objectKey,
+      )
+      const outcome = await moveBucketObject({
+        s3,
+        sourceObjectKey: objectKey,
+        destinationObjectKey,
+      })
+
+      successes.push({
+        objectKey,
+        success: true,
+        destinationObjectKey: outcome.destinationObjectKey,
+      })
+    } catch (error) {
+      failures.push({
+        objectKey,
+        success: false,
+        error: error instanceof Error ? error.message : 'Move failed',
+      })
+    }
+  }
+
+  return {
+    sourcePrefix: normalizedSource,
+    destinationPrefix: normalizedDestination,
+    objectCount: objectKeys.length,
+    successes,
+    failures,
+  }
+}
+
+export async function deleteFolderPrefix({
+  s3,
+  sourcePrefix,
+}: {
+  s3: BucketListAllS3Client & BucketDeleteS3Client
+  sourcePrefix: string
+}): Promise<BucketFolderOperationOutcome> {
+  const normalizedSource = normalizeBucketPrefix(sourcePrefix)
+  const objectKeys = await collectObjectKeysUnderPrefix(s3, normalizedSource)
+  const successes: BucketObjectOperationResult[] = []
+  const failures: BucketObjectOperationResult[] = []
+
+  for (const objectKey of objectKeys) {
+    try {
+      await deleteBucketObject({
+        s3,
+        objectKey,
+      })
+
+      successes.push({
+        objectKey,
+        success: true,
+      })
+    } catch (error) {
+      failures.push({
+        objectKey,
+        success: false,
+        error: error instanceof Error ? error.message : 'Delete failed',
+      })
+    }
+  }
+
+  return {
+    sourcePrefix: normalizedSource,
+    objectCount: objectKeys.length,
+    successes,
+    failures,
+  }
 }
 
 export function formatBucketListPage(

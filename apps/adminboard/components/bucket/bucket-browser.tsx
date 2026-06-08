@@ -21,6 +21,9 @@ import {
   type BucketObjectRow,
   getBucketBreadcrumbs,
 } from '@virtality/shared/utils'
+import { BucketFolderDeleteDialog } from './bucket-folder-delete-dialog'
+import { BucketFolderMoveDialog } from './bucket-folder-move-dialog'
+import { BucketFolderRenameDialog } from './bucket-folder-rename-dialog'
 import { useBucket } from '@virtality/react-query'
 import { Input } from '@virtality/ui/components/input'
 import { Spinner } from '@virtality/ui/components/spinner'
@@ -106,6 +109,50 @@ function ObjectPreview({ object }: { object: BucketObjectRow }) {
   return <FileIcon className='size-12 text-zinc-400' aria-hidden='true' />
 }
 
+function FolderActions({
+  folder,
+  onRename,
+  onMove,
+  onDelete,
+}: {
+  folder: BucketFolderRow
+  onRename: (folder: BucketFolderRow) => void
+  onMove: (folder: BucketFolderRow) => void
+  onDelete: (folder: BucketFolderRow) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size='icon'
+          variant='ghost'
+          className='size-8'
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Ellipsis />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' onClick={(event) => event.stopPropagation()}>
+        <DropdownMenuItem onClick={() => onRename(folder)}>
+          <Pencil />
+          Rename
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onMove(folder)}>
+          <FolderInput />
+          Move
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onDelete(folder)}
+          className='text-red-600 focus:text-red-600'
+        >
+          <Trash2 />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function ObjectActions({
   object,
   onRename,
@@ -178,6 +225,9 @@ const BucketBrowser = () => {
   const [moveObject, setMoveObject] = useState<BucketObjectRow | null>(null)
   const [replaceObject, setReplaceObject] = useState<BucketObjectRow | null>(null)
   const [deleteObject, setDeleteObject] = useState<BucketObjectRow | null>(null)
+  const [renameFolder, setRenameFolder] = useState<BucketFolderRow | null>(null)
+  const [moveFolder, setMoveFolder] = useState<BucketFolderRow | null>(null)
+  const [deleteFolder, setDeleteFolder] = useState<BucketFolderRow | null>(null)
 
   const { data, isLoading, isFetching, error } = useBucket({
     prefix,
@@ -367,7 +417,14 @@ const BucketBrowser = () => {
                 <TableCell className='font-mono text-xs text-zinc-500'>
                   {folder.prefix}
                 </TableCell>
-                <TableCell />
+                <TableCell className='text-right'>
+                  <FolderActions
+                    folder={folder}
+                    onRename={setRenameFolder}
+                    onMove={setMoveFolder}
+                    onDelete={setDeleteFolder}
+                  />
+                </TableCell>
               </TableRow>
             ))}
 
@@ -445,6 +502,39 @@ const BucketBrowser = () => {
           }
         }}
         object={deleteObject}
+        onDeleted={refreshCurrentFolder}
+      />
+
+      <BucketFolderRenameDialog
+        open={renameFolder !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameFolder(null)
+          }
+        }}
+        folder={renameFolder}
+        onRenamed={refreshCurrentFolder}
+      />
+
+      <BucketFolderMoveDialog
+        open={moveFolder !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMoveFolder(null)
+          }
+        }}
+        folder={moveFolder}
+        onMoved={refreshCurrentFolder}
+      />
+
+      <BucketFolderDeleteDialog
+        open={deleteFolder !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteFolder(null)
+          }
+        }}
+        folder={deleteFolder}
         onDeleted={refreshCurrentFolder}
       />
 

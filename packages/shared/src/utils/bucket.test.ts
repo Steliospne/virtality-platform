@@ -3,12 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   bucketCdnUrl,
   buildBucketObjectKey,
+  buildFolderDestinationObjectKey,
+  buildFolderRenameDestinationPrefix,
   buildRenameDestinationObjectKey,
+  collectObjectKeysUnderPrefix,
   deleteBucketObject,
+  deleteFolderPrefix,
   formatBucketListPage,
   getBucketBreadcrumbs,
   inferContentTypeFromObjectKey,
   moveBucketObject,
+  moveFolderPrefix,
   replaceBucketObject,
   sanitizeBucketFilenameStem,
   uploadBucketObjects,
@@ -436,6 +441,131 @@ describe('replaceBucketObject', () => {
     })
 
     expect(s3.deleteFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('collectObjectKeysUnderPrefix', () => {
+  it('enumerates every object key under a prefix across pages', async () => {
+    const s3 = {
+      listAllUnderPrefix: vi.fn(async ({ continuationToken }) => {
+        if (continuationToken) {
+          return {
+            objectKeys: ['images/thumbs/preview.jpg'],
+            nextContinuationToken: null,
+          }
+        }
+
+        return {
+          objectKeys: ['images/', 'images/photo.jpg', 'images/thumbs/'],
+          nextContinuationToken: 'page-2',
+        }
+      }),
+    }
+
+    const objectKeys = await collectObjectKeysUnderPrefix(s3, 'images/')
+
+    expect(objectKeys).toEqual(['images/photo.jpg', 'images/thumbs/preview.jpg'])
+    expect(s3.listAllUnderPrefix).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('buildFolderDestinationObjectKey', () => {
+  it('maps object keys from one folder prefix to another', () => {
+    expect(
+      buildFolderDestinationObjectKey(
+        'images/old/',
+        'videos/new/',
+        'images/old/photo.jpg',
+      ),
+    ).toBe('videos/new/photo.jpg')
+  })
+})
+
+describe('buildFolderRenameDestinationPrefix', () => {
+  it('renames a folder within its parent prefix', () => {
+    expect(
+      buildFolderRenameDestinationPrefix('images/thumbs/', 'previews'),
+    ).toBe('images/previews/')
+  })
+})
+
+describe('moveFolderPrefix', () => {
+  it('moves every object with copy-before-delete semantics and partial-failure summaries', async () => {
+    const s3 = {
+      listAllUnderPrefix: vi.fn(async () => ({
+        objectKeys: ['images/old/one.jpg', 'images/old/two.jpg'],
+        nextContinuationToken: null,
+      })),
+      objectExists: vi.fn(async ({ Key }) => Key === 'videos/new/two.jpg'),
+      copyObject: vi.fn(async () => true),
+      deleteFile: vi.fn(async () => ({})),
+    }
+
+    const outcome = await moveFolderPrefix({
+      s3,
+      sourcePrefix: 'images/old/',
+      destinationPrefix: 'videos/new/',
+    })
+
+    expect(outcome).toMatchObject({
+      sourcePrefix: 'images/old/',
+      destinationPrefix: 'videos/new/',
+      objectCount: 2,
+    })
+    expect(outcome.successes).toEqual([
+      {
+        objectKey: 'images/old/one.jpg',
+        success: true,
+        destinationObjectKey: 'videos/new/one.jpg',
+      },
+    ])
+    expect(outcome.failures).toEqual([
+      {
+        objectKey: 'images/old/two.jpg',
+        success: false,
+        error: 'Destination object key already exists',
+      },
+    ])
+    expect(s3.copyObject).toHaveBeenCalledWith({
+      sourceKey: 'images/old/one.jpg',
+      destinationKey: 'videos/new/one.jpg',
+    })
+    expect(s3.deleteFile).toHaveBeenCalledWith({ Key: 'images/old/one.jpg' })
+    expect(s3.deleteFile).not.toHaveBeenCalledWith({ Key: 'images/old/two.jpg' })
+  })
+})
+
+describe('deleteFolderPrefix', () => {
+  it('permanently deletes every object under a folder prefix', async () => {
+    const deletedKeys: string[] = []
+    const s3 = {
+      listAllUnderPrefix: vi.fn(async () => ({
+        objectKeys: ['archive/one.txt', 'archive/two.txt'],
+        nextContinuationToken: null,
+      })),
+      deleteFile: vi.fn(async ({ Key }) => {
+        deletedKeys.push(Key)
+        return Key === 'archive/two.txt' ? null : {}
+      }),
+    }
+
+    const outcome = await deleteFolderPrefix({
+      s3,
+      sourcePrefix: 'archive/',
+    })
+
+    expect(outcome.objectCount).toBe(2)
+    expect(outcome.successes).toEqual([
+      { objectKey: 'archive/one.txt', success: true },
+    ])
+    expect(outcome.failures).toEqual([
+      {
+        objectKey: 'archive/two.txt',
+        success: false,
+        error: 'Failed to delete bucket object',
+      },
+    ])
+    expect(deletedKeys).toEqual(['archive/one.txt', 'archive/two.txt'])
   })
 })
 
