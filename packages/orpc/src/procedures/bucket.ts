@@ -1,29 +1,29 @@
-import { CDN_URL } from '@virtality/shared/types'
+import {
+  formatBucketListPage,
+  normalizeBucketPrefix,
+} from '@virtality/shared/utils'
+import { z } from 'zod'
 import { authed } from '../middleware/auth.ts'
 
-const listImages = authed
+const BucketListInput = z.object({
+  prefix: z.string().optional().default(''),
+  continuationToken: z.string().optional(),
+})
+
+const listBucketPrefix = authed
   .route({ path: '/bucket/list', method: 'GET' })
-  .handler(async ({ context }) => {
+  .input(BucketListInput)
+  .handler(async ({ context, input }) => {
     const { s3 } = context
-    const files = await s3.listFiles()
-    const exclude = ['mp4', 'mov']
-    const baseURL = CDN_URL
+    const prefix = normalizeBucketPrefix(input.prefix ?? '')
+    const result = await s3.listPrefix({
+      prefix,
+      continuationToken: input.continuationToken,
+    })
 
-    const filterHandler = (i?: string) => {
-      if (!i) return
-      const type = i.split('.')[1]
-      if (!type) return
-      if (!exclude.includes(type)) return i
-    }
-
-    return files
-      .filter((i): i is string => !!filterHandler(i))
-      .map((item) => ({
-        imageURL: `${baseURL}/${item}`,
-        key: item,
-      }))
+    return formatBucketListPage(prefix, result)
   })
 
 export const bucket = {
-  list: listImages,
+  list: listBucketPrefix,
 }

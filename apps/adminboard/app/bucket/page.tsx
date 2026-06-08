@@ -1,9 +1,9 @@
-import BucketTableDAL from '@/components/bucket/bucket-table'
+import BucketBrowser from '@/components/bucket/bucket-browser'
 
 export const dynamic = 'force-dynamic'
 
-const Images = () => {
-  return <BucketTableDAL />
+const BucketPage = () => {
+  return <BucketBrowser />
 }
 
-export default Images
+export default BucketPage

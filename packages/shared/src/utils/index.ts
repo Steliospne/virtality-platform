@@ -1,3 +1,4 @@
+export * from './bucket.ts'
 export * from './diff-by-id.ts'
 export * from './exercise-families-for-library.ts'
 export * from './filter-exercises-for-library.ts'
