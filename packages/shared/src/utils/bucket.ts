@@ -1,4 +1,6 @@
+import { Buffer } from 'node:buffer'
 import { CDN_URL } from '../types/general.ts'
+import { createRandomStringGenerator } from './random.ts'
 
 export type BucketFolderRow = {
   type: 'folder'
@@ -23,6 +25,38 @@ export type BucketListPage = {
   nextContinuationToken: string | null
 }
 
+export type BucketUploadFileInput = {
+  name: string
+  contentType: string
+  body: Buffer
+}
+
+export type BucketUploadResultItem = {
+  filename: string
+  objectKey: string
+  cdnUrl: string
+  contentType: string
+  size: number
+}
+
+export type BucketUploadFailure = {
+  filename: string
+  error: string
+}
+
+export type BucketUploadOutcome = {
+  uploads: BucketUploadResultItem[]
+  failures: BucketUploadFailure[]
+}
+
+export type BucketUploadS3Client = {
+  uploadFile: (input: {
+    Key: string
+    Body: Buffer
+    ContentType?: string
+  }) => Promise<unknown | null>
+}
+
 export type S3ListPrefixResult = {
   CommonPrefixes?: { Prefix?: string }[]
   Contents?: {
@@ -32,6 +66,9 @@ export type S3ListPrefixResult = {
   }[]
   NextContinuationToken?: string | null
 }
+
+const UNSAFE_BUCKET_PATH_CHARS = /[?#\s%<>|\\:*"']/
+const BUCKET_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i
 
 const EXTENSION_CONTENT_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
@@ -49,6 +86,208 @@ const EXTENSION_CONTENT_TYPES: Record<string, string> = {
   html: 'text/html',
   css: 'text/css',
   js: 'text/javascript',
+}
+
+function getBucketPathSegments(path: string): string[] {
+  const trimmed = path.trim().replace(/^\/+/, '').replace(/\/+$/, '')
+  if (!trimmed) {
+    return []
+  }
+
+  return trimmed.split('/')
+}
+
+export function validateBucketTargetPrefix(prefix: string): string | null {
+  const trimmed = prefix.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  if (trimmed.startsWith('/')) {
+    return 'Bucket paths cannot start with a slash'
+  }
+
+  if (trimmed.includes('?')) {
+    return 'Bucket paths cannot contain query strings'
+  }
+
+  if (UNSAFE_BUCKET_PATH_CHARS.test(trimmed)) {
+    return 'Bucket paths contain invalid characters'
+  }
+
+  const segments = getBucketPathSegments(trimmed)
+  for (const segment of segments) {
+    if (!segment) {
+      return 'Bucket paths cannot contain empty segments'
+    }
+
+    if (segment === '.' || segment === '..') {
+      return 'Bucket paths cannot contain dot segments'
+    }
+
+    if (!BUCKET_SEGMENT_PATTERN.test(segment)) {
+      return 'Bucket path segments must be URL-safe'
+    }
+  }
+
+  return null
+}
+
+export function validateBucketObjectKey(objectKey: string): string | null {
+  const trimmed = objectKey.trim()
+  if (!trimmed) {
+    return 'Object keys cannot be empty'
+  }
+
+  if (trimmed.startsWith('/')) {
+    return 'Object keys cannot start with a slash'
+  }
+
+  if (trimmed.endsWith('/')) {
+    return 'Object keys cannot end with a slash'
+  }
+
+  if (trimmed.includes('?')) {
+    return 'Object keys cannot contain query strings'
+  }
+
+  if (UNSAFE_BUCKET_PATH_CHARS.test(trimmed)) {
+    return 'Object keys contain invalid characters'
+  }
+
+  const segments = trimmed.split('/')
+  for (const segment of segments) {
+    if (!segment) {
+      return 'Object keys cannot contain empty segments'
+    }
+
+    if (segment === '.' || segment === '..') {
+      return 'Object keys cannot contain dot segments'
+    }
+  }
+
+  const filename = segments.at(-1) ?? ''
+  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(filename)) {
+    return 'Object key filenames must be URL-safe'
+  }
+
+  return null
+}
+
+export function sanitizeBucketFilenameStem(filename: string): string {
+  const sanitized = filename
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return sanitized || 'file'
+}
+
+export function getBucketFilenameParts(filename: string): {
+  stem: string
+  extension: string
+} {
+  const trimmed = filename.trim()
+  const lastDot = trimmed.lastIndexOf('.')
+  if (lastDot <= 0 || lastDot === trimmed.length - 1) {
+    return { stem: trimmed, extension: '' }
+  }
+
+  return {
+    stem: trimmed.slice(0, lastDot),
+    extension: trimmed.slice(lastDot + 1).toLowerCase(),
+  }
+}
+
+export function buildBucketObjectKey({
+  targetPrefix,
+  originalFilename,
+  uniqueSuffix,
+}: {
+  targetPrefix: string
+  originalFilename: string
+  uniqueSuffix: string
+}): string {
+  const prefixError = validateBucketTargetPrefix(targetPrefix)
+  if (prefixError) {
+    throw new Error(prefixError)
+  }
+
+  const normalizedPrefix = normalizeBucketPrefix(
+    targetPrefix.trim().toLowerCase().replace(/^\/+/, '').replace(/\/+/g, '/'),
+  )
+  const { stem, extension } = getBucketFilenameParts(originalFilename)
+  const sanitizedStem = sanitizeBucketFilenameStem(stem)
+  const suffix = uniqueSuffix.toLowerCase()
+  const filename = extension
+    ? `${sanitizedStem}-${suffix}.${extension}`
+    : `${sanitizedStem}-${suffix}`
+  const objectKey = `${normalizedPrefix}${filename}`
+  const objectKeyError = validateBucketObjectKey(objectKey)
+
+  if (objectKeyError) {
+    throw new Error(objectKeyError)
+  }
+
+  return objectKey
+}
+
+export async function uploadBucketObjects({
+  s3,
+  targetPrefix,
+  files,
+  createSuffix = () => createRandomStringGenerator('a-z', '0-9')(8),
+}: {
+  s3: BucketUploadS3Client
+  targetPrefix: string
+  files: BucketUploadFileInput[]
+  createSuffix?: () => string
+}): Promise<BucketUploadOutcome> {
+  const prefixError = validateBucketTargetPrefix(targetPrefix)
+  if (prefixError) {
+    throw new Error(prefixError)
+  }
+
+  const uploads: BucketUploadResultItem[] = []
+  const failures: BucketUploadFailure[] = []
+
+  for (const file of files) {
+    try {
+      const objectKey = buildBucketObjectKey({
+        targetPrefix,
+        originalFilename: file.name,
+        uniqueSuffix: createSuffix(),
+      })
+      const contentType =
+        file.contentType || inferContentTypeFromObjectKey(objectKey)
+      const result = await s3.uploadFile({
+        Key: objectKey,
+        Body: file.body,
+        ContentType: contentType,
+      })
+
+      if (result === null) {
+        failures.push({ filename: file.name, error: 'Upload failed' })
+        continue
+      }
+
+      uploads.push({
+        filename: file.name,
+        objectKey,
+        cdnUrl: bucketCdnUrl(objectKey),
+        contentType,
+        size: file.body.byteLength,
+      })
+    } catch (error) {
+      failures.push({
+        filename: file.name,
+        error: error instanceof Error ? error.message : 'Upload failed',
+      })
+    }
+  }
+
+  return { uploads, failures }
 }
 
 export function normalizeBucketPrefix(prefix: string): string {

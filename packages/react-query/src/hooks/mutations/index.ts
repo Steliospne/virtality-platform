@@ -53,3 +53,6 @@ export { useSendEmailTemplate } from './email/use-send-email-template.js'
 // Favorite exercise mutations
 export { useAddFavoriteExercise } from './favorite-exercise/use-add-favorite-exercise.js'
 export { useRemoveFavoriteExercise } from './favorite-exercise/use-remove-favorite-exercise.js'
+
+// Bucket mutations
+export { useUploadBucketObjects } from './bucket/use-upload-bucket-objects.js'

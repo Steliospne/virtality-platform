@@ -32,7 +32,9 @@ import {
   FileIcon,
   Film,
   Folder,
+  Upload,
 } from 'lucide-react'
+import { BucketUploadDialog } from './bucket-upload-dialog'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -132,6 +134,7 @@ const BucketBrowser = () => {
   const [continuationToken, setContinuationToken] = useState<string | undefined>()
   const [search, setSearch] = useState('')
   const [rows, setRows] = useState<BucketRowsState>(emptyRows)
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 
   const { data, isLoading, isFetching, error } = useBucket({
     prefix,
@@ -251,12 +254,18 @@ const BucketBrowser = () => {
         })}
       </nav>
 
-      <Input
-        placeholder='Search in this folder...'
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        className='max-w-sm'
-      />
+      <div className='flex flex-wrap items-center gap-3'>
+        <Input
+          placeholder='Search in this folder...'
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className='max-w-sm'
+        />
+        <Button onClick={() => setIsUploadDialogOpen(true)}>
+          <Upload />
+          Upload
+        </Button>
+      </div>
 
       {error ? (
         <p className='text-sm text-red-500'>Failed to load bucket objects.</p>
@@ -334,6 +343,12 @@ const BucketBrowser = () => {
           </TableBody>
         </Table>
       </div>
+
+      <BucketUploadDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        currentPrefix={prefix}
+      />
 
       {rows.nextContinuationToken ? (
         <div>
