@@ -48,6 +48,7 @@ import { BucketObjectReplaceDialog } from './bucket-object-replace-dialog'
 import { BucketObjectMoveDialog } from './bucket-object-move-dialog'
 import { BucketObjectRenameDialog } from './bucket-object-rename-dialog'
 import { BucketUploadDialog } from './bucket-upload-dialog'
+import { scheduleAfterDropdownClose } from '@/lib/schedule-after-dropdown-close'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -122,8 +123,17 @@ function FolderActions({
   onMove: (folder: BucketFolderRow) => void
   onDelete: (folder: BucketFolderRow) => void
 }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const openDialogAction = (action: (folder: BucketFolderRow) => void) => () => {
+    scheduleAfterDropdownClose(
+      () => setMenuOpen(false),
+      () => action(folder),
+    )
+  }
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           size='icon'
@@ -135,16 +145,16 @@ function FolderActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' onClick={(event) => event.stopPropagation()}>
-        <DropdownMenuItem onClick={() => onRename(folder)}>
+        <DropdownMenuItem onSelect={openDialogAction(onRename)}>
           <Pencil />
           Rename
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onMove(folder)}>
+        <DropdownMenuItem onSelect={openDialogAction(onMove)}>
           <FolderInput />
           Move
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => onDelete(folder)}
+          onSelect={openDialogAction(onDelete)}
           className='text-red-600 focus:text-red-600'
         >
           <Trash2 />
@@ -170,6 +180,15 @@ function ObjectActions({
   onReplace: (object: BucketObjectRow) => void
   onDelete: (object: BucketObjectRow) => void
 }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const openDialogAction = (action: (object: BucketObjectRow) => void) => () => {
+    scheduleAfterDropdownClose(
+      () => setMenuOpen(false),
+      () => action(object),
+    )
+  }
+
   const copyCdnUrl = () => {
     void navigator.clipboard.writeText(object.cdnUrl)
   }
@@ -179,39 +198,39 @@ function ObjectActions({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button size='icon' variant='ghost' className='size-8'>
           <Ellipsis />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        <DropdownMenuItem onClick={() => onViewDetails(object)}>
+        <DropdownMenuItem onSelect={openDialogAction(onViewDetails)}>
           <Info />
           View details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyCdnUrl}>
+        <DropdownMenuItem onSelect={copyCdnUrl}>
           <Copy />
           Copy CDN URL
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyObjectKey}>
+        <DropdownMenuItem onSelect={copyObjectKey}>
           <Copy />
           Copy object key
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onRename(object)}>
+        <DropdownMenuItem onSelect={openDialogAction(onRename)}>
           <Pencil />
           Rename
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onMove(object)}>
+        <DropdownMenuItem onSelect={openDialogAction(onMove)}>
           <FolderInput />
           Move
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onReplace(object)}>
+        <DropdownMenuItem onSelect={openDialogAction(onReplace)}>
           <RefreshCw />
           Replace content
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => onDelete(object)}
+          onSelect={openDialogAction(onDelete)}
           className='text-red-600 focus:text-red-600'
         >
           <Trash2 />
