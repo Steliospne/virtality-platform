@@ -43,12 +43,6 @@ importers:
       '@auth/pg-adapter':
         specifier: 1.8.0
         version: 1.8.0(pg@8.16.3)
-      '@aws-sdk/client-s3':
-        specifier: 3.943.0
-        version: 3.943.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: 3.943.0
-        version: 3.943.0
       '@better-auth/stripe':
         specifier: 1.5.5
         version: 1.5.5(908c2569895b1d48bb7eea94f9049724)
