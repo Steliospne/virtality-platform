@@ -72,6 +72,14 @@ export type BucketMoveOutcome = {
   cdnUrl: string
 }
 
+export type BucketDeleteS3Client = {
+  deleteFile: (input: { Key: string }) => Promise<unknown | null>
+}
+
+export type BucketDeleteOutcome = {
+  objectKey: string
+}
+
 export type S3ListPrefixResult = {
   CommonPrefixes?: { Prefix?: string }[]
   Contents?: {
@@ -371,6 +379,28 @@ export function buildRenameDestinationObjectKey(
   }
 
   return destinationObjectKey
+}
+
+export async function deleteBucketObject({
+  s3,
+  objectKey,
+}: {
+  s3: BucketDeleteS3Client
+  objectKey: string
+}): Promise<BucketDeleteOutcome> {
+  const trimmed = objectKey.trim()
+  const keyError = validateBucketObjectKey(trimmed)
+
+  if (keyError) {
+    throw new Error(keyError)
+  }
+
+  const deleteResult = await s3.deleteFile({ Key: trimmed })
+  if (deleteResult === null) {
+    throw new Error('Failed to delete bucket object')
+  }
+
+  return { objectKey: trimmed }
 }
 
 export async function moveBucketObject({

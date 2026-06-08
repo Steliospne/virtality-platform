@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { createAppLogger } from '@virtality/shared/observability'
 import {
+  deleteBucketObject,
   formatBucketListPage,
   moveBucketObject,
   normalizeBucketPrefix,
@@ -30,6 +31,10 @@ const BucketUploadInput = z.object({
 const BucketMoveInput = z.object({
   sourceObjectKey: z.string().min(1),
   destinationObjectKey: z.string().min(1),
+})
+
+const BucketDeleteInput = z.object({
+  objectKey: z.string().min(1),
 })
 
 const listBucketPrefix = authed
@@ -125,8 +130,41 @@ const moveBucket = authed
     }
   })
 
+const deleteBucket = authed
+  .route({ path: '/bucket/delete', method: 'DELETE' })
+  .input(BucketDeleteInput)
+  .handler(async ({ context, input }) => {
+    const { s3, user } = context
+
+    try {
+      const outcome = await deleteBucketObject({
+        s3,
+        objectKey: input.objectKey,
+      })
+
+      bucketLogger.info('bucket.delete.completed', {
+        actorId: user.id,
+        objectKey: outcome.objectKey,
+      })
+
+      return outcome
+    } catch (error) {
+      bucketLogger.warn('bucket.delete.failed', {
+        actorId: user.id,
+        objectKey: input.objectKey,
+        error,
+      })
+
+      throw new ORPCError('BAD_REQUEST', {
+        message:
+          error instanceof Error ? error.message : 'Bucket delete failed',
+      })
+    }
+  })
+
 export const bucket = {
   list: listBucketPrefix,
   upload: uploadBucket,
   move: moveBucket,
+  delete: deleteBucket,
 }

@@ -34,8 +34,10 @@ import {
   Folder,
   FolderInput,
   Pencil,
+  Trash2,
   Upload,
 } from 'lucide-react'
+import { BucketObjectDeleteDialog } from './bucket-object-delete-dialog'
 import { BucketObjectMoveDialog } from './bucket-object-move-dialog'
 import { BucketObjectRenameDialog } from './bucket-object-rename-dialog'
 import { BucketUploadDialog } from './bucket-upload-dialog'
@@ -106,10 +108,12 @@ function ObjectActions({
   object,
   onRename,
   onMove,
+  onDelete,
 }: {
   object: BucketObjectRow
   onRename: (object: BucketObjectRow) => void
   onMove: (object: BucketObjectRow) => void
+  onDelete: (object: BucketObjectRow) => void
 }) {
   const copyCdnUrl = () => {
     void navigator.clipboard.writeText(object.cdnUrl)
@@ -143,6 +147,13 @@ function ObjectActions({
           <FolderInput />
           Move
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onDelete(object)}
+          className='text-red-600 focus:text-red-600'
+        >
+          <Trash2 />
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -157,6 +168,7 @@ const BucketBrowser = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [renameObject, setRenameObject] = useState<BucketObjectRow | null>(null)
   const [moveObject, setMoveObject] = useState<BucketObjectRow | null>(null)
+  const [deleteObject, setDeleteObject] = useState<BucketObjectRow | null>(null)
 
   const { data, isLoading, isFetching, error } = useBucket({
     prefix,
@@ -367,6 +379,7 @@ const BucketBrowser = () => {
                     object={object}
                     onRename={setRenameObject}
                     onMove={setMoveObject}
+                    onDelete={setDeleteObject}
                   />
                 </TableCell>
               </TableRow>
@@ -401,6 +414,17 @@ const BucketBrowser = () => {
         }}
         object={moveObject}
         onMoved={refreshCurrentFolder}
+      />
+
+      <BucketObjectDeleteDialog
+        open={deleteObject !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteObject(null)
+          }
+        }}
+        object={deleteObject}
+        onDeleted={refreshCurrentFolder}
       />
 
       {rows.nextContinuationToken ? (

@@ -4,6 +4,7 @@ import {
   bucketCdnUrl,
   buildBucketObjectKey,
   buildRenameDestinationObjectKey,
+  deleteBucketObject,
   formatBucketListPage,
   getBucketBreadcrumbs,
   inferContentTypeFromObjectKey,
@@ -284,6 +285,50 @@ describe('buildRenameDestinationObjectKey', () => {
     expect(() =>
       buildRenameDestinationObjectKey('images/photo.jpg', 'my photo.jpg'),
     ).toThrow(/invalid/)
+  })
+})
+
+describe('deleteBucketObject', () => {
+  it('rejects invalid object keys without calling storage', async () => {
+    const s3 = {
+      deleteFile: vi.fn(),
+    }
+
+    await expect(
+      deleteBucketObject({
+        s3,
+        objectKey: 'images/photo.jpg/',
+      }),
+    ).rejects.toThrow(/slash/)
+
+    expect(s3.deleteFile).not.toHaveBeenCalled()
+  })
+
+  it('permanently deletes a valid bucket object', async () => {
+    const s3 = {
+      deleteFile: vi.fn(async () => ({})),
+    }
+
+    const outcome = await deleteBucketObject({
+      s3,
+      objectKey: 'images/photo.jpg',
+    })
+
+    expect(outcome).toEqual({ objectKey: 'images/photo.jpg' })
+    expect(s3.deleteFile).toHaveBeenCalledWith({ Key: 'images/photo.jpg' })
+  })
+
+  it('reports storage failures without claiming success', async () => {
+    const s3 = {
+      deleteFile: vi.fn(async () => null),
+    }
+
+    await expect(
+      deleteBucketObject({
+        s3,
+        objectKey: 'images/photo.jpg',
+      }),
+    ).rejects.toThrow(/failed to delete/i)
   })
 })
 
