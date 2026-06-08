@@ -11,12 +11,16 @@ import {
 import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
 import { Spinner } from '@virtality/ui/components/spinner'
-import { useMoveBucketObject } from '@virtality/react-query'
+import {
+  useBucketObjectReferences,
+  useMoveBucketObject,
+} from '@virtality/react-query'
 import {
   type BucketObjectRow,
   validateBucketObjectKey,
 } from '@virtality/shared/utils'
 import { useEffect, useMemo, useState } from 'react'
+import { BucketReferencedObjectWarning } from './bucket-referenced-object-warning'
 
 type BucketObjectMoveDialogProps = {
   open: boolean
@@ -34,6 +38,10 @@ export function BucketObjectMoveDialog({
   const [destinationObjectKey, setDestinationObjectKey] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const referencesQuery = useBucketObjectReferences(
+    open && object ? object.objectKey : null,
+  )
 
   const moveMutation = useMoveBucketObject({
     onSuccess: (outcome) => {
@@ -120,6 +128,11 @@ export function BucketObjectMoveDialog({
                 <p className='text-sm text-red-500'>{destinationError}</p>
               ) : null}
             </div>
+
+            <BucketReferencedObjectWarning
+              references={referencesQuery.data?.references ?? []}
+              operation='move'
+            />
 
             {validationError ? (
               <p className='text-sm text-red-500'>{validationError}</p>

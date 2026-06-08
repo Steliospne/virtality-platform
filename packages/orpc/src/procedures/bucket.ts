@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { createAppLogger } from '@virtality/shared/observability'
 import {
   deleteBucketObject,
+  findKnownBucketObjectReferences,
   formatBucketListPage,
   moveBucketObject,
   normalizeBucketPrefix,
@@ -11,6 +12,7 @@ import {
 import { Buffer } from 'node:buffer'
 import { z } from 'zod'
 import { authed } from '../middleware/auth.ts'
+import { createPrismaBucketReferenceReader } from './bucket-reference-reader.ts'
 
 const bucketLogger = createAppLogger({
   serviceName: 'server',
@@ -42,6 +44,10 @@ const BucketReplaceInput = z.object({
   sourceObjectKey: z.string().min(1),
   file: z.instanceof(File),
   deleteOldObject: z.boolean().optional().default(false),
+})
+
+const BucketReferencesInput = z.object({
+  objectKey: z.string().min(1),
 })
 
 const listBucketPrefix = authed
@@ -211,10 +217,21 @@ const replaceBucket = authed
     }
   })
 
+const getBucketObjectReferences = authed
+  .route({ path: '/bucket/references', method: 'GET' })
+  .input(BucketReferencesInput)
+  .handler(async ({ context, input }) => {
+    return findKnownBucketObjectReferences({
+      reader: createPrismaBucketReferenceReader(context.prisma),
+      objectKey: input.objectKey,
+    })
+  })
+
 export const bucket = {
   list: listBucketPrefix,
   upload: uploadBucket,
   move: moveBucket,
   delete: deleteBucket,
   replace: replaceBucket,
+  references: getBucketObjectReferences,
 }

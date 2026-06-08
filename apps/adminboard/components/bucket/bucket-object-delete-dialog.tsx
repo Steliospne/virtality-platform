@@ -9,9 +9,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Spinner } from '@virtality/ui/components/spinner'
-import { useDeleteBucketObject } from '@virtality/react-query'
+import {
+  useBucketObjectReferences,
+  useDeleteBucketObject,
+} from '@virtality/react-query'
 import { type BucketObjectRow } from '@virtality/shared/utils'
 import { useEffect, useState } from 'react'
+import { BucketReferencedObjectWarning } from './bucket-referenced-object-warning'
 
 type BucketObjectDeleteDialogProps = {
   open: boolean
@@ -28,6 +32,10 @@ export function BucketObjectDeleteDialog({
 }: BucketObjectDeleteDialogProps) {
   const [validationError, setValidationError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const referencesQuery = useBucketObjectReferences(
+    open && object ? object.objectKey : null,
+  )
 
   const deleteMutation = useDeleteBucketObject({
     onSuccess: (outcome) => {
@@ -80,6 +88,11 @@ export function BucketObjectDeleteDialog({
               <p className='text-sm font-medium'>{object.name}</p>
               <p className='font-mono text-xs text-zinc-500'>{object.objectKey}</p>
             </div>
+
+            <BucketReferencedObjectWarning
+              references={referencesQuery.data?.references ?? []}
+              operation='delete'
+            />
 
             {validationError ? (
               <p className='text-sm text-red-500'>{validationError}</p>

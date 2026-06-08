@@ -11,13 +11,17 @@ import {
 import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
 import { Spinner } from '@virtality/ui/components/spinner'
-import { useMoveBucketObject } from '@virtality/react-query'
+import {
+  useBucketObjectReferences,
+  useMoveBucketObject,
+} from '@virtality/react-query'
 import {
   buildRenameDestinationObjectKey,
   getBucketObjectParentPrefix,
   type BucketObjectRow,
 } from '@virtality/shared/utils'
 import { useEffect, useMemo, useState } from 'react'
+import { BucketReferencedObjectWarning } from './bucket-referenced-object-warning'
 
 type BucketObjectRenameDialogProps = {
   open: boolean
@@ -35,6 +39,10 @@ export function BucketObjectRenameDialog({
   const [newFilename, setNewFilename] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const referencesQuery = useBucketObjectReferences(
+    open && object ? object.objectKey : null,
+  )
 
   const moveMutation = useMoveBucketObject({
     onSuccess: (outcome) => {
@@ -132,6 +140,11 @@ export function BucketObjectRenameDialog({
                 <p className='text-sm text-red-500'>{destinationError}</p>
               ) : null}
             </div>
+
+            <BucketReferencedObjectWarning
+              references={referencesQuery.data?.references ?? []}
+              operation='rename'
+            />
 
             {validationError ? (
               <p className='text-sm text-red-500'>{validationError}</p>

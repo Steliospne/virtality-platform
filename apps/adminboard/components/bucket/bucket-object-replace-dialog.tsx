@@ -11,13 +11,17 @@ import {
 import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
 import { Spinner } from '@virtality/ui/components/spinner'
-import { useReplaceBucketObject } from '@virtality/react-query'
+import {
+  useBucketObjectReferences,
+  useReplaceBucketObject,
+} from '@virtality/react-query'
 import {
   type BucketObjectRow,
   type BucketReplaceOutcome,
 } from '@virtality/shared/utils'
 import { Copy, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { BucketReferencedObjectWarning } from './bucket-referenced-object-warning'
 
 type BucketObjectReplaceDialogProps = {
   open: boolean
@@ -63,6 +67,10 @@ export function BucketObjectReplaceDialog({
   const [validationError, setValidationError] = useState<string | null>(null)
   const [replaceOutcome, setReplaceOutcome] = useState<BucketReplaceOutcome | null>(
     null,
+  )
+
+  const referencesQuery = useBucketObjectReferences(
+    open && object ? object.objectKey : null,
   )
 
   const replaceMutation = useReplaceBucketObject({
@@ -156,6 +164,12 @@ export function BucketObjectReplaceDialog({
               />
               Delete the previous object after the replacement upload succeeds
             </label>
+
+            <BucketReferencedObjectWarning
+              references={referencesQuery.data?.references ?? []}
+              operation='replace'
+              deleteOldObject={deleteOldObject}
+            />
 
             {validationError ? (
               <p className='text-sm text-red-500'>{validationError}</p>
