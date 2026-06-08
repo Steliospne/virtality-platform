@@ -57,6 +57,7 @@ export { useReferralCodes } from './referral/use-referral-codes.js'
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'
 export { useBucketObjectReferences } from './bucket/use-bucket-object-references.js'
+export { useBucketObjectDetails } from './bucket/use-bucket-object-details.js'
 export { useBucketFolderPreview } from './bucket/use-bucket-folder-preview.js'
 
 // Favorite exercise queries

@@ -143,6 +143,20 @@ class VirtalityS3 extends S3Client {
     }
   }
 
+  headObject = async ({ Key }: { Key: string }) => {
+    try {
+      const response = await this.send(new HeadObjectCommand({ Bucket, Key }))
+      return {
+        ContentType: response.ContentType,
+        ContentLength: response.ContentLength,
+        LastModified: response.LastModified,
+        ETag: response.ETag,
+      }
+    } catch {
+      return null
+    }
+  }
+
   copyObject = async ({
     sourceKey,
     destinationKey,

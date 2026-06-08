@@ -11,6 +11,7 @@ import {
   deleteFolderPrefix,
   formatBucketListPage,
   getBucketBreadcrumbs,
+  getBucketObjectDetails,
   inferContentTypeFromObjectKey,
   moveBucketObject,
   moveFolderPrefix,
@@ -183,6 +184,28 @@ describe('uploadBucketObjects', () => {
 })
 
 describe('formatBucketListPage', () => {
+  it('infers list row content type from extension without metadata lookup', () => {
+    const page = formatBucketListPage('', {
+      Contents: [
+        {
+          Key: 'assets/photo.jpg',
+          Size: 100,
+          LastModified: new Date('2026-01-01T00:00:00.000Z'),
+        },
+        {
+          Key: 'data/archive',
+          Size: 50,
+          LastModified: new Date('2026-01-02T00:00:00.000Z'),
+        },
+      ],
+    })
+
+    expect(page.objects.map((object) => object.contentType)).toEqual([
+      'image/jpeg',
+      'application/octet-stream',
+    ])
+  })
+
   it('returns folders before objects in separate sorted lists', () => {
     const page = formatBucketListPage('', {
       CommonPrefixes: [{ Prefix: 'videos/' }, { Prefix: 'images/' }],
@@ -263,6 +286,74 @@ describe('formatBucketListPage', () => {
 
     expect(page.objects).toHaveLength(1)
     expect(page.objects[0]?.name).toBe('photo.jpg')
+  })
+})
+
+describe('getBucketObjectDetails', () => {
+  it('returns exact stored metadata from storage', async () => {
+    const s3 = {
+      headObject: vi.fn(async () => ({
+        ContentType: 'image/webp',
+        ContentLength: 2048,
+        LastModified: new Date('2026-01-05T00:00:00.000Z'),
+        ETag: '"abc123"',
+      })),
+    }
+
+    const details = await getBucketObjectDetails({
+      s3,
+      objectKey: 'images/photo.jpg',
+    })
+
+    expect(details).toMatchObject({
+      found: true,
+      objectKey: 'images/photo.jpg',
+      cdnUrl: 'https://cdn.virtality.app/images/photo.jpg',
+      storedContentType: 'image/webp',
+      inferredContentType: 'image/jpeg',
+      size: 2048,
+      lastModified: '2026-01-05T00:00:00.000Z',
+      etag: '"abc123"',
+    })
+    expect(s3.headObject).toHaveBeenCalledTimes(1)
+    expect(s3.headObject).toHaveBeenCalledWith({ Key: 'images/photo.jpg' })
+  })
+
+  it('handles missing or deleted objects without throwing', async () => {
+    const s3 = {
+      headObject: vi.fn(async () => null),
+    }
+
+    const details = await getBucketObjectDetails({
+      s3,
+      objectKey: 'images/missing.jpg',
+    })
+
+    expect(details).toMatchObject({
+      found: false,
+      objectKey: 'images/missing.jpg',
+      cdnUrl: 'https://cdn.virtality.app/images/missing.jpg',
+      storedContentType: null,
+      inferredContentType: 'image/jpeg',
+      size: null,
+      lastModified: null,
+      etag: null,
+    })
+  })
+
+  it('rejects invalid object keys without calling storage', async () => {
+    const s3 = {
+      headObject: vi.fn(),
+    }
+
+    await expect(
+      getBucketObjectDetails({
+        s3,
+        objectKey: 'images/photo.jpg/',
+      }),
+    ).rejects.toThrow(/slash/)
+
+    expect(s3.headObject).not.toHaveBeenCalled()
   })
 })
 

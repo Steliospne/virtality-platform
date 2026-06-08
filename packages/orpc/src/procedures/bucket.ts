@@ -7,6 +7,7 @@ import {
   findKnownBucketFolderReferences,
   findKnownBucketObjectReferences,
   formatBucketListPage,
+  getBucketObjectDetails,
   moveBucketObject,
   moveFolderPrefix,
   normalizeBucketPrefix,
@@ -51,6 +52,10 @@ const BucketReplaceInput = z.object({
 })
 
 const BucketReferencesInput = z.object({
+  objectKey: z.string().min(1),
+})
+
+const BucketObjectDetailsInput = z.object({
   objectKey: z.string().min(1),
 })
 
@@ -234,6 +239,27 @@ const replaceBucket = authed
     }
   })
 
+const getBucketObjectDetailsProcedure = authed
+  .route({ path: '/bucket/details', method: 'GET' })
+  .input(BucketObjectDetailsInput)
+  .handler(async ({ context, input }) => {
+    const { s3 } = context
+
+    try {
+      return await getBucketObjectDetails({
+        s3,
+        objectKey: input.objectKey,
+      })
+    } catch (error) {
+      throw new ORPCError('BAD_REQUEST', {
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Invalid bucket object details request',
+      })
+    }
+  })
+
 const getBucketObjectReferences = authed
   .route({ path: '/bucket/references', method: 'GET' })
   .input(BucketReferencesInput)
@@ -344,6 +370,7 @@ export const bucket = {
   move: moveBucket,
   delete: deleteBucket,
   replace: replaceBucket,
+  details: getBucketObjectDetailsProcedure,
   references: getBucketObjectReferences,
   folderPreview: previewBucketFolder,
   folderMove: moveBucketFolder,

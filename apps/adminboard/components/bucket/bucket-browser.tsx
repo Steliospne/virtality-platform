@@ -36,12 +36,14 @@ import {
   Film,
   Folder,
   FolderInput,
+  Info,
   Pencil,
   RefreshCw,
   Trash2,
   Upload,
 } from 'lucide-react'
 import { BucketObjectDeleteDialog } from './bucket-object-delete-dialog'
+import { BucketObjectDetailsDialog } from './bucket-object-details-dialog'
 import { BucketObjectReplaceDialog } from './bucket-object-replace-dialog'
 import { BucketObjectMoveDialog } from './bucket-object-move-dialog'
 import { BucketObjectRenameDialog } from './bucket-object-rename-dialog'
@@ -155,12 +157,14 @@ function FolderActions({
 
 function ObjectActions({
   object,
+  onViewDetails,
   onRename,
   onMove,
   onReplace,
   onDelete,
 }: {
   object: BucketObjectRow
+  onViewDetails: (object: BucketObjectRow) => void
   onRename: (object: BucketObjectRow) => void
   onMove: (object: BucketObjectRow) => void
   onReplace: (object: BucketObjectRow) => void
@@ -182,6 +186,10 @@ function ObjectActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
+        <DropdownMenuItem onClick={() => onViewDetails(object)}>
+          <Info />
+          View details
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={copyCdnUrl}>
           <Copy />
           Copy CDN URL
@@ -225,6 +233,7 @@ const BucketBrowser = () => {
   const [moveObject, setMoveObject] = useState<BucketObjectRow | null>(null)
   const [replaceObject, setReplaceObject] = useState<BucketObjectRow | null>(null)
   const [deleteObject, setDeleteObject] = useState<BucketObjectRow | null>(null)
+  const [detailsObject, setDetailsObject] = useState<BucketObjectRow | null>(null)
   const [renameFolder, setRenameFolder] = useState<BucketFolderRow | null>(null)
   const [moveFolder, setMoveFolder] = useState<BucketFolderRow | null>(null)
   const [deleteFolder, setDeleteFolder] = useState<BucketFolderRow | null>(null)
@@ -443,6 +452,7 @@ const BucketBrowser = () => {
                 <TableCell className='text-right'>
                   <ObjectActions
                     object={object}
+                    onViewDetails={setDetailsObject}
                     onRename={setRenameObject}
                     onMove={setMoveObject}
                     onReplace={setReplaceObject}
@@ -503,6 +513,16 @@ const BucketBrowser = () => {
         }}
         object={deleteObject}
         onDeleted={refreshCurrentFolder}
+      />
+
+      <BucketObjectDetailsDialog
+        open={detailsObject !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailsObject(null)
+          }
+        }}
+        object={detailsObject}
       />
 
       <BucketFolderRenameDialog

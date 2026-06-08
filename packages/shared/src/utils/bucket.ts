@@ -25,6 +25,26 @@ export type BucketListPage = {
   nextContinuationToken: string | null
 }
 
+export type BucketObjectDetails = {
+  objectKey: string
+  cdnUrl: string
+  found: boolean
+  storedContentType: string | null
+  inferredContentType: string
+  size: number | null
+  lastModified: string | null
+  etag: string | null
+}
+
+export type BucketObjectDetailsS3Client = {
+  headObject: (input: { Key: string }) => Promise<{
+    ContentType?: string
+    ContentLength?: number
+    LastModified?: Date
+    ETag?: string
+  } | null>
+}
+
 export type BucketUploadFileInput = {
   name: string
   contentType: string
@@ -741,6 +761,48 @@ export async function deleteFolderPrefix({
     objectCount: objectKeys.length,
     successes,
     failures,
+  }
+}
+
+export async function getBucketObjectDetails({
+  s3,
+  objectKey,
+}: {
+  s3: BucketObjectDetailsS3Client
+  objectKey: string
+}): Promise<BucketObjectDetails> {
+  const trimmed = objectKey.trim()
+  const keyError = validateBucketObjectKey(trimmed)
+
+  if (keyError) {
+    throw new Error(keyError)
+  }
+
+  const inferredContentType = inferContentTypeFromObjectKey(trimmed)
+  const head = await s3.headObject({ Key: trimmed })
+
+  if (!head) {
+    return {
+      objectKey: trimmed,
+      cdnUrl: bucketCdnUrl(trimmed),
+      found: false,
+      storedContentType: null,
+      inferredContentType,
+      size: null,
+      lastModified: null,
+      etag: null,
+    }
+  }
+
+  return {
+    objectKey: trimmed,
+    cdnUrl: bucketCdnUrl(trimmed),
+    found: true,
+    storedContentType: head.ContentType ?? null,
+    inferredContentType,
+    size: head.ContentLength ?? null,
+    lastModified: head.LastModified?.toISOString() ?? null,
+    etag: head.ETag ?? null,
   }
 }
 
