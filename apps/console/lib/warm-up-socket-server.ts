@@ -1,11 +1,8 @@
 'use client'
 
-import { SOCKET_URL, SOCKET_URL_LOCAL } from '@virtality/shared/types'
+import { getSocketUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const socketBaseUrl =
-  env === 'production' || env === 'preview' ? SOCKET_URL : SOCKET_URL_LOCAL
+const socketBaseUrl = getSocketUrl()
 
 /** HTTP path on the socket service that wakes a cold instance before WebSocket use. */
 export const SOCKET_WARMUP_PATH = '/warmup'

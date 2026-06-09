@@ -5,21 +5,9 @@ import {
 } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 import { stripeClient } from '@better-auth/stripe/client'
-import {
-  API_PREFIX,
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
+import { API_PREFIX, getServerUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const base =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const base = getServerUrl()
 
 const baseURL = base + API_PREFIX + '/auth'
 

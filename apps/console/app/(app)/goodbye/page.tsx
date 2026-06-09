@@ -2,20 +2,9 @@ import { Button } from '@virtality/ui/components/button'
 import { Card } from '@virtality/ui/components/card'
 import Image from 'next/image'
 import Link from 'next/link'
-import {
-  WEBSITE_URL,
-  WEBSITE_URL_LOCAL,
-  WEBSITE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getWebsiteUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? WEBSITE_URL
-    : env === 'preview'
-      ? WEBSITE_URL_STAGING
-      : WEBSITE_URL_LOCAL
+const baseURL = getWebsiteUrl()
 
 const cdnURL = process.env.NEXT_PUBLIC_CDN_URL
 

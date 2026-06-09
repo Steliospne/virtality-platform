@@ -2,22 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import acceptLanguage from 'accept-language'
 import { settings } from '@/i18n/settings'
 import { auth } from '@virtality/auth'
-import {
-  WEBSITE_URL,
-  WEBSITE_URL_STAGING,
-  WEBSITE_URL_LOCAL,
-} from '@virtality/shared/types'
+import { getWebsiteUrl } from '@virtality/shared/types'
 
 acceptLanguage.languages(settings.languages)
 
-const env = process.env.ENV || 'development'
-
-const websiteURL =
-  env === 'production'
-    ? WEBSITE_URL
-    : env === 'preview'
-      ? WEBSITE_URL_STAGING
-      : WEBSITE_URL_LOCAL
+const websiteURL = getWebsiteUrl()
 
 export async function proxy(request: NextRequest) {
   let response

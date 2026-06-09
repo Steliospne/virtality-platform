@@ -2,11 +2,7 @@
 import { SiGoogle, SiGoogleHex } from '@icons-pack/react-simple-icons'
 import { authClient } from '@/auth-client'
 import { Button } from '@virtality/ui/components/button'
-import {
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getConsoleUrl } from '@virtality/shared/types'
 import { useCallback, useState } from 'react'
 import useTimeout from '@/hooks/use-timeout'
 import { Spinner } from '@virtality/ui/components/spinner'
@@ -17,14 +13,7 @@ interface SocialSignInButtonProps {
   referralCode?: string
 }
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const callbackURL =
-  env === 'production'
-    ? CONSOLE_URL
-    : env === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const callbackURL = getConsoleUrl()
 
 const SocialSignInButton = ({ referralCode }: SocialSignInButtonProps) => {
   const [isRunning, setIsRunning] = useState(false)

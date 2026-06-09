@@ -5,20 +5,9 @@ import { ThemeProvider } from '@/components/ui/ThemeProvider'
 import Navbar from '@/components/layout/navbar'
 import { QueryProvider, ORPCProvider } from '@virtality/react-query'
 import { Toaster } from '@/components/ui/sonner'
-import {
-  ORPC_PREFIX,
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
-const env = process.env.ENV || 'development'
+import { getServerUrl, ORPC_PREFIX } from '@virtality/shared/types'
 
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const baseURL = getServerUrl()
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

@@ -6,12 +6,7 @@ import { ChangeEvent, Fragment, useCallback, useState } from 'react'
 import { Button } from '@virtality/ui/components/button'
 import { toast } from 'react-toastify'
 import { authClient } from '@/auth-client'
-import {
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-  FieldMeta,
-} from '@virtality/shared/types'
+import { FieldMeta, getConsoleUrl } from '@virtality/shared/types'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,14 +33,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? CONSOLE_URL
-    : env === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const baseURL = getConsoleUrl()
 
 type UserForm = Pick<z.infer<typeof UserSchema>, 'name' | 'phoneNumber'> & {
   image?: File | string | null

@@ -1,25 +1,14 @@
 'use server'
 import { headers } from 'next/headers'
 import { User, Session } from '@virtality/db'
-import {
-  ORPC_PREFIX,
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
+import { getServerUrl, ORPC_PREFIX } from '@virtality/shared/types'
 import { serverLogger } from '@/lib/server-logger'
 
-const env = process.env.ENV || 'development'
 const logger = serverLogger.child({
   component: 'adminboard-auth-actions',
 })
 
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const baseURL = getServerUrl()
 
 const me = baseURL + ORPC_PREFIX + '/me'
 

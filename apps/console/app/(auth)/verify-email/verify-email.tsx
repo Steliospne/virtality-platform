@@ -13,22 +13,11 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { authClient } from '@/auth-client'
 import { useIsUserVerified } from '@virtality/react-query'
-import {
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getConsoleUrl } from '@virtality/shared/types'
 
 const COOKIE_NAME = 'verification_time'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? CONSOLE_URL
-    : env === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const baseURL = getConsoleUrl()
 
 const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
   const router = useRouter()

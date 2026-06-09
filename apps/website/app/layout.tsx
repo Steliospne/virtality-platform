@@ -6,13 +6,9 @@ import Navbar from '@/components/layout/navbar'
 import { Toaster } from 'sonner'
 import Footer from '@/components/layout/footer'
 import {
+  getServerUrl,
+  getWebsiteUrl,
   ORPC_PREFIX,
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-  WEBSITE_URL,
-  WEBSITE_URL_LOCAL,
-  WEBSITE_URL_STAGING,
 } from '@virtality/shared/types'
 import { ORPCProvider, QueryProvider } from '@virtality/react-query'
 
@@ -28,14 +24,8 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500', '600'],
 })
 
-const env = process.env.ENV || 'development'
-
-const websiteURL =
-  env === 'production'
-    ? WEBSITE_URL
-    : env === 'preview'
-      ? WEBSITE_URL_STAGING
-      : WEBSITE_URL_LOCAL
+const websiteURL = getWebsiteUrl()
+const baseURL = getServerUrl()
 
 export const metadata: Metadata = {
   metadataBase: new URL(websiteURL),
@@ -53,14 +43,6 @@ export const metadata: Metadata = {
     images: ['/site_front.png'],
   },
 }
-
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
-
 export default function RootLayout({
   children,
 }: Readonly<{

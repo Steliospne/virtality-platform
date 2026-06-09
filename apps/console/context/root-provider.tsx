@@ -5,20 +5,8 @@ import TourProvider from '@/context/tour-context'
 import SocketWarmUp from '@/components/auth/socket-warm-up'
 import CookieBanner from '@/components/layout/cookie-banner'
 import { ToastContainer } from 'react-toastify'
-import {
-  ORPC_PREFIX,
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
-const env = process.env.ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+import { ORPC_PREFIX, getServerUrl } from '@virtality/shared/types'
+const baseURL = getServerUrl()
 
 async function RootProvider({ children }: { children: React.ReactNode }) {
   return (

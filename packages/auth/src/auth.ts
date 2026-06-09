@@ -15,24 +15,13 @@ import { admin, organization, phoneNumber } from 'better-auth/plugins'
 import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
-import {
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
+import { getServerUrl } from '@virtality/shared/types'
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 })
 
-const env = process.env.ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const baseURL = getServerUrl()
 
 export const auth = betterAuth({
   appName: 'virtality',

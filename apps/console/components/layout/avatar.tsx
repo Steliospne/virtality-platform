@@ -36,35 +36,15 @@ import useMounted from '@/hooks/use-mounted'
 import { useStore } from 'tinybase/ui-react'
 import { useRouter } from 'next/navigation'
 import posthog from 'posthog-js'
-import {
-  WEBSITE_URL,
-  WEBSITE_URL_LOCAL,
-  WEBSITE_URL_STAGING,
-  ADMINBOARD_URL,
-  ADMINBOARD_URL_LOCAL,
-  ADMINBOARD_URL_STAGING,
-} from '@virtality/shared/types'
+import { getWebsiteUrl, getAdminUrl } from '@virtality/shared/types'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 import useConsoleSessionTracking, {
   finalizeConsoleSession,
 } from '@/hooks/analytics/use-console-session-tracking'
 import useIsAuthed from '@/hooks/use-is-authed'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? WEBSITE_URL
-    : env === 'preview'
-      ? WEBSITE_URL_STAGING
-      : WEBSITE_URL_LOCAL
-
-const adminboardURL =
-  env === 'production'
-    ? ADMINBOARD_URL
-    : env === 'preview'
-      ? ADMINBOARD_URL_STAGING
-      : ADMINBOARD_URL_LOCAL
+const baseURL = getWebsiteUrl()
+const adminboardURL = getAdminUrl()
 
 const Avatar = () => {
   const { data, isPending } = useIsAuthed()

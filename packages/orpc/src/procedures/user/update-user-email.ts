@@ -1,18 +1,9 @@
 import { UserSchema } from '@virtality/db/definitions'
 import { authed } from '../../middleware/auth.ts'
 import { auth } from '@virtality/auth'
-import {
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getConsoleUrl } from '@virtality/shared/types'
 
-const baseURL =
-  process.env.ENV === 'production'
-    ? CONSOLE_URL
-    : process.env.ENV === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const baseURL = getConsoleUrl()
 
 export const updateUserEmail = authed
   .route({ path: '/user/update-email', method: 'POST' })

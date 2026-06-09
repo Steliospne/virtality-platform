@@ -32,30 +32,10 @@ import AvatarSkeleton from './avatar-skeleton'
 import useMounted from '@/hooks/use-mounted'
 import { useRouter } from 'next/navigation'
 
-import {
-  WEBSITE_URL,
-  WEBSITE_URL_LOCAL,
-  WEBSITE_URL_STAGING,
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getWebsiteUrl, getConsoleUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const websiteURL =
-  env === 'production'
-    ? WEBSITE_URL
-    : env === 'preview'
-      ? WEBSITE_URL_STAGING
-      : WEBSITE_URL_LOCAL
-
-const consoleURL =
-  env === 'production'
-    ? CONSOLE_URL
-    : env === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const websiteURL = getWebsiteUrl()
+const consoleURL = getConsoleUrl()
 
 const Avatar = () => {
   const mounted = useMounted()

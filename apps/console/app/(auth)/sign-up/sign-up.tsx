@@ -21,20 +21,9 @@ import { Loader2 } from 'lucide-react'
 import SignupForm from '@/components/auth/sign-up-form'
 import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
-import {
-  CONSOLE_URL,
-  CONSOLE_URL_LOCAL,
-  CONSOLE_URL_STAGING,
-} from '@virtality/shared/types'
+import { getConsoleUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const baseURL =
-  env === 'production'
-    ? CONSOLE_URL
-    : env === 'preview'
-      ? CONSOLE_URL_STAGING
-      : CONSOLE_URL_LOCAL
+const baseURL = getConsoleUrl()
 
 const SignUp = () => {
   const router = useRouter()

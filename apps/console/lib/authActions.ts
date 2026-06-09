@@ -3,25 +3,14 @@
 import { Session, User } from '@/auth-client'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import {
-  ORPC_PREFIX,
-  SERVER_URL_LOCAL,
-  SERVER_URL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
+import { ORPC_PREFIX, getServerUrl } from '@virtality/shared/types'
 import { serverLogger } from './server-logger'
 
-const env = process.env.ENV || 'development'
 const logger = serverLogger.child({
   component: 'console-auth-actions',
 })
 
-const baseURL =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const baseURL = getServerUrl()
 
 const me = baseURL + ORPC_PREFIX + '/me'
 

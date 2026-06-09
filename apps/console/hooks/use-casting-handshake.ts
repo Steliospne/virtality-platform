@@ -3,21 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SocketWithQuery } from '@/types/models'
 import { createDeviceEmitter, subscribe } from '@/lib/device-event-controller'
-import { CASTING_EVENT } from '@virtality/shared/types'
-import {
-  SERVER_URL,
-  SERVER_URL_LOCAL,
-  SERVER_URL_STAGING,
-} from '@virtality/shared/types'
+import { CASTING_EVENT, getServerUrl } from '@virtality/shared/types'
 
-const env = process.env.NEXT_PUBLIC_ENV || 'development'
-
-const base =
-  env === 'production'
-    ? SERVER_URL
-    : env === 'preview'
-      ? SERVER_URL_STAGING
-      : SERVER_URL_LOCAL
+const base = getServerUrl()
 
 export type CastingStatus =
   | 'idle'
