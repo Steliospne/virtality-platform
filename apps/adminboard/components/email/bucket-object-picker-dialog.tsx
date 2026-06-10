@@ -25,6 +25,9 @@ type BucketObjectPickerDialogProps = {
   onSelect: (objectKey: string) => void
 }
 
+const pickerRowClassName =
+  'hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left'
+
 export const BucketObjectPickerDialog = ({
   open,
   onOpenChange,
@@ -75,12 +78,12 @@ export const BucketObjectPickerDialog = ({
 
             return (
               <div key={crumb.prefix} className='flex items-center gap-1'>
-                {index > 0 ? (
+                {index > 0 && (
                   <ChevronRight
                     className='text-muted-foreground size-4'
                     aria-hidden='true'
                   />
-                ) : null}
+                )}
                 <button
                   type='button'
                   className={
@@ -118,7 +121,7 @@ export const BucketObjectPickerDialog = ({
                   key={folder.prefix}
                   type='button'
                   onClick={() => setPrefix(folder.prefix)}
-                  className='hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left'
+                  className={pickerRowClassName}
                 >
                   <Folder
                     className='size-12 text-amber-500'
@@ -141,7 +144,7 @@ export const BucketObjectPickerDialog = ({
                     onSelect(object.objectKey)
                     onOpenChange(false)
                   }}
-                  className='hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left'
+                  className={pickerRowClassName}
                 >
                   <Image
                     src={object.cdnUrl}

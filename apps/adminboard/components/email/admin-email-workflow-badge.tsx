@@ -4,9 +4,7 @@ import {
   type AdminEmailWorkflowBadgeInput,
 } from '@/lib/admin-email-workflow-badges'
 
-type AdminEmailWorkflowBadgeProps = AdminEmailWorkflowBadgeInput
-
-export const AdminEmailWorkflowBadge = (props: AdminEmailWorkflowBadgeProps) => {
+export const AdminEmailWorkflowBadge = (props: AdminEmailWorkflowBadgeInput) => {
   const config = getAdminEmailWorkflowBadgeConfig(props)
 
   return (

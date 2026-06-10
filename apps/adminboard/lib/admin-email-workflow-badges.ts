@@ -14,32 +14,30 @@ export type AdminEmailWorkflowBadgeConfig = {
   className: string
 }
 
+function createWorkflowBadgeConfig(
+  label: string,
+  isPositive: boolean,
+): AdminEmailWorkflowBadgeConfig {
+  return {
+    label,
+    variant: 'outline',
+    className: isPositive ? SUCCESS_BADGE_CLASS : WARNING_BADGE_CLASS,
+  }
+}
+
 export function getAdminEmailWorkflowBadgeConfig(
   input: AdminEmailWorkflowBadgeInput,
 ): AdminEmailWorkflowBadgeConfig {
-  if (input.kind === 'test-send') {
-    return input.complete
-      ? {
-          label: 'Test send complete',
-          variant: 'outline',
-          className: SUCCESS_BADGE_CLASS,
-        }
-      : {
-          label: 'Test send required',
-          variant: 'outline',
-          className: WARNING_BADGE_CLASS,
-        }
+  switch (input.kind) {
+    case 'test-send':
+      return createWorkflowBadgeConfig(
+        input.complete ? 'Test send complete' : 'Test send required',
+        input.complete,
+      )
+    case 'send-readiness':
+      return createWorkflowBadgeConfig(
+        input.ready ? 'Send-ready' : 'Not send-ready',
+        input.ready,
+      )
   }
-
-  return input.ready
-    ? {
-        label: 'Send-ready',
-        variant: 'outline',
-        className: SUCCESS_BADGE_CLASS,
-      }
-    : {
-        label: 'Not send-ready',
-        variant: 'outline',
-        className: WARNING_BADGE_CLASS,
-      }
 }
