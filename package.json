@@ -20,6 +20,7 @@
     "db:up": "docker compose -f infra/docker/compose.db.yml up -d",
     "db:down": "docker compose -f infra/docker/compose.db.yml down",
     "db:generate": "turbo run @virtality/db#generate",
+    "db:reset": "turbo run @virtality/db#reset",
     "db:migrate:dev": "turbo run @virtality/db#migrate:dev",
     "db:migrate:deploy": "turbo run @virtality/db#migrate:deploy",
     "db:studio": "turbo run @virtality/db#studio",

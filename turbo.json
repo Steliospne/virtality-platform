@@ -226,6 +226,10 @@
     "@virtality/db#studio": {
       "cache": false,
       "persistent": true
+    },
+    "@virtality/db#reset": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
