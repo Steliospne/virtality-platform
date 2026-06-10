@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@virtality/ui/components/badge'
+import { AdminEmailWorkflowBadge } from './admin-email-workflow-badge'
 import {
   Card,
   CardContent,
@@ -213,16 +214,14 @@ export const AdminEmailDraftWorkspace = ({
               </CardDescription>
             </div>
             <div className='flex flex-wrap gap-2'>
-              {draft.hasSuccessfulTestSend ? (
-                <Badge variant='secondary'>Test send complete</Badge>
-              ) : (
-                <Badge variant='outline'>Test send required</Badge>
-              )}
-              {draft.sendReadiness.ready ? (
-                <Badge>Send-ready</Badge>
-              ) : (
-                <Badge variant='outline'>Not send-ready</Badge>
-              )}
+              <AdminEmailWorkflowBadge
+                kind='test-send'
+                complete={draft.hasSuccessfulTestSend}
+              />
+              <AdminEmailWorkflowBadge
+                kind='send-readiness'
+                ready={draft.sendReadiness.ready}
+              />
               {isDirty ? <Badge variant='outline'>Unsaved changes</Badge> : null}
             </div>
           </div>
