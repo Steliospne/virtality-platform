@@ -7,6 +7,7 @@ describe('getAdminEmailWorkflowBadgeConfig', () => {
       label: 'Test send required',
       variant: 'outline',
       className: expect.stringContaining('amber'),
+      minWidthClass: 'min-w-[9.25rem]',
     })
   })
 
@@ -15,6 +16,7 @@ describe('getAdminEmailWorkflowBadgeConfig', () => {
       label: 'Test send complete',
       variant: 'outline',
       className: expect.stringContaining('emerald'),
+      minWidthClass: 'min-w-[9.25rem]',
     })
   })
 
@@ -23,6 +25,7 @@ describe('getAdminEmailWorkflowBadgeConfig', () => {
       label: 'Not send-ready',
       variant: 'outline',
       className: expect.stringContaining('amber'),
+      minWidthClass: 'min-w-[6.75rem]',
     })
   })
 
@@ -31,6 +34,7 @@ describe('getAdminEmailWorkflowBadgeConfig', () => {
       label: 'Send-ready',
       variant: 'outline',
       className: expect.stringContaining('emerald'),
+      minWidthClass: 'min-w-[6.75rem]',
     })
   })
 })

@@ -188,6 +188,7 @@ export const AdminAuthoredEmailsPanel = () => {
           />
         ) : selectedDraft ? (
           <AdminEmailDraftWorkspace
+            key={selectedDraft.id}
             draft={{
               id: selectedDraft.id,
               subject: selectedDraft.subject,

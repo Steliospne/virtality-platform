@@ -15,6 +15,7 @@ import {
   formatRecipientsForInput,
   parseRecipientsFromInput,
 } from '@/lib/admin-email-recipients'
+import { cn } from '@/lib/utils'
 import type { EmailBodyBlock } from '@virtality/shared/types'
 import { MAX_EMAIL_RECIPIENTS } from '@virtality/shared/types'
 import {
@@ -213,7 +214,7 @@ export const AdminEmailDraftWorkspace = ({
                 locked.
               </CardDescription>
             </div>
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               <AdminEmailWorkflowBadge
                 kind='test-send'
                 complete={draft.hasSuccessfulTestSend}
@@ -222,7 +223,15 @@ export const AdminEmailDraftWorkspace = ({
                 kind='send-readiness'
                 ready={draft.sendReadiness.ready}
               />
-              {isDirty ? <Badge variant='outline'>Unsaved changes</Badge> : null}
+              <Badge
+                variant='outline'
+                className={cn(
+                  'min-w-[8.5rem]',
+                  !isDirty && 'pointer-events-none invisible',
+                )}
+              >
+                Unsaved changes
+              </Badge>
             </div>
           </div>
         </CardHeader>
