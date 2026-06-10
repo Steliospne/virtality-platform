@@ -7,6 +7,7 @@ import {
   getTemplateById,
 } from '@virtality/ui/template-registry'
 import { reactToHTML } from '@virtality/ui/components/email/react-to-html'
+import { adminAuthoredEmail } from './admin-authored-email.ts'
 
 const emailSchema = z.string().email()
 
@@ -109,6 +110,7 @@ const sendTemplateProcedure = authed
 
 export const email = {
   sendThankYouEmail: sendThankYouEmailProcedure,
+  adminAuthored: adminAuthoredEmail,
   templates: {
     list: listTemplatesProcedure,
     get: getTemplateProcedure,
