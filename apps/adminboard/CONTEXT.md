@@ -31,3 +31,39 @@ _Avoid_: Directory
 **Folder Operation**:
 An admin action applied to every bucket object in a folder.
 _Avoid_: Folder CRUD
+
+**Admin-authored Email**:
+A marketing, newsletter, or announcement email composed by an Adminboard admin using Email Body Blocks.
+_Avoid_: Custom template, HTML email
+
+**System Email**:
+A code-owned account or product email that changes infrequently and is not edited through the no-code builder.
+_Avoid_: Transactional template
+
+**Email Draft**:
+A saved, editable Admin-authored Email that has not been final-sent.
+_Avoid_: Template draft
+
+**Sent Email Record**:
+An immutable record created by Final Send, including the rendered snapshot and per-recipient delivery results.
+_Avoid_: Sent message
+
+**Email Body Block**:
+A structured content unit in the no-code builder, such as Heading, Paragraph, Image, Button, List, Card, or Divider.
+_Avoid_: Component, widget
+
+**Email Brand Shell**:
+The locked Virtality header, footer, and sender identity wrapped around admin-authored body content.
+_Avoid_: Email layout, wrapper template
+
+**Email Recipient List**:
+The explicit list of recipient email addresses entered for a draft send.
+_Avoid_: Audience, mailing list
+
+**Email Test Send**:
+A required pre-send delivery to verify the rendered email in a real inbox.
+_Avoid_: Preview send
+
+**Final Send**:
+The immediate, irreversible send that creates a Sent Email Record.
+_Avoid_: Blast send, publish

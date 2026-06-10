@@ -20,6 +20,10 @@
     "./components/email/react-to-html": {
       "types": "./src/lib/react-to-html.ts",
       "default": "./dist/src/lib/react-to-html.js"
+    },
+    "./render-admin-authored-email": {
+      "types": "./src/lib/render-admin-authored-email.tsx",
+      "default": "./dist/src/lib/render-admin-authored-email.js"
     }
   },
   "scripts": {
