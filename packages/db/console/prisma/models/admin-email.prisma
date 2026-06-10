@@ -1,0 +1,68 @@
+// Admin-authored Email Domain
+
+enum AdminEmailDeliveryStatus {
+  sent
+  failed
+}
+
+model AdminEmailDraft {
+  id                     String    @id
+  subject                String    @default("")
+  previewText            String?
+  bodyBlocksJson         String    @default("[]")
+  recipients             String[]  @default([])
+  hasSuccessfulTestSend  Boolean   @default(false)
+  lastTestSentAt         DateTime? @db.Timestamp(6)
+  createdById            String
+  clonedFromDraftId      String?
+  clonedFromSentRecordId String?
+  createdAt              DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt              DateTime  @updatedAt @db.Timestamp(6)
+
+  createdBy            User                  @relation("AdminEmailDraftCreator", fields: [createdById], references: [id])
+  clonedFromDraft      AdminEmailDraft?      @relation("AdminEmailDraftClone", fields: [clonedFromDraftId], references: [id], onDelete: SetNull)
+  clonedFromSentRecord AdminEmailSentRecord? @relation("AdminEmailDraftClonedFromSent", fields: [clonedFromSentRecordId], references: [id], onDelete: SetNull)
+  draftClones          AdminEmailDraft[]     @relation("AdminEmailDraftClone")
+  sentRecords          AdminEmailSentRecord[]
+
+  @@index([createdById])
+  @@index([updatedAt])
+}
+
+model AdminEmailSentRecord {
+  id                   String   @id
+  sourceDraftId        String?
+  subject              String
+  previewText          String?
+  bodyBlocksJson       String
+  renderedSnapshotJson String
+  recipients           String[]
+  createdById          String
+  sentById             String
+  draftCreatedAt       DateTime @db.Timestamp(6)
+  sentAt               DateTime @default(now()) @db.Timestamp(6)
+
+  sourceDraft     AdminEmailDraft?           @relation(fields: [sourceDraftId], references: [id], onDelete: SetNull)
+  createdBy       User                       @relation("AdminEmailSentRecordCreator", fields: [createdById], references: [id])
+  sentBy          User                       @relation("AdminEmailSentRecordSender", fields: [sentById], references: [id])
+  clonedDrafts    AdminEmailDraft[]          @relation("AdminEmailDraftClonedFromSent")
+  deliveryResults AdminEmailDeliveryResult[]
+
+  @@index([sentAt])
+  @@index([createdById])
+  @@index([sentById])
+}
+
+model AdminEmailDeliveryResult {
+  id             String                   @id
+  sentRecordId   String
+  recipientEmail String
+  status         AdminEmailDeliveryStatus
+  errorMessage   String?
+  attemptedAt    DateTime                 @default(now()) @db.Timestamp(6)
+
+  sentRecord AdminEmailSentRecord @relation(fields: [sentRecordId], references: [id], onDelete: Cascade)
+
+  @@unique([sentRecordId, recipientEmail])
+  @@index([sentRecordId])
+}

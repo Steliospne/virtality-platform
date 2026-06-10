@@ -1,4 +1,5 @@
 export * from './admin-email-blocks.ts'
+export * from './admin-email-persistence.ts'
 export * from './admin-email-send-readiness.ts'
 export * from './bucket.ts'
 export * from './bucket-references.ts'

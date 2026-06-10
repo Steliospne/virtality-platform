@@ -26,6 +26,9 @@ model User {
   sessions         Session[]
   userPreset       Preset[]
   favoriteExercise FavoriteExercise[]
+  adminEmailDraftsCreated      AdminEmailDraft[]      @relation("AdminEmailDraftCreator")
+  adminEmailSentRecordsCreated AdminEmailSentRecord[] @relation("AdminEmailSentRecordCreator")
+  adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
 }
 
 model Account {

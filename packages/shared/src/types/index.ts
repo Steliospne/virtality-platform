@@ -1,4 +1,5 @@
 export * from './admin-email.js'
+export * from './admin-email-persistence.js'
 export * from './mime-types.js'
 export * from './session-schema.js'
 export * from './general.js'
