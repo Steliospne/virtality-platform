@@ -49,6 +49,14 @@ export { useDeleteReferralCode } from './referral/use-delete-referral-code.js'
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'
 export { useSendEmailTemplate } from './email/use-send-email-template.js'
+export {
+  useCreateAdminEmailDraft,
+  useUpdateAdminEmailDraft,
+  useCloneAdminEmailDraft,
+  useCloneAdminEmailFromSent,
+  useTestSendAdminEmailDraft,
+  useFinalSendAdminEmailDraft,
+} from './email/use-admin-authored-email-mutations.js'
 
 // Favorite exercise mutations
 export { useAddFavoriteExercise } from './favorite-exercise/use-add-favorite-exercise.js'

@@ -69,6 +69,13 @@ export {
   useEmailTemplate,
   useEmailTemplatePreview,
 } from './email/use-email-templates.js'
+export {
+  useAdminEmailDrafts,
+  useAdminEmailDraft,
+  useAdminEmailDraftPreview,
+  useAdminEmailSentRecords,
+  useAdminEmailSentRecord,
+} from './email/use-admin-authored-emails.js'
 
 // Adminboard dashboard queries
 export { useTotalUniquePatients } from './adminboard/dashboard/use-total-unique-patients.js'
