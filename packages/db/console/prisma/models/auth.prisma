@@ -27,6 +27,8 @@ model User {
   userPreset       Preset[]
   favoriteExercise FavoriteExercise[]
   adminEmailDraftsCreated      AdminEmailDraft[]      @relation("AdminEmailDraftCreator")
+  adminEmailDraftsArchived     AdminEmailDraft[]      @relation("AdminEmailDraftArchivedBy")
+  adminEmailDraftsRestored     AdminEmailDraft[]      @relation("AdminEmailDraftRestoredBy")
   adminEmailSentRecordsCreated AdminEmailSentRecord[] @relation("AdminEmailSentRecordCreator")
   adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
 }

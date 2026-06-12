@@ -1,4 +1,4 @@
-export type AdminEmailDraftHeaderMenuItemId = 'preview' | 'clone'
+export type AdminEmailDraftHeaderMenuItemId = 'preview' | 'clone' | 'archive'
 
 export type AdminEmailDraftHeaderMenuItem = {
   id: AdminEmailDraftHeaderMenuItemId
@@ -34,12 +34,26 @@ export async function prepareAdminEmailDraftPreview({
 
 export function getAdminEmailDraftHeaderMenuItems(
   isFinalSent: boolean,
+  isArchived = false,
 ): AdminEmailDraftHeaderMenuItem[] {
-  return [
+  const items: AdminEmailDraftHeaderMenuItem[] = [
     { id: 'preview', label: 'Preview' },
     {
       id: 'clone',
       label: isFinalSent ? 'Clone into new draft' : 'Clone draft',
     },
   ]
+
+  if (!isArchived) {
+    items.push({ id: 'archive', label: 'Archive draft' })
+  }
+
+  return items
 }
+
+export const ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY = {
+  title: 'Archive draft?',
+  description:
+    'This hides the draft from the active list. You can restore it later from Archived drafts.',
+  confirmLabel: 'Archive draft',
+} as const

@@ -71,6 +71,7 @@ export {
 } from './email/use-email-templates.js'
 export {
   useAdminEmailDrafts,
+  useAdminEmailArchivedDrafts,
   useAdminEmailDraft,
   useAdminEmailDraftPreview,
   useAdminEmailSentRecords,

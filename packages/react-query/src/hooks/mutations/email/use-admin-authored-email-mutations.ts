@@ -9,6 +9,9 @@ const useInvalidateAdminEmailDrafts = () => {
     queryClient.invalidateQueries({
       queryKey: orpc.email.adminAuthored.drafts.list.key(),
     })
+    queryClient.invalidateQueries({
+      queryKey: orpc.email.adminAuthored.drafts.listArchived.key(),
+    })
   }
 }
 
@@ -113,6 +116,28 @@ export const useTestSendAdminEmailDraft = (draftId: string | undefined) => {
         invalidateDrafts()
         invalidateDraft()
       },
+    }),
+  )
+}
+
+export const useArchiveAdminEmailDraft = () => {
+  const orpc = useORPC()
+  const invalidateDrafts = useInvalidateAdminEmailDrafts()
+
+  return useMutation(
+    orpc.email.adminAuthored.drafts.archive.mutationOptions({
+      onSuccess: () => invalidateDrafts(),
+    }),
+  )
+}
+
+export const useRestoreAdminEmailDraft = () => {
+  const orpc = useORPC()
+  const invalidateDrafts = useInvalidateAdminEmailDrafts()
+
+  return useMutation(
+    orpc.email.adminAuthored.drafts.restore.mutationOptions({
+      onSuccess: () => invalidateDrafts(),
     }),
   )
 }

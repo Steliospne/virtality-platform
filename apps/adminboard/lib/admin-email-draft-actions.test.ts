@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY,
   getAdminEmailDraftHeaderMenuItems,
   getAdminEmailDraftPreviewQueryDraftId,
   prepareAdminEmailDraftPreview,
@@ -68,17 +69,32 @@ describe('prepareAdminEmailDraftPreview', () => {
 })
 
 describe('getAdminEmailDraftHeaderMenuItems', () => {
-  it('includes preview and clone actions for editable drafts', () => {
+  it('includes preview, clone, and archive actions for editable drafts', () => {
     expect(getAdminEmailDraftHeaderMenuItems(false)).toEqual([
+      { id: 'preview', label: 'Preview' },
+      { id: 'clone', label: 'Clone draft' },
+      { id: 'archive', label: 'Archive draft' },
+    ])
+  })
+
+  it('includes preview, clone, and archive actions for final-sent read-only drafts', () => {
+    expect(getAdminEmailDraftHeaderMenuItems(true)).toEqual([
+      { id: 'preview', label: 'Preview' },
+      { id: 'clone', label: 'Clone into new draft' },
+      { id: 'archive', label: 'Archive draft' },
+    ])
+  })
+
+  it('omits archive for archived drafts', () => {
+    expect(getAdminEmailDraftHeaderMenuItems(false, true)).toEqual([
       { id: 'preview', label: 'Preview' },
       { id: 'clone', label: 'Clone draft' },
     ])
   })
+})
 
-  it('includes preview and clone actions for final-sent read-only drafts', () => {
-    expect(getAdminEmailDraftHeaderMenuItems(true)).toEqual([
-      { id: 'preview', label: 'Preview' },
-      { id: 'clone', label: 'Clone into new draft' },
-    ])
+describe('ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY', () => {
+  it('explains that archived drafts can be restored', () => {
+    expect(ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY.description).toContain('restore')
   })
 })

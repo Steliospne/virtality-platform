@@ -24,6 +24,7 @@ import {
 } from '@/lib/admin-email-draft-actions'
 import {
   useAdminEmailDraftPreview,
+  useArchiveAdminEmailDraft,
   useCloneAdminEmailDraft,
   useFinalSendAdminEmailDraft,
   useTestSendAdminEmailDraft,
@@ -32,6 +33,7 @@ import {
 import { Save, Send } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { AdminEmailDraftArchiveDialog } from './admin-email-draft-archive-dialog'
 import { AdminEmailDraftHeaderMenu } from './admin-email-draft-header-menu'
 import { AdminEmailDraftPreviewDialog } from './admin-email-draft-preview-dialog'
 import { EmailBlockBuilder } from './email-block-builder'
@@ -55,6 +57,7 @@ type DraftWorkspaceData = {
 type AdminEmailDraftWorkspaceProps = {
   draft: DraftWorkspaceData
   onCloned: (draftId: string) => void
+  onArchived: () => void
   onFinalSent: (sentRecordId: string) => void
 }
 
@@ -75,16 +78,19 @@ const toFormState = (draft: DraftWorkspaceData): DraftFormState => ({
 export const AdminEmailDraftWorkspace = ({
   draft,
   onCloned,
+  onArchived,
   onFinalSent,
 }: AdminEmailDraftWorkspaceProps) => {
   const [form, setForm] = useState<DraftFormState>(() => toFormState(draft))
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const [testRecipientEmail, setTestRecipientEmail] = useState('')
   const [finalSendOpen, setFinalSendOpen] = useState(false)
   const [confirmedSubject, setConfirmedSubject] = useState('')
 
   const updateDraftMutation = useUpdateAdminEmailDraft()
   const cloneDraftMutation = useCloneAdminEmailDraft()
+  const archiveDraftMutation = useArchiveAdminEmailDraft()
   const testSendMutation = useTestSendAdminEmailDraft(draft.id)
   const finalSendMutation = useFinalSendAdminEmailDraft()
 
@@ -106,6 +112,7 @@ export const AdminEmailDraftWorkspace = ({
   useEffect(() => {
     setForm(toFormState(draft))
     setPreviewOpen(false)
+    setArchiveOpen(false)
     setConfirmedSubject('')
   }, [draft.id, draft.updatedAt])
 
@@ -212,6 +219,17 @@ export const AdminEmailDraftWorkspace = ({
     }
   }
 
+  const handleArchive = async () => {
+    try {
+      await archiveDraftMutation.mutateAsync({ draftId: draft.id })
+      toast.success('Draft archived')
+      setArchiveOpen(false)
+      onArchived()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to archive draft')
+    }
+  }
+
   const readOnly = draft.isFinalSent
 
   return (
@@ -248,6 +266,7 @@ export const AdminEmailDraftWorkspace = ({
                 isFinalSent={readOnly}
                 onPreview={() => void handlePreview()}
                 onClone={() => void handleClone()}
+                onArchive={() => setArchiveOpen(true)}
                 isClonePending={cloneDraftMutation.isPending}
               />
             </div>
@@ -407,6 +426,13 @@ export const AdminEmailDraftWorkspace = ({
         subject={preview?.subject ?? form.subject}
         html={preview?.html}
         isLoading={isPreviewFetching}
+      />
+
+      <AdminEmailDraftArchiveDialog
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        onConfirm={() => void handleArchive()}
+        isPending={archiveDraftMutation.isPending}
       />
 
       <FinalSendDialog

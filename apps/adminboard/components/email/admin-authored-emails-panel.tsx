@@ -11,12 +11,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
+  useAdminEmailArchivedDrafts,
   useAdminEmailDrafts,
   useAdminEmailSentRecords,
   useCreateAdminEmailDraft,
+  useRestoreAdminEmailDraft,
 } from '@virtality/react-query'
 import { format } from 'date-fns'
-import { FileText, Plus, Send } from 'lucide-react'
+import { Archive, FileText, Plus, RotateCcw, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AdminEmailDraftWorkspace } from './admin-email-draft-workspace'
@@ -30,8 +32,11 @@ type Selection =
 export const AdminAuthoredEmailsPanel = () => {
   const [selection, setSelection] = useState<Selection>(null)
   const { data: drafts, isLoading: draftsLoading } = useAdminEmailDrafts()
+  const { data: archivedDrafts, isLoading: archivedDraftsLoading } =
+    useAdminEmailArchivedDrafts()
   const { data: sentRecords, isLoading: sentLoading } = useAdminEmailSentRecords()
   const createDraftMutation = useCreateAdminEmailDraft()
+  const restoreDraftMutation = useRestoreAdminEmailDraft()
 
   const selectedDraft = drafts?.find(
     (draft) => selection?.kind === 'draft' && draft.id === selection.id,
@@ -47,7 +52,17 @@ export const AdminAuthoredEmailsPanel = () => {
     }
   }
 
-  if (draftsLoading || sentLoading) {
+  const handleRestoreDraft = async (draftId: string) => {
+    try {
+      const restored = await restoreDraftMutation.mutateAsync({ draftId })
+      setSelection({ kind: 'draft', id: restored.id })
+      toast.success('Draft restored')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to restore draft')
+    }
+  }
+
+  if (draftsLoading || archivedDraftsLoading || sentLoading) {
     return (
       <div className='flex items-center justify-center py-12'>
         <p className='text-muted-foreground'>Loading admin-authored emails...</p>
@@ -116,6 +131,48 @@ export const AdminAuthoredEmailsPanel = () => {
                 ))}
               </div>
             )}
+
+            {(archivedDrafts ?? []).length > 0 ? (
+              <details className='rounded-lg border'>
+                <summary className='hover:bg-accent flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden'>
+                  <Archive className='text-muted-foreground size-4 shrink-0' />
+                  Archived drafts ({archivedDrafts?.length ?? 0})
+                </summary>
+                <div className='space-y-2 border-t p-3'>
+                  {(archivedDrafts ?? []).map((draft) => (
+                    <div
+                      key={draft.id}
+                      className='flex items-start gap-2 rounded-lg border p-3'
+                    >
+                      <div className='min-w-0 flex-1 space-y-1'>
+                        <p className='truncate font-medium'>
+                          {draft.subject.trim() || 'Untitled draft'}
+                        </p>
+                        <p className='text-muted-foreground text-xs'>
+                          Archived{' '}
+                          {draft.archivedAt
+                            ? format(new Date(draft.archivedAt), 'MMM d, yyyy HH:mm')
+                            : 'recently'}
+                        </p>
+                        {draft.isFinalSent ? (
+                          <Badge variant='outline'>Final sent</Badge>
+                        ) : null}
+                      </div>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        disabled={restoreDraftMutation.isPending}
+                        onClick={() => void handleRestoreDraft(draft.id)}
+                      >
+                        <RotateCcw className='mr-1 size-3.5' />
+                        Restore
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -201,6 +258,7 @@ export const AdminAuthoredEmailsPanel = () => {
               updatedAt: selectedDraft.updatedAt,
             }}
             onCloned={(draftId) => setSelection({ kind: 'draft', id: draftId })}
+            onArchived={() => setSelection(null)}
             onFinalSent={(sentRecordId) =>
               setSelection({ kind: 'sent', id: sentRecordId })
             }

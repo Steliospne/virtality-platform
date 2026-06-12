@@ -7,8 +7,11 @@ import {
   parseEmailBodyBlocksJson,
   parseRenderedEmailSnapshotJson,
   serializeRenderedEmailSnapshotJson,
+  buildArchiveDraftData,
   buildDraftUpdateData,
+  buildRestoreDraftData,
   draftHasFinalSend,
+  isDraftArchived,
   getDraftSendReadiness,
   parseDraftBodyBlocks,
   validateDraftBodyBlocksInput,
@@ -75,6 +78,10 @@ type DraftWithSentRecords = {
   lastTestSentAt: Date | null
   clonedFromDraftId: string | null
   clonedFromSentRecordId: string | null
+  archivedAt: Date | null
+  archivedById: string | null
+  restoredAt: Date | null
+  restoredById: string | null
   createdById: string
   createdAt: Date
   updatedAt: Date
@@ -103,6 +110,11 @@ const mapDraft = (draft: DraftWithSentRecords) => {
     lastTestSentAt: draft.lastTestSentAt,
     clonedFromDraftId: draft.clonedFromDraftId,
     clonedFromSentRecordId: draft.clonedFromSentRecordId,
+    archivedAt: draft.archivedAt,
+    archivedById: draft.archivedById,
+    restoredAt: draft.restoredAt,
+    restoredById: draft.restoredById,
+    isArchived: isDraftArchived(draft),
     createdById: draft.createdById,
     createdAt: draft.createdAt,
     updatedAt: draft.updatedAt,
@@ -125,6 +137,12 @@ const getDraftOrThrow = async (prisma: PrismaClient, draftId: string) => {
 }
 
 const assertDraftEditable = (draft: DraftWithSentRecords) => {
+  if (isDraftArchived(draft)) {
+    throw new ORPCError('BAD_REQUEST', {
+      message: 'Email draft is archived and cannot be changed',
+    })
+  }
+
   if (draftHasFinalSend(toDraftRecord(draft))) {
     throw new ORPCError('BAD_REQUEST', {
       message: 'Email draft has been final-sent and cannot be changed',
@@ -152,8 +170,21 @@ const listDrafts = authed
   .route({ path: '/email/admin-authored/drafts/list', method: 'GET' })
   .handler(async ({ context }) => {
     const drafts = await context.prisma.adminEmailDraft.findMany({
+      where: { archivedAt: null },
       include: draftInclude,
       orderBy: { updatedAt: 'desc' },
+    })
+
+    return drafts.map(mapDraft)
+  })
+
+const listArchivedDrafts = authed
+  .route({ path: '/email/admin-authored/drafts/list-archived', method: 'GET' })
+  .handler(async ({ context }) => {
+    const drafts = await context.prisma.adminEmailDraft.findMany({
+      where: { archivedAt: { not: null } },
+      include: draftInclude,
+      orderBy: { archivedAt: 'desc' },
     })
 
     return drafts.map(mapDraft)
@@ -272,6 +303,48 @@ const cloneSentRecord = authed
     })
 
     return mapDraft(cloned)
+  })
+
+const archiveDraft = authed
+  .route({ path: '/email/admin-authored/drafts/archive', method: 'POST' })
+  .input(draftIdInput)
+  .handler(async ({ context, input }) => {
+    const draft = await getDraftOrThrow(context.prisma, input.draftId)
+
+    if (isDraftArchived(draft)) {
+      throw new ORPCError('BAD_REQUEST', {
+        message: 'Email draft is already archived',
+      })
+    }
+
+    const archived = await context.prisma.adminEmailDraft.update({
+      where: { id: input.draftId },
+      data: buildArchiveDraftData(context.user.id),
+      include: draftInclude,
+    })
+
+    return mapDraft(archived)
+  })
+
+const restoreDraft = authed
+  .route({ path: '/email/admin-authored/drafts/restore', method: 'POST' })
+  .input(draftIdInput)
+  .handler(async ({ context, input }) => {
+    const draft = await getDraftOrThrow(context.prisma, input.draftId)
+
+    if (!isDraftArchived(draft)) {
+      throw new ORPCError('BAD_REQUEST', {
+        message: 'Email draft is not archived',
+      })
+    }
+
+    const restored = await context.prisma.adminEmailDraft.update({
+      where: { id: input.draftId },
+      data: buildRestoreDraftData(context.user.id),
+      include: draftInclude,
+    })
+
+    return mapDraft(restored)
   })
 
 const previewDraft = authed
@@ -480,11 +553,14 @@ const getSentRecord = authed
 export const adminAuthoredEmail = {
   drafts: {
     list: listDrafts,
+    listArchived: listArchivedDrafts,
     get: getDraft,
     create: createDraft,
     update: updateDraft,
     clone: cloneDraft,
     cloneFromSent: cloneSentRecord,
+    archive: archiveDraft,
+    restore: restoreDraft,
     preview: previewDraft,
     testSend: testSendDraft,
     finalSend: finalSendDraft,

@@ -54,6 +54,8 @@ export {
   useUpdateAdminEmailDraft,
   useCloneAdminEmailDraft,
   useCloneAdminEmailFromSent,
+  useArchiveAdminEmailDraft,
+  useRestoreAdminEmailDraft,
   useTestSendAdminEmailDraft,
   useFinalSendAdminEmailDraft,
 } from './email/use-admin-authored-email-mutations.js'

@@ -8,22 +8,26 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { getAdminEmailDraftHeaderMenuItems } from '@/lib/admin-email-draft-actions'
-import { Copy, Eye, MoreHorizontal } from 'lucide-react'
+import { Archive, Copy, Eye, MoreHorizontal } from 'lucide-react'
 
 type AdminEmailDraftHeaderMenuProps = {
   isFinalSent: boolean
+  isArchived?: boolean
   onPreview: () => void
   onClone: () => void
+  onArchive: () => void
   isClonePending?: boolean
 }
 
 export const AdminEmailDraftHeaderMenu = ({
   isFinalSent,
+  isArchived = false,
   onPreview,
   onClone,
+  onArchive,
   isClonePending = false,
 }: AdminEmailDraftHeaderMenuProps) => {
-  const menuItems = getAdminEmailDraftHeaderMenuItems(isFinalSent)
+  const menuItems = getAdminEmailDraftHeaderMenuItems(isFinalSent, isArchived)
 
   return (
     <DropdownMenu>
@@ -43,11 +47,18 @@ export const AdminEmailDraftHeaderMenu = ({
                 return
               }
 
+              if (item.id === 'archive') {
+                onArchive()
+                return
+              }
+
               onClone()
             }}
           >
             {item.id === 'preview' ? (
               <Eye className='mr-2 size-4' />
+            ) : item.id === 'archive' ? (
+              <Archive className='mr-2 size-4' />
             ) : (
               <Copy className='mr-2 size-4' />
             )}

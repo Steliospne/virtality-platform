@@ -16,10 +16,16 @@ model AdminEmailDraft {
   createdById            String
   clonedFromDraftId      String?
   clonedFromSentRecordId String?
+  archivedAt             DateTime? @db.Timestamp(6)
+  archivedById           String?
+  restoredAt             DateTime? @db.Timestamp(6)
+  restoredById           String?
   createdAt              DateTime  @default(now()) @db.Timestamp(6)
   updatedAt              DateTime  @updatedAt @db.Timestamp(6)
 
   createdBy            User                  @relation("AdminEmailDraftCreator", fields: [createdById], references: [id])
+  archivedBy           User?                 @relation("AdminEmailDraftArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
+  restoredBy           User?                 @relation("AdminEmailDraftRestoredBy", fields: [restoredById], references: [id], onDelete: SetNull)
   clonedFromDraft      AdminEmailDraft?      @relation("AdminEmailDraftClone", fields: [clonedFromDraftId], references: [id], onDelete: SetNull)
   clonedFromSentRecord AdminEmailSentRecord? @relation("AdminEmailDraftClonedFromSent", fields: [clonedFromSentRecordId], references: [id], onDelete: SetNull)
   draftClones          AdminEmailDraft[]     @relation("AdminEmailDraftClone")
@@ -27,6 +33,7 @@ model AdminEmailDraft {
 
   @@index([createdById])
   @@index([updatedAt])
+  @@index([archivedAt])
 }
 
 model AdminEmailSentRecord {

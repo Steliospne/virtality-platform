@@ -6,6 +6,11 @@ export const useAdminEmailDrafts = () => {
   return useQuery(orpc.email.adminAuthored.drafts.list.queryOptions())
 }
 
+export const useAdminEmailArchivedDrafts = () => {
+  const orpc = useORPC()
+  return useQuery(orpc.email.adminAuthored.drafts.listArchived.queryOptions())
+}
+
 export const useAdminEmailDraft = (draftId: string | null) => {
   const orpc = useORPC()
   return useQuery(
