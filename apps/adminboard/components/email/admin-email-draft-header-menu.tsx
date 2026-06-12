@@ -7,8 +7,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { getAdminEmailDraftHeaderMenuItems } from '@/lib/admin-email-draft-actions'
+import {
+  type AdminEmailDraftHeaderMenuItem,
+  type AdminEmailDraftHeaderMenuItemId,
+  getAdminEmailDraftHeaderMenuItems,
+} from '@/lib/admin-email-draft-actions'
 import { Archive, Copy, Eye, MoreHorizontal, RotateCcw } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+const MENU_ITEM_ICONS: Record<AdminEmailDraftHeaderMenuItemId, LucideIcon> = {
+  preview: Eye,
+  clone: Copy,
+  archive: Archive,
+  restore: RotateCcw,
+}
 
 type AdminEmailDraftHeaderMenuProps = {
   isFinalSent: boolean
@@ -19,6 +31,45 @@ type AdminEmailDraftHeaderMenuProps = {
   onRestore?: () => void
   isClonePending?: boolean
   isRestorePending?: boolean
+}
+
+const getMenuItemLabel = (
+  item: AdminEmailDraftHeaderMenuItem,
+  isClonePending: boolean,
+  isRestorePending: boolean,
+): string => {
+  if (item.id === 'clone' && isClonePending) {
+    return 'Cloning...'
+  }
+
+  if (item.id === 'restore' && isRestorePending) {
+    return 'Restoring...'
+  }
+
+  return item.label
+}
+
+const handleMenuItemSelect = (
+  itemId: AdminEmailDraftHeaderMenuItemId,
+  handlers: Pick<
+    AdminEmailDraftHeaderMenuProps,
+    'onPreview' | 'onClone' | 'onArchive' | 'onRestore'
+  >,
+) => {
+  switch (itemId) {
+    case 'preview':
+      handlers.onPreview()
+      break
+    case 'archive':
+      handlers.onArchive()
+      break
+    case 'restore':
+      handlers.onRestore?.()
+      break
+    case 'clone':
+      handlers.onClone()
+      break
+  }
 }
 
 export const AdminEmailDraftHeaderMenu = ({
@@ -41,48 +92,30 @@ export const AdminEmailDraftHeaderMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        {menuItems.map((item) => (
-          <DropdownMenuItem
-            key={item.id}
-            disabled={
-              (item.id === 'clone' && isClonePending) ||
-              (item.id === 'restore' && isRestorePending)
-            }
-            onSelect={() => {
-              if (item.id === 'preview') {
-                onPreview()
-                return
-              }
+        {menuItems.map((item) => {
+          const Icon = MENU_ITEM_ICONS[item.id]
 
-              if (item.id === 'archive') {
-                onArchive()
-                return
+          return (
+            <DropdownMenuItem
+              key={item.id}
+              disabled={
+                (item.id === 'clone' && isClonePending) ||
+                (item.id === 'restore' && isRestorePending)
               }
-
-              if (item.id === 'restore') {
-                onRestore?.()
-                return
+              onSelect={() =>
+                handleMenuItemSelect(item.id, {
+                  onPreview,
+                  onClone,
+                  onArchive,
+                  onRestore,
+                })
               }
-
-              onClone()
-            }}
-          >
-            {item.id === 'preview' ? (
-              <Eye className='mr-2 size-4' />
-            ) : item.id === 'archive' ? (
-              <Archive className='mr-2 size-4' />
-            ) : item.id === 'restore' ? (
-              <RotateCcw className='mr-2 size-4' />
-            ) : (
-              <Copy className='mr-2 size-4' />
-            )}
-            {item.id === 'clone' && isClonePending
-              ? 'Cloning...'
-              : item.id === 'restore' && isRestorePending
-                ? 'Restoring...'
-                : item.label}
-          </DropdownMenuItem>
-        ))}
+            >
+              <Icon className='mr-2 size-4' />
+              {getMenuItemLabel(item, isClonePending, isRestorePending)}
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

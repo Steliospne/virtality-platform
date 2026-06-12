@@ -20,6 +20,7 @@ import type { EmailBodyBlock } from '@virtality/shared/types'
 import { MAX_EMAIL_RECIPIENTS } from '@virtality/shared/types'
 import {
   getAdminEmailDraftPreviewQueryDraftId,
+  getAdminEmailDraftWorkspaceHeader,
   isAdminEmailDraftReadOnly,
   prepareAdminEmailDraftPreview,
 } from '@/lib/admin-email-draft-actions'
@@ -251,6 +252,10 @@ export const AdminEmailDraftWorkspace = ({
     isArchived,
     isFinalSent: draft.isFinalSent,
   })
+  const workspaceHeader = getAdminEmailDraftWorkspaceHeader({
+    isArchived,
+    isFinalSent: draft.isFinalSent,
+  })
 
   return (
     <div className='space-y-6'>
@@ -258,18 +263,8 @@ export const AdminEmailDraftWorkspace = ({
         <CardHeader>
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div>
-              <CardTitle>
-                {isArchived
-                  ? 'Archived draft (read-only)'
-                  : draft.isFinalSent
-                    ? 'Sent draft (read-only)'
-                    : 'Edit draft'}
-              </CardTitle>
-              <CardDescription>
-                {isArchived
-                  ? 'Restore this draft to edit it again, or clone it into a new active draft.'
-                  : 'Edit the subject and Email Body Blocks. The Email Brand Shell stays locked.'}
-              </CardDescription>
+              <CardTitle>{workspaceHeader.title}</CardTitle>
+              <CardDescription>{workspaceHeader.description}</CardDescription>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
               {isArchived ? <Badge variant='outline'>Archived</Badge> : null}

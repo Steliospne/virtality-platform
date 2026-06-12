@@ -50,6 +50,10 @@ export const AdminAuthoredEmailsPanel = () => {
 
   const selectedDraft = selectedDraftResolution.draft
   const selectedDraftIsArchived = selectedDraftResolution.isArchived
+  const archivedDraftList = archivedDrafts ?? []
+
+  const isDraftSelected = (draftId: string) =>
+    selection?.kind === 'draft' && selection.id === draftId
 
   const handleCreateDraft = async () => {
     try {
@@ -111,9 +115,7 @@ export const AdminAuthoredEmailsPanel = () => {
                     onClick={() => setSelection({ kind: 'draft', id: draft.id })}
                     className={cn(
                       'hover:bg-accent w-full rounded-lg border p-3 text-left transition-colors',
-                      selection?.kind === 'draft' && selection.id === draft.id
-                        ? 'bg-accent'
-                        : '',
+                      isDraftSelected(draft.id) ? 'bg-accent' : '',
                     )}
                   >
                     <div className='flex items-start gap-3'>
@@ -141,21 +143,19 @@ export const AdminAuthoredEmailsPanel = () => {
               </div>
             )}
 
-            {(archivedDrafts ?? []).length > 0 ? (
+            {archivedDraftList.length > 0 ? (
               <details className='rounded-lg border'>
                 <summary className='hover:bg-accent flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden'>
                   <Archive className='text-muted-foreground size-4 shrink-0' />
-                  Archived drafts ({archivedDrafts?.length ?? 0})
+                  Archived drafts ({archivedDraftList.length})
                 </summary>
                 <div className='space-y-2 border-t p-3'>
-                  {(archivedDrafts ?? []).map((draft) => (
+                  {archivedDraftList.map((draft) => (
                     <div
                       key={draft.id}
                       className={cn(
                         'flex items-start gap-2 rounded-lg border p-3',
-                        selection?.kind === 'draft' && selection.id === draft.id
-                          ? 'bg-accent'
-                          : '',
+                        isDraftSelected(draft.id) ? 'bg-accent' : '',
                       )}
                     >
                       <button

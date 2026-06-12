@@ -45,6 +45,35 @@ export type AdminEmailDraftHeaderMenuItem = {
   label: string
 }
 
+export function getAdminEmailDraftCloneLabel(isFinalSent: boolean): string {
+  return isFinalSent ? 'Clone into new draft' : 'Clone draft'
+}
+
+export function getAdminEmailDraftWorkspaceHeader({
+  isArchived,
+  isFinalSent,
+}: {
+  isArchived: boolean
+  isFinalSent: boolean
+}): { title: string; description: string } {
+  if (isArchived) {
+    return {
+      title: 'Archived draft (read-only)',
+      description:
+        'Restore this draft to edit it again, or clone it into a new active draft.',
+    }
+  }
+
+  const description =
+    'Edit the subject and Email Body Blocks. The Email Brand Shell stays locked.'
+
+  if (isFinalSent) {
+    return { title: 'Sent draft (read-only)', description }
+  }
+
+  return { title: 'Edit draft', description }
+}
+
 export function getAdminEmailDraftPreviewQueryDraftId({
   previewOpen,
   isDirty,
@@ -76,25 +105,20 @@ export function getAdminEmailDraftHeaderMenuItems(
   isFinalSent: boolean,
   isArchived = false,
 ): AdminEmailDraftHeaderMenuItem[] {
+  const cloneItem: AdminEmailDraftHeaderMenuItem = {
+    id: 'clone',
+    label: getAdminEmailDraftCloneLabel(isFinalSent),
+  }
+  const previewAndClone: AdminEmailDraftHeaderMenuItem[] = [
+    { id: 'preview', label: 'Preview' },
+    cloneItem,
+  ]
+
   if (isArchived) {
-    return [
-      { id: 'restore', label: 'Restore draft' },
-      { id: 'preview', label: 'Preview' },
-      {
-        id: 'clone',
-        label: isFinalSent ? 'Clone into new draft' : 'Clone draft',
-      },
-    ]
+    return [{ id: 'restore', label: 'Restore draft' }, ...previewAndClone]
   }
 
-  return [
-    { id: 'preview', label: 'Preview' },
-    {
-      id: 'clone',
-      label: isFinalSent ? 'Clone into new draft' : 'Clone draft',
-    },
-    { id: 'archive', label: 'Archive draft' },
-  ]
+  return [...previewAndClone, { id: 'archive', label: 'Archive draft' }]
 }
 
 export const ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY = {
