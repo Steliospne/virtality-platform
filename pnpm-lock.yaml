@@ -22,6 +22,9 @@ importers:
       '@ai-hero/sandcastle':
         specifier: ^0.6.6
         version: 0.6.6
+      fallow:
+        specifier: ^2.94.0
+        version: 2.94.0
       pnpm:
         specifier: 10.23.0
         version: 10.23.0
@@ -1956,6 +1959,46 @@ packages:
   '@faker-js/faker@10.2.0':
     resolution: {integrity: sha512-rTXwAsIxpCqzUnZvrxVh3L0QA0NzToqWBLAhV+zDV3MIIwiQhAZHMdPCIaj5n/yADu/tyk12wIPgL6YHGXJP+g==}
     engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
+
+  '@fallow-cli/darwin-arm64@2.94.0':
+    resolution: {integrity: sha512-g+cDJgjEAaCgutFVXzO9D7HCmbq2d2YIyz5rVD8ciIcZxsGqwRZJleH63x/h16EwNxcQJDG+4DJ9FYzT6lcTJQ==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@fallow-cli/darwin-x64@2.94.0':
+    resolution: {integrity: sha512-XVq9nBOyZWmtMpoYowOVc1Gznx1zGhKbBKIh6yEoV4PrdK28/MOXfcvbBEXlvBafY8Af3phU0rC0U6ra50kbMQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@fallow-cli/linux-arm64-gnu@2.94.0':
+    resolution: {integrity: sha512-kSLP/ncE2vGpX1h99QQ24zr6KM73+hSM+kVhqBTWfndBV043AVAgtbWFQuSl6FJ6fs4agRG0UU4bR54g4i7d3w==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@fallow-cli/linux-arm64-musl@2.94.0':
+    resolution: {integrity: sha512-JOtUnaQtbBw1IdBREa/B+Ol2hqVvAEioKbYraUsg7EpZene48M99A3tbkEq2NSVB/bvg3nwkJpiUqli05R5qWg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@fallow-cli/linux-x64-gnu@2.94.0':
+    resolution: {integrity: sha512-e2RNyEU7KZnQiX4SqMqm1Mhv6Q9lds+kBFM5b45yknaSL639c8y/7WsaDT8OxNdWCnTNoH1uH3rGfIH+U7X6sg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@fallow-cli/linux-x64-musl@2.94.0':
+    resolution: {integrity: sha512-qt7+mP0XFacHcpw/jQ1pZekp0cG9RRFT5uYBaSQgUT9z8s/1Fqk8eBaGAXMWMlTdsK192m6yJBhY5yw2LeZgjg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@fallow-cli/win32-arm64-msvc@2.94.0':
+    resolution: {integrity: sha512-+VyMKqj+RALFvjUCuswvhjoe211h2jrtjwSoxgiKN5d8Jsjh9kYBzfTzj4qZIHHKxYxNJGB2NnYe+HcPC2vviw==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@fallow-cli/win32-x64-msvc@2.94.0':
+    resolution: {integrity: sha512-ZIXAo7hWXBaYb84r4b/n+mRCFuvXMlkNavbTnRJFvBbLpYTavwo1ZDGykzgP5FmATuv0hkx9edRXypUzvvm+7g==}
+    cpu: [x64]
+    os: [win32]
 
   '@floating-ui/core@1.7.4':
     resolution: {integrity: sha512-C3HlIdsBxszvm5McXlB8PeOEWfBhcGBTZGkGlWc2U0KFY5IwG5OQEuQ8rq52DZmcHDlPLd+YFBK+cZcytwIFWg==}
@@ -5945,6 +5988,11 @@ packages:
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
 
+  fallow@2.94.0:
+    resolution: {integrity: sha512-ygIJ8tsJ9Cc9zXQOBk649MaMROSAqzsLiHE5lQ+vLdLc25++yckxChz+34KkopMOFqNbQO06zt7mHWRv8Hn40g==}
+    engines: {node: '>=16'}
+    hasBin: true
+
   fast-check@3.23.2:
     resolution: {integrity: sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==}
     engines: {node: '>=8.0.0'}
@@ -9679,6 +9727,30 @@ snapshots:
       levn: 0.4.1
 
   '@faker-js/faker@10.2.0': {}
+
+  '@fallow-cli/darwin-arm64@2.94.0':
+    optional: true
+
+  '@fallow-cli/darwin-x64@2.94.0':
+    optional: true
+
+  '@fallow-cli/linux-arm64-gnu@2.94.0':
+    optional: true
+
+  '@fallow-cli/linux-arm64-musl@2.94.0':
+    optional: true
+
+  '@fallow-cli/linux-x64-gnu@2.94.0':
+    optional: true
+
+  '@fallow-cli/linux-x64-musl@2.94.0':
+    optional: true
+
+  '@fallow-cli/win32-arm64-msvc@2.94.0':
+    optional: true
+
+  '@fallow-cli/win32-x64-msvc@2.94.0':
+    optional: true
 
   '@floating-ui/core@1.7.4':
     dependencies:
@@ -14162,7 +14234,7 @@ snapshots:
       '@next/eslint-plugin-next': 16.1.6
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.2(jiti@2.6.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.39.2(jiti@2.6.1))
@@ -14212,7 +14284,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.2(jiti@2.6.1)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3
@@ -14224,6 +14296,22 @@ snapshots:
       unrs-resolver: 1.11.1
     optionalDependencies:
       eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-import-x: 4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1))
+    transitivePeerDependencies:
+      - supports-color
+
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.2(jiti@2.6.1)):
+    dependencies:
+      '@nolyfill/is-core-module': 1.0.39
+      debug: 4.4.3
+      eslint: 9.39.2(jiti@2.6.1)
+      get-tsconfig: 4.13.6
+      is-bun-module: 2.0.0
+      stable-hash: 0.0.5
+      tinyglobby: 0.2.15
+      unrs-resolver: 1.11.1
+    optionalDependencies:
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-import-x: 4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
@@ -14246,6 +14334,16 @@ snapshots:
       eslint: 9.39.1(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.1(jiti@2.6.1))
+    transitivePeerDependencies:
+      - supports-color
+
+  eslint-module-utils@2.12.1(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1)):
+    dependencies:
+      debug: 3.2.7
+    optionalDependencies:
+      eslint: 9.39.2(jiti@2.6.1)
+      eslint-import-resolver-node: 0.3.9
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -14360,7 +14458,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.52.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1))
+      eslint-module-utils: 2.12.1(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2(jiti@2.6.1))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -14691,6 +14789,19 @@ snapshots:
   exsolve@1.0.8: {}
 
   extend@3.0.2: {}
+
+  fallow@2.94.0:
+    dependencies:
+      detect-libc: 2.1.2
+    optionalDependencies:
+      '@fallow-cli/darwin-arm64': 2.94.0
+      '@fallow-cli/darwin-x64': 2.94.0
+      '@fallow-cli/linux-arm64-gnu': 2.94.0
+      '@fallow-cli/linux-arm64-musl': 2.94.0
+      '@fallow-cli/linux-x64-gnu': 2.94.0
+      '@fallow-cli/linux-x64-musl': 2.94.0
+      '@fallow-cli/win32-arm64-msvc': 2.94.0
+      '@fallow-cli/win32-x64-msvc': 2.94.0
 
   fast-check@3.23.2:
     dependencies:

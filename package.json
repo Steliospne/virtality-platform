@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@ai-hero/sandcastle": "^0.6.6",
+    "fallow": "^2.94.0",
     "pnpm": "10.23.0",
     "prettier": "3.8.1",
     "prettier-plugin-tailwindcss": "0.7.2",
