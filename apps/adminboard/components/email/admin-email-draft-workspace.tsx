@@ -19,15 +19,21 @@ import { cn } from '@/lib/utils'
 import type { EmailBodyBlock } from '@virtality/shared/types'
 import { MAX_EMAIL_RECIPIENTS } from '@virtality/shared/types'
 import {
+  getAdminEmailDraftPreviewQueryDraftId,
+  prepareAdminEmailDraftPreview,
+} from '@/lib/admin-email-draft-actions'
+import {
   useAdminEmailDraftPreview,
   useCloneAdminEmailDraft,
   useFinalSendAdminEmailDraft,
   useTestSendAdminEmailDraft,
   useUpdateAdminEmailDraft,
 } from '@virtality/react-query'
-import { Copy, Eye, Save, Send } from 'lucide-react'
+import { Save, Send } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { AdminEmailDraftHeaderMenu } from './admin-email-draft-header-menu'
+import { AdminEmailDraftPreviewDialog } from './admin-email-draft-preview-dialog'
 import { EmailBlockBuilder } from './email-block-builder'
 import { FinalSendDialog } from './final-send-dialog'
 
@@ -72,7 +78,7 @@ export const AdminEmailDraftWorkspace = ({
   onFinalSent,
 }: AdminEmailDraftWorkspaceProps) => {
   const [form, setForm] = useState<DraftFormState>(() => toFormState(draft))
-  const [showPreview, setShowPreview] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [testRecipientEmail, setTestRecipientEmail] = useState('')
   const [finalSendOpen, setFinalSendOpen] = useState(false)
   const [confirmedSubject, setConfirmedSubject] = useState('')
@@ -99,13 +105,18 @@ export const AdminEmailDraftWorkspace = ({
 
   useEffect(() => {
     setForm(toFormState(draft))
-    setShowPreview(false)
+    setPreviewOpen(false)
     setConfirmedSubject('')
   }, [draft.id, draft.updatedAt])
 
-  const { data: preview, refetch: refetchPreview } = useAdminEmailDraftPreview(
-    showPreview && !isDirty ? draft.id : null,
-  )
+  const previewQueryDraftId = getAdminEmailDraftPreviewQueryDraftId({
+    previewOpen,
+    isDirty,
+    draftId: draft.id,
+  })
+
+  const { data: preview, refetch: refetchPreview, isFetching: isPreviewFetching } =
+    useAdminEmailDraftPreview(previewQueryDraftId)
 
   const saveDraft = async () => {
     try {
@@ -125,14 +136,15 @@ export const AdminEmailDraftWorkspace = ({
   }
 
   const handlePreview = async () => {
-    if (isDirty) {
-      const saved = await saveDraft()
-      if (!saved) {
-        return
-      }
+    const canPreview = await prepareAdminEmailDraftPreview({
+      isDirty,
+      saveDraft,
+    })
+    if (!canPreview) {
+      return
     }
 
-    setShowPreview(true)
+    setPreviewOpen(true)
     void refetchPreview()
   }
 
@@ -232,6 +244,12 @@ export const AdminEmailDraftWorkspace = ({
               >
                 Unsaved changes
               </Badge>
+              <AdminEmailDraftHeaderMenu
+                isFinalSent={readOnly}
+                onPreview={() => void handlePreview()}
+                onClone={() => void handleClone()}
+                isClonePending={cloneDraftMutation.isPending}
+              />
             </div>
           </div>
         </CardHeader>
@@ -300,57 +318,14 @@ export const AdminEmailDraftWorkspace = ({
           />
 
           {!readOnly ? (
-            <div className='flex flex-wrap gap-2'>
-              <Button
-                type='button'
-                onClick={() => void saveDraft()}
-                disabled={!isDirty || updateDraftMutation.isPending}
-              >
-                <Save className='mr-2 size-4' />
-                {updateDraftMutation.isPending ? 'Saving...' : 'Save draft'}
-              </Button>
-              <Button type='button' variant='outline' onClick={() => void handleClone()}>
-                <Copy className='mr-2 size-4' />
-                Clone draft
-              </Button>
-            </div>
-          ) : (
-            <Button type='button' variant='outline' onClick={() => void handleClone()}>
-              <Copy className='mr-2 size-4' />
-              Clone into new draft
+            <Button
+              type='button'
+              onClick={() => void saveDraft()}
+              disabled={!isDirty || updateDraftMutation.isPending}
+            >
+              <Save className='mr-2 size-4' />
+              {updateDraftMutation.isPending ? 'Saving...' : 'Save draft'}
             </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Preview</CardTitle>
-          <CardDescription>
-            Review the rendered email with the locked brand shell.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <Button type='button' variant='outline' onClick={() => void handlePreview()}>
-            <Eye className='mr-2 size-4' />
-            {showPreview ? 'Refresh preview' : 'Load preview'}
-          </Button>
-
-          {showPreview ? (
-            <div className='space-y-3'>
-              <p className='text-lg font-medium'>{preview?.subject ?? draft.subject}</p>
-              <div className='bg-muted/50 min-h-[300px] rounded-lg border p-4'>
-                {preview?.html ? (
-                  <iframe
-                    className='h-full min-h-[300px] w-full'
-                    srcDoc={preview.html}
-                    title='Email preview'
-                  />
-                ) : (
-                  <p className='text-muted-foreground text-sm'>Loading preview...</p>
-                )}
-              </div>
-            </div>
           ) : null}
         </CardContent>
       </Card>
@@ -425,6 +400,14 @@ export const AdminEmailDraftWorkspace = ({
           </Card>
         </>
       ) : null}
+
+      <AdminEmailDraftPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        subject={preview?.subject ?? form.subject}
+        html={preview?.html}
+        isLoading={isPreviewFetching}
+      />
 
       <FinalSendDialog
         open={finalSendOpen}
