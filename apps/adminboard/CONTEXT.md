@@ -2,6 +2,10 @@
 
 Internal admin dashboard for managing platform resources and operational content.
 
+## UI patterns
+
+When a dropdown menu item opens a dialog, follow `docs/adr/0002-dropdown-dialog-pointer-events.md` (controlled menu, `modal={false}`, defer dialog open via `useDropdownMenu`).
+
 ## Language
 
 **Bucket Object**:

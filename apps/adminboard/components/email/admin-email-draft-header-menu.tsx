@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useDropdownMenu } from '@/hooks/use-dropdown-menu-action'
 import {
   type AdminEmailDraftHeaderMenuItem,
   type AdminEmailDraftHeaderMenuItemId,
@@ -82,10 +83,11 @@ export const AdminEmailDraftHeaderMenu = ({
   isClonePending = false,
   isRestorePending = false,
 }: AdminEmailDraftHeaderMenuProps) => {
+  const { open, setOpen, runAfterClose } = useDropdownMenu()
   const menuItems = getAdminEmailDraftHeaderMenuItems(isFinalSent, isArchived)
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button type='button' variant='outline' size='icon' aria-label='Draft actions'>
           <MoreHorizontal className='size-4' />
@@ -103,12 +105,14 @@ export const AdminEmailDraftHeaderMenu = ({
                 (item.id === 'restore' && isRestorePending)
               }
               onSelect={() =>
-                handleMenuItemSelect(item.id, {
-                  onPreview,
-                  onClone,
-                  onArchive,
-                  onRestore,
-                })
+                runAfterClose(() =>
+                  handleMenuItemSelect(item.id, {
+                    onPreview,
+                    onClone,
+                    onArchive,
+                    onRestore,
+                  }),
+                )
               }
             >
               <Icon className='mr-2 size-4' />
