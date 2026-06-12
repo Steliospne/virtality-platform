@@ -20,6 +20,7 @@ import type { EmailBodyBlock } from '@virtality/shared/types'
 import { MAX_EMAIL_RECIPIENTS } from '@virtality/shared/types'
 import {
   getAdminEmailDraftPreviewQueryDraftId,
+  isAdminEmailDraftReadOnly,
   prepareAdminEmailDraftPreview,
 } from '@/lib/admin-email-draft-actions'
 import {
@@ -27,6 +28,7 @@ import {
   useArchiveAdminEmailDraft,
   useCloneAdminEmailDraft,
   useFinalSendAdminEmailDraft,
+  useRestoreAdminEmailDraft,
   useTestSendAdminEmailDraft,
   useUpdateAdminEmailDraft,
 } from '@virtality/react-query'
@@ -56,8 +58,10 @@ type DraftWorkspaceData = {
 
 type AdminEmailDraftWorkspaceProps = {
   draft: DraftWorkspaceData
+  isArchived?: boolean
   onCloned: (draftId: string) => void
   onArchived: () => void
+  onRestored: (draftId: string) => void
   onFinalSent: (sentRecordId: string) => void
 }
 
@@ -77,8 +81,10 @@ const toFormState = (draft: DraftWorkspaceData): DraftFormState => ({
 
 export const AdminEmailDraftWorkspace = ({
   draft,
+  isArchived = false,
   onCloned,
   onArchived,
+  onRestored,
   onFinalSent,
 }: AdminEmailDraftWorkspaceProps) => {
   const [form, setForm] = useState<DraftFormState>(() => toFormState(draft))
@@ -91,6 +97,7 @@ export const AdminEmailDraftWorkspace = ({
   const updateDraftMutation = useUpdateAdminEmailDraft()
   const cloneDraftMutation = useCloneAdminEmailDraft()
   const archiveDraftMutation = useArchiveAdminEmailDraft()
+  const restoreDraftMutation = useRestoreAdminEmailDraft()
   const testSendMutation = useTestSendAdminEmailDraft(draft.id)
   const finalSendMutation = useFinalSendAdminEmailDraft()
 
@@ -230,7 +237,20 @@ export const AdminEmailDraftWorkspace = ({
     }
   }
 
-  const readOnly = draft.isFinalSent
+  const handleRestore = async () => {
+    try {
+      const restored = await restoreDraftMutation.mutateAsync({ draftId: draft.id })
+      toast.success('Draft restored')
+      onRestored(restored.id)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to restore draft')
+    }
+  }
+
+  const readOnly = isAdminEmailDraftReadOnly({
+    isArchived,
+    isFinalSent: draft.isFinalSent,
+  })
 
   return (
     <div className='space-y-6'>
@@ -238,13 +258,21 @@ export const AdminEmailDraftWorkspace = ({
         <CardHeader>
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div>
-              <CardTitle>{readOnly ? 'Sent draft (read-only)' : 'Edit draft'}</CardTitle>
+              <CardTitle>
+                {isArchived
+                  ? 'Archived draft (read-only)'
+                  : draft.isFinalSent
+                    ? 'Sent draft (read-only)'
+                    : 'Edit draft'}
+              </CardTitle>
               <CardDescription>
-                Edit the subject and Email Body Blocks. The Email Brand Shell stays
-                locked.
+                {isArchived
+                  ? 'Restore this draft to edit it again, or clone it into a new active draft.'
+                  : 'Edit the subject and Email Body Blocks. The Email Brand Shell stays locked.'}
               </CardDescription>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
+              {isArchived ? <Badge variant='outline'>Archived</Badge> : null}
               <AdminEmailWorkflowBadge
                 kind='test-send'
                 complete={draft.hasSuccessfulTestSend}
@@ -263,11 +291,14 @@ export const AdminEmailDraftWorkspace = ({
                 Unsaved changes
               </Badge>
               <AdminEmailDraftHeaderMenu
-                isFinalSent={readOnly}
+                isFinalSent={draft.isFinalSent}
+                isArchived={isArchived}
                 onPreview={() => void handlePreview()}
                 onClone={() => void handleClone()}
                 onArchive={() => setArchiveOpen(true)}
+                onRestore={() => void handleRestore()}
                 isClonePending={cloneDraftMutation.isPending}
+                isRestorePending={restoreDraftMutation.isPending}
               />
             </div>
           </div>

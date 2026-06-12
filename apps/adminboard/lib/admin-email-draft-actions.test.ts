@@ -3,7 +3,9 @@ import {
   ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY,
   getAdminEmailDraftHeaderMenuItems,
   getAdminEmailDraftPreviewQueryDraftId,
+  isAdminEmailDraftReadOnly,
   prepareAdminEmailDraftPreview,
+  resolveSelectedAdminEmailDraft,
 } from './admin-email-draft-actions'
 
 describe('getAdminEmailDraftPreviewQueryDraftId', () => {
@@ -85,11 +87,75 @@ describe('getAdminEmailDraftHeaderMenuItems', () => {
     ])
   })
 
-  it('omits archive for archived drafts', () => {
+  it('includes restore, preview, and clone for archived drafts', () => {
     expect(getAdminEmailDraftHeaderMenuItems(false, true)).toEqual([
+      { id: 'restore', label: 'Restore draft' },
       { id: 'preview', label: 'Preview' },
       { id: 'clone', label: 'Clone draft' },
     ])
+  })
+
+  it('uses final-sent clone label for archived final-sent drafts', () => {
+    expect(getAdminEmailDraftHeaderMenuItems(true, true)).toEqual([
+      { id: 'restore', label: 'Restore draft' },
+      { id: 'preview', label: 'Preview' },
+      { id: 'clone', label: 'Clone into new draft' },
+    ])
+  })
+})
+
+describe('isAdminEmailDraftReadOnly', () => {
+  it('treats archived drafts as read-only', () => {
+    expect(isAdminEmailDraftReadOnly({ isArchived: true, isFinalSent: false })).toBe(
+      true,
+    )
+  })
+
+  it('treats final-sent drafts as read-only', () => {
+    expect(isAdminEmailDraftReadOnly({ isArchived: false, isFinalSent: true })).toBe(
+      true,
+    )
+  })
+
+  it('allows editing active drafts that are not final-sent', () => {
+    expect(isAdminEmailDraftReadOnly({ isArchived: false, isFinalSent: false })).toBe(
+      false,
+    )
+  })
+})
+
+describe('resolveSelectedAdminEmailDraft', () => {
+  const active = [{ id: 'active-1' }]
+  const archived = [{ id: 'archived-1' }]
+
+  it('resolves an active draft selection', () => {
+    expect(
+      resolveSelectedAdminEmailDraft({
+        selectionId: 'active-1',
+        activeDrafts: active,
+        archivedDrafts: archived,
+      }),
+    ).toEqual({ draft: active[0], isArchived: false })
+  })
+
+  it('resolves an archived draft selection', () => {
+    expect(
+      resolveSelectedAdminEmailDraft({
+        selectionId: 'archived-1',
+        activeDrafts: active,
+        archivedDrafts: archived,
+      }),
+    ).toEqual({ draft: archived[0], isArchived: true })
+  })
+
+  it('returns undefined when the draft is not found', () => {
+    expect(
+      resolveSelectedAdminEmailDraft({
+        selectionId: 'missing',
+        activeDrafts: active,
+        archivedDrafts: archived,
+      }),
+    ).toEqual({ draft: undefined, isArchived: false })
   })
 })
 

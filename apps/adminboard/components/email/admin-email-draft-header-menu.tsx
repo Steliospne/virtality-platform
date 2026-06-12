@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { getAdminEmailDraftHeaderMenuItems } from '@/lib/admin-email-draft-actions'
-import { Archive, Copy, Eye, MoreHorizontal } from 'lucide-react'
+import { Archive, Copy, Eye, MoreHorizontal, RotateCcw } from 'lucide-react'
 
 type AdminEmailDraftHeaderMenuProps = {
   isFinalSent: boolean
@@ -16,7 +16,9 @@ type AdminEmailDraftHeaderMenuProps = {
   onPreview: () => void
   onClone: () => void
   onArchive: () => void
+  onRestore?: () => void
   isClonePending?: boolean
+  isRestorePending?: boolean
 }
 
 export const AdminEmailDraftHeaderMenu = ({
@@ -25,7 +27,9 @@ export const AdminEmailDraftHeaderMenu = ({
   onPreview,
   onClone,
   onArchive,
+  onRestore,
   isClonePending = false,
+  isRestorePending = false,
 }: AdminEmailDraftHeaderMenuProps) => {
   const menuItems = getAdminEmailDraftHeaderMenuItems(isFinalSent, isArchived)
 
@@ -40,7 +44,10 @@ export const AdminEmailDraftHeaderMenu = ({
         {menuItems.map((item) => (
           <DropdownMenuItem
             key={item.id}
-            disabled={item.id === 'clone' && isClonePending}
+            disabled={
+              (item.id === 'clone' && isClonePending) ||
+              (item.id === 'restore' && isRestorePending)
+            }
             onSelect={() => {
               if (item.id === 'preview') {
                 onPreview()
@@ -52,6 +59,11 @@ export const AdminEmailDraftHeaderMenu = ({
                 return
               }
 
+              if (item.id === 'restore') {
+                onRestore?.()
+                return
+              }
+
               onClone()
             }}
           >
@@ -59,10 +71,16 @@ export const AdminEmailDraftHeaderMenu = ({
               <Eye className='mr-2 size-4' />
             ) : item.id === 'archive' ? (
               <Archive className='mr-2 size-4' />
+            ) : item.id === 'restore' ? (
+              <RotateCcw className='mr-2 size-4' />
             ) : (
               <Copy className='mr-2 size-4' />
             )}
-            {item.id === 'clone' && isClonePending ? 'Cloning...' : item.label}
+            {item.id === 'clone' && isClonePending
+              ? 'Cloning...'
+              : item.id === 'restore' && isRestorePending
+                ? 'Restoring...'
+                : item.label}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

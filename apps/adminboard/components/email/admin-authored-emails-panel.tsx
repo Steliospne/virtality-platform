@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@virtality/ui/components/card'
 import { Button } from '@/components/ui/button'
+import { resolveSelectedAdminEmailDraft } from '@/lib/admin-email-draft-actions'
 import { cn } from '@/lib/utils'
 import {
   useAdminEmailArchivedDrafts,
@@ -38,9 +39,17 @@ export const AdminAuthoredEmailsPanel = () => {
   const createDraftMutation = useCreateAdminEmailDraft()
   const restoreDraftMutation = useRestoreAdminEmailDraft()
 
-  const selectedDraft = drafts?.find(
-    (draft) => selection?.kind === 'draft' && draft.id === selection.id,
-  )
+  const selectedDraftResolution =
+    selection?.kind === 'draft'
+      ? resolveSelectedAdminEmailDraft({
+          selectionId: selection.id,
+          activeDrafts: drafts,
+          archivedDrafts,
+        })
+      : { draft: undefined, isArchived: false }
+
+  const selectedDraft = selectedDraftResolution.draft
+  const selectedDraftIsArchived = selectedDraftResolution.isArchived
 
   const handleCreateDraft = async () => {
     try {
@@ -142,9 +151,18 @@ export const AdminAuthoredEmailsPanel = () => {
                   {(archivedDrafts ?? []).map((draft) => (
                     <div
                       key={draft.id}
-                      className='flex items-start gap-2 rounded-lg border p-3'
+                      className={cn(
+                        'flex items-start gap-2 rounded-lg border p-3',
+                        selection?.kind === 'draft' && selection.id === draft.id
+                          ? 'bg-accent'
+                          : '',
+                      )}
                     >
-                      <div className='min-w-0 flex-1 space-y-1'>
+                      <button
+                        type='button'
+                        onClick={() => setSelection({ kind: 'draft', id: draft.id })}
+                        className='min-w-0 flex-1 space-y-1 text-left'
+                      >
                         <p className='truncate font-medium'>
                           {draft.subject.trim() || 'Untitled draft'}
                         </p>
@@ -157,7 +175,7 @@ export const AdminAuthoredEmailsPanel = () => {
                         {draft.isFinalSent ? (
                           <Badge variant='outline'>Final sent</Badge>
                         ) : null}
-                      </div>
+                      </button>
                       <Button
                         type='button'
                         variant='outline'
@@ -246,6 +264,7 @@ export const AdminAuthoredEmailsPanel = () => {
         ) : selectedDraft ? (
           <AdminEmailDraftWorkspace
             key={selectedDraft.id}
+            isArchived={selectedDraftIsArchived}
             draft={{
               id: selectedDraft.id,
               subject: selectedDraft.subject,
@@ -259,6 +278,7 @@ export const AdminAuthoredEmailsPanel = () => {
             }}
             onCloned={(draftId) => setSelection({ kind: 'draft', id: draftId })}
             onArchived={() => setSelection(null)}
+            onRestored={(draftId) => setSelection({ kind: 'draft', id: draftId })}
             onFinalSent={(sentRecordId) =>
               setSelection({ kind: 'sent', id: sentRecordId })
             }
