@@ -4,8 +4,10 @@ import {
   PatientSessionSchema,
   SessionExerciseSchema,
 } from '@virtality/db/definitions'
+import { SessionCompletionSaveChoice } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { z } from 'zod'
+import { completePatientSessionWithSaveChoice } from './session-completion.ts'
 
 const StartPatientSessionFromAckSchema = z.object({
   session: PatientSessionSchema,
@@ -116,19 +118,42 @@ const startPatientSessionFromAck = authed
     return created
   })
 
+const CompletePatientSessionSchema = z.object({
+  id: z.string(),
+  saveChoice: z
+    .enum([
+      SessionCompletionSaveChoice.FINISH_ONLY,
+      SessionCompletionSaveChoice.UPDATE_SOURCE_PROGRAM,
+      SessionCompletionSaveChoice.SAVE_AS_NEW_PROGRAM,
+    ])
+    .default(SessionCompletionSaveChoice.FINISH_ONLY),
+  newProgramName: z.string().optional(),
+  notes: z.string().optional().nullable(),
+  exercises: z
+    .array(
+      SessionExerciseSchema.omit({ patientSessionId: true }).extend({
+        patientSessionId: z.string().optional(),
+      }),
+    )
+    .optional(),
+})
+
 const completePatientSession = authed
   .route({ path: '/patient-session/complete', method: 'POST' })
-  .input(PatientSessionSchema.pick({ id: true }))
+  .input(CompletePatientSessionSchema)
   .handler(async ({ context, input }) => {
-    const { prisma } = context
-    const patientSession = await prisma.patientSession.update({
-      where: { id: input.id },
-      data: {
-        completedAt: new Date(),
-        status: 'COMPLETED',
+    const { prisma, user } = context
+
+    return completePatientSessionWithSaveChoice(
+      {
+        patientSession: prisma.patientSession,
+        sessionExercise: prisma.sessionExercise,
+        reusableProgram: prisma.reusableProgram,
+        reusableProgramExercise: prisma.reusableProgramExercise,
       },
-    })
-    return patientSession
+      user.id,
+      input,
+    )
   })
 
 export const patientSession = {

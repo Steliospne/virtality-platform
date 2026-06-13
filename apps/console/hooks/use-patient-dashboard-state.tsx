@@ -16,6 +16,7 @@ type State = {
   isSettingsOpen: { id: string; open: boolean } | null
   exercises: CompleteExercise[]
   isDialogOpen: boolean
+  completionSessionId: string | null
   programState: 'ready' | 'launching' | 'started' | 'paused'
   selectedDevice: VRDevice | null
   selectedProgram: CompleteReusableProgram | null
@@ -36,6 +37,7 @@ const initialState: State = {
   isSettingsOpen: null,
   exercises: [],
   isDialogOpen: false,
+  completionSessionId: null,
   programState: 'ready',
   selectedDevice: null,
   selectedProgram: null,

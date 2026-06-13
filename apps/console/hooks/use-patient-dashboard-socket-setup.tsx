@@ -210,16 +210,16 @@ const usePatientDashboardSocketSetup = ({
     }
   }
 
-  const handleEnd = async () => {
-    socket?.emit(PROGRAM_EVENT.EndAck)
-    currExercise.current = 0
+  const openCompletionDialog = async () => {
+    const sessionIdForCompletion = patientSessionId.current
 
     await handleSessionDataCreation()
 
     resetSessionState()
     updatePatientDashboardState({
       programState: ProgramStatus.END,
-      isDialogOpen: !isDialogOpen,
+      completionSessionId: sessionIdForCompletion || null,
+      isDialogOpen: true,
       activeExerciseData: {
         ...activeExerciseData,
         currentRep: 0,
@@ -230,23 +230,15 @@ const usePatientDashboardSocketSetup = ({
     })
   }
 
+  const handleEnd = async () => {
+    socket?.emit(PROGRAM_EVENT.EndAck)
+    currExercise.current = 0
+    await openCompletionDialog()
+  }
+
   const handleEndAck = async () => {
     currExercise.current = 0
-
-    await handleSessionDataCreation()
-
-    resetSessionState()
-    updatePatientDashboardState({
-      programState: ProgramStatus.END,
-      isDialogOpen: !isDialogOpen,
-      activeExerciseData: {
-        ...activeExerciseData,
-        currentRep: 0,
-        currentSet: 0,
-        totalReps: 0,
-        totalSets: 0,
-      },
-    })
+    await openCompletionDialog()
   }
 
   const handleChangeExercise = (data: string) => {
@@ -410,20 +402,7 @@ const usePatientDashboardSocketSetup = ({
     currExercise.current = 0
     if (patientSessionId.current !== '') {
       try {
-        await handleSessionDataCreation()
-
-        resetSessionState()
-        updatePatientDashboardState({
-          programState: ProgramStatus.END,
-          isDialogOpen: !isDialogOpen,
-          activeExerciseData: {
-            id: null,
-            currentRep: 0,
-            currentSet: 0,
-            totalReps: 0,
-            totalSets: 0,
-          },
-        })
+        await openCompletionDialog()
       } catch (error) {
         console.log(error)
         throw Error('Error creating session data.')
