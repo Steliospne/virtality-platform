@@ -5,6 +5,8 @@ import {
   filterCompletedClinicalSessions,
   getClinicalHistorySessionDate,
   getClinicalHistorySessionStatusLabel,
+  getSessionSourceProgramDisplayName,
+  QUICK_START_SESSION_LABEL,
 } from './session-history'
 
 const baseSession = {
@@ -64,5 +66,46 @@ describe('session history helpers', () => {
       'Interrupted',
     )
     expect(getClinicalHistorySessionStatusLabel('ACTIVE')).toBeNull()
+  })
+})
+
+describe('session source program display', () => {
+  it('shows the stored source program name when available', () => {
+    expect(
+      getSessionSourceProgramDisplayName({
+        sourceProgramName: 'Shoulder rehab',
+        sourceReusableProgramId: 'program-1',
+      }),
+    ).toBe('Shoulder rehab')
+  })
+
+  it('shows Quick Start for ad hoc sessions without a source program', () => {
+    expect(
+      getSessionSourceProgramDisplayName({
+        sourceProgramName: null,
+        sourceReusableProgramId: null,
+      }),
+    ).toBe(QUICK_START_SESSION_LABEL)
+  })
+
+  it('keeps the stored name after the library program is renamed or retired', () => {
+    expect(
+      getSessionSourceProgramDisplayName({
+        sourceProgramName: 'Original shoulder plan',
+        sourceReusableProgramId: 'retired-program',
+      }),
+    ).toBe('Original shoulder plan')
+  })
+
+  it('does not depend on patient-program assignment lookups', () => {
+    const session = {
+      programId: 'legacy-patient-program',
+      sourceProgramName: 'Migrated library program',
+      sourceReusableProgramId: 'program-1',
+    }
+
+    expect(getSessionSourceProgramDisplayName(session)).toBe(
+      'Migrated library program',
+    )
   })
 })

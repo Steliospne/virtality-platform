@@ -1,9 +1,28 @@
+import type { PatientSession } from '@virtality/db'
 import {
   isClinicalHistorySession,
   isCompletedClinicalSession,
   isInterruptedClinicalSession,
 } from '@virtality/shared/utils'
 import type { ExtendedPatientSession } from '@/types/models'
+
+export const QUICK_START_SESSION_LABEL = 'Quick Start'
+
+export function getSessionSourceProgramDisplayName(
+  session: Pick<
+    PatientSession,
+    'sourceProgramName' | 'sourceReusableProgramId'
+  >,
+): string {
+  const storedName = session.sourceProgramName?.trim()
+  if (storedName) return storedName
+
+  if (!session.sourceReusableProgramId) {
+    return QUICK_START_SESSION_LABEL
+  }
+
+  return 'Unknown program'
+}
 
 export function filterClinicalHistorySessions(
   sessions: ExtendedPatientSession[],

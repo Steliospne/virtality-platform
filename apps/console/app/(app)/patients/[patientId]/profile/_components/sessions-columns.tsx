@@ -14,7 +14,10 @@ import ColumnHeader from '@/components/tables/header-cell'
 import DateCell from '@/components/tables/date-cell'
 import { PatientSession } from '@virtality/db'
 import { getSessionDurationMinutes } from '@/lib/session-metrics'
-import { getClinicalHistorySessionStatusLabel } from '@/lib/session-history'
+import {
+  getClinicalHistorySessionStatusLabel,
+  getSessionSourceProgramDisplayName,
+} from '@/lib/session-history'
 import type { ExtendedPatientSession } from '@/types/models'
 import { Badge } from '@/components/ui/badge'
 
@@ -66,6 +69,18 @@ export const sessionsColumns: ColumnDef<
       />
     ),
     cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
+  },
+  {
+    id: 'sourceProgram',
+    header: () => 'Program',
+    cell: ({ row }) => {
+      const session = row.original as ExtendedPatientSession
+      return (
+        <span className='text-sm'>
+          {getSessionSourceProgramDisplayName(session)}
+        </span>
+      )
+    },
   },
   {
     accessorKey: 'completedAt',

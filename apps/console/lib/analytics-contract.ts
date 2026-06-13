@@ -64,16 +64,12 @@ type RouteGroup =
   | 'other'
 type Source = 'button' | 'keyboard' | 'auto' | 'import' | 'unknown'
 type TabView =
-  | 'virtality-presets'
   | 'user-profile'
   | 'user-sessions'
-  | 'user-presets'
   | 'patient-profile'
   | 'patient-sessions'
   | 'patient-session'
   | 'patient-medical-history'
-  | 'patient-programs'
-  | 'patient-program'
   | 'program-library'
 
 export type CommonEventProps = {

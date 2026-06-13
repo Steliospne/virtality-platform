@@ -13,7 +13,6 @@ export default async function PatientsLayout({
 
   const dashboardURL = `/patients/${patientId}/patient-dashboard`
   const profileURL = `/patients/${patientId}/profile`
-  const programsURL = `/patients/${patientId}/programs`
 
   return (
     <>
@@ -26,7 +25,6 @@ export default async function PatientsLayout({
             featureAccess: true,
           },
           { textContext: 'Profile', href: profileURL, featureAccess: true },
-          { textContext: 'Programs', href: programsURL, featureAccess: true },
         ]}
       />
       <PageTransition>{children}</PageTransition>

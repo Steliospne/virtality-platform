@@ -30,7 +30,6 @@ import {
   getQueryClient,
   useExercise,
   useORPC,
-  usePatientPrograms,
   useUpdatePatientSession,
   useUserName,
 } from '@virtality/react-query'
@@ -58,7 +57,10 @@ import { toast } from 'react-toastify'
 import { Exercise } from '@virtality/db'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
-import { getClinicalHistorySessionStatusLabel } from '@/lib/session-history'
+import {
+  getClinicalHistorySessionStatusLabel,
+  getSessionSourceProgramDisplayName,
+} from '@/lib/session-history'
 
 interface SessionCardProps {
   session: ExtendedPatientSession
@@ -77,7 +79,6 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [view, setView] = useState(true)
 
-  const { data: programs } = usePatientPrograms({ patientId })
   const { data: userName } = useUserName()
   const { data: exercises } = useExercise()
 
@@ -165,7 +166,7 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
     return sessionAvg
   }
 
-  const currentProgram = programs?.find((p) => session?.programId === p.id)
+  const sourceProgramName = getSessionSourceProgramDisplayName(session)
 
   const increment = () => {
     setChartIndex((prev) => prev + 1)
@@ -202,7 +203,7 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
           <Card className='flex-1 p-6'>
             <CardHeader>
               <CardTitle className='flex justify-between'>
-                <span>{currentProgram?.name}</span>
+                <span>{sourceProgramName}</span>
                 <div className='flex flex-col gap-2'>
                   {statusLabel && (
                     <Badge
