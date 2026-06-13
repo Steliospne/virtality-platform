@@ -1,8 +1,16 @@
-import { Avatar, Map, PatientProgram } from '@virtality/db'
+import { Avatar, Map } from '@virtality/db'
 import { useReducer, useEffect } from 'react'
-import { CompleteExercise, PatientLocalData, VRDevice } from '@/types/models'
-import { useAvatar, useMap, usePatientPrograms } from '@virtality/react-query'
-import { withRom } from '@/lib/with-rom'
+import {
+  CompleteExercise,
+  CompleteReusableProgram,
+  PatientLocalData,
+  VRDevice,
+} from '@/types/models'
+import { useAvatar, useMap, useReusablePrograms } from '@virtality/react-query'
+import {
+  buildProgramSelectionState,
+  resolveLastUsedProgram,
+} from '@/lib/patient-dashboard-program-selection'
 
 type State = {
   isSettingsOpen: { id: string; open: boolean } | null
@@ -10,7 +18,7 @@ type State = {
   isDialogOpen: boolean
   programState: 'started' | 'paused' | 'ready'
   selectedDevice: VRDevice | null
-  selectedProgram: PatientProgram | null
+  selectedProgram: CompleteReusableProgram | null
   selectedMode: 'main' | 'free'
   selectedAvatar: Avatar | null
   selectedMap: Map | null
@@ -94,33 +102,22 @@ interface usePatientDashboardStateProps {
 
 const usePatientDashboardState = ({
   patientLocalData,
-  patientId,
 }: usePatientDashboardStateProps) => {
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const { data: avatars } = useAvatar()
   const { data: maps } = useMap()
-  const { data: programs } = usePatientPrograms({ patientId })
+  const { data: programs } = useReusablePrograms()
 
   useEffect(() => {
-    const program = programs?.find(
-      (program) => program.id === patientLocalData.lastProgram,
+    const program = resolveLastUsedProgram(
+      programs,
+      patientLocalData.lastProgram,
     )
 
     if (program && !state.selectedProgram) {
-      const { programExercise: exercises } = program
-
-      const firstExercise = exercises[0]
-
-      const exercisesWithRomMode = withRom(exercises)
-
-      updatePatientDashboardState({
-        selectedProgram: program,
-        exercises: exercisesWithRomMode,
-        activeExerciseData: {
-          ...state.activeExerciseData,
-          id: firstExercise ? firstExercise.exerciseId : null,
-        },
-      })
+      updatePatientDashboardState(
+        buildProgramSelectionState(program, state.activeExerciseData),
+      )
     }
 
     const avatar = avatars?.find(

@@ -136,7 +136,7 @@ const usePatientDashboardSocketSetup = ({
     const newSession: PatientSession = {
       id: generateUUID(),
       patientId,
-      programId: selectedProgram ? selectedProgram.id : null,
+      programId: null,
       nprs: null,
       notes: null,
       createdAt: new Date(),

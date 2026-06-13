@@ -78,7 +78,7 @@ export type DeviceForm = Pick<Device, 'name' | 'model'>
 
 export type PatientLocalData = {
   lastHeadset: Device['id']
-  lastProgram: PatientProgram['id']
+  lastProgram: ReusableProgram['id']
   lastAvatar: Avatar['id']
   lastMap: Map['id']
 }

@@ -21,7 +21,11 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExerciseWithSettings } from '@/types/models'
-import { PatientProgramFormSchema, PatientProgramForm } from '@/lib/definitions'
+import {
+  ReusableProgramFormSchema,
+  ReusableProgramForm,
+  reusableProgramExercisesForCreateSubmit,
+} from '@/lib/program-library-submit'
 import { FormInput } from '@/components/ui/form-v2'
 import { Exercise } from '@virtality/db'
 import ErrorToasty from '@/components/ui/ErrorToasty'
@@ -29,8 +33,8 @@ import { generateUUID } from '@virtality/shared/utils'
 import posthog from 'posthog-js'
 import {
   getQueryClient,
-  useCreateProgram,
-  useCreateProgramExercises,
+  useCreateReusableProgram,
+  useCreateReusableProgramExercises,
   useExercise,
   useORPC,
 } from '@virtality/react-query'
@@ -65,7 +69,6 @@ const QuickStartDialog = () => {
       setSelectedProgram,
       updatePatientDashboardState,
     },
-    patientId,
   } = usePatientDashboard()
 
   const {
@@ -73,37 +76,39 @@ const QuickStartDialog = () => {
     handler: { updateExercises },
   } = useExerciseLibrary()
 
-  const { mutateAsync: createProgram } = useCreateProgram({
+  const { mutateAsync: createReusableProgram } = useCreateReusableProgram({
     onSuccess: (data) => {
       setSelectedProgram(data)
     },
   })
 
-  const { mutate: createProgramExercise } = useCreateProgramExercises({
-    onSuccess: (_, variables) => {
-      const formattedExercises = variables.exercises.map((ex) => ({
-        ...ex,
-        sets: ex.sets ?? 0,
-        reps: ex.reps ?? 0,
-        restTime: ex.restTime ?? 5,
-        holdTime: ex.holdTime ?? 30,
-        speed: ex.speed ?? 1,
-      }))
+  const { mutate: createReusableProgramExercises } =
+    useCreateReusableProgramExercises({
+      onSuccess: (_, variables) => {
+        const formattedExercises = variables.exercises.map((ex) => ({
+          id: ex.id,
+          exerciseId: ex.exerciseId,
+          sets: ex.sets ?? 3,
+          reps: ex.reps ?? 10,
+          restTime: ex.restTime ?? 5,
+          holdTime: ex.holdTime ?? 1,
+          speed: ex.speed ?? 1,
+        }))
 
-      queryClient.invalidateQueries({
-        queryKey: orpc.program.list.key(),
-      })
+        queryClient.invalidateQueries({
+          queryKey: orpc.reusableProgram.list.queryKey(),
+        })
 
-      updateExercises([])
-      updatePatientDashboardState({
-        exercises: withRom(formattedExercises),
-        inQuickStart: false,
-      })
-    },
-  })
+        updateExercises([])
+        updatePatientDashboardState({
+          exercises: withRom(formattedExercises),
+          inQuickStart: false,
+        })
+      },
+    })
 
-  const form = useForm<PatientProgramForm>({
-    resolver: zodResolver(PatientProgramFormSchema),
+  const form = useForm<ReusableProgramForm>({
+    resolver: zodResolver(ReusableProgramFormSchema),
     defaultValues: { name: '' },
   })
 
@@ -128,8 +133,8 @@ const QuickStartDialog = () => {
     })
   }
 
-  const saveAsHandler = async (values: PatientProgramForm) => {
-    if (!exerciseInfo || !values) return
+  const saveAsHandler = async (values: ReusableProgramForm) => {
+    if (!values) return
 
     const enabledVariants = enabledVariantsForSubmit(
       selectedExercises,
@@ -143,24 +148,19 @@ const QuickStartDialog = () => {
 
     const { name } = values
 
-    const data = { patientId, name }
+    const program = await createReusableProgram({ name })
 
-    const program = await createProgram(data)
+    const exercises = reusableProgramExercisesForCreateSubmit(
+      selectedExercises,
+      deferredRemovalIds,
+      program.id,
+      generateUUID,
+    )
 
-    const formattedExercises = applyExercises(exerciseInfo, enabledVariants)
-
-    const exercises = formattedExercises.map((ex) => ({
-      id: generateUUID(),
-      programId: program.id,
-      exerciseId: ex.exerciseId,
-      sets: ex.sets,
-      reps: ex.reps,
-      restTime: ex.restTime,
-      holdTime: ex.holdTime,
-      speed: ex.speed,
-    }))
-
-    createProgramExercise({ programId: program.id, exercises })
+    createReusableProgramExercises({
+      reusableProgramId: program.id,
+      exercises,
+    })
   }
 
   const backBtnHandler = () => {

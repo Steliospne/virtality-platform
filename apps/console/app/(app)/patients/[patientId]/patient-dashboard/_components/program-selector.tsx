@@ -17,21 +17,27 @@ import {
 import { Button } from '@virtality/ui/components/button'
 import { Check, ChevronsUpDown, Dumbbell, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { usePatient, usePatientPrograms } from '@virtality/react-query'
-import { withRom } from '@/lib/with-rom'
+import { usePatient, useReusablePrograms } from '@virtality/react-query'
+import {
+  buildProgramSelectionState,
+  orderProgramsForDashboardSelection,
+} from '@/lib/patient-dashboard-program-selection'
 
 const ProgramSelector = ({ className }: { className?: string }) => {
   const { state, handler, store, patientLocalData, patientId } =
     usePatientDashboard()
 
   const { data: patient } = usePatient({ patientId })
-  const { data: programs, isLoading: programsLoading } = usePatientPrograms({
-    patientId,
-  })
+  const { data: programs, isLoading: programsLoading } = useReusablePrograms()
   const { selectedProgram, inQuickStart, activeExerciseData } = state
   const { updatePatientDashboardState, setInQuickStart } = handler
 
   const [isComboBoxOpen, setIsComboBoxOpen] = useState(false)
+
+  const orderedPrograms = orderProgramsForDashboardSelection(
+    programs ?? [],
+    patientLocalData.lastProgram,
+  )
 
   const programSelect = (programId: string) => {
     const pickedProgram =
@@ -39,24 +45,14 @@ const ProgramSelector = ({ className }: { className?: string }) => {
 
     if (!pickedProgram || !patient) return
 
-    const { programExercise: exercises } = pickedProgram
     store?.setRow('patients', patient.id, {
       ...patientLocalData,
       lastProgram: pickedProgram.id,
     })
 
-    const firstExercise = exercises[0]
-
-    updatePatientDashboardState({
-      selectedProgram: pickedProgram,
-      exercises: withRom(exercises),
-      activeExerciseData: {
-        ...activeExerciseData,
-        id: firstExercise ? firstExercise.exerciseId : null,
-        totalReps: firstExercise ? firstExercise.reps : 0,
-        totalSets: firstExercise ? firstExercise.sets : 0,
-      },
-    })
+    updatePatientDashboardState(
+      buildProgramSelectionState(pickedProgram, activeExerciseData),
+    )
 
     setIsComboBoxOpen(!isComboBoxOpen)
   }
@@ -148,11 +144,11 @@ const ProgramSelector = ({ className }: { className?: string }) => {
                   onlyQuickStart
                 />
               </CommandItem>
-              {programs?.map((program) => (
+              {orderedPrograms.map((program) => (
                 <CommandItem
                   key={program.id}
-                  value={program.id}
-                  onSelect={programSelect}
+                  value={program.name}
+                  onSelect={() => programSelect(program.id)}
                 >
                   {program.name}
                   <Check
