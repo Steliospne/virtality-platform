@@ -1,11 +1,14 @@
 'use client'
 
 import { EffectivenessComparisonChart } from '@/components/dashboard/effectiveness-comparison-chart'
+import { EffectivenessProgressQualityChart } from '@/components/dashboard/effectiveness-progress-quality-chart'
 import {
   EffectivenessMetricCard,
   formatAverage,
   formatCount,
   formatPercent,
+  formatProgressDelta,
+  formatProgressQuality,
 } from '@/components/dashboard/effectiveness-metric-card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -94,6 +97,25 @@ const EffectivenessReportPage = () => {
   }
 
   const summary = data.summary
+  const progressQuality = data.progressQuality
+
+  const progressSummary = (() => {
+    if (progressQuality.sessionsWithProgressData === 0) {
+      return 'No completed sessions in range included usable progress payloads.'
+    }
+
+    const deltaText =
+      progressQuality.progressQualityDeltaPercent === null
+        ? 'Not enough sessions with progress data to compare first vs latest quality.'
+        : `First-to-latest session quality changed by ${formatProgressDelta(progressQuality.progressQualityDeltaPercent)} within the selected period.`
+
+    const missingText =
+      progressQuality.sessionsMissingProgressData > 0
+        ? ` ${formatCount(progressQuality.sessionsMissingProgressData)} completed session${progressQuality.sessionsMissingProgressData === 1 ? '' : 's'} lacked usable progress data and were excluded from quality metrics.`
+        : ''
+
+    return `Average rep progress quality was ${formatProgressQuality(progressQuality.averageProgressQualityPercent)} across ${formatCount(progressQuality.sessionsWithProgressData)} session${progressQuality.sessionsWithProgressData === 1 ? '' : 's'} with progress payloads. ${deltaText}${missingText}`
+  })()
 
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
@@ -103,9 +125,10 @@ const EffectivenessReportPage = () => {
             Product Effectiveness
           </h1>
           <p className='text-muted-foreground mt-2 max-w-3xl text-sm'>
-            Adoption snapshot based on completed sessions for non-deleted
-            patients, grouped by patient owner. Metrics reflect product usage,
-            not clinical outcomes.
+            Adoption and product progress snapshot based on completed sessions
+            for non-deleted patients, grouped by patient owner. Progress quality
+            reflects rep completion in session payloads and is a product proxy,
+            not a validated clinical outcome measure.
           </p>
         </div>
 
@@ -157,7 +180,9 @@ const EffectivenessReportPage = () => {
           : `No completed sessions were recorded between ${format(rangeFrom, 'dd MMM yyyy')} and ${format(rangeTo, 'dd MMM yyyy')}.`}
       </p>
 
-      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+      <p className='text-muted-foreground text-sm'>{progressSummary}</p>
+
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6'>
         <EffectivenessMetricCard
           title='Active Patients'
           value={formatCount(summary.activePatients)}
@@ -182,7 +207,25 @@ const EffectivenessReportPage = () => {
           description='Completed sessions divided by active patients'
           tone='amber'
         />
+        <EffectivenessMetricCard
+          title='Progress Quality'
+          value={formatProgressQuality(
+            progressQuality.averageProgressQualityPercent,
+          )}
+          description='Average rep progress (%) from session payloads with usable data'
+          tone='slate'
+        />
+        <EffectivenessMetricCard
+          title='Quality Delta'
+          value={formatProgressDelta(
+            progressQuality.progressQualityDeltaPercent,
+          )}
+          description='Change from earliest to latest session with progress in range'
+          tone='slate'
+        />
       </div>
+
+      <EffectivenessProgressQualityChart data={progressQuality.trend} />
 
       <EffectivenessComparisonChart data={comparisonRows} />
 

@@ -110,3 +110,20 @@ export function formatAverage(value: number | null): string {
     maximumFractionDigits: 1,
   })
 }
+
+export function formatProgressQuality(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  return `${value}%`
+}
+
+export function formatProgressDelta(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  const prefix = value > 0 ? '+' : ''
+  return `${prefix}${value} pts`
+}

@@ -399,6 +399,12 @@ const getEffectivenessReport = authed
       },
       select: {
         patientId: true,
+        completedAt: true,
+        sessionData: {
+          select: {
+            value: true,
+          },
+        },
       },
     })
 
@@ -425,8 +431,14 @@ const getEffectivenessReport = authed
 
     const report = buildEffectivenessReport({
       patients,
-      sessions,
+      sessions: sessions.map((session) => ({
+        patientId: session.patientId,
+        completedAt: session.completedAt!.toISOString(),
+        sessionData: session.sessionData,
+      })),
       userNamesById,
+      from: toISODate(from),
+      to: toISODate(to),
     })
 
     return {

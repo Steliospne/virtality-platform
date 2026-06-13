@@ -28,6 +28,17 @@ export type EffectivenessReportData = {
     averageSessionsPerActivePatient: number | null
   }>
   hasSessionActivity: boolean
+  progressQuality: {
+    averageProgressQualityPercent: number | null
+    sessionsWithProgressData: number
+    sessionsMissingProgressData: number
+    progressQualityDeltaPercent: number | null
+    trend: Array<{
+      bucketStart: string
+      averageProgressQualityPercent: number | null
+      sessionsWithProgress: number
+    }>
+  }
 }
 
 export function useEffectivenessReport(
