@@ -28,15 +28,6 @@ import {
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
-const rowNavigationExceptions = [
-  'div[data-slot="dialog-content"]',
-  'div[data-slot="dialog-close"]',
-  'div[data-slot="dialog-overlay"]',
-  'div[data-slot="dropdown-menu-content"]',
-  'div[data-slot="dropdown-menu-item"]',
-  'div[data-slot="button"]',
-]
-
 const PatientsTable = () => {
   useIsAuthed()
   usePageViewTracking({ props: { route_group: 'patient' } })
@@ -126,7 +117,6 @@ const PatientsTable = () => {
         table={table}
         columns={columns}
         rowNavigation={rowNavigation}
-        rowNavigationExceptions={rowNavigationExceptions}
         className='flex-1'
       />
       <DataTableFooter table={table} />

@@ -32,6 +32,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+/** Portaled UI clicks bubble through the React tree into row handlers. */
+export const defaultRowNavigationExceptions = [
+  '#actions',
+  '#select',
+  '[data-slot="dialog-content"]',
+  '[data-slot="dialog-close"]',
+  '[data-slot="dialog-overlay"]',
+  '[data-slot="dropdown-menu-content"]',
+  '[data-slot="dropdown-menu-item"]',
+  '[data-slot="dropdown-menu-trigger"]',
+  '[data-slot="button"]',
+]
+
+function getRowNavigationExceptions(
+  rowNavigationExceptions?: string | string[],
+): string[] {
+  const extra = rowNavigationExceptions
+    ? Array.isArray(rowNavigationExceptions)
+      ? rowNavigationExceptions
+      : [rowNavigationExceptions]
+    : []
+
+  return [...defaultRowNavigationExceptions, ...extra]
+}
+
 interface DataTableHeaderProps<TData> {
   children?: ReactNode
   table: TableType<TData>
@@ -119,21 +144,12 @@ export function DataTableBody<TData, TValue>({
     if (!rowNavigation) return
     const target = e.target as HTMLElement
     const currTarget = e.currentTarget as HTMLElement
-    const isCheckbox = target.closest('#select')
-    const isActions = target.closest('#actions')
 
-    let isNotRow = false
-
-    if (typeof rowNavigationExceptions === 'string') {
-      isNotRow = target.closest(rowNavigationExceptions) ? true : false
-    } else {
-      rowNavigationExceptions?.forEach((exception) => {
-        const close = target.closest(exception) ? true : false
-        if (close) return (isNotRow = true)
-      })
+    for (const exception of getRowNavigationExceptions(
+      rowNavigationExceptions,
+    )) {
+      if (target.closest(exception)) return
     }
-
-    if (isCheckbox || isActions || isNotRow) return
 
     rowNavigation(currTarget.id)
   }
