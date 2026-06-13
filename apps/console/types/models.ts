@@ -2,13 +2,9 @@ import {
   Avatar,
   Exercise,
   Map,
-  PatientProgram,
-  ProgramExercise,
   PatientSession,
   SessionExercise,
   Device,
-  PresetExercise,
-  Preset,
   ReusableProgram,
   ReusableProgramExercise,
   SessionData,
@@ -18,7 +14,10 @@ import { HumanState } from '@/data/static/human-body'
 import { Socket } from 'socket.io-client'
 import type { DeviceEmitter } from '@/lib/device-event-controller'
 
-export type ExerciseWithSettings = Omit<ProgramExercise, 'programId'> & {
+export type ExerciseWithSettings = Pick<
+  SessionExercise,
+  'id' | 'exerciseId' | 'sets' | 'reps' | 'restTime' | 'holdTime' | 'speed'
+> & {
   romMode: 0 | 1
 }
 
@@ -26,20 +25,8 @@ export interface CompleteExercise extends ExerciseWithSettings {
   exercise?: Exercise
 }
 
-export interface CompletePatientProgram extends PatientProgram {
-  programExercise: ProgramExercise[]
-}
-
 export interface CompleteReusableProgram extends ReusableProgram {
   exercises: ReusableProgramExercise[]
-}
-
-export type SessionDataComplete = PatientSession & {
-  program: Pick<PatientProgram, 'name'>
-} & {
-  sessionExercise: (Pick<SessionExercise, 'id'> & {
-    exercise: Pick<Exercise, 'id' | 'displayName' | 'direction'>
-  })[]
 }
 
 export const ProgramStatus = {
@@ -50,8 +37,6 @@ export const ProgramStatus = {
 } as const
 
 export type ProgramStatus = (typeof ProgramStatus)[keyof typeof ProgramStatus]
-
-export type ExerciseData = Omit<ProgramExercise, 'exerciseId' | 'programId'>
 
 export type VRDevice = {
   data: Device
@@ -99,10 +84,6 @@ export type ProgressDataPoint =
       [key: string]: number
     }
   | { [key: string]: number }
-
-export interface PresetWithExercises extends Preset {
-  presetExercise: PresetExercise[]
-}
 
 export type PrismaJSONtoSTR<T, R> = Omit<T, keyof R> & R
 

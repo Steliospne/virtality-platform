@@ -11,6 +11,10 @@
     "./provider": {
       "types": "./src/provider.tsx",
       "default": "./dist/provider.js"
+    },
+    "./legacy": {
+      "types": "./src/legacy/index.ts",
+      "default": "./dist/legacy/index.js"
     }
   },
   "scripts": {

@@ -4,24 +4,6 @@
 export { useUpdateUserInfo } from './user/use-update-user-info.js'
 export { useUpdateUserEmail } from './user/use-update-user-email.ts'
 
-// Program mutations
-export { useCreateProgram } from './program/use-create-program.js'
-export { useUpdateProgram } from './program/use-update-program.js'
-export { useDeleteProgram } from './program/use-delete-program.js'
-
-// Program exercise mutations
-export { useCreateProgramExercises } from './program-exercise/use-create-program-exercises.js'
-export { useUpdateProgramExercises } from './program-exercise/use-update-program-exercises.js'
-
-// Preset mutations
-export { useCreatePreset } from './preset/use-create-preset.js'
-export { useUpdatePreset } from './preset/use-update-preset.js'
-export { useDeletePreset } from './preset/use-delete-preset.js'
-
-// Preset exercise mutations`
-export { useCreatePresetExercises } from './preset-exercise/use-create-preset-exercises.js'
-export { useUpdatePresetExercises } from './preset-exercise/use-update-preset-exercises.js'
-
 // Reusable program mutations
 export { useCreateReusableProgram } from './reusable-program/use-create-reusable-program.js'
 export { useUpdateReusableProgram } from './reusable-program/use-update-reusable-program.js'

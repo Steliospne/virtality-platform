@@ -3,7 +3,7 @@ import type { ORPCUtils } from '../../../orpc.js'
 import { useORPC } from '../../../orpc-context.js'
 
 type CreatePatientProgramOnSuccess = ReturnType<
-  ORPCUtils['program']['create']['mutationOptions']
+  ORPCUtils['legacy']['program']['create']['mutationOptions']
 >['onSuccess']
 
 interface UseCreateProgramProps {
@@ -12,5 +12,5 @@ interface UseCreateProgramProps {
 
 export function useCreateProgram({ onSuccess }: UseCreateProgramProps = {}) {
   const orpc = useORPC()
-  return useMutation(orpc.program.create.mutationOptions({ onSuccess }))
+  return useMutation(orpc.legacy.program.create.mutationOptions({ onSuccess }))
 }

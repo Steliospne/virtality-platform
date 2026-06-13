@@ -2,6 +2,7 @@ import { PatientProgramSchema } from '@virtality/db/definitions'
 import { authed } from '../middleware/auth.ts'
 import { generateUUID } from '@virtality/shared/utils'
 
+/** @deprecated Legacy patient-program API — use reusableProgram procedures instead. */
 const listProgram = authed
   .route({ path: '/program/list', method: 'GET' })
   .input(PatientProgramSchema.pick({ patientId: true }))

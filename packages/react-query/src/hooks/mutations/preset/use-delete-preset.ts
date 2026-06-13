@@ -3,7 +3,7 @@ import type { ORPCUtils } from '../../../orpc.js'
 import { useORPC } from '../../../orpc-context.js'
 
 type DeletePresetOnSuccess = ReturnType<
-  ORPCUtils['preset']['delete']['mutationOptions']
+  ORPCUtils['legacy']['preset']['delete']['mutationOptions']
 >['onSuccess']
 
 interface UseDeletePresetProps {
@@ -12,5 +12,5 @@ interface UseDeletePresetProps {
 
 export function useDeletePreset({ onSuccess }: UseDeletePresetProps = {}) {
   const orpc = useORPC()
-  return useMutation(orpc.preset.delete.mutationOptions({ onSuccess }))
+  return useMutation(orpc.legacy.preset.delete.mutationOptions({ onSuccess }))
 }

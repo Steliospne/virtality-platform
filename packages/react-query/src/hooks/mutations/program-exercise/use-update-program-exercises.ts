@@ -3,7 +3,7 @@ import type { ORPCUtils } from '../../../orpc.js'
 import { useORPC } from '../../../orpc-context.js'
 
 type UpdateProgramExercisesOnSuccess = ReturnType<
-  ORPCUtils['programExercise']['updateMany']['mutationOptions']
+  ORPCUtils['legacy']['programExercise']['updateMany']['mutationOptions']
 >['onSuccess']
 
 interface UseUpdateProgramExercisesProps {
@@ -15,6 +15,6 @@ export function useUpdateProgramExercises({
 }: UseUpdateProgramExercisesProps = {}) {
   const orpc = useORPC()
   return useMutation(
-    orpc.programExercise.updateMany.mutationOptions({ onSuccess }),
+    orpc.legacy.programExercise.updateMany.mutationOptions({ onSuccess }),
   )
 }

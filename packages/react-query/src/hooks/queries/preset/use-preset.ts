@@ -7,5 +7,5 @@ interface UsePresetProps {
 
 export function usePreset({ id }: UsePresetProps) {
   const orpc = useORPC()
-  return useQuery(orpc.preset.find.queryOptions({ input: { id } }))
+  return useQuery(orpc.legacy.preset.find.queryOptions({ input: { id } }))
 }

@@ -8,7 +8,7 @@ interface UsePatientProgramsProps {
 export function usePatientPrograms({ patientId }: UsePatientProgramsProps) {
   const orpc = useORPC()
   return useQuery(
-    orpc.program.list.queryOptions({
+    orpc.legacy.program.list.queryOptions({
       input: patientId ? { patientId } : skipToken,
     }),
   )

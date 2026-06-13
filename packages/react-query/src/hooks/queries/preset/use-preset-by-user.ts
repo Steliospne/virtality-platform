@@ -10,7 +10,7 @@ export function usePresetsByUser({
 }: PresetFindManyArgs) {
   const orpc = useORPC()
   return useQuery(
-    orpc.preset.listUser.queryOptions({
+    orpc.legacy.preset.listUser.queryOptions({
       input: { where, orderBy, skip, take },
     }),
   )

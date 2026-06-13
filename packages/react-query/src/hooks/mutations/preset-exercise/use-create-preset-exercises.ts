@@ -3,7 +3,7 @@ import type { ORPCUtils } from '../../../orpc.js'
 import { useORPC } from '../../../orpc-context.js'
 
 type PresetExerciseOnSuccess = ReturnType<
-  ORPCUtils['presetExercise']['createMany']['mutationOptions']
+  ORPCUtils['legacy']['presetExercise']['createMany']['mutationOptions']
 >['onSuccess']
 
 interface UseCreatePresetExercisesProps {
@@ -15,6 +15,6 @@ export function useCreatePresetExercises({
 }: UseCreatePresetExercisesProps = {}) {
   const orpc = useORPC()
   return useMutation(
-    orpc.presetExercise.createMany.mutationOptions({ onSuccess }),
+    orpc.legacy.presetExercise.createMany.mutationOptions({ onSuccess }),
   )
 }

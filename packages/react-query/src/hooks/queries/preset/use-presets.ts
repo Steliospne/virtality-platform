@@ -3,5 +3,5 @@ import { useORPC } from '../../../orpc-context.js'
 
 export function usePresets() {
   const orpc = useORPC()
-  return useQuery(orpc.preset.list.queryOptions({ staleTime: 'static' }))
+  return useQuery(orpc.legacy.preset.list.queryOptions({ staleTime: 'static' }))
 }

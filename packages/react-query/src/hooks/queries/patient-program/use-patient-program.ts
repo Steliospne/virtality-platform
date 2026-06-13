@@ -7,5 +7,5 @@ interface UsePatientProgramProps {
 
 export function usePatientProgram({ id }: UsePatientProgramProps) {
   const orpc = useORPC()
-  return useQuery(orpc.program.find.queryOptions({ input: { id } }))
+  return useQuery(orpc.legacy.program.find.queryOptions({ input: { id } }))
 }

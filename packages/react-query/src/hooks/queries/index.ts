@@ -8,11 +8,6 @@ export { useUsers } from './user/use-users.js'
 // Account queries
 export { useListAccounts } from './account/use-list-accounts.js'
 
-// Preset queries
-export { usePreset } from './preset/use-preset.js'
-export { usePresets } from './preset/use-presets.js'
-export { usePresetsByUser } from './preset/use-preset-by-user.js'
-
 // Reusable program queries
 export { useReusableProgram } from './reusable-program/use-reusable-program.js'
 export { useReusablePrograms } from './reusable-program/use-reusable-programs.js'
@@ -45,10 +40,6 @@ export { usePatients } from './patient/use-patients.js'
 // Patient session queries
 export { usePatientSession } from './patient-session/use-patient-session.js'
 export { usePatientSessions } from './patient-session/use-patient-sessions.js'
-
-// Patient program queries
-export { usePatientProgram } from './patient-program/use-patient-program.js'
-export { usePatientPrograms } from './patient-program/use-patient-programs.js'
 
 // Device queries
 export { useDeviceCore } from './use-device.js'

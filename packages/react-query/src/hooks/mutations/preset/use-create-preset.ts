@@ -3,7 +3,7 @@ import type { ORPCUtils } from '../../../orpc.js'
 import { useORPC } from '../../../orpc-context.js'
 
 type CreatePresetOnSuccess = ReturnType<
-  ORPCUtils['preset']['create']['mutationOptions']
+  ORPCUtils['legacy']['preset']['create']['mutationOptions']
 >['onSuccess']
 
 interface UseCreatePresetProps {
@@ -12,5 +12,5 @@ interface UseCreatePresetProps {
 
 export function useCreatePreset({ onSuccess }: UseCreatePresetProps = {}) {
   const orpc = useORPC()
-  return useMutation(orpc.preset.create.mutationOptions({ onSuccess }))
+  return useMutation(orpc.legacy.preset.create.mutationOptions({ onSuccess }))
 }

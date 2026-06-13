@@ -7,10 +7,7 @@ import { exercise } from './procedures/exercise.ts'
 import { patientSession } from './procedures/patient-session.ts'
 import { device } from './procedures/device.ts'
 import { supplementalTherapy } from './procedures/supplemental-therapy.ts'
-import { program } from './procedures/program.ts'
-import { programExercise } from './procedures/program-exercise.ts'
-import { preset } from './procedures/preset.ts'
-import { presetExercise } from './procedures/preset-exercise.ts'
+import { legacy } from './procedures/legacy/index.ts'
 import { reusableProgram } from './procedures/reusable-program.ts'
 import { reusableProgramExercise } from './procedures/reusable-program-exercise.ts'
 import { patientSessionData } from './procedures/patient-session-data.ts'
@@ -35,10 +32,7 @@ export const router = {
   exercise,
   device,
   supplementalTherapy,
-  program,
-  programExercise,
-  preset,
-  presetExercise,
+  legacy,
   reusableProgram,
   reusableProgramExercise,
   patientSessionData,

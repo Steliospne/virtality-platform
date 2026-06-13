@@ -4,6 +4,7 @@ import {
 } from '@virtality/db/definitions'
 import { authed } from '../middleware/auth.ts'
 
+/** @deprecated Legacy preset API — use reusableProgram starter templates instead. */
 const listPreset = authed
   .route({ path: '/preset/list', method: 'GET' })
   .handler(async ({ context }) => {

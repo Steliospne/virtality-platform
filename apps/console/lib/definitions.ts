@@ -70,22 +70,16 @@ export const ExerciseSchema = z.object({
 
 export const ExerciseArraySchema = z.array(ExerciseSchema)
 
-export const ProgramExerciseSchema = z.object({
+export const SessionExerciseSchema = z.object({
   id: z.string(),
   exerciseId: z.string(),
-  programId: z.string(),
+  patientSessionId: z.string(),
   reps: z.number(),
   sets: z.number(),
   restTime: z.number(),
   holdTime: z.number(),
   speed: z.number(),
 })
-
-export const ProgramExerciseArraySchema = z.array(ProgramExerciseSchema)
-
-export const SessionExerciseSchema = ProgramExerciseSchema.extend({
-  patientSessionId: z.string(),
-}).omit({ programId: true })
 
 export const SessionExerciseArraySchema = z.array(SessionExerciseSchema)
 
@@ -162,20 +156,6 @@ export const ProgressDataSchema = z.object({
 })
 
 export type ProgressData = z.infer<typeof ProgressDataSchema>
-
-export const PresetFormSchema = z.object({
-  presetName: z.string().nonempty('Name cannot be empty.'),
-  pathology: z.string().nonempty('Pathology cannot be empty.'),
-  start: z.string().nullable().refine(isValidNumber, {
-    message: 'Must be a positive number',
-  }),
-  end: z.string().nullable().refine(isValidNumber, {
-    message: 'Must be a positive number',
-  }),
-  description: z.string().nullable(),
-})
-
-export type PresetForm = z.infer<typeof PresetFormSchema>
 
 export const BugReportFormSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters.' }),

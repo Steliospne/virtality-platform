@@ -15,7 +15,7 @@ import { useState } from 'react'
 import PresetPopover from './preset-popover'
 import { columns } from '@/app/resources/preset/columns'
 import { tableDefaults } from '@/tanstack-tables'
-import { usePresets } from '@virtality/react-query'
+import { usePresets } from '@virtality/react-query/legacy'
 
 const PresetTableDAL = () => {
   const { data, isPending } = usePresets()
