@@ -43,6 +43,7 @@ export { useUpdatePatientSession } from './patient-session/use-update-patient-se
 export { useDeletePatientSession } from './patient-session/use-delete-patient-session.js'
 export { useCompleteSession } from './patient-session/use-complete-session.js'
 export { useCreatePatientSessionData } from './patient-session-data/use-create-patient-session-data.js'
+export { useUpsertPatientSessionData } from './patient-session-data/use-upsert-patient-session-data.js'
 export { useCreatePatientSessionExercises } from './patient-session-exercise/use-create-patient-session-exercises.js'
 
 // Device mutations

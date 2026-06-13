@@ -15,13 +15,13 @@ import useDashboardState from './use-patient-dashboard-state'
 import SuccessToasty from '../components/ui/SuccessToasty'
 import NotifyDoctorToasty from '../components/ui/NotifyDoctorToasty'
 import { ProgressDataSchema, ProgressData } from '@/lib/definitions'
-import { getDisplayName, getUUID } from '@/lib/utils'
+import { getDisplayName } from '@/lib/utils'
 import usePlotData from './use-plot-data'
 import { generateUUID } from '@virtality/shared/utils'
 import {
   getQueryClient,
-  useCreatePatientSessionData,
   useStartPatientSessionFromAck,
+  useUpsertPatientSessionData,
   useORPC,
 } from '@virtality/react-query'
 import {
@@ -32,6 +32,10 @@ import {
   shouldCreatePatientSessionOnStartAck,
   type SessionExerciseRowInput,
 } from '@/lib/patient-dashboard-session-launch'
+import {
+  buildCurrentExerciseProgressUpsert,
+  buildSessionProgressUpserts,
+} from '@/lib/session-progress-persistence'
 import ErrorToasty from '../components/ui/ErrorToasty'
 
 type ProgressDataPerExercise = {
@@ -85,25 +89,22 @@ const usePatientDashboardSocketSetup = ({
   const currRep = useRef(0)
   const stats = useRef({ highscore: 0, bestExercise: '' })
 
-  const { mutateAsync: createPatientSessionData } = useCreatePatientSessionData(
+  const invalidatePatientSessions = async () =>
+    await queryClient.invalidateQueries({
+      queryKey: orpc.patientSession.list.queryKey({
+        input: { where: { patientId } },
+      }),
+    })
+
+  const { mutateAsync: upsertPatientSessionData } = useUpsertPatientSessionData(
     {
-      onSuccess: async () =>
-        await queryClient.invalidateQueries({
-          queryKey: orpc.patientSession.list.queryKey({
-            input: { where: { patientId } },
-          }),
-        }),
+      onSuccess: invalidatePatientSessions,
     },
   )
 
   const { mutateAsync: startPatientSessionFromAck } =
     useStartPatientSessionFromAck({
-      onSuccess: async () =>
-        await queryClient.invalidateQueries({
-          queryKey: orpc.patientSession.list.queryKey({
-            input: { where: { patientId } },
-          }),
-        }),
+      onSuccess: invalidatePatientSessions,
     })
 
   const resetSessionState = () => {
@@ -111,21 +112,42 @@ const usePatientDashboardSocketSetup = ({
     sessionExerciseRows.current = []
   }
 
+  const persistCurrentExerciseProgress = async () => {
+    const sessionExercise = sessionExerciseRows.current[currExercise.current]
+    if (
+      !canPersistSessionProgress(
+        patientSessionId.current,
+        sessionExerciseRows.current,
+        currExercise.current,
+      ) ||
+      !sessionExercise
+    ) {
+      return
+    }
+
+    await upsertPatientSessionData([
+      buildCurrentExerciseProgressUpsert({
+        patientSessionId: patientSessionId.current,
+        sessionExercise,
+        progressPoints: realTimeData.current,
+      }),
+    ])
+  }
+
   const handleSessionDataCreation = async () => {
     if (!patientSessionId.current || sessionExerciseRows.current.length === 0) {
       return
     }
 
-    const data = sessionExerciseRows.current.map((sessionExercise) => ({
-      id: getUUID(),
-      patientSessionId: patientSessionId.current,
-      sessionExerciseId: sessionExercise.id,
-      value: JSON.stringify(
-        progressData.current?.[sessionExercise.exerciseId] || [],
-      ),
-    }))
-
-    await createPatientSessionData(data)
+    await upsertPatientSessionData(
+      buildSessionProgressUpserts({
+        patientSessionId: patientSessionId.current,
+        sessionExerciseRows: sessionExerciseRows.current,
+        progressByExerciseId: progressData.current ?? {},
+        currentExerciseIndex: currExercise.current,
+        currentExerciseProgress: realTimeData.current,
+      }),
+    )
   }
 
   const progressDataClear = () => {
@@ -317,7 +339,7 @@ const usePatientDashboardSocketSetup = ({
     } else console.log(validatedData.error.message)
   }
 
-  const handleSetEnd = (payload: string) => {
+  const handleSetEnd = async (payload: string) => {
     if (
       !canPersistSessionProgress(
         patientSessionId.current,
@@ -351,6 +373,12 @@ const usePatientDashboardSocketSetup = ({
       if (isLastExercise) {
         currExercise.current = 0
       }
+    }
+
+    try {
+      await persistCurrentExerciseProgress()
+    } catch (error) {
+      console.error(error)
     }
   }
 
