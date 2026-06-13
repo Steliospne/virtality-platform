@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  filterSessionsByDateRange,
   getVisitConsistency,
   getSessionDurationTrend,
   getDoseTrend,
-  filterSessionsByDateRange,
   DATE_RANGE_DAYS,
   type DateRangePreset,
 } from '@/lib/session-metrics'
+import { filterCompletedClinicalSessions } from '@/lib/session-history'
 import type { ExtendedPatientSession } from '@/types/models'
 import {
   Card,
@@ -50,7 +51,12 @@ export function SessionsOverview({
   onStartDateChange,
   onRangePresetChange,
 }: SessionsOverviewProps) {
-  const filtered = filterSessionsByDateRange(sessions, startDate, rangePreset)
+  const completedSessions = filterCompletedClinicalSessions(sessions)
+  const filtered = filterSessionsByDateRange(
+    completedSessions,
+    startDate,
+    rangePreset,
+  )
   const gapThresholdDays = DATE_RANGE_DAYS[rangePreset]
   const { avgDaysBetween, gaps } = getVisitConsistency(
     filtered,
@@ -121,7 +127,8 @@ export function SessionsOverview({
           </Select>
         </div>
         <p className='ml-auto text-sm text-zinc-500 dark:text-zinc-400'>
-          {filtered.length} session{filtered.length !== 1 ? 's' : ''} in range
+          {filtered.length} completed session{filtered.length !== 1 ? 's' : ''}{' '}
+          in range
         </p>
       </div>
 

@@ -58,6 +58,7 @@ import { toast } from 'react-toastify'
 import { Exercise } from '@virtality/db'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
+import { getClinicalHistorySessionStatusLabel } from '@/lib/session-history'
 
 interface SessionCardProps {
   session: ExtendedPatientSession
@@ -125,10 +126,13 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
     return 0
   }
 
-  const completedAtTime = () => {
-    if (!session) return '00:00'
-    return format(session.completedAt!, 'H:mm')
-  }
+  const statusLabel = getClinicalHistorySessionStatusLabel(session.status)
+  const historyDate =
+    session.completedAt != null
+      ? new Date(session.completedAt)
+      : new Date(session.createdAt)
+
+  const completedAtTime = () => format(historyDate, 'H:mm')
 
   const sessionProgress = () => {
     const count = session?.sessionData?.reduce((acc, next) => {
@@ -200,8 +204,14 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
               <CardTitle className='flex justify-between'>
                 <span>{currentProgram?.name}</span>
                 <div className='flex flex-col gap-2'>
-                  {session.completedAt && (
-                    <Badge variant='outline'>Completed</Badge>
+                  {statusLabel && (
+                    <Badge
+                      variant={
+                        statusLabel === 'Interrupted' ? 'secondary' : 'outline'
+                      }
+                    >
+                      {statusLabel}
+                    </Badge>
                   )}
                   <Button
                     size='icon'
@@ -215,7 +225,7 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
                 </div>
               </CardTitle>
               <CardDescription>
-                {format(session.completedAt!, 'PPPP')} at {completedAtTime()}
+                {format(historyDate, 'PPPP')} at {completedAtTime()}
               </CardDescription>
             </CardHeader>
             <div className='flex flex-1 flex-col space-y-6'>

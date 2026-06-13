@@ -37,7 +37,10 @@ const SessionsTable = ({
     input: {
       where: {
         patientId,
-        AND: [{ deletedAt: null }, { completedAt: { not: null } }],
+        AND: [
+          { deletedAt: null },
+          { status: { in: ['COMPLETED', 'INTERRUPTED'] } },
+        ],
       },
     },
   })

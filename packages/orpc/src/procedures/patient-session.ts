@@ -8,6 +8,7 @@ import { SessionCompletionSaveChoice } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { z } from 'zod'
 import { completePatientSessionWithSaveChoice } from './session-completion.ts'
+import { interruptPatientSession } from './session-interruption.ts'
 
 const StartPatientSessionFromAckSchema = z.object({
   session: PatientSessionSchema,
@@ -156,6 +157,19 @@ const completePatientSession = authed
     )
   })
 
+const InterruptPatientSessionSchema = z.object({
+  id: z.string(),
+})
+
+const interruptSession = authed
+  .route({ path: '/patient-session/interrupt', method: 'POST' })
+  .input(InterruptPatientSessionSchema)
+  .handler(async ({ context, input }) => {
+    const { prisma } = context
+
+    return interruptPatientSession(prisma.patientSession, input.id)
+  })
+
 export const patientSession = {
   list: listPatientSessions,
   find: findPatientSession,
@@ -164,4 +178,5 @@ export const patientSession = {
   update: updatePatientSession,
   delete: deletePatientSession,
   complete: completePatientSession,
+  interrupt: interruptSession,
 }

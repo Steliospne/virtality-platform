@@ -22,6 +22,7 @@ import {
   getQueryClient,
   useStartPatientSessionFromAck,
   useUpsertPatientSessionData,
+  useInterruptPatientSession,
   useORPC,
 } from '@virtality/react-query'
 import {
@@ -106,6 +107,10 @@ const usePatientDashboardSocketSetup = ({
     useStartPatientSessionFromAck({
       onSuccess: invalidatePatientSessions,
     })
+
+  const { mutateAsync: interruptPatientSession } = useInterruptPatientSession({
+    onSuccess: invalidatePatientSessions,
+  })
 
   const resetSessionState = () => {
     patientSessionId.current = ''
@@ -398,18 +403,41 @@ const usePatientDashboardSocketSetup = ({
     NotifyDoctorToasty('Patient needs attention')
   }
 
-  const memberLeft = async () => {
-    currExercise.current = 0
-    if (patientSessionId.current !== '') {
-      try {
-        await openCompletionDialog()
-      } catch (error) {
-        console.log(error)
-        throw Error('Error creating session data.')
-      }
-    } else {
+  const handleUnexpectedSessionEnd = async () => {
+    const sessionId = patientSessionId.current
+
+    if (!sessionId) {
       setProgramState(ProgramStatus.END)
+      return
     }
+
+    try {
+      await handleSessionDataCreation()
+      await interruptPatientSession({ id: sessionId })
+      ErrorToasty('Session was interrupted before completion.')
+    } catch (error) {
+      console.error(error)
+      ErrorToasty('Failed to save interrupted session progress.')
+    } finally {
+      currExercise.current = 0
+      resetSessionState()
+      updatePatientDashboardState({
+        programState: ProgramStatus.END,
+        completionSessionId: null,
+        isDialogOpen: false,
+        activeExerciseData: {
+          ...activeExerciseData,
+          currentRep: 0,
+          currentSet: 0,
+          totalReps: 0,
+          totalSets: 0,
+        },
+      })
+    }
+  }
+
+  const memberLeft = async () => {
+    await handleUnexpectedSessionEnd()
   }
 
   useEffect(() => {

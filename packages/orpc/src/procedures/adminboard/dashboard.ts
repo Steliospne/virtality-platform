@@ -182,6 +182,7 @@ const getSessionsPerPatient = authed
                 notIn: INTERNAL_USERS,
               },
             },
+            status: 'COMPLETED',
           },
         ],
       },

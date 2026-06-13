@@ -14,7 +14,9 @@ import ColumnHeader from '@/components/tables/header-cell'
 import DateCell from '@/components/tables/date-cell'
 import { PatientSession } from '@virtality/db'
 import { getSessionDurationMinutes } from '@/lib/session-metrics'
+import { getClinicalHistorySessionStatusLabel } from '@/lib/session-history'
 import type { ExtendedPatientSession } from '@/types/models'
+import { Badge } from '@/components/ui/badge'
 
 export const sessionsColumns: ColumnDef<
   PatientSession & { sessionData?: unknown[]; sessionExercise?: unknown[] }
@@ -75,6 +77,25 @@ export const sessionsColumns: ColumnDef<
       />
     ),
     cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
+  },
+  {
+    id: 'status',
+    header: () => 'Status',
+    cell: ({ row }) => {
+      const session = row.original as ExtendedPatientSession
+      const label = getClinicalHistorySessionStatusLabel(session.status)
+
+      if (!label) return '—'
+
+      return (
+        <Badge
+          variant={label === 'Interrupted' ? 'secondary' : 'outline'}
+          className='font-normal'
+        >
+          {label}
+        </Badge>
+      )
+    },
   },
   {
     id: 'duration',

@@ -4,6 +4,10 @@
  */
 
 import type { ExtendedPatientSession, ProgressDataPoint } from '@/types/models'
+import {
+  filterClinicalHistorySessions,
+  filterCompletedClinicalSessions,
+} from '@/lib/session-history'
 
 const MS_PER_DAY = 86400000
 
@@ -381,7 +385,7 @@ export function getDosePerSession(session: ExtendedPatientSession): number {
 export function getDoseTrend(
   sessions: ExtendedPatientSession[],
 ): { sessionId: string; completedAt: Date; dose: number }[] {
-  const completed = sessions.filter((s) => s.completedAt != null)
+  const completed = filterCompletedClinicalSessions(sessions)
   return completed
     .map((s) => ({
       sessionId: s.id,
@@ -405,8 +409,7 @@ export function getSessionDurationMinutes(
 export function getSessionDurationTrend(
   sessions: ExtendedPatientSession[],
 ): { sessionId: string; completedAt: Date; durationMin: number }[] {
-  return sessions
-    .filter((s) => s.completedAt != null)
+  return filterCompletedClinicalSessions(sessions)
     .map((s) => ({
       sessionId: s.id,
       completedAt: new Date(s.completedAt!),
@@ -436,7 +439,7 @@ export function getVisitConsistency(
     nextSessionId: string
   }[]
 } {
-  const completed = sessions
+  const completed = filterCompletedClinicalSessions(sessions)
     .filter((s) => s.completedAt != null)
     .map((s) => ({ id: s.id, completedAt: new Date(s.completedAt!) }))
     .sort((a, b) => a.completedAt.getTime() - b.completedAt.getTime())
@@ -487,7 +490,7 @@ export const DATE_RANGE_DAYS: Record<DateRangePreset, number> = {
   '3months': 90,
 }
 
-/** Filter sessions to those completed within [startDate, startDate + rangeDays]. */
+/** Filter sessions to those in clinical history within [startDate, startDate + rangeDays]. */
 export function filterSessionsByDateRange(
   sessions: ExtendedPatientSession[],
   startDate: Date,
@@ -498,9 +501,12 @@ export function filterSessionsByDateRange(
   endDate.setDate(endDate.getDate() + rangeDays)
   const startMs = startDate.getTime()
   const endMs = endDate.getTime()
-  return sessions.filter((s) => {
-    if (!s.completedAt) return false
-    const t = new Date(s.completedAt).getTime()
+  return filterClinicalHistorySessions(sessions).filter((session) => {
+    const historyDate =
+      session.completedAt != null
+        ? new Date(session.completedAt)
+        : new Date(session.createdAt)
+    const t = historyDate.getTime()
     return t >= startMs && t <= endMs
   })
 }

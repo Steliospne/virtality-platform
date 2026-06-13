@@ -43,6 +43,7 @@ export { useStartPatientSessionFromAck } from './patient-session/use-start-patie
 export { useUpdatePatientSession } from './patient-session/use-update-patient-session.js'
 export { useDeletePatientSession } from './patient-session/use-delete-patient-session.js'
 export { useCompleteSession } from './patient-session/use-complete-session.js'
+export { useInterruptPatientSession } from './patient-session/use-interrupt-patient-session.js'
 export { useCreatePatientSessionData } from './patient-session-data/use-create-patient-session-data.js'
 export { useUpsertPatientSessionData } from './patient-session-data/use-upsert-patient-session-data.js'
 export { useCreatePatientSessionExercises } from './patient-session-exercise/use-create-patient-session-exercises.js'
