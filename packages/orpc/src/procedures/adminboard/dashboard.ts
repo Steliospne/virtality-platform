@@ -399,10 +399,19 @@ const getEffectivenessReport = authed
       },
       select: {
         patientId: true,
+        createdAt: true,
         completedAt: true,
         sessionData: {
           select: {
             value: true,
+          },
+        },
+        sessionExercise: {
+          select: {
+            sets: true,
+            reps: true,
+            holdTime: true,
+            speed: true,
           },
         },
       },
@@ -433,8 +442,10 @@ const getEffectivenessReport = authed
       patients,
       sessions: sessions.map((session) => ({
         patientId: session.patientId,
+        createdAt: session.createdAt.toISOString(),
         completedAt: session.completedAt!.toISOString(),
         sessionData: session.sessionData,
+        sessionExercises: session.sessionExercise,
       })),
       userNamesById,
       from: toISODate(from),

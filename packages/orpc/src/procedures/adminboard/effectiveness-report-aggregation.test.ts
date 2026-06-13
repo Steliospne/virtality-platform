@@ -25,18 +25,24 @@ describe('buildEffectivenessReport', () => {
       sessions: [
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-10T09:30:00.000Z',
           completedAt: '2026-06-10T10:00:00.000Z',
           sessionData: [],
+          sessionExercises: [],
         },
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-12T09:00:00.000Z',
           completedAt: '2026-06-12T10:00:00.000Z',
           sessionData: [],
+          sessionExercises: [],
         },
         {
           patientId: 'patient-3',
+          createdAt: '2026-06-11T09:00:00.000Z',
           completedAt: '2026-06-11T10:00:00.000Z',
           sessionData: [],
+          sessionExercises: [],
         },
       ],
       userNamesById: {
@@ -86,8 +92,10 @@ describe('buildEffectivenessReport', () => {
       sessions: [
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-10T09:00:00.000Z',
           completedAt: '2026-06-10T10:00:00.000Z',
           sessionData: [],
+          sessionExercises: [],
         },
       ],
       userNamesById: {},
@@ -139,6 +147,16 @@ describe('buildEffectivenessReport', () => {
       progressQualityDeltaPercent: null,
       trend: expect.any(Array),
     })
+    expect(report.therapyIntensity).toEqual({
+      totalTherapyDose: 0,
+      averageTherapyDosePerSession: null,
+      averageSessionDurationMinutes: null,
+      sessionsWithDoseData: 0,
+      sessionsMissingDoseData: 0,
+      sessionsWithDurationData: 0,
+      sessionsMissingDurationData: 0,
+      trend: expect.any(Array),
+    })
   })
 
   it('ignores sessions for patients outside the scoped patient list', () => {
@@ -148,8 +166,10 @@ describe('buildEffectivenessReport', () => {
       sessions: [
         {
           patientId: 'patient-orphan',
+          createdAt: '2026-06-10T09:00:00.000Z',
           completedAt: '2026-06-10T10:00:00.000Z',
           sessionData: [],
+          sessionExercises: [],
         },
       ],
       userNamesById: { 'user-a': 'Alice' },
@@ -172,18 +192,24 @@ describe('buildEffectivenessReport', () => {
       sessions: [
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-03T09:30:00.000Z',
           completedAt: '2026-06-03T10:00:00.000Z',
           sessionData: [{ value: progressValue([50]) }],
+          sessionExercises: [],
         },
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-10T09:00:00.000Z',
           completedAt: '2026-06-10T10:00:00.000Z',
           sessionData: [{ value: progressValue([70]) }],
+          sessionExercises: [],
         },
         {
           patientId: 'patient-1',
+          createdAt: '2026-06-15T09:00:00.000Z',
           completedAt: '2026-06-15T10:00:00.000Z',
           sessionData: [{ value: 'not-json' }],
+          sessionExercises: [],
         },
       ],
       userNamesById: { 'user-a': 'Alice' },
@@ -202,5 +228,57 @@ describe('buildEffectivenessReport', () => {
     )
     expect(weekWithFifty?.sessionsWithProgress).toBe(1)
     expect(weekWithSeventy?.sessionsWithProgress).toBe(1)
+  })
+
+  it('calculates therapy dose, duration, trend buckets, and empty exercise handling', () => {
+    const report = buildEffectivenessReport({
+      from: '2026-06-02',
+      to: '2026-06-16',
+      patients: [{ id: 'patient-1', userId: 'user-a' }],
+      sessions: [
+        {
+          patientId: 'patient-1',
+          createdAt: '2026-06-03T09:15:00.000Z',
+          completedAt: '2026-06-03T10:00:00.000Z',
+          sessionData: [],
+          sessionExercises: [
+            { sets: 2, reps: 10, holdTime: 5, speed: 1 },
+            { sets: 1, reps: 5, holdTime: 4, speed: 2 },
+          ],
+        },
+        {
+          patientId: 'patient-1',
+          createdAt: '2026-06-10T09:00:00.000Z',
+          completedAt: '2026-06-10T10:30:00.000Z',
+          sessionData: [],
+          sessionExercises: [{ sets: 3, reps: 8, holdTime: 2, speed: 1.5 }],
+        },
+        {
+          patientId: 'patient-1',
+          createdAt: '2026-06-15T09:00:00.000Z',
+          completedAt: '2026-06-15T10:00:00.000Z',
+          sessionData: [],
+          sessionExercises: [],
+        },
+      ],
+      userNamesById: { 'user-a': 'Alice' },
+    })
+
+    expect(report.therapyIntensity.totalTherapyDose).toBe(212)
+    expect(report.therapyIntensity.averageTherapyDosePerSession).toBe(106)
+    expect(report.therapyIntensity.averageSessionDurationMinutes).toBe(65)
+    expect(report.therapyIntensity.sessionsWithDoseData).toBe(2)
+    expect(report.therapyIntensity.sessionsMissingDoseData).toBe(1)
+    expect(report.therapyIntensity.sessionsWithDurationData).toBe(3)
+    expect(report.therapyIntensity.sessionsMissingDurationData).toBe(0)
+
+    const weekWithOneForty = report.therapyIntensity.trend.find(
+      (point) => point.averageTherapyDose === 140,
+    )
+    const weekWithSeventyTwo = report.therapyIntensity.trend.find(
+      (point) => point.averageTherapyDose === 72,
+    )
+    expect(weekWithOneForty?.sessionsWithDose).toBe(1)
+    expect(weekWithSeventyTwo?.sessionsWithDose).toBe(1)
   })
 })

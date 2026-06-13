@@ -127,3 +127,23 @@ export function formatProgressDelta(value: number | null): string {
   const prefix = value > 0 ? '+' : ''
   return `${prefix}${value} pts`
 }
+
+export function formatTherapyDose(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  })
+}
+
+export function formatDurationMinutes(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  return `${value.toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  })} min`
+}

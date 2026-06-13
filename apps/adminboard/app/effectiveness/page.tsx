@@ -2,13 +2,16 @@
 
 import { EffectivenessComparisonChart } from '@/components/dashboard/effectiveness-comparison-chart'
 import { EffectivenessProgressQualityChart } from '@/components/dashboard/effectiveness-progress-quality-chart'
+import { EffectivenessTherapyIntensityChart } from '@/components/dashboard/effectiveness-therapy-intensity-chart'
 import {
   EffectivenessMetricCard,
   formatAverage,
   formatCount,
+  formatDurationMinutes,
   formatPercent,
   formatProgressDelta,
   formatProgressQuality,
+  formatTherapyDose,
 } from '@/components/dashboard/effectiveness-metric-card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -98,6 +101,7 @@ const EffectivenessReportPage = () => {
 
   const summary = data.summary
   const progressQuality = data.progressQuality
+  const therapyIntensity = data.therapyIntensity
 
   const progressSummary = (() => {
     if (progressQuality.sessionsWithProgressData === 0) {
@@ -117,6 +121,24 @@ const EffectivenessReportPage = () => {
     return `Average rep progress quality was ${formatProgressQuality(progressQuality.averageProgressQualityPercent)} across ${formatCount(progressQuality.sessionsWithProgressData)} session${progressQuality.sessionsWithProgressData === 1 ? '' : 's'} with progress payloads. ${deltaText}${missingText}`
   })()
 
+  const therapySummary = (() => {
+    if (therapyIntensity.sessionsWithDoseData === 0) {
+      return 'No completed sessions in range included exercise settings for therapy dose.'
+    }
+
+    const missingDoseText =
+      therapyIntensity.sessionsMissingDoseData > 0
+        ? ` ${formatCount(therapyIntensity.sessionsMissingDoseData)} completed session${therapyIntensity.sessionsMissingDoseData === 1 ? '' : 's'} lacked exercise settings and were excluded from dose metrics.`
+        : ''
+
+    const durationText =
+      therapyIntensity.averageSessionDurationMinutes === null
+        ? 'Average session duration was unavailable for completed sessions in range.'
+        : `Average completed session duration was ${formatDurationMinutes(therapyIntensity.averageSessionDurationMinutes)}.`
+
+    return `Total therapy dose was ${formatTherapyDose(therapyIntensity.totalTherapyDose)} with an average of ${formatTherapyDose(therapyIntensity.averageTherapyDosePerSession)} per session with exercise settings. ${durationText}${missingDoseText}`
+  })()
+
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
       <div className='flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
@@ -127,8 +149,9 @@ const EffectivenessReportPage = () => {
           <p className='text-muted-foreground mt-2 max-w-3xl text-sm'>
             Adoption and product progress snapshot based on completed sessions
             for non-deleted patients, grouped by patient owner. Progress quality
-            reflects rep completion in session payloads and is a product proxy,
-            not a validated clinical outcome measure.
+            reflects rep completion in session payloads. Therapy dose uses
+            completed session exercise settings as a volume proxy, not a
+            validated clinical dosage measure.
           </p>
         </div>
 
@@ -182,7 +205,9 @@ const EffectivenessReportPage = () => {
 
       <p className='text-muted-foreground text-sm'>{progressSummary}</p>
 
-      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6'>
+      <p className='text-muted-foreground text-sm'>{therapySummary}</p>
+
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
         <EffectivenessMetricCard
           title='Active Patients'
           value={formatCount(summary.activePatients)}
@@ -223,9 +248,33 @@ const EffectivenessReportPage = () => {
           description='Change from earliest to latest session with progress in range'
           tone='slate'
         />
+        <EffectivenessMetricCard
+          title='Total Therapy Dose'
+          value={formatTherapyDose(therapyIntensity.totalTherapyDose)}
+          description='Sum of sets × reps × hold time × speed from session exercises'
+          tone='amber'
+        />
+        <EffectivenessMetricCard
+          title='Avg Therapy Dose'
+          value={formatTherapyDose(
+            therapyIntensity.averageTherapyDosePerSession,
+          )}
+          description='Average dose per session with exercise settings in range'
+          tone='teal'
+        />
+        <EffectivenessMetricCard
+          title='Avg Session Duration'
+          value={formatDurationMinutes(
+            therapyIntensity.averageSessionDurationMinutes,
+          )}
+          description='Average minutes from session start to completion'
+          tone='violet'
+        />
       </div>
 
       <EffectivenessProgressQualityChart data={progressQuality.trend} />
+
+      <EffectivenessTherapyIntensityChart data={therapyIntensity.trend} />
 
       <EffectivenessComparisonChart data={comparisonRows} />
 

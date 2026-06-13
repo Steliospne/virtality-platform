@@ -3,6 +3,11 @@ import {
   getProgressQualityDeltaPercent,
   getSessionProgressQualityPercent,
 } from './session-progress-quality.ts'
+import {
+  getSessionDurationMinutes,
+  getSessionTherapyDose,
+  type SessionExerciseSettings,
+} from './session-therapy-intensity.ts'
 
 export type EffectivenessPatientRow = {
   id: string
@@ -11,8 +16,10 @@ export type EffectivenessPatientRow = {
 
 export type EffectivenessSessionRow = {
   patientId: string
+  createdAt: string
   completedAt: string
   sessionData: { value: string }[]
+  sessionExercises: SessionExerciseSettings[]
 }
 
 export type ProgressQualityTrendPoint = {
@@ -27,6 +34,23 @@ export type EffectivenessProgressQuality = {
   sessionsMissingProgressData: number
   progressQualityDeltaPercent: number | null
   trend: ProgressQualityTrendPoint[]
+}
+
+export type TherapyIntensityTrendPoint = {
+  bucketStart: string
+  averageTherapyDose: number | null
+  sessionsWithDose: number
+}
+
+export type EffectivenessTherapyIntensity = {
+  totalTherapyDose: number
+  averageTherapyDosePerSession: number | null
+  averageSessionDurationMinutes: number | null
+  sessionsWithDoseData: number
+  sessionsMissingDoseData: number
+  sessionsWithDurationData: number
+  sessionsMissingDurationData: number
+  trend: TherapyIntensityTrendPoint[]
 }
 
 export type EffectivenessUserMetrics = {
@@ -52,6 +76,7 @@ export type EffectivenessReportResult = {
   byUser: EffectivenessUserMetrics[]
   hasSessionActivity: boolean
   progressQuality: EffectivenessProgressQuality
+  therapyIntensity: EffectivenessTherapyIntensity
 }
 
 const normalizeOwnerId = (userId: string | null): string =>
@@ -163,6 +188,77 @@ const buildProgressQualityMetrics = (input: {
     sessionsMissingProgressData,
     progressQualityDeltaPercent:
       getProgressQualityDeltaPercent(sessionQualities),
+    trend,
+  }
+}
+
+const buildTherapyIntensityMetrics = (input: {
+  sessions: EffectivenessSessionRow[]
+  from: string
+  to: string
+}): EffectivenessTherapyIntensity => {
+  const dosesByBucket = new Map<string, number[]>()
+  const sessionDoses: number[] = []
+  const sessionDurations: number[] = []
+  let sessionsMissingDoseData = 0
+  let sessionsMissingDurationData = 0
+
+  input.sessions.forEach((session) => {
+    const dose = getSessionTherapyDose(session.sessionExercises)
+    const duration = getSessionDurationMinutes(
+      session.createdAt,
+      session.completedAt,
+    )
+
+    if (dose === null) {
+      sessionsMissingDoseData += 1
+    } else {
+      sessionDoses.push(dose)
+      const bucketStart = toISODate(
+        getISOWeekStartUTC(new Date(session.completedAt)),
+      )
+      const bucketDoses = dosesByBucket.get(bucketStart) ?? []
+      bucketDoses.push(dose)
+      dosesByBucket.set(bucketStart, bucketDoses)
+    }
+
+    if (duration === null) {
+      sessionsMissingDurationData += 1
+    } else {
+      sessionDurations.push(duration)
+    }
+  })
+
+  const trend = buildWeeklyTrendBuckets(input.from, input.to).map(
+    (bucketStart) => {
+      const bucketDoses = dosesByBucket.get(bucketStart) ?? []
+      return {
+        bucketStart,
+        averageTherapyDose: toAverage(
+          bucketDoses.reduce((total, dose) => total + dose, 0),
+          bucketDoses.length,
+        ),
+        sessionsWithDose: bucketDoses.length,
+      }
+    },
+  )
+
+  const totalTherapyDose = sessionDoses.reduce((sum, dose) => sum + dose, 0)
+
+  return {
+    totalTherapyDose,
+    averageTherapyDosePerSession: toAverage(
+      totalTherapyDose,
+      sessionDoses.length,
+    ),
+    averageSessionDurationMinutes: toAverage(
+      sessionDurations.reduce((sum, duration) => sum + duration, 0),
+      sessionDurations.length,
+    ),
+    sessionsWithDoseData: sessionDoses.length,
+    sessionsMissingDoseData,
+    sessionsWithDurationData: sessionDurations.length,
+    sessionsMissingDurationData,
     trend,
   }
 }
@@ -293,6 +389,11 @@ export function buildEffectivenessReport(input: {
     byUser,
     hasSessionActivity: summary.completedSessions > 0,
     progressQuality: buildProgressQualityMetrics({
+      sessions: input.sessions,
+      from: input.from,
+      to: input.to,
+    }),
+    therapyIntensity: buildTherapyIntensityMetrics({
       sessions: input.sessions,
       from: input.from,
       to: input.to,

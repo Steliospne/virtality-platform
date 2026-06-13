@@ -39,6 +39,20 @@ export type EffectivenessReportData = {
       sessionsWithProgress: number
     }>
   }
+  therapyIntensity: {
+    totalTherapyDose: number
+    averageTherapyDosePerSession: number | null
+    averageSessionDurationMinutes: number | null
+    sessionsWithDoseData: number
+    sessionsMissingDoseData: number
+    sessionsWithDurationData: number
+    sessionsMissingDurationData: number
+    trend: Array<{
+      bucketStart: string
+      averageTherapyDose: number | null
+      sessionsWithDose: number
+    }>
+  }
 }
 
 export function useEffectivenessReport(
