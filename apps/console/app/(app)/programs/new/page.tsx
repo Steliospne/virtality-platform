@@ -1,12 +1,7 @@
-import { ExerciseLibraryProvider } from '@/context/exercise-library-context'
-import ReusableProgramFormView from './_components/reusable-program-form'
+import ReusableProgramCreateFlow from './_components/reusable-program-create-flow'
 
 const CreateReusableProgramPage = () => {
-  return (
-    <ExerciseLibraryProvider>
-      <ReusableProgramFormView />
-    </ExerciseLibraryProvider>
-  )
+  return <ReusableProgramCreateFlow />
 }
 
 export default CreateReusableProgramPage
