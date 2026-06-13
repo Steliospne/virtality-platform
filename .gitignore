@@ -31,3 +31,6 @@ generated*
 
 # Sandcastle
 .sandcastle-backup*/
+
+# DB dumps
+*.dump
