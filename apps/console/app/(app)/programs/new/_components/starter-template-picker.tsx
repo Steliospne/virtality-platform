@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/command'
 import { useExercise, useStarterTemplates } from '@virtality/react-query'
 import type { CompleteReusableProgram } from '@/types/models'
-import { starterTemplateExerciseNamesForPreview } from '@/lib/starter-template-create'
+import { starterTemplateExercisesForPreview } from '@/lib/starter-template-create'
 import LoadingScreen from '@/components/ui/loading-screen'
+import StarterTemplateExercisePreviewItem from './starter-template-exercise-preview-item'
 
 interface StarterTemplatePickerProps {
   onCancel: () => void
@@ -35,16 +36,19 @@ const StarterTemplatePicker = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   )
+  const [playingExerciseId, setPlayingExerciseId] = useState<string | null>(
+    null,
+  )
 
   const selectedTemplate = useMemo(
     () => templates?.find((template) => template.id === selectedTemplateId),
     [selectedTemplateId, templates],
   )
 
-  const previewExerciseNames = useMemo(() => {
+  const previewExercises = useMemo(() => {
     if (!selectedTemplate || !exercises) return []
 
-    return starterTemplateExerciseNamesForPreview(
+    return starterTemplateExercisesForPreview(
       selectedTemplate.exercises,
       exercises,
     )
@@ -81,7 +85,10 @@ const StarterTemplatePicker = ({
                 <CommandItem
                   key={template.id}
                   value={`${template.name} ${template.id}`}
-                  onSelect={() => setSelectedTemplateId(template.id)}
+                  onSelect={() => {
+                    setSelectedTemplateId(template.id)
+                    setPlayingExerciseId(null)
+                  }}
                   className={
                     selectedTemplateId === template.id ? 'bg-accent' : undefined
                   }
@@ -104,14 +111,19 @@ const StarterTemplatePicker = ({
           {selectedTemplate ? (
             <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-auto'>
               <p className='font-medium'>{selectedTemplate.name}</p>
-              {previewExerciseNames.length > 0 ? (
-                <ul className='list-disc space-y-1 pl-5'>
-                  {previewExerciseNames.map((name, index) => (
-                    <li key={`${selectedTemplate.id}-${name}-${index}`}>
-                      {name}
-                    </li>
+              {previewExercises.length > 0 ? (
+                <div className='flex flex-col gap-2'>
+                  {previewExercises.map((exercise) => (
+                    <StarterTemplateExercisePreviewItem
+                      key={`${selectedTemplate.id}-${exercise.id}`}
+                      exercise={exercise}
+                      isPlaying={playingExerciseId === exercise.id}
+                      onPlayingChange={(playing) =>
+                        setPlayingExerciseId(playing ? exercise.id : null)
+                      }
+                    />
                   ))}
-                </ul>
+                </div>
               ) : (
                 <p className='text-muted-foreground text-sm'>
                   This template has no enabled exercises to preview.

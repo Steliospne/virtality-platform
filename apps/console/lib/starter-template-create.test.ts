@@ -8,6 +8,7 @@ import {
   STANDARD_PROGRAM_EXERCISE_SETTINGS,
   starterTemplateExerciseNamesForPreview,
   starterTemplateExercisesForEditor,
+  starterTemplateExercisesForPreview,
   suggestedProgramNameFromTemplate,
 } from './starter-template-create.js'
 
@@ -33,7 +34,45 @@ const catalog = [
 ] as Exercise[]
 
 describe('starter template creation helpers', () => {
-  it('previews exercise names in template order without dose or settings', () => {
+  it('previews enabled exercises in template order without dose or settings', () => {
+    const previewExercises = starterTemplateExercisesForPreview(
+      [
+        {
+          exerciseId: 'ex-2',
+          position: 1,
+          sets: 99,
+          reps: 99,
+          restTime: 99,
+          holdTime: 99,
+          speed: 9,
+        },
+        {
+          exerciseId: 'ex-1',
+          position: 0,
+          sets: 1,
+          reps: 1,
+          restTime: 1,
+          holdTime: 1,
+          speed: 1,
+        },
+        {
+          exerciseId: 'ex-3',
+          position: 2,
+          sets: 2,
+          reps: 2,
+          restTime: 2,
+          holdTime: 2,
+          speed: 2,
+        },
+      ],
+      catalog,
+    )
+
+    expect(previewExercises.map((exercise) => exercise.id)).toEqual([
+      'ex-1',
+      'ex-2',
+    ])
+
     const names = starterTemplateExerciseNamesForPreview(
       [
         {

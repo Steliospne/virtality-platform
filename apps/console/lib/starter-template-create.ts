@@ -23,6 +23,11 @@ export type ExerciseCatalogRow = Pick<
   'id' | 'displayName' | 'direction' | 'enabled'
 >
 
+export type StarterTemplatePreviewExercise = Pick<
+  Exercise,
+  'id' | 'displayName' | 'direction' | 'enabled' | 'image' | 'video'
+>
+
 export type StarterTemplateEditorExercise = {
   id: string
   exerciseId: string
@@ -35,10 +40,10 @@ export function sortStarterTemplateExercises<T extends { position: number }>(
   return [...exercises].sort((a, b) => a.position - b.position)
 }
 
-export function starterTemplateExerciseNamesForPreview(
+export function starterTemplateExercisesForPreview(
   templateExercises: readonly StarterTemplateExerciseRow[],
-  catalog: readonly ExerciseCatalogRow[],
-): string[] {
+  catalog: readonly StarterTemplatePreviewExercise[],
+): StarterTemplatePreviewExercise[] {
   const catalogById = new Map(
     catalog.map((exercise) => [exercise.id, exercise]),
   )
@@ -46,10 +51,18 @@ export function starterTemplateExerciseNamesForPreview(
   return sortStarterTemplateExercises(templateExercises)
     .map((row) => catalogById.get(row.exerciseId))
     .filter(
-      (exercise): exercise is ExerciseCatalogRow =>
+      (exercise): exercise is StarterTemplatePreviewExercise =>
         exercise !== undefined && exercise.enabled,
     )
-    .map((exercise) => exercise.displayName)
+}
+
+export function starterTemplateExerciseNamesForPreview(
+  templateExercises: readonly StarterTemplateExerciseRow[],
+  catalog: readonly ExerciseCatalogRow[],
+): string[] {
+  return starterTemplateExercisesForPreview(templateExercises, catalog).map(
+    (exercise) => exercise.displayName,
+  )
 }
 
 export function starterTemplateExercisesForEditor(
