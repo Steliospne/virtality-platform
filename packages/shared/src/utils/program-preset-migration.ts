@@ -94,6 +94,12 @@ export type MigrationOrphanedSessionReference = {
   programId: string
 }
 
+export type MigrationDuplicatePosition = {
+  reusableProgramId: string
+  position: number
+  exerciseRowIds: string[]
+}
+
 export type ProgramPresetMigrationLog = {
   patientProgramsMigrated: number
   patientProgramsSkipped: number
@@ -106,6 +112,7 @@ export type ProgramPresetMigrationLog = {
   orphanedSessionReferences: MigrationOrphanedSessionReference[]
   missingExercises: MigrationMissingExercise[]
   skippedRows: MigrationSkippedRow[]
+  duplicatePositions: MigrationDuplicatePosition[]
 }
 
 export type ProgramPresetMigrationPlan = {
@@ -144,7 +151,45 @@ function createEmptyLog(): ProgramPresetMigrationLog {
     orphanedSessionReferences: [],
     missingExercises: [],
     skippedRows: [],
+    duplicatePositions: [],
   }
+}
+
+export function findDuplicatePositionsInMigrationPlan(
+  exercises: readonly ReusableProgramExerciseMigrationTarget[],
+): MigrationDuplicatePosition[] {
+  const positionsByProgram = new Map<string, Map<number, string[]>>()
+
+  for (const exercise of exercises) {
+    const positions =
+      positionsByProgram.get(exercise.reusableProgramId) ?? new Map()
+    const rowIds = positions.get(exercise.position) ?? []
+    rowIds.push(exercise.id)
+    positions.set(exercise.position, rowIds)
+    positionsByProgram.set(exercise.reusableProgramId, positions)
+  }
+
+  const duplicates: MigrationDuplicatePosition[] = []
+
+  for (const [reusableProgramId, positions] of positionsByProgram) {
+    for (const [position, exerciseRowIds] of positions) {
+      if (exerciseRowIds.length > 1) {
+        duplicates.push({
+          reusableProgramId,
+          position,
+          exerciseRowIds,
+        })
+      }
+    }
+  }
+
+  return duplicates.sort((left, right) => {
+    const programCompare = left.reusableProgramId.localeCompare(
+      right.reusableProgramId,
+    )
+    if (programCompare !== 0) return programCompare
+    return left.position - right.position
+  })
 }
 
 function sortExercisesById<T extends { id: string }>(exercises: T[]): T[] {
@@ -372,6 +417,10 @@ export function buildProgramPresetMigrationPlan(
     log.sessionsUpdated += 1
   }
 
+  log.duplicatePositions = findDuplicatePositionsInMigrationPlan(
+    reusableProgramExercises,
+  )
+
   return {
     reusablePrograms,
     reusableProgramExercises,
@@ -416,6 +465,15 @@ export function formatProgramPresetMigrationLog(
     lines.push('', 'Orphaned session references:')
     for (const row of log.orphanedSessionReferences) {
       lines.push(`  - session ${row.sessionId}: program ${row.programId}`)
+    }
+  }
+
+  if (log.duplicatePositions.length > 0) {
+    lines.push('', 'Duplicate positions:')
+    for (const row of log.duplicatePositions) {
+      lines.push(
+        `  - program ${row.reusableProgramId}: position ${row.position} (${row.exerciseRowIds.join(', ')})`,
+      )
     }
   }
 

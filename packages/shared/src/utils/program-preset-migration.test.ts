@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_REUSABLE_PROGRAM_EXERCISE_SETTINGS,
   buildProgramPresetMigrationPlan,
+  findDuplicatePositionsInMigrationPlan,
   formatProgramPresetMigrationLog,
   mapExercisesWithPositions,
 } from './program-preset-migration.js'
@@ -349,6 +350,13 @@ describe('program and preset migration plan', () => {
             reason: 'Reusable program ID already exists',
           },
         ],
+        duplicatePositions: [
+          {
+            reusableProgramId: 'program-1',
+            position: 0,
+            exerciseRowIds: ['row-a', 'row-b'],
+          },
+        ],
       },
       true,
     )
@@ -357,5 +365,93 @@ describe('program and preset migration plan', () => {
     expect(output).toContain('Patient programs migrated: 2')
     expect(output).toContain('Missing exercises:')
     expect(output).toContain('Orphaned session references:')
+    expect(output).toContain('Duplicate positions:')
+  })
+
+  it('reports duplicate positions in the migration plan log', () => {
+    const duplicates = findDuplicatePositionsInMigrationPlan([
+      {
+        id: 'row-a',
+        reusableProgramId: 'program-1',
+        exerciseId: 'exercise-a',
+        position: 0,
+        sets: 3,
+        reps: 10,
+        restTime: 5,
+        holdTime: 1,
+        speed: 1,
+      },
+      {
+        id: 'row-b',
+        reusableProgramId: 'program-1',
+        exerciseId: 'exercise-b',
+        position: 0,
+        sets: 2,
+        reps: 8,
+        restTime: 4,
+        holdTime: 2,
+        speed: 1.5,
+      },
+      {
+        id: 'row-c',
+        reusableProgramId: 'program-2',
+        exerciseId: 'exercise-c',
+        position: 1,
+        sets: 1,
+        reps: 1,
+        restTime: 1,
+        holdTime: 1,
+        speed: 1,
+      },
+    ])
+
+    expect(duplicates).toEqual([
+      {
+        reusableProgramId: 'program-1',
+        position: 0,
+        exerciseRowIds: ['row-a', 'row-b'],
+      },
+    ])
+  })
+
+  it('leaves duplicate positions empty for valid migration plans', () => {
+    const plan = buildProgramPresetMigrationPlan({
+      patientPrograms: [
+        {
+          id: 'program-1',
+          name: 'Shoulder rehab',
+          userId: 'clinician-1',
+          createdAt,
+          updatedAt,
+          deletedAt: null,
+          programExercise: [
+            {
+              id: 'row-a',
+              exerciseId: 'exercise-a',
+              sets: 3,
+              reps: 10,
+              restTime: 5,
+              holdTime: 1,
+              speed: 1,
+            },
+            {
+              id: 'row-b',
+              exerciseId: 'exercise-b',
+              sets: 2,
+              reps: 8,
+              restTime: 4,
+              holdTime: 2,
+              speed: 1.5,
+            },
+          ],
+        },
+      ],
+      presets: [],
+      patientSessions: [],
+      knownExerciseIds,
+      existingReusableProgramIds: new Set(),
+    })
+
+    expect(plan.log.duplicatePositions).toEqual([])
   })
 })
