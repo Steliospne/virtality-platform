@@ -84,8 +84,8 @@ httpServer.prependListener('request', (req, _res) => {
   if (!isHandshakeRequest) return
 
   const roomCode = parsed.searchParams.get('roomCode') ?? ''
-  const agent = parsed.searchParams.get('agent') ?? 'unknown'
-  const key = `${agent}:${roomCode || 'missing'}`
+  const role = parsed.searchParams.get('role') ?? 'unknown'
+  const key = `${role}:${roomCode || 'missing'}`
   if (coldStartCompletedKeys.has(key)) return
 
   const currentAttempt = (coldStartAttemptTracker.get(key) ?? 0) + 1
@@ -94,7 +94,7 @@ httpServer.prependListener('request', (req, _res) => {
     coldStartAttemptTracker.set(key, currentAttempt)
     logger.info('socket.cold_start.simulation.request_drop', {
       roomCode: roomCode || 'missing',
-      agent,
+      role,
       attempt: currentAttempt,
       rejectUntilAttempt: coldStartRejectAttempts,
       method: req.method ?? 'GET',
@@ -111,7 +111,7 @@ httpServer.prependListener('request', (req, _res) => {
   console.log('from listener')
   logger.info('socket.cold_start.simulation.request_accept', {
     roomCode: roomCode || 'missing',
-    agent,
+    role,
     attempt: currentAttempt,
     method: req.method ?? 'GET',
     path: parsed.pathname,
@@ -125,11 +125,11 @@ io.on(CONNECTION_EVENT.CONNECTION, (socket) => {
       typeof socket.handshake.query.roomCode === 'string'
         ? socket.handshake.query.roomCode
         : ''
-    const agent =
-      typeof socket.handshake.query.agent === 'string'
-        ? socket.handshake.query.agent
+    const role =
+      typeof socket.handshake.query.role === 'string'
+        ? socket.handshake.query.role
         : 'unknown'
-    const key = `${agent}:${roomCode || 'missing'}`
+    const key = `${role}:${roomCode || 'missing'}`
 
     // Reset after a successful connection so future connect cycles
     // can simulate cold start again for the same key.

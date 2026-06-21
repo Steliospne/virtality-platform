@@ -18,7 +18,7 @@ export const createEventHandler = (
     logger.info('socket.relay.emit', {
       relayKey: key,
       eventName: event[key].name,
-      agent: socket.handshake.query?.agent ?? 'unknown',
+      role: socket.handshake.query?.role ?? 'unknown',
       roomCode,
       socketId: socket.id,
       hasPayload: payload !== undefined,

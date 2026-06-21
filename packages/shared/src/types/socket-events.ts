@@ -217,12 +217,51 @@ export type DeviceStatusResponse = {
   status: 'active' | 'inactive'
 }
 
+export const ROOM_PEER_ROLE = {
+  Console: 'console',
+  Vr: 'vr',
+} as const
+
+export type RoomPeerRole = (typeof ROOM_PEER_ROLE)[keyof typeof ROOM_PEER_ROLE]
+
+export type RoleSlot = {
+  activePeerSocketId: string | null
+}
+
+export type RoomRoleSlots = Record<RoomPeerRole, RoleSlot>
+
+export function createEmptyRoleSlots(): RoomRoleSlots {
+  return {
+    [ROOM_PEER_ROLE.Console]: { activePeerSocketId: null },
+    [ROOM_PEER_ROLE.Vr]: { activePeerSocketId: null },
+  }
+}
+
+export function parseRoomPeerRole(role: unknown): RoomPeerRole | null {
+  if (role === ROOM_PEER_ROLE.Console || role === ROOM_PEER_ROLE.Vr) {
+    return role
+  }
+  return null
+}
+
+export function isRoomComplete(roleSlots: RoomRoleSlots): boolean {
+  return (
+    roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId !== null &&
+    roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId !== null
+  )
+}
+
+export function isRoomEmpty(roleSlots: RoomRoleSlots): boolean {
+  return (
+    roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId === null &&
+    roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId === null
+  )
+}
+
 export type Room = {
   id: string
-  firstMemberId: null | string
-  secondMemberId: null | string
   createdAt: number
-  members: number
+  roleSlots: RoomRoleSlots
 }
 
 // ── Emit payload maps (keyed by event‑constant key) ─────────────────────────

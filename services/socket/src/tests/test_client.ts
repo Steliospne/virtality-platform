@@ -12,6 +12,7 @@ if (!ROOM_CODE) throw Error('Missing ROOM_CODE variable!')
 const socketOptions: Partial<ManagerOptions & SocketOptions> = {
   query: {
     roomCode: ROOM_CODE,
+    role: 'vr',
   },
 }
 

@@ -107,7 +107,7 @@ export type BodyAreas = {
 export interface SocketWithQuery extends Socket {
   io: {
     opts: {
-      query: { roomCode: string }
+      query: { roomCode: string; role: string }
     } & Socket['io']['opts']
   } & Socket['io']
 }

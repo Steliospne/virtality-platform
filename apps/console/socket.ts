@@ -11,7 +11,7 @@ const socketOptions = {
   reconnectionAttempts: 5,
   query: {
     roomCode: '',
-    agent: 'console',
+    role: 'console',
   },
 } satisfies Partial<ManagerOptions & SocketOptions>
 
