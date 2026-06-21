@@ -57,6 +57,7 @@ function registerRelayEvents(
   for (const key in eventMap) {
     const entry = eventMap[key]
     logger.debug('registerRelayEvents', {
+      role: socket.data.roomPeerRole ?? 'unknown',
       eventName: entry.name,
       roomCode: resolvedRoomCode,
       socketId: socket.id,
