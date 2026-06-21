@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { completePatientSessionWithSaveChoice } from './session-completion.ts'
 import { createPatientSessionFromAck } from './session-start-from-ack.ts'
 import { interruptPatientSession } from './session-interruption.ts'
+import { syncSessionWorkingCopy } from './session-working-copy.ts'
 
 const StartPatientSessionFromAckSchema = z.object({
   session: PatientSessionSchema,
@@ -164,6 +165,30 @@ const interruptSession = authed
     return interruptPatientSession(prisma.patientSession, input.id)
   })
 
+const SyncSessionWorkingCopySchema = z.object({
+  id: z.string(),
+  exercises: z.array(
+    SessionExerciseSchema.omit({ patientSessionId: true }).extend({
+      patientSessionId: z.string().optional(),
+    }),
+  ),
+})
+
+const syncWorkingCopy = authed
+  .route({ path: '/patient-session/sync-working-copy', method: 'POST' })
+  .input(SyncSessionWorkingCopySchema)
+  .handler(async ({ context, input }) => {
+    const { prisma } = context
+
+    return syncSessionWorkingCopy(
+      {
+        patientSession: prisma.patientSession,
+        sessionExercise: prisma.sessionExercise,
+      },
+      input,
+    )
+  })
+
 export const patientSession = {
   list: listPatientSessions,
   find: findPatientSession,
@@ -173,4 +198,5 @@ export const patientSession = {
   delete: deletePatientSession,
   complete: completePatientSession,
   interrupt: interruptSession,
+  syncWorkingCopy,
 }

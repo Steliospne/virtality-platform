@@ -33,6 +33,8 @@ describe('patient dashboard session launch seam', () => {
       /resolveProgramStateAfterStartAckPersistenceFailure/,
     )
     expect(socketSetupSource).toMatch(/canPersistSessionProgress/)
+    expect(socketSetupSource).toMatch(/syncSessionWorkingCopy/)
+    expect(socketSetupSource).toMatch(/shouldPersistSessionWorkingCopy/)
   })
 
   it('keeps last used program as convenience state on the dashboard', () => {

@@ -7,6 +7,7 @@ import {
   SessionCompletionSaveChoice,
   assertCompletionSaveChoiceAllowed,
   assertSessionCanBeCompleted,
+  assertSessionExerciseRowsMutable,
   buildCompletionSessionExerciseRows,
   buildSaveAsNewProgramName,
   canOfferUpdateSourceProgram,
@@ -26,6 +27,16 @@ describe('session completion helpers', () => {
     expect(() => assertSessionCanBeCompleted('ACTIVE')).not.toThrow()
     expect(() => assertSessionCanBeCompleted('COMPLETED')).toThrow(
       /only active sessions/i,
+    )
+  })
+
+  it('allows session exercise row changes only while the session is active', () => {
+    expect(() => assertSessionExerciseRowsMutable('ACTIVE')).not.toThrow()
+    expect(() => assertSessionExerciseRowsMutable('COMPLETED')).toThrow(
+      /cannot be modified/i,
+    )
+    expect(() => assertSessionExerciseRowsMutable('INTERRUPTED')).toThrow(
+      /cannot be modified/i,
     )
   })
 

@@ -44,6 +44,14 @@ export function assertSessionCanBeCompleted(status: string): void {
   }
 }
 
+export function assertSessionExerciseRowsMutable(status: string): void {
+  if (status !== 'ACTIVE') {
+    throw new Error(
+      'Session exercise rows cannot be modified once the session is no longer active',
+    )
+  }
+}
+
 export function canOfferUpdateSourceProgram(
   session: SessionCompletionSession,
   sourceProgram: ReusableProgramRecord | null | undefined,

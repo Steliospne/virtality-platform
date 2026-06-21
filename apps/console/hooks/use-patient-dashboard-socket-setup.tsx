@@ -22,6 +22,7 @@ import {
   useStartPatientSessionFromAck,
   useUpsertPatientSessionData,
   useInterruptPatientSession,
+  useSyncSessionWorkingCopy,
   useORPC,
 } from '@virtality/react-query'
 import {
@@ -36,6 +37,12 @@ import {
   buildCurrentExerciseProgressUpsert,
   buildSessionProgressUpserts,
 } from '@/lib/session-progress-persistence'
+import {
+  buildSessionWorkingCopySyncPayload,
+  serializeSessionWorkingCopy,
+  shouldPersistSessionWorkingCopy,
+} from '@/lib/session-working-copy-sync'
+import { generateUUID } from '@virtality/shared/utils'
 import ErrorToasty from '../components/ui/ErrorToasty'
 
 type ProgressDataPerExercise = {
@@ -85,6 +92,7 @@ const usePatientDashboardSocketSetup = ({
   const realTimeData = useRef<ProgressDataPoint[]>([])
   const patientSessionId = useRef('')
   const sessionExerciseRows = useRef<SessionExerciseRowInput[]>([])
+  const lastSyncedWorkingCopy = useRef<string | null>(null)
   const currSet = useRef(0)
   const currRep = useRef(0)
   const stats = useRef({ highscore: 0, bestExercise: '' })
@@ -111,9 +119,12 @@ const usePatientDashboardSocketSetup = ({
     onSuccess: invalidatePatientSessions,
   })
 
+  const { mutateAsync: syncSessionWorkingCopy } = useSyncSessionWorkingCopy()
+
   const resetSessionState = () => {
     patientSessionId.current = ''
     sessionExerciseRows.current = []
+    lastSyncedWorkingCopy.current = null
   }
 
   const persistCurrentExerciseProgress = async () => {
@@ -200,6 +211,7 @@ const usePatientDashboardSocketSetup = ({
 
       patientSessionId.current = persistenceInput.sessionId
       sessionExerciseRows.current = persistenceInput.exercises
+      lastSyncedWorkingCopy.current = serializeSessionWorkingCopy(exercises)
       setProgramState(resolveProgramStateAfterStartAckPersistenceSuccess())
     } catch (error) {
       console.error(error)
@@ -439,6 +451,42 @@ const usePatientDashboardSocketSetup = ({
   const memberLeft = async () => {
     await handleUnexpectedSessionEnd()
   }
+
+  useEffect(() => {
+    if (
+      !shouldPersistSessionWorkingCopy(
+        programState,
+        patientSessionId.current,
+        exercises,
+      )
+    ) {
+      return
+    }
+
+    const serializedWorkingCopy = serializeSessionWorkingCopy(exercises)
+    if (serializedWorkingCopy === lastSyncedWorkingCopy.current) {
+      return
+    }
+
+    const payload = buildSessionWorkingCopySyncPayload({
+      sessionId: patientSessionId.current,
+      exercises,
+      persistedRows: sessionExerciseRows.current,
+      createId: generateUUID,
+    })
+
+    void syncSessionWorkingCopy(payload)
+      .then((result) => {
+        sessionExerciseRows.current = result.exercises.map((exercise) => ({
+          ...exercise,
+          patientSessionId: patientSessionId.current,
+        }))
+        lastSyncedWorkingCopy.current = serializedWorkingCopy
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+  }, [exercises, programState, syncSessionWorkingCopy])
 
   useEffect(() => {
     if (!socket) return
