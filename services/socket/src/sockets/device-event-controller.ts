@@ -46,25 +46,55 @@ export function resetActiveRoomsForTests() {
 function registerRelayEvents(
   eventMap: RelayEventMap,
   roomCode: string | string[],
-  socket: Socket,
+  socket: SocketWithRole,
 ) {
+  const resolvedRoomCode = Array.isArray(roomCode) ? roomCode[0] : roomCode
+
   for (const key in eventMap) {
     const entry = eventMap[key]
     logger.debug('registerRelayEvents', {
       eventName: entry.name,
-      roomCode,
+      roomCode: resolvedRoomCode,
       socketId: socket.id,
     })
     socket.on(entry.name, (payload: unknown) => {
+      const roomPeerRole = socket.data.roomPeerRole as RoomPeerRole | undefined
+      const room = activeRooms.get(resolvedRoomCode)
+
+      if (!room || !roomPeerRole) {
+        logger.warn('socket.relay.blocked', {
+          eventName: entry.name,
+          roomCode: resolvedRoomCode,
+          socketId: socket.id,
+          reason: 'missing_room_or_role',
+        })
+        return
+      }
+
+      const activePeerSocketId = room.roleSlots[roomPeerRole].activePeerSocketId
+
+      if (activePeerSocketId !== socket.id) {
+        logger.info('socket.relay.stale_peer_blocked', {
+          eventName: entry.name,
+          roomCode: resolvedRoomCode,
+          socketId: socket.id,
+          role: roomPeerRole,
+          activePeerSocketId,
+        })
+        return
+      }
+
       logger.info('socket.relay.emit', {
         eventName: entry.name,
-        role: socket.handshake.query?.role ?? 'unknown',
-        roomCode,
+        role: roomPeerRole,
+        roomCode: resolvedRoomCode,
         socketId: socket.id,
         hasPayload: payload !== undefined,
         payload,
       })
-      socket.to(roomCode).emit(entry.name, entry.payload ? payload : undefined)
+      socket
+        .to(resolvedRoomCode)
+        .emit(entry.name, entry.payload ? payload : undefined)
     })
   }
 }

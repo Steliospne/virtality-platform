@@ -11,8 +11,12 @@ import {
   expect,
   it,
 } from 'vitest'
+import { Socket as ServerSocket } from 'socket.io'
 import {
+  CASTING_EVENT,
   CONNECTION_EVENT,
+  DEVICE_EVENT,
+  PROGRAM_EVENT,
   ROOM_EVENT,
   ROOM_PEER_ROLE,
 } from '@virtality/shared/types'
@@ -573,5 +577,172 @@ describe('VR role peer replacement', () => {
 
     expect(deviceStatus.status).toBe('active')
     await expectNoEvent(consoleSocket, ROOM_EVENT.MemberLeft)
+  })
+})
+
+describe('relay protection from replaced peers', () => {
+  let httpServer: HttpServer
+  let port: number
+  const clients: ClientSocket[] = []
+  let originalDisconnect: ServerSocket['disconnect']
+  const deferredServerDisconnects: ServerSocket[] = []
+
+  beforeAll(async () => {
+    httpServer = createServer()
+    const io = new Server(httpServer, {
+      cors: { origin: '*' },
+    })
+    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
+
+    await new Promise<void>((resolve) => {
+      httpServer.listen(0, '127.0.0.1', () => resolve())
+    })
+    port = (httpServer.address() as AddressInfo).port
+  })
+
+  afterAll(async () => {
+    for (const client of clients) {
+      client.disconnect()
+    }
+    await new Promise<void>((resolve, reject) => {
+      httpServer.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  })
+
+  beforeEach(() => {
+    resetActiveRoomsForTests()
+    deferredServerDisconnects.length = 0
+    originalDisconnect = ServerSocket.prototype.disconnect
+    ServerSocket.prototype.disconnect = function (
+      this: ServerSocket,
+      ...args: Parameters<ServerSocket['disconnect']>
+    ) {
+      deferredServerDisconnects.push(this)
+      return this
+    }
+  })
+
+  afterEach(() => {
+    ServerSocket.prototype.disconnect = originalDisconnect
+    for (const socket of deferredServerDisconnects) {
+      originalDisconnect.call(socket, true)
+    }
+    while (clients.length > 0) {
+      clients.pop()?.disconnect()
+    }
+  })
+
+  function connectClient(query: TestQuery): ClientSocket {
+    const client = ioClient(`http://127.0.0.1:${port}`, {
+      query,
+      transports: ['websocket'],
+      forceNew: true,
+      reconnection: false,
+    })
+    clients.push(client)
+    return client
+  }
+
+  it('blocks treatment, device, and casting relays from a replaced VR peer', async () => {
+    const roomCode = 'vr-relay-block-room'
+    const consoleSocket = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Console,
+    })
+    const firstVr = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Vr,
+    })
+
+    await Promise.all([
+      waitForConnect(consoleSocket),
+      waitForEvent(consoleSocket, ROOM_EVENT.RoomJoined),
+      waitForConnect(firstVr),
+      waitForEvent(firstVr, ROOM_EVENT.RoomJoined),
+      waitForEvent(consoleSocket, ROOM_EVENT.RoomComplete),
+    ])
+
+    const secondVr = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Vr,
+    })
+
+    await Promise.all([
+      waitForConnect(secondVr),
+      waitForEvent(firstVr, ROOM_EVENT.ReplacementNotice),
+      waitForEvent(secondVr, ROOM_EVENT.RoomJoined),
+    ])
+
+    const consoleProgramPause = expectNoEvent(
+      consoleSocket,
+      PROGRAM_EVENT.Pause,
+    )
+    const consoleDeviceId = expectNoEvent(
+      consoleSocket,
+      DEVICE_EVENT.SendDeviceId,
+    )
+    const consoleCastingOffer = expectNoEvent(
+      consoleSocket,
+      CASTING_EVENT.Offer,
+    )
+
+    firstVr.emit(PROGRAM_EVENT.Pause)
+    firstVr.emit(DEVICE_EVENT.SendDeviceId, 'stale-device-id')
+    firstVr.emit(CASTING_EVENT.Offer, { type: 'offer', sdp: 'stale-sdp' })
+
+    await Promise.all([
+      consoleProgramPause,
+      consoleDeviceId,
+      consoleCastingOffer,
+    ])
+
+    const relayedDeviceId = waitForEvent<string>(
+      consoleSocket,
+      DEVICE_EVENT.SendDeviceId,
+    )
+    secondVr.emit(DEVICE_EVENT.SendDeviceId, 'active-device-id')
+    await expect(relayedDeviceId).resolves.toBe('active-device-id')
+  })
+
+  it('blocks relays from a replaced console peer', async () => {
+    const roomCode = 'console-relay-block-room'
+    const firstConsole = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Console,
+    })
+    const vrSocket = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Vr,
+    })
+
+    await Promise.all([
+      waitForConnect(firstConsole),
+      waitForEvent(firstConsole, ROOM_EVENT.RoomJoined),
+      waitForConnect(vrSocket),
+      waitForEvent(vrSocket, ROOM_EVENT.RoomJoined),
+      waitForEvent(firstConsole, ROOM_EVENT.RoomComplete),
+    ])
+
+    const secondConsole = connectClient({
+      roomCode,
+      role: ROOM_PEER_ROLE.Console,
+    })
+
+    await Promise.all([
+      waitForConnect(secondConsole),
+      waitForEvent(firstConsole, ROOM_EVENT.ReplacementNotice),
+      waitForEvent(secondConsole, ROOM_EVENT.RoomJoined),
+    ])
+
+    const vrProgramPause = expectNoEvent(vrSocket, PROGRAM_EVENT.Pause)
+    firstConsole.emit(PROGRAM_EVENT.Pause)
+    await vrProgramPause
+
+    const relayedProgramPause = waitForEvent(vrSocket, PROGRAM_EVENT.Pause)
+    secondConsole.emit(PROGRAM_EVENT.Pause)
+    await relayedProgramPause
   })
 })
