@@ -111,7 +111,7 @@ const ControlPanel = ({
   }, [devices, patientLocalData, selectedDevice])
 
   const programStart = () => {
-    if (!exercises)
+    if (!exercises?.length)
       return ErrorToasty('Please select program or use quick start!')
 
     if (!connected) return ErrorToasty('Please connect with a device!')

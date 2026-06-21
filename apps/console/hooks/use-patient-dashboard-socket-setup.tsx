@@ -17,7 +17,6 @@ import NotifyDoctorToasty from '../components/ui/NotifyDoctorToasty'
 import { ProgressDataSchema, ProgressData } from '@/lib/definitions'
 import { getDisplayName } from '@/lib/utils'
 import usePlotData from './use-plot-data'
-import { generateUUID } from '@virtality/shared/utils'
 import {
   getQueryClient,
   useStartPatientSessionFromAck,
@@ -26,10 +25,10 @@ import {
   useORPC,
 } from '@virtality/react-query'
 import {
-  buildSessionExerciseRowsFromWorkingCopy,
-  buildStartedSessionInput,
+  buildStartAckPersistenceInput,
   canPersistSessionProgress,
-  resolveSourceProgramContext,
+  resolveProgramStateAfterStartAckPersistenceFailure,
+  resolveProgramStateAfterStartAckPersistenceSuccess,
   shouldCreatePatientSessionOnStartAck,
   type SessionExerciseRowInput,
 } from '@/lib/patient-dashboard-session-launch'
@@ -169,38 +168,39 @@ const usePatientDashboardSocketSetup = ({
     socket?.emit(PROGRAM_EVENT.End)
     selectedDevice?.events.program.End()
     ErrorToasty('Failed to start session. Please try again.')
-    setProgramState(ProgramStatus.END)
+    setProgramState(resolveProgramStateAfterStartAckPersistenceFailure())
   }
 
   const handleStartAck = async () => {
-    if (!shouldCreatePatientSessionOnStartAck(programState)) {
-      return
-    }
+    const persistenceInput = buildStartAckPersistenceInput({
+      programState,
+      exercises,
+      patientId,
+      inQuickStart,
+      selectedProgram,
+    })
 
-    if (!exercises?.length) {
-      handlePersistenceFailureAfterStartAck()
+    if (!persistenceInput) {
+      if (
+        shouldCreatePatientSessionOnStartAck(programState) &&
+        !exercises?.length
+      ) {
+        handlePersistenceFailureAfterStartAck()
+      }
       return
     }
 
     progressDataClear()
 
-    const sessionId = generateUUID()
-    const source = resolveSourceProgramContext(inQuickStart, selectedProgram)
-    const rows = buildSessionExerciseRowsFromWorkingCopy(exercises, sessionId)
-
     try {
       await startPatientSessionFromAck({
-        session: buildStartedSessionInput({
-          sessionId,
-          patientId,
-          source,
-        }),
-        exercises: rows,
+        session: persistenceInput.session,
+        exercises: persistenceInput.exercises,
       })
 
-      patientSessionId.current = sessionId
-      sessionExerciseRows.current = rows
-      setProgramState(ProgramStatus.START)
+      patientSessionId.current = persistenceInput.sessionId
+      sessionExerciseRows.current = persistenceInput.exercises
+      setProgramState(resolveProgramStateAfterStartAckPersistenceSuccess())
     } catch (error) {
       console.error(error)
       handlePersistenceFailureAfterStartAck()

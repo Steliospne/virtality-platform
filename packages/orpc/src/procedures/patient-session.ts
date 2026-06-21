@@ -8,6 +8,7 @@ import { SessionCompletionSaveChoice } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { z } from 'zod'
 import { completePatientSessionWithSaveChoice } from './session-completion.ts'
+import { createPatientSessionFromAck } from './session-start-from-ack.ts'
 import { interruptPatientSession } from './session-interruption.ts'
 
 const StartPatientSessionFromAckSchema = z.object({
@@ -101,22 +102,15 @@ const startPatientSessionFromAck = authed
   .handler(async ({ context, input }) => {
     const { prisma } = context
 
-    const created = await prisma.$transaction(async (tx) => {
-      const patientSession = await tx.patientSession.create({
-        data: input.session,
-      })
-
-      await tx.sessionExercise.createMany({
-        data: input.exercises.map((exercise) => ({
-          ...exercise,
-          patientSessionId: patientSession.id,
-        })),
-      })
-
-      return patientSession
-    })
-
-    return created
+    return prisma.$transaction(async (tx) =>
+      createPatientSessionFromAck(
+        {
+          patientSession: tx.patientSession,
+          sessionExercise: tx.sessionExercise,
+        },
+        input,
+      ),
+    )
   })
 
 const CompletePatientSessionSchema = z.object({

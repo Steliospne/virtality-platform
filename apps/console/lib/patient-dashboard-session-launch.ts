@@ -113,3 +113,59 @@ export function shouldCreatePatientSessionOnStartAck(
 ): boolean {
   return programState === 'launching'
 }
+
+export type StartAckPersistenceInput = {
+  sessionId: string
+  session: StartedSessionInput
+  exercises: SessionExerciseRowInput[]
+}
+
+export function buildStartAckPersistenceInput({
+  programState,
+  exercises,
+  patientId,
+  inQuickStart,
+  selectedProgram,
+  createId = generateUUID,
+}: {
+  programState: DashboardProgramState
+  exercises: CompleteExercise[] | undefined
+  patientId: string
+  inQuickStart: boolean
+  selectedProgram: Pick<CompleteReusableProgram, 'id' | 'name'> | null
+  createId?: () => string
+}): StartAckPersistenceInput | null {
+  if (!shouldCreatePatientSessionOnStartAck(programState)) {
+    return null
+  }
+
+  if (!exercises?.length) {
+    return null
+  }
+
+  const sessionId = createId()
+  const source = resolveSourceProgramContext(inQuickStart, selectedProgram)
+  const rows = buildSessionExerciseRowsFromWorkingCopy(
+    exercises,
+    sessionId,
+    createId,
+  )
+
+  return {
+    sessionId,
+    session: buildStartedSessionInput({
+      sessionId,
+      patientId,
+      source,
+    }),
+    exercises: rows,
+  }
+}
+
+export function resolveProgramStateAfterStartAckPersistenceFailure(): DashboardProgramState {
+  return 'ready'
+}
+
+export function resolveProgramStateAfterStartAckPersistenceSuccess(): DashboardProgramState {
+  return 'started'
+}

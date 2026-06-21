@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildSessionExerciseRowsFromWorkingCopy,
+  buildStartAckPersistenceInput,
   buildStartedSessionInput,
   canPersistSessionProgress,
+  resolveProgramStateAfterStartAckPersistenceFailure,
+  resolveProgramStateAfterStartAckPersistenceSuccess,
   resolveSourceProgramContext,
   shouldCreatePatientSessionOnStartAck,
 } from './patient-dashboard-session-launch.js'
@@ -137,5 +140,98 @@ describe('shouldCreatePatientSessionOnStartAck', () => {
     expect(shouldCreatePatientSessionOnStartAck('ready')).toBe(false)
     expect(shouldCreatePatientSessionOnStartAck('launching')).toBe(true)
     expect(shouldCreatePatientSessionOnStartAck('started')).toBe(false)
+  })
+})
+
+describe('buildStartAckPersistenceInput', () => {
+  it('skips persistence until the dashboard is in a launch attempt', () => {
+    expect(
+      buildStartAckPersistenceInput({
+        programState: 'ready',
+        exercises: sampleExercises,
+        patientId: 'patient-1',
+        inQuickStart: false,
+        selectedProgram: sampleProgram,
+        createId: () => 'session-1',
+      }),
+    ).toBeNull()
+  })
+
+  it('returns null when the working copy has no exercises', () => {
+    expect(
+      buildStartAckPersistenceInput({
+        programState: 'launching',
+        exercises: [],
+        patientId: 'patient-1',
+        inQuickStart: false,
+        selectedProgram: sampleProgram,
+        createId: () => 'session-1',
+      }),
+    ).toBeNull()
+  })
+
+  it('builds started session input and rows for a library launch', () => {
+    let counter = 0
+    const createId = () => `session-id-${++counter}`
+
+    const result = buildStartAckPersistenceInput({
+      programState: 'launching',
+      exercises: sampleExercises,
+      patientId: 'patient-1',
+      inQuickStart: false,
+      selectedProgram: sampleProgram,
+      createId,
+    })
+
+    expect(result).toMatchObject({
+      sessionId: 'session-id-1',
+      session: {
+        id: 'session-id-1',
+        patientId: 'patient-1',
+        status: 'ACTIVE',
+        sourceReusableProgramId: 'program-1',
+        sourceProgramName: 'Shoulder rehab',
+      },
+      exercises: [
+        {
+          id: 'session-id-2',
+          patientSessionId: 'session-id-1',
+          exerciseId: 'ex-1',
+          position: 0,
+        },
+        {
+          id: 'session-id-3',
+          patientSessionId: 'session-id-1',
+          exerciseId: 'ex-2',
+          position: 1,
+        },
+      ],
+    })
+  })
+
+  it('builds quick start sessions without source program context', () => {
+    expect(
+      buildStartAckPersistenceInput({
+        programState: 'launching',
+        exercises: sampleExercises,
+        patientId: 'patient-1',
+        inQuickStart: true,
+        selectedProgram: sampleProgram,
+        createId: () => 'session-1',
+      })?.session,
+    ).toMatchObject({
+      sourceReusableProgramId: null,
+      sourceProgramName: null,
+    })
+  })
+})
+
+describe('StartAck persistence failure handling', () => {
+  it('returns to ready so the clinician can retry after persistence fails', () => {
+    expect(resolveProgramStateAfterStartAckPersistenceFailure()).toBe('ready')
+  })
+
+  it('moves to started after persistence succeeds', () => {
+    expect(resolveProgramStateAfterStartAckPersistenceSuccess()).toBe('started')
   })
 })
