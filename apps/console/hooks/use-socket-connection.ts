@@ -1,6 +1,7 @@
 'use client'
 
-import { CONNECTION_EVENT } from '@virtality/shared/types'
+import { CONNECTION_EVENT, ROOM_EVENT } from '@virtality/shared/types'
+import { buildReplacementNoticeConnectionMeta } from '@/lib/socket-replacement-notice'
 import { VRDevice } from '@/types/models'
 import { useEffect, useState } from 'react'
 
@@ -166,6 +167,12 @@ const useSocketConnection = ({ device }: useSocketConnectionProps) => {
       })
     }
 
+    const onReplacementNotice = () => {
+      device.socket.io.opts.reconnection = false
+      device.socket.disconnect()
+      setMeta(buildReplacementNoticeConnectionMeta())
+    }
+
     if (device.socket.connected) onConnect()
 
     device.socket.on('connect', onConnect)
@@ -174,6 +181,7 @@ const useSocketConnection = ({ device }: useSocketConnectionProps) => {
     device.socket.io.on('reconnect_failed', onReconnectFailed)
     device.socket.on('connect_error', onConnectError)
     device.socket.on(CONNECTION_EVENT.ERROR, onConnectionError)
+    device.socket.on(ROOM_EVENT.ReplacementNotice, onReplacementNotice)
 
     return () => {
       device.socket.off('connect', onConnect)
@@ -182,6 +190,7 @@ const useSocketConnection = ({ device }: useSocketConnectionProps) => {
       device.socket.io.off('reconnect_failed', onReconnectFailed)
       device.socket.off('connect_error', onConnectError)
       device.socket.off(CONNECTION_EVENT.ERROR, onConnectionError)
+      device.socket.off(ROOM_EVENT.ReplacementNotice, onReplacementNotice)
     }
   }, [device])
 

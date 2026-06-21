@@ -24,8 +24,14 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
   const [deviceConnected, setDeviceConnected] = useState(false)
 
   const store = useStore()
-  const { connected, connectionState, reconnectAttempt, connect, disconnect } =
-    useSocketConnection({ device: selectedDevice })
+  const {
+    connected,
+    connectionState,
+    reconnectAttempt,
+    connectionError,
+    connect,
+    disconnect,
+  } = useSocketConnection({ device: selectedDevice })
 
   const handleVRConnection = async () => {
     const deviceId = selectedDevice?.data.deviceId
@@ -99,7 +105,7 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
             : connectionState === 'reconnecting'
               ? `Reconnecting (${reconnectAttempt}/5)...`
               : connectionState === 'failed'
-                ? 'Connection failed'
+                ? (connectionError ?? 'Connection failed')
                 : connected
                   ? 'Online'
                   : 'Offline'}
