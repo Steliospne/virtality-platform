@@ -128,7 +128,7 @@ function registerRoomEvents(
   }
 
   if (isRoomComplete(room.roleSlots)) {
-    socket.to(roomCode).emit(ROOM_EVENT.RoomComplete, {
+    socket.nsp.to(roomCode).emit(ROOM_EVENT.RoomComplete, {
       roomCode,
       timestamp: Date.now(),
     } satisfies RoomCompletePayload)
