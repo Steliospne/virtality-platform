@@ -70,4 +70,20 @@ describe('replaced clinician surfaces', () => {
     expect(selectorSource).toMatch(/useReusablePrograms/)
     expect(selectorSource).not.toMatch(/usePatientPrograms/)
   })
+
+  it('removes orphaned preset i18n locale files', () => {
+    expect(pathExists('i18n/locales/en/preset.json')).toBe(false)
+    expect(pathExists('i18n/locales/el/preset.json')).toBe(false)
+  })
+
+  it('uses starter-template vocabulary in clinician analytics events', () => {
+    const analyticsSource = readConsoleFile('lib/analytics-contract.ts')
+
+    expect(analyticsSource).toMatch(/starter_template/)
+    expect(analyticsSource).not.toMatch(/preset_created/)
+    expect(analyticsSource).not.toMatch(/preset_updated/)
+    expect(analyticsSource).not.toMatch(/preset_applied_to_program/)
+    expect(analyticsSource).not.toMatch(/source_preset_id/)
+    expect(analyticsSource).not.toMatch(/'preset'/)
+  })
 })

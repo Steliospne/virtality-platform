@@ -15,9 +15,6 @@ export const analyticsEventNames = [
   'program_creation_started',
   'program_creation_completed',
   'program_creation_abandoned',
-  'preset_created',
-  'preset_updated',
-  'preset_applied_to_program',
   'device_selected',
   'device_connection_state_changed',
   'session_started',
@@ -48,20 +45,13 @@ type NavItem =
   | 'forms'
   | 'landing_page'
   | 'user_profile'
-type StartType = 'blank' | 'preset'
+type StartType = 'blank' | 'starter_template'
 type SessionMode = 'main' | 'free'
 type SessionEndReason = 'manual' | 'disconnect' | 'error'
 type ConnectionState = 'connected' | 'disconnected' | 'error'
 type SkipDirection = 'back' | 'forward'
 type SceneSetting = 'avatar' | 'map' | 'sitting'
-type RouteGroup =
-  | 'auth'
-  | 'patient'
-  | 'device'
-  | 'preset'
-  | 'program'
-  | 'user'
-  | 'other'
+type RouteGroup = 'auth' | 'patient' | 'device' | 'program' | 'user' | 'other'
 type Source = 'button' | 'keyboard' | 'auto' | 'import' | 'unknown'
 type TabView =
   | 'user-profile'
@@ -116,29 +106,17 @@ export type AnalyticsEventPayloadMap = {
   patient_deleted: CommonEventProps
   program_creation_started: CommonEventProps & {
     start_type: StartType
-    source_preset_id?: string
+    source_starter_template_id?: string
   }
   program_creation_completed: CommonEventProps & {
     program_id: string
     exercise_count: number
     time_spent_sec: number
-    source_preset_id?: string
+    source_starter_template_id?: string
   }
   program_creation_abandoned: CommonEventProps & {
     step: number
     time_spent_sec: number
-  }
-  preset_created: CommonEventProps & {
-    preset_id: string
-    exercise_count?: number
-  }
-  preset_updated: CommonEventProps & {
-    preset_id: string
-    changed_fields?: string[]
-  }
-  preset_applied_to_program: CommonEventProps & {
-    preset_id: string
-    program_id?: string
   }
   device_selected: CommonEventProps & {
     device_id: string
