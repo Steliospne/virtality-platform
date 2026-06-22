@@ -16,24 +16,12 @@ const logger = createAppLogger({
   },
 })
 
-// Keepalive endpoint for cron (e.g. GitHub Actions) to prevent free tier sleep
-app.get('/line', (_req, res) => {
-  logger.debug('http.keepalive.ok', {
-    route: '/line',
-  })
-  res.status(200).send('ok')
-})
-
 const httpServer = createServer(app)
 
 logger.info('service.bootstrap', {
   env: process.env.ENV ?? 'development',
   nodeEnv: process.env.NODE_ENV ?? 'development',
   simulationEnabled: process.env.SIM === 'true',
-  coldStartSimulationEnabled: process.env.SOCKET_SIM_COLD_START === 'true',
-  coldStartRejectAttempts: Number(
-    process.env.SOCKET_SIM_COLD_START_REJECT_ATTEMPTS ?? 2,
-  ),
 })
 
 const socketOptions = {
@@ -57,89 +45,10 @@ app.get('/warmup', (_req, res) => {
   res.status(200).send('ok')
 })
 
-const DEFAULT_COLD_START_REJECT_ATTEMPTS = 4
-const isColdStartSimulationEnabled =
-  process.env.SOCKET_SIM_COLD_START === 'true'
-const coldStartRejectAttempts = Number(
-  process.env.SOCKET_SIM_COLD_START_REJECT_ATTEMPTS ??
-    DEFAULT_COLD_START_REJECT_ATTEMPTS,
-)
-const coldStartAttemptTracker = new Map<string, number>()
-const coldStartCompletedKeys = new Set<string>()
-
 const PORT = process.env.PORT || '8081'
 
-httpServer.prependListener('request', (req, _res) => {
-  if (!isColdStartSimulationEnabled || coldStartRejectAttempts <= 0) {
-    return
-  }
-
-  const url = req.url ?? ''
-  if (!url.startsWith('/socket.io/')) return
-
-  const parsed = new URL(url, 'http://localhost')
-  const isHandshakeRequest =
-    parsed.searchParams.get('EIO') !== null &&
-    parsed.searchParams.get('sid') === null
-  if (!isHandshakeRequest) return
-
-  const roomCode = parsed.searchParams.get('roomCode') ?? ''
-  const role = parsed.searchParams.get('role') ?? 'unknown'
-  const key = `${role}:${roomCode || 'missing'}`
-  if (coldStartCompletedKeys.has(key)) return
-
-  const currentAttempt = (coldStartAttemptTracker.get(key) ?? 0) + 1
-  console.log('currentAttempt', currentAttempt)
-  if (currentAttempt <= coldStartRejectAttempts) {
-    coldStartAttemptTracker.set(key, currentAttempt)
-    logger.info('socket.cold_start.simulation.request_drop', {
-      roomCode: roomCode || 'missing',
-      role,
-      attempt: currentAttempt,
-      rejectUntilAttempt: coldStartRejectAttempts,
-      method: req.method ?? 'GET',
-      path: parsed.pathname,
-    })
-
-    // Drop request at HTTP layer so the client experiences an unreachable server.
-    req.socket.destroy()
-    return
-  }
-
-  coldStartAttemptTracker.delete(key)
-  coldStartCompletedKeys.add(key)
-  console.log('from listener')
-  logger.info('socket.cold_start.simulation.request_accept', {
-    roomCode: roomCode || 'missing',
-    role,
-    attempt: currentAttempt,
-    method: req.method ?? 'GET',
-    path: parsed.pathname,
-  })
-})
-
 // Socket.IO connection handler
-io.on(CONNECTION_EVENT.CONNECTION, (socket) => {
-  if (isColdStartSimulationEnabled) {
-    const roomCode =
-      typeof socket.handshake.query.roomCode === 'string'
-        ? socket.handshake.query.roomCode
-        : ''
-    const role =
-      typeof socket.handshake.query.role === 'string'
-        ? socket.handshake.query.role
-        : 'unknown'
-    const key = `${role}:${roomCode || 'missing'}`
-
-    // Reset after a successful connection so future connect cycles
-    // can simulate cold start again for the same key.
-    console.log('coldStartCompletedKeys', coldStartCompletedKeys)
-    coldStartCompletedKeys.delete(key)
-    coldStartAttemptTracker.delete(key)
-  }
-
-  connectionHandler(socket)
-})
+io.on(CONNECTION_EVENT.CONNECTION, (socket) => connectionHandler(socket))
 
 const httpServerOptions =
   process.env.NODE_ENV !== 'production'
