@@ -1,5 +1,6 @@
 'use client'
 
+import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import {
   Card,
   CardContent,
@@ -48,22 +49,20 @@ export function EffectivenessProgressQualityChart({
         : point.averageProgressQualityPercent,
   }))
   const hasProgress = chartData.some((point) => point.sessionsWithProgress > 0)
+  const chartCopy = EFFECTIVENESS_REPORT_COPY.charts.progressQuality
 
   return (
     <Card className='shadow-sm transition-shadow hover:shadow-md'>
       <CardHeader className='pb-4'>
         <CardTitle className='text-base font-semibold'>
-          Progress Quality Trend
+          {chartCopy.title}
         </CardTitle>
-        <CardDescription>
-          Weekly average rep progress (%) from completed session payloads. This
-          is a product progress proxy, not a validated clinical outcome measure.
-        </CardDescription>
+        <CardDescription>{chartCopy.description}</CardDescription>
       </CardHeader>
       <CardContent>
         {!hasProgress ? (
           <div className='text-muted-foreground flex h-[320px] items-center justify-center text-sm'>
-            No usable progress payloads for the selected date range.
+            {chartCopy.emptyState}
           </div>
         ) : (
           <ResponsiveContainer width='100%' height={320}>
@@ -107,11 +106,11 @@ export function EffectivenessProgressQualityChart({
                 formatter={(value, _name, item) => {
                   const sessionsWithProgress = item.payload.sessionsWithProgress
                   if (typeof value !== 'number') {
-                    return ['No progress data', 'Average quality']
+                    return [chartCopy.tooltipNoData, chartCopy.tooltipLabel]
                   }
                   return [
                     `${value}% across ${sessionsWithProgress} session${sessionsWithProgress === 1 ? '' : 's'}`,
-                    'Average quality',
+                    chartCopy.tooltipLabel,
                   ]
                 }}
               />

@@ -7,6 +7,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
+import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -71,7 +72,7 @@ const Navbar = () => {
                 className='flex flex-row items-center gap-2'
               >
                 <LineChart />
-                Effectiveness
+                {EFFECTIVENESS_REPORT_COPY.navLabel}
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>

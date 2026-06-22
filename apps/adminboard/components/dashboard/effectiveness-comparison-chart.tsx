@@ -1,5 +1,7 @@
 'use client'
 
+import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
+import { formatPercent } from '@/lib/effectiveness-report-formatters'
 import {
   Card,
   CardContent,
@@ -22,20 +24,21 @@ interface EffectivenessComparisonChartProps {
 export function EffectivenessComparisonChart({
   data,
 }: EffectivenessComparisonChartProps) {
+  const engagementCopy = EFFECTIVENESS_REPORT_COPY.charts.engagementByOwner
+  const { columns } = engagementCopy
+
   return (
     <Card className='shadow-sm transition-shadow hover:shadow-md'>
       <CardHeader className='pb-4'>
         <CardTitle className='text-base font-semibold'>
-          Engagement by Owner
+          {engagementCopy.title}
         </CardTitle>
-        <CardDescription>
-          Active patients and completed sessions grouped by patient owner
-        </CardDescription>
+        <CardDescription>{engagementCopy.description}</CardDescription>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <div className='text-muted-foreground flex h-[320px] items-center justify-center text-sm'>
-            No owner activity for the selected date range.
+            {engagementCopy.emptyState}
           </div>
         ) : (
           <div className='overflow-x-auto'>
@@ -43,16 +46,16 @@ export function EffectivenessComparisonChart({
               <thead>
                 <tr className='border-b'>
                   <th className='text-muted-foreground px-3 py-2 font-medium'>
-                    Owner
+                    {columns.owner}
                   </th>
                   <th className='text-muted-foreground px-3 py-2 font-medium'>
-                    Active patients
+                    {columns.activePatients}
                   </th>
                   <th className='text-muted-foreground px-3 py-2 font-medium'>
-                    Activation rate
+                    {columns.adoptionRate}
                   </th>
                   <th className='text-muted-foreground px-3 py-2 font-medium'>
-                    Completed sessions
+                    {columns.completedSessions}
                   </th>
                 </tr>
               </thead>
@@ -77,12 +80,4 @@ export function EffectivenessComparisonChart({
       </CardContent>
     </Card>
   )
-}
-
-function formatPercent(value: number | null): string {
-  if (value === null) {
-    return '—'
-  }
-
-  return `${value}%`
 }

@@ -12,6 +12,7 @@ import {
   useTotalUniquePatients,
 } from '@virtality/react-query'
 import { LineChart } from 'lucide-react'
+import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import Link from 'next/link'
 
 const StartPage = () => {
@@ -50,7 +51,7 @@ const StartPage = () => {
           <Button asChild variant='outline'>
             <Link href='/effectiveness' className='flex items-center gap-2'>
               <LineChart className='size-4' />
-              Product Effectiveness
+              {EFFECTIVENESS_REPORT_COPY.dashboardLinkLabel}
             </Link>
           </Button>
         </div>

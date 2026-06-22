@@ -3,8 +3,8 @@
 import { EffectivenessComparisonChart } from '@/components/dashboard/effectiveness-comparison-chart'
 import { EffectivenessProgressQualityChart } from '@/components/dashboard/effectiveness-progress-quality-chart'
 import { EffectivenessTherapyIntensityChart } from '@/components/dashboard/effectiveness-therapy-intensity-chart'
+import { EffectivenessMetricCard } from '@/components/dashboard/effectiveness-metric-card'
 import {
-  EffectivenessMetricCard,
   formatAverage,
   formatCount,
   formatDurationMinutes,
@@ -12,7 +12,13 @@ import {
   formatProgressDelta,
   formatProgressQuality,
   formatTherapyDose,
-} from '@/components/dashboard/effectiveness-metric-card'
+} from '@/lib/effectiveness-report-formatters'
+import {
+  EFFECTIVENESS_REPORT_COPY,
+  buildAdoptionPeriodSummary,
+  buildProgressQualitySummary,
+  buildTherapyVolumeSummary,
+} from '@/lib/effectiveness-report-copy'
 import {
   Select,
   SelectContent,
@@ -134,7 +140,7 @@ const EffectivenessReportPage = () => {
     return (
       <div className='min-h-screen-with-header mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8'>
         <p className='text-sm text-red-600 dark:text-red-400'>
-          Failed to load effectiveness report.
+          {EFFECTIVENESS_REPORT_COPY.loadError}
         </p>
       </div>
     )
@@ -144,55 +150,43 @@ const EffectivenessReportPage = () => {
   const progressQuality = data.progressQuality
   const therapyIntensity = data.therapyIntensity
 
-  const progressSummary = (() => {
-    if (progressQuality.sessionsWithProgressData === 0) {
-      return 'No completed sessions in range included usable progress payloads.'
-    }
+  const rangeLabel = `${format(rangeFrom, 'dd MMM yyyy')} and ${format(rangeTo, 'dd MMM yyyy')}`
 
-    const deltaText =
-      progressQuality.progressQualityDeltaPercent === null
-        ? 'Not enough sessions with progress data to compare first vs latest quality.'
-        : `First-to-latest session quality changed by ${formatProgressDelta(progressQuality.progressQualityDeltaPercent)} within the selected period.`
+  const adoptionSummary = buildAdoptionPeriodSummary({
+    hasSessionActivity: data.hasSessionActivity,
+    activePatients: summary.activePatients,
+    totalPatients: summary.totalPatients,
+    rangeLabel,
+  })
 
-    const missingText =
-      progressQuality.sessionsMissingProgressData > 0
-        ? ` ${formatCount(progressQuality.sessionsMissingProgressData)} completed session${progressQuality.sessionsMissingProgressData === 1 ? '' : 's'} lacked usable progress data and were excluded from quality metrics.`
-        : ''
+  const progressSummary = buildProgressQualitySummary({
+    sessionsWithProgressData: progressQuality.sessionsWithProgressData,
+    sessionsMissingProgressData: progressQuality.sessionsMissingProgressData,
+    averageProgressQualityPercent:
+      progressQuality.averageProgressQualityPercent,
+    progressQualityDeltaPercent: progressQuality.progressQualityDeltaPercent,
+  })
 
-    return `Average rep progress quality was ${formatProgressQuality(progressQuality.averageProgressQualityPercent)} across ${formatCount(progressQuality.sessionsWithProgressData)} session${progressQuality.sessionsWithProgressData === 1 ? '' : 's'} with progress payloads. ${deltaText}${missingText}`
-  })()
+  const therapySummary = buildTherapyVolumeSummary({
+    sessionsWithDoseData: therapyIntensity.sessionsWithDoseData,
+    sessionsMissingDoseData: therapyIntensity.sessionsMissingDoseData,
+    totalTherapyDose: therapyIntensity.totalTherapyDose,
+    averageTherapyDosePerSession: therapyIntensity.averageTherapyDosePerSession,
+    averageSessionDurationMinutes:
+      therapyIntensity.averageSessionDurationMinutes,
+  })
 
-  const therapySummary = (() => {
-    if (therapyIntensity.sessionsWithDoseData === 0) {
-      return 'No completed sessions in range included exercise settings for therapy dose.'
-    }
-
-    const missingDoseText =
-      therapyIntensity.sessionsMissingDoseData > 0
-        ? ` ${formatCount(therapyIntensity.sessionsMissingDoseData)} completed session${therapyIntensity.sessionsMissingDoseData === 1 ? '' : 's'} lacked exercise settings and were excluded from dose metrics.`
-        : ''
-
-    const durationText =
-      therapyIntensity.averageSessionDurationMinutes === null
-        ? 'Average session duration was unavailable for completed sessions in range.'
-        : `Average completed session duration was ${formatDurationMinutes(therapyIntensity.averageSessionDurationMinutes)}.`
-
-    return `Total therapy dose was ${formatTherapyDose(therapyIntensity.totalTherapyDose)} with an average of ${formatTherapyDose(therapyIntensity.averageTherapyDosePerSession)} per session with exercise settings. ${durationText}${missingDoseText}`
-  })()
+  const { kpi } = EFFECTIVENESS_REPORT_COPY
 
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
       <div className='flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
         <div className='min-w-0'>
           <h1 className='text-3xl font-semibold tracking-tight md:text-4xl'>
-            Product Effectiveness
+            {EFFECTIVENESS_REPORT_COPY.pageTitle}
           </h1>
           <p className='text-muted-foreground mt-2 max-w-3xl text-sm'>
-            Adoption and product progress snapshot based on completed sessions
-            for non-deleted patients, grouped by patient owner. Progress quality
-            reflects rep completion in session payloads. Therapy dose uses
-            completed session exercise settings as a volume proxy, not a
-            validated clinical dosage measure.
+            {EFFECTIVENESS_REPORT_COPY.pageSubtitle}
           </p>
         </div>
 
@@ -202,7 +196,7 @@ const EffectivenessReportPage = () => {
               htmlFor='owner-filter'
               className='text-muted-foreground text-xs font-medium'
             >
-              Patient owner
+              {EFFECTIVENESS_REPORT_COPY.ownerFilterLabel}
             </label>
             <Select value={selectedOwner} onValueChange={setSelectedOwner}>
               <SelectTrigger
@@ -273,9 +267,7 @@ const EffectivenessReportPage = () => {
           ? `Showing metrics for ${selectedOwnerLabel}.`
           : null}
         {selectedOwner !== ALL_OWNERS_VALUE ? ' ' : null}
-        {data.hasSessionActivity
-          ? `Between ${format(rangeFrom, 'dd MMM yyyy')} and ${format(rangeTo, 'dd MMM yyyy')}, ${formatCount(summary.activePatients)} of ${formatCount(summary.totalPatients)} scoped patients had at least one completed session.`
-          : `No completed sessions were recorded between ${format(rangeFrom, 'dd MMM yyyy')} and ${format(rangeTo, 'dd MMM yyyy')}.`}
+        {adoptionSummary}
       </p>
 
       <p className='text-muted-foreground text-sm'>{progressSummary}</p>
@@ -284,65 +276,65 @@ const EffectivenessReportPage = () => {
 
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
         <EffectivenessMetricCard
-          title='Active Patients'
+          title={kpi.activePatients.title}
           value={formatCount(summary.activePatients)}
-          description='Patients with at least one completed session in range'
+          description={kpi.activePatients.description}
           tone='blue'
         />
         <EffectivenessMetricCard
-          title='Patient Activation Rate'
+          title={kpi.patientActivationRate.title}
           value={formatPercent(summary.patientActivationRatePercent)}
-          description='Active patients divided by scoped patients'
+          description={kpi.patientActivationRate.description}
           tone='violet'
         />
         <EffectivenessMetricCard
-          title='Completed Sessions'
+          title={kpi.completedSessions.title}
           value={formatCount(summary.completedSessions)}
-          description='Completed sessions with a completion timestamp in range'
+          description={kpi.completedSessions.description}
           tone='teal'
         />
         <EffectivenessMetricCard
-          title='Avg Sessions per Active Patient'
+          title={kpi.averageSessionsPerActivePatient.title}
           value={formatAverage(summary.averageSessionsPerActivePatient)}
-          description='Completed sessions divided by active patients'
+          description={kpi.averageSessionsPerActivePatient.description}
           tone='amber'
         />
         <EffectivenessMetricCard
-          title='Progress Quality'
+          title={kpi.progressQuality.title}
           value={formatProgressQuality(
             progressQuality.averageProgressQualityPercent,
           )}
-          description='Average rep progress (%) from session payloads with usable data'
+          description={kpi.progressQuality.description}
           tone='slate'
         />
         <EffectivenessMetricCard
-          title='Quality Delta'
+          title={kpi.progressQualityDelta.title}
           value={formatProgressDelta(
             progressQuality.progressQualityDeltaPercent,
           )}
-          description='Change from earliest to latest session with progress in range'
+          description={kpi.progressQualityDelta.description}
           tone='slate'
         />
         <EffectivenessMetricCard
-          title='Total Therapy Dose'
+          title={kpi.totalTherapyVolume.title}
           value={formatTherapyDose(therapyIntensity.totalTherapyDose)}
-          description='Sum of sets × reps × hold time × speed from session exercises'
+          description={kpi.totalTherapyVolume.description}
           tone='amber'
         />
         <EffectivenessMetricCard
-          title='Avg Therapy Dose'
+          title={kpi.averageTherapyVolume.title}
           value={formatTherapyDose(
             therapyIntensity.averageTherapyDosePerSession,
           )}
-          description='Average dose per session with exercise settings in range'
+          description={kpi.averageTherapyVolume.description}
           tone='teal'
         />
         <EffectivenessMetricCard
-          title='Avg Session Duration'
+          title={kpi.averageSessionDuration.title}
           value={formatDurationMinutes(
             therapyIntensity.averageSessionDurationMinutes,
           )}
-          description='Average minutes from session start to completion'
+          description={kpi.averageSessionDuration.description}
           tone='violet'
         />
       </div>
@@ -354,6 +346,10 @@ const EffectivenessReportPage = () => {
       {selectedOwner === ALL_OWNERS_VALUE ? (
         <EffectivenessComparisonChart data={comparisonRows} />
       ) : null}
+
+      <p className='text-muted-foreground text-xs leading-relaxed'>
+        {EFFECTIVENESS_REPORT_COPY.disclaimer}
+      </p>
 
       <p className='text-muted-foreground text-xs'>
         <Link href='/' className='underline underline-offset-2'>

@@ -1,5 +1,6 @@
 'use client'
 
+import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import {
   Card,
   CardContent,
@@ -51,24 +52,20 @@ export function EffectivenessTherapyIntensityChart({
       point.averageTherapyDose === null ? undefined : point.averageTherapyDose,
   }))
   const hasDose = chartData.some((point) => point.sessionsWithDose > 0)
+  const chartCopy = EFFECTIVENESS_REPORT_COPY.charts.therapyVolume
 
   return (
     <Card className='shadow-sm transition-shadow hover:shadow-md'>
       <CardHeader className='pb-4'>
         <CardTitle className='text-base font-semibold'>
-          Therapy Intensity Trend
+          {chartCopy.title}
         </CardTitle>
-        <CardDescription>
-          Weekly average therapy dose from completed session exercise settings.
-          Dose is a volume proxy (sets × reps × hold time × speed), not a
-          clinical dosage claim.
-        </CardDescription>
+        <CardDescription>{chartCopy.description}</CardDescription>
       </CardHeader>
       <CardContent>
         {!hasDose ? (
           <div className='text-muted-foreground flex h-[320px] items-center justify-center text-sm'>
-            No completed sessions with exercise settings for the selected date
-            range.
+            {chartCopy.emptyState}
           </div>
         ) : (
           <ResponsiveContainer width='100%' height={320}>
@@ -111,11 +108,11 @@ export function EffectivenessTherapyIntensityChart({
                 formatter={(value, _name, item) => {
                   const sessionsWithDose = item.payload.sessionsWithDose
                   if (typeof value !== 'number') {
-                    return ['No dose data', 'Average dose']
+                    return [chartCopy.tooltipNoData, chartCopy.tooltipLabel]
                   }
                   return [
                     `${formatDoseValue(value)} across ${sessionsWithDose} session${sessionsWithDose === 1 ? '' : 's'}`,
-                    'Average dose',
+                    chartCopy.tooltipLabel,
                   ]
                 }}
               />
