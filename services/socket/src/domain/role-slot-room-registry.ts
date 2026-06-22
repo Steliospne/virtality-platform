@@ -2,6 +2,7 @@ import {
   createEmptyRoleSlots,
   isRoomComplete,
   isRoomEmpty,
+  ROOM_PEER_ROLE,
   type Room,
   type RoomPeerRole,
   type RoomRoleSlots,
@@ -83,16 +84,23 @@ export type RelayAuthorizationOutcome =
 
 export type DeviceStatus = 'active' | 'inactive'
 
+export type RoleSlotPeerLogContext = {
+  consoleActivePeerSocketId: string | null
+  vrActivePeerSocketId: string | null
+}
+
 export type RoomEvictedOutcome = {
   kind: 'room_evicted'
   roomCode: string
   reason: 'ttl_expired' | 'both_role_slots_empty'
   ageMs: number
-}
+} & RoleSlotPeerLogContext
 
 export type RoleSlotRoomRegistry = {
   reset(): void
   hasRoom(roomCode: string): boolean
+  getActiveRoomCount(): number
+  listRoomSnapshots(): RoomSnapshot[]
   joinRoleSlot(input: RoleSlotPeerInput): JoinRoleSlotOutcome
   disconnectRolePeer(input: RoleSlotPeerInput): DisconnectRolePeerOutcome
   getRoomSnapshot(roomCode: string): RoomSnapshot | null
@@ -101,14 +109,31 @@ export type RoleSlotRoomRegistry = {
   evictStaleRooms(now?: number): RoomEvictedOutcome[]
 }
 
+export type SeededRoom = {
+  roomCode: string
+  createdAt: number
+  roleSlots?: RoomRoleSlots
+}
+
 export type CreateRoleSlotRoomRegistryOptions = {
   roomTtlMs?: number
+  seedRooms?: SeededRoom[]
 }
 
 export type RoleSlotPeerInput = {
   roomCode: string
   peerSocketId: string
   roomPeerRole: RoomPeerRole
+}
+
+export function roleSlotPeerLogContext(
+  roleSlots: RoomRoleSlots,
+): RoleSlotPeerLogContext {
+  return {
+    consoleActivePeerSocketId:
+      roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
+    vrActivePeerSocketId: roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
+  }
 }
 
 function toRoomSnapshot(roomCode: string, room: Room): RoomSnapshot {
@@ -126,6 +151,14 @@ export function createRoleSlotRoomRegistry(
 ): RoleSlotRoomRegistry {
   const roomTtlMs = options.roomTtlMs ?? DEFAULT_ROOM_TTL_MS
   const rooms = new Map<string, Room>()
+
+  for (const seededRoom of options.seedRooms ?? []) {
+    rooms.set(seededRoom.roomCode, {
+      id: seededRoom.roomCode,
+      createdAt: seededRoom.createdAt,
+      roleSlots: seededRoom.roleSlots ?? createEmptyRoleSlots(),
+    })
+  }
 
   function getOrCreateRoom(roomCode: string): Room {
     const existingRoom = rooms.get(roomCode)
@@ -149,6 +182,16 @@ export function createRoleSlotRoomRegistry(
 
     hasRoom(roomCode) {
       return rooms.has(roomCode)
+    },
+
+    getActiveRoomCount() {
+      return rooms.size
+    },
+
+    listRoomSnapshots() {
+      return Array.from(rooms, ([roomCode, room]) =>
+        toRoomSnapshot(roomCode, room),
+      )
     },
 
     joinRoleSlot({ roomCode, peerSocketId, roomPeerRole }) {
@@ -273,19 +316,12 @@ export function createRoleSlotRoomRegistry(
         }
 
         rooms.delete(roomCode)
-
-        let reason: RoomEvictedOutcome['reason']
-        if (ttlExpired) {
-          reason = 'ttl_expired'
-        } else {
-          reason = 'both_role_slots_empty'
-        }
-
         evictedRooms.push({
           kind: 'room_evicted',
           roomCode,
-          reason,
+          reason: ttlExpired ? 'ttl_expired' : 'both_role_slots_empty',
           ageMs,
+          ...roleSlotPeerLogContext(room.roleSlots),
         })
       })
 

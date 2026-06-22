@@ -6,7 +6,6 @@ import {
   ROOM_EVENT,
   ROOM_PEER_ROLE,
   type RelayEventMap,
-  type Room,
   type RoomPeerRole,
   type DeviceStatusResponse,
   type RoomJoinedPayload,
@@ -14,16 +13,23 @@ import {
   type RoomCompletePayload,
   type MemberLeftPayload,
   type ReplacementNoticePayload,
-  createEmptyRoleSlots,
-  isRoomComplete,
-  isRoomEmpty,
   parseRoomPeerRole,
   DEVICE_RELAY,
 } from '@virtality/shared/types'
 import { createAppLogger } from '@virtality/shared/observability'
+import {
+  createRoleSlotRoomRegistry,
+  roleSlotPeerLogContext,
+  type DisconnectRolePeerOutcome,
+  type RelayBlockedOutcome,
+  type RolePeerReplacedOutcome,
+  type RoleSlotJoinedOutcome,
+  type RoleSlotRoomRegistry,
+  type RoomEvictedOutcome,
+} from '../domain/role-slot-room-registry'
 import vrCommSim from './vrCommsTesting'
 
-const activeRooms: Map<string, Room> = new Map()
+let roleSlotRoomRegistry = createRoleSlotRoomRegistry()
 const logger = createAppLogger({
   serviceName: 'socket',
   defaultAttributes: {
@@ -38,11 +44,48 @@ type SocketWithRole = Socket & {
 }
 
 export function resetActiveRoomsForTests() {
-  activeRooms.clear()
+  roleSlotRoomRegistry.reset()
+}
+
+export function replaceRoleSlotRoomRegistryForTests(
+  registry: RoleSlotRoomRegistry,
+) {
+  roleSlotRoomRegistry = registry
 }
 
 export function hasActiveRoomForTests(roomCode: string): boolean {
-  return activeRooms.has(roomCode)
+  return roleSlotRoomRegistry.hasRoom(roomCode)
+}
+
+function getRoleSlotLogContext(roomCode: string) {
+  const snapshot = roleSlotRoomRegistry.getRoomSnapshot(roomCode)
+  return snapshot ? roleSlotPeerLogContext(snapshot.roleSlots) : {}
+}
+
+function logRelayBlocked(
+  authorization: RelayBlockedOutcome,
+  context: {
+    eventName: string
+    roomCode: string
+    socketId: string
+    role: RoomPeerRole
+  },
+) {
+  const payload = {
+    eventName: context.eventName,
+    roomCode: context.roomCode,
+    socketId: context.socketId,
+    role: context.role,
+    reason: authorization.reason,
+    activePeerSocketId: authorization.activePeerSocketId,
+  }
+
+  if (authorization.reason === 'room_not_found') {
+    logger.warn('socket.relay.blocked', payload)
+    return
+  }
+
+  logger.info('socket.relay.stale_peer_blocked', payload)
 }
 
 // ── Relay registration ─────────────────────────────────────────────────────
@@ -64,9 +107,8 @@ function registerRelayEvents(
     })
     socket.on(entry.name, (payload: unknown) => {
       const roomPeerRole = socket.data.roomPeerRole as RoomPeerRole | undefined
-      const room = activeRooms.get(resolvedRoomCode)
 
-      if (!room || !roomPeerRole) {
+      if (!roomPeerRole) {
         logger.warn('socket.relay.blocked', {
           eventName: entry.name,
           roomCode: resolvedRoomCode,
@@ -76,15 +118,18 @@ function registerRelayEvents(
         return
       }
 
-      const activePeerSocketId = room.roleSlots[roomPeerRole].activePeerSocketId
+      const authorization = roleSlotRoomRegistry.authorizeRelay({
+        roomCode: resolvedRoomCode,
+        peerSocketId: socket.id,
+        roomPeerRole,
+      })
 
-      if (activePeerSocketId !== socket.id) {
-        logger.info('socket.relay.stale_peer_blocked', {
+      if (authorization.kind === 'relay_blocked') {
+        logRelayBlocked(authorization, {
           eventName: entry.name,
           roomCode: resolvedRoomCode,
           socketId: socket.id,
           role: roomPeerRole,
-          activePeerSocketId,
         })
         return
       }
@@ -106,14 +151,74 @@ function registerRelayEvents(
 
 // ── Room lifecycle ─────────────────────────────────────────────────────────
 
+function emitRoomCompleteIfNeeded(
+  socket: SocketWithRole,
+  roomCode: string,
+  roomPeerRole: RoomPeerRole,
+  roomComplete: boolean,
+) {
+  if (!roomComplete) {
+    return
+  }
+
+  socket.nsp.to(roomCode).emit(ROOM_EVENT.RoomComplete, {
+    roomCode,
+    timestamp: Date.now(),
+  } satisfies RoomCompletePayload)
+  logger.info('socket.room.complete', {
+    roomCode,
+    socketId: socket.id,
+    role: roomPeerRole,
+    ...getRoleSlotLogContext(roomCode),
+  })
+}
+
+function handleDisconnectOutcome(
+  socket: SocketWithRole,
+  outcome: DisconnectRolePeerOutcome,
+) {
+  switch (outcome.kind) {
+    case 'room_not_found':
+      return
+    case 'stale_disconnect_ignored':
+      logger.info('socket.room.stale_disconnect_ignored', {
+        roomCode: outcome.roomCode,
+        socketId: outcome.peerSocketId,
+        role: outcome.roomPeerRole,
+        activePeerSocketId: outcome.activePeerSocketId,
+      })
+      return
+    case 'room_deleted':
+      logger.info('socket.room.deleted', {
+        roomCode: outcome.roomCode,
+      })
+      return
+    case 'role_slot_cleared':
+      socket.to(outcome.roomCode).emit(ROOM_EVENT.MemberLeft, {
+        memberId: outcome.departedPeerSocketId,
+        timestamp: Date.now(),
+      } satisfies MemberLeftPayload)
+      logger.info('socket.room.role_slot_cleared', {
+        roomCode: outcome.roomCode,
+        socketId: outcome.departedPeerSocketId,
+        role: outcome.roomPeerRole,
+        ...getRoleSlotLogContext(outcome.roomCode),
+      })
+      return
+  }
+}
+
 function registerRoomEvents(
   roomCode: string,
-  room: Room,
   socket: SocketWithRole,
   roomPeerRole: RoomPeerRole,
-  options: { emitMemberJoined?: boolean } = {},
+  options: { emitMemberJoined?: boolean; roomComplete?: boolean } = {},
 ) {
   const emitMemberJoined = options.emitMemberJoined ?? true
+  const roomComplete =
+    options.roomComplete ??
+    roleSlotRoomRegistry.getRoomSnapshot(roomCode)?.roomComplete ??
+    false
 
   socket.emit(ROOM_EVENT.RoomJoined, {
     roomCode,
@@ -127,21 +232,7 @@ function registerRoomEvents(
     } satisfies MemberJoinedPayload)
   }
 
-  if (isRoomComplete(room.roleSlots)) {
-    socket.nsp.to(roomCode).emit(ROOM_EVENT.RoomComplete, {
-      roomCode,
-      timestamp: Date.now(),
-    } satisfies RoomCompletePayload)
-    logger.info('socket.room.complete', {
-      roomCode,
-      socketId: socket.id,
-      role: roomPeerRole,
-      consoleActivePeerSocketId:
-        room.roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
-      vrActivePeerSocketId:
-        room.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
-    })
-  }
+  emitRoomCompleteIfNeeded(socket, roomCode, roomPeerRole, roomComplete)
 
   socket.on(CONNECTION_EVENT.DISCONNECTION, () => {
     logger.info('socket.connection.closed', {
@@ -149,45 +240,15 @@ function registerRoomEvents(
       socketId: socket.id,
       role: roomPeerRole,
     })
-    if (!activeRooms.has(roomCode)) return
 
-    const current = activeRooms.get(roomCode)!
-    const roleSlot = current.roleSlots[roomPeerRole]
+    if (!roleSlotRoomRegistry.hasRoom(roomCode)) return
 
-    if (roleSlot.activePeerSocketId !== socket.id) {
-      logger.info('socket.room.stale_disconnect_ignored', {
-        roomCode,
-        socketId: socket.id,
-        role: roomPeerRole,
-        activePeerSocketId: roleSlot.activePeerSocketId,
-      })
-      return
-    }
-
-    roleSlot.activePeerSocketId = null
-
-    if (isRoomEmpty(current.roleSlots)) {
-      activeRooms.delete(roomCode)
-      logger.info('socket.room.deleted', {
-        roomCode,
-      })
-      return
-    }
-
-    activeRooms.set(roomCode, current)
-    socket.to(roomCode).emit(ROOM_EVENT.MemberLeft, {
-      memberId: socket.id,
-      timestamp: Date.now(),
-    } satisfies MemberLeftPayload)
-    logger.info('socket.room.role_slot_cleared', {
+    const outcome = roleSlotRoomRegistry.disconnectRolePeer({
       roomCode,
-      socketId: socket.id,
-      role: roomPeerRole,
-      consoleActivePeerSocketId:
-        current.roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
-      vrActivePeerSocketId:
-        current.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
+      peerSocketId: socket.id,
+      roomPeerRole,
     })
+    handleDisconnectOutcome(socket, outcome)
   })
 }
 
@@ -197,11 +258,8 @@ function registerConnectionEvents(roomCode: string, socket: Socket) {
   socket.on(
     CONNECTION_EVENT.DEVICE_STATUS,
     (_payload: unknown, ack?: (res: DeviceStatusResponse) => void) => {
-      const currentRoom = activeRooms.get(roomCode)
-      const isOppositeRolePeerPresent =
-        !!currentRoom && isRoomComplete(currentRoom.roleSlots)
       if (typeof ack === 'function') {
-        ack({ status: isOppositeRolePeerPresent ? 'active' : 'inactive' })
+        ack({ status: roleSlotRoomRegistry.getDeviceStatus(roomCode) })
       }
     },
   )
@@ -227,28 +285,25 @@ const ROLE_PEER_REPLACED_LOG_EVENT = {
   [ROOM_PEER_ROLE.Console]: 'socket.room.console_role_peer_replaced',
 } as const satisfies Record<RoomPeerRole, string>
 
-function replaceRolePeer(
-  roomCode: string,
-  room: Room,
+function handleRolePeerReplaced(
   incomingSocket: SocketWithRole,
-  roomPeerRole: RoomPeerRole,
+  outcome: RolePeerReplacedOutcome,
 ) {
-  const roleSlot = room.roleSlots[roomPeerRole]
-  const replacedSocketId = roleSlot.activePeerSocketId!
-  const replacedSocket = incomingSocket.nsp.sockets.get(replacedSocketId)
-
-  roleSlot.activePeerSocketId = incomingSocket.id
-  activeRooms.set(roomCode, room)
-  incomingSocket.join(roomCode)
+  const {
+    roomCode,
+    roomPeerRole,
+    replacedPeerSocketId,
+    activePeerSocketId,
+    roomComplete,
+  } = outcome
+  const replacedSocket = incomingSocket.nsp.sockets.get(replacedPeerSocketId)
 
   logger.info(ROLE_PEER_REPLACED_LOG_EVENT[roomPeerRole], {
     roomCode,
-    replacedSocketId,
-    activePeerSocketId: incomingSocket.id,
+    replacedSocketId: replacedPeerSocketId,
+    activePeerSocketId,
     role: roomPeerRole,
-    consoleActivePeerSocketId:
-      room.roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
-    vrActivePeerSocketId: room.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
+    ...getRoleSlotLogContext(roomCode),
   })
 
   if (replacedSocket) {
@@ -261,9 +316,26 @@ function replaceRolePeer(
     replacedSocket.disconnect(true)
   }
 
-  registerRoomEvents(roomCode, room, incomingSocket, roomPeerRole, {
+  registerRoomEvents(roomCode, incomingSocket, roomPeerRole, {
     emitMemberJoined: false,
+    roomComplete,
   })
+}
+
+function handleRoleSlotJoined(
+  socket: SocketWithRole,
+  outcome: RoleSlotJoinedOutcome,
+) {
+  const { roomCode, roomPeerRole, roomComplete } = outcome
+
+  logger.info('socket.room.role_slot_joined', {
+    socketId: socket.id,
+    roomCode,
+    role: roomPeerRole,
+    ...getRoleSlotLogContext(roomCode),
+  })
+
+  registerRoomEvents(roomCode, socket, roomPeerRole, { roomComplete })
 }
 
 function registerSocketHandlers(
@@ -329,73 +401,57 @@ export function connectionHandler(socket: Socket) {
 
   socketWithRole.data.roomPeerRole = roomPeerRole
 
-  if (!activeRooms.has(roomCode)) {
-    activeRooms.set(roomCode, {
-      id: roomCode,
-      createdAt: Date.now(),
-      roleSlots: createEmptyRoleSlots(),
-    })
-  }
-
-  const room = activeRooms.get(roomCode)!
-  const roleSlot = room.roleSlots[roomPeerRole]
-
-  if (roleSlot.activePeerSocketId !== null) {
-    replaceRolePeer(roomCode, room, socketWithRole, roomPeerRole)
-    registerSocketHandlers(roomCode, socketWithRole, isSim)
-    return
-  }
-
-  socket.join(roomCode)
-  roleSlot.activePeerSocketId = socket.id
-  activeRooms.set(roomCode, room)
-
-  logger.info('socket.room.role_slot_joined', {
-    socketId: socket.id,
+  const joinOutcome = roleSlotRoomRegistry.joinRoleSlot({
     roomCode,
-    role: roomPeerRole,
-    consoleActivePeerSocketId:
-      room.roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
-    vrActivePeerSocketId: room.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
+    peerSocketId: socket.id,
+    roomPeerRole,
   })
 
-  registerRoomEvents(roomCode, room, socketWithRole, roomPeerRole)
+  socket.join(roomCode)
+
+  switch (joinOutcome.kind) {
+    case 'role_peer_replaced':
+      handleRolePeerReplaced(socketWithRole, joinOutcome)
+      break
+    case 'role_slot_joined':
+      handleRoleSlotJoined(socketWithRole, joinOutcome)
+      break
+  }
+
   registerSocketHandlers(roomCode, socketWithRole, isSim)
 }
 
 // ── Stale room cleanup ────────────────────────────────────────────────────
 
-setInterval(
-  () => {
-    const now = Date.now()
-    activeRooms.forEach((room, code) => {
-      if (
-        now - room.createdAt > 5 * 60 * 60 * 1000 ||
-        isRoomEmpty(room.roleSlots)
-      ) {
-        activeRooms.delete(code)
-        logger.info('socket.room.cleaned', {
-          roomCode: code,
-          ageMs: now - room.createdAt,
-          consoleActivePeerSocketId:
-            room.roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId,
-          vrActivePeerSocketId:
-            room.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId,
-        })
-      }
-    })
-  },
-  30 * 60 * 1000,
-)
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000
+const SNAPSHOT_INTERVAL_MS = 0.5 * 60 * 1000
 
-setInterval(
-  () => {
-    if (activeRooms.size === 0) return
+export function runStaleRoomCleanup(now = Date.now()): RoomEvictedOutcome[] {
+  const evictedRooms = roleSlotRoomRegistry.evictStaleRooms(now)
 
-    logger.debug('socket.rooms.snapshot', {
-      activeRoomCount: activeRooms.size,
-      rooms: [...activeRooms.entries()],
+  for (const outcome of evictedRooms) {
+    logger.info('socket.room.cleaned', {
+      roomCode: outcome.roomCode,
+      ageMs: outcome.ageMs,
+      reason: outcome.reason,
+      consoleActivePeerSocketId: outcome.consoleActivePeerSocketId,
+      vrActivePeerSocketId: outcome.vrActivePeerSocketId,
     })
-  },
-  0.5 * 60 * 1000,
-)
+  }
+
+  return evictedRooms
+}
+
+setInterval(() => {
+  runStaleRoomCleanup()
+}, CLEANUP_INTERVAL_MS)
+
+setInterval(() => {
+  const activeRoomCount = roleSlotRoomRegistry.getActiveRoomCount()
+  if (activeRoomCount === 0) return
+
+  logger.debug('socket.rooms.snapshot', {
+    activeRoomCount,
+    rooms: roleSlotRoomRegistry.listRoomSnapshots(),
+  })
+}, SNAPSHOT_INTERVAL_MS)
