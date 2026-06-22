@@ -19,11 +19,13 @@ import {
 import { createAppLogger } from '@virtality/shared/observability'
 import {
   createRoleSlotRoomRegistry,
+  EMPTY_ROLE_SLOT_PEER_LOG_CONTEXT,
   roleSlotPeerLogContext,
   type DisconnectRolePeerOutcome,
   type RelayBlockedOutcome,
   type RolePeerReplacedOutcome,
   type RoleSlotJoinedOutcome,
+  type RoleSlotPeerLogContext,
   type RoleSlotRoomRegistry,
   type RoomEvictedOutcome,
 } from '../domain/role-slot-room-registry'
@@ -57,9 +59,13 @@ export function hasActiveRoomForTests(roomCode: string): boolean {
   return roleSlotRoomRegistry.hasRoom(roomCode)
 }
 
-function getRoleSlotLogContext(roomCode: string) {
+function getRoleSlotLogContext(roomCode: string): RoleSlotPeerLogContext {
   const snapshot = roleSlotRoomRegistry.getRoomSnapshot(roomCode)
-  return snapshot ? roleSlotPeerLogContext(snapshot.roleSlots) : {}
+  if (!snapshot) {
+    return EMPTY_ROLE_SLOT_PEER_LOG_CONTEXT
+  }
+
+  return roleSlotPeerLogContext(snapshot.roleSlots)
 }
 
 function logRelayBlocked(
@@ -106,7 +112,7 @@ function registerRelayEvents(
       socketId: socket.id,
     })
     socket.on(entry.name, (payload: unknown) => {
-      const roomPeerRole = socket.data.roomPeerRole as RoomPeerRole | undefined
+      const roomPeerRole = socket.data.roomPeerRole
 
       if (!roomPeerRole) {
         logger.warn('socket.relay.blocked', {
@@ -388,10 +394,12 @@ export function connectionHandler(socket: Socket) {
 
   const roomPeerRole = parseRoomPeerRole(roleQuery)
   if (!roomPeerRole) {
-    const message =
-      roleQuery === undefined || roleQuery === ''
-        ? 'Room peer role is required.'
-        : 'Unknown room peer role.'
+    let message: string
+    if (roleQuery === undefined || roleQuery === '') {
+      message = 'Room peer role is required.'
+    } else {
+      message = 'Unknown room peer role.'
+    }
     rejectConnection(socket, 'invalid_room_peer_role', message, {
       roomCode,
       role: roleQuery,
@@ -430,12 +438,19 @@ export function runStaleRoomCleanup(now = Date.now()): RoomEvictedOutcome[] {
   const evictedRooms = roleSlotRoomRegistry.evictStaleRooms(now)
 
   for (const outcome of evictedRooms) {
+    const {
+      roomCode,
+      ageMs,
+      reason,
+      consoleActivePeerSocketId,
+      vrActivePeerSocketId,
+    } = outcome
     logger.info('socket.room.cleaned', {
-      roomCode: outcome.roomCode,
-      ageMs: outcome.ageMs,
-      reason: outcome.reason,
-      consoleActivePeerSocketId: outcome.consoleActivePeerSocketId,
-      vrActivePeerSocketId: outcome.vrActivePeerSocketId,
+      roomCode,
+      ageMs,
+      reason,
+      consoleActivePeerSocketId,
+      vrActivePeerSocketId,
     })
   }
 

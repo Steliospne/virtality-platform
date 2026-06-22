@@ -1,7 +1,3 @@
-import { createServer, type Server as HttpServer } from 'http'
-import { type AddressInfo } from 'node:net'
-import { Server } from 'socket.io'
-import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client'
 import {
   afterAll,
   afterEach,
@@ -11,71 +7,31 @@ import {
   expect,
   it,
 } from 'vitest'
-import {
-  CONNECTION_EVENT,
-  ROOM_EVENT,
-  ROOM_PEER_ROLE,
-} from '@virtality/shared/types'
+import { ROOM_EVENT, ROOM_PEER_ROLE } from '@virtality/shared/types'
 import {
   connectionHandler,
   hasActiveRoomForTests,
   resetActiveRoomsForTests,
 } from './device-event-controller'
-import { waitForConnect, waitForEvent } from './socket-test-helpers'
+import {
+  createSocketTestHarness,
+  waitForConnect,
+  waitForEvent,
+} from './socket-test-helpers'
 
 describe('device event controller connection handler', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
   })
 
-  afterEach(() => {
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
-  })
+  afterEach(() => harness.disconnectClients())
 
-  function connectClient(query: {
-    roomCode: string
-    role?: string
-  }): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   it('creates registry room state on first join and replaces occupied role slots', async () => {
     const roomCode = 'registry-connection-room'

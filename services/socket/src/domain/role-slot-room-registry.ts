@@ -89,6 +89,11 @@ export type RoleSlotPeerLogContext = {
   vrActivePeerSocketId: string | null
 }
 
+export const EMPTY_ROLE_SLOT_PEER_LOG_CONTEXT: RoleSlotPeerLogContext = {
+  consoleActivePeerSocketId: null,
+  vrActivePeerSocketId: null,
+}
+
 export type RoomEvictedOutcome = {
   kind: 'room_evicted'
   roomCode: string
@@ -158,6 +163,13 @@ export function createRoleSlotRoomRegistry(
       createdAt: seededRoom.createdAt,
       roleSlots: seededRoom.roleSlots ?? createEmptyRoleSlots(),
     })
+  }
+
+  function blockRelay(
+    reason: RelayBlockedOutcome['reason'],
+    activePeerSocketId: string | null,
+  ): RelayBlockedOutcome {
+    return { kind: 'relay_blocked', reason, activePeerSocketId }
   }
 
   function getOrCreateRoom(roomCode: string): Room {
@@ -281,20 +293,12 @@ export function createRoleSlotRoomRegistry(
     authorizeRelay({ roomCode, peerSocketId, roomPeerRole }) {
       const room = rooms.get(roomCode)
       if (!room) {
-        return {
-          kind: 'relay_blocked',
-          reason: 'room_not_found',
-          activePeerSocketId: null,
-        }
+        return blockRelay('room_not_found', null)
       }
 
       const activePeerSocketId = room.roleSlots[roomPeerRole].activePeerSocketId
       if (activePeerSocketId !== peerSocketId) {
-        return {
-          kind: 'relay_blocked',
-          reason: 'not_active_role_peer',
-          activePeerSocketId,
-        }
+        return blockRelay('not_active_role_peer', activePeerSocketId)
       }
 
       return {

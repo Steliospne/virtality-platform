@@ -1,7 +1,4 @@
-import { createServer, type Server as HttpServer } from 'http'
-import { type AddressInfo } from 'node:net'
-import { Server } from 'socket.io'
-import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client'
+import type { Socket as ClientSocket } from 'socket.io-client'
 import {
   afterAll,
   afterEach,
@@ -25,50 +22,13 @@ import {
   hasActiveRoomForTests,
   resetActiveRoomsForTests,
 } from '../sockets/device-event-controller'
-import { waitForConnect, waitForEvent } from './socket-test-helpers'
-
-type TestQuery = {
-  roomCode: string
-  role?: string
-}
-
-function waitForDisconnect(
-  socket: ClientSocket,
-  timeoutMs = 3000,
-): Promise<void> {
-  if (!socket.connected) return Promise.resolve()
-
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('Timed out waiting for socket disconnect'))
-    }, timeoutMs)
-
-    socket.once('disconnect', () => {
-      clearTimeout(timer)
-      resolve()
-    })
-  })
-}
-
-function expectNoEvent(
-  socket: ClientSocket,
-  event: string,
-  windowMs = 500,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onEvent = () => {
-      clearTimeout(timer)
-      reject(new Error(`Unexpected event "${event}" received`))
-    }
-
-    const timer = setTimeout(() => {
-      socket.off(event, onEvent)
-      resolve()
-    }, windowMs)
-
-    socket.on(event, onEvent)
-  })
-}
+import {
+  createSocketTestHarness,
+  expectNoEvent,
+  waitForConnect,
+  waitForDisconnect,
+  waitForEvent,
+} from './socket-test-helpers'
 
 async function waitForRoomRemoval(
   roomCode: string,
@@ -85,55 +45,18 @@ async function waitForRoomRemoval(
 }
 
 describe('role-slot room entry', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
   })
 
-  afterEach(() => {
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
-  })
+  afterEach(() => harness.disconnectClients())
 
-  function connectClient(query: TestQuery): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   it('lets console and vr join the same room and signals room complete', async () => {
     const roomCode = 'role-pair-room'
@@ -201,55 +124,18 @@ describe('role-slot room entry', () => {
 })
 
 describe('Console role peer replacement', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
   })
 
-  afterEach(() => {
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
-  })
+  afterEach(() => harness.disconnectClients())
 
-  function connectClient(query: TestQuery): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   it('replaces the active console peer instead of rejecting the room as full', async () => {
     const roomCode = 'console-replacement-room'
@@ -403,55 +289,18 @@ describe('Console role peer replacement', () => {
 })
 
 describe('VR role peer replacement', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
   })
 
-  afterEach(() => {
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
-  })
+  afterEach(() => harness.disconnectClients())
 
-  function connectClient(query: TestQuery): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   it('replaces the active VR peer instead of rejecting the room as full', async () => {
     const roomCode = 'vr-replacement-room'
@@ -561,36 +410,12 @@ describe('VR role peer replacement', () => {
 })
 
 describe('relay protection from replaced peers', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
   let originalDisconnect: ServerSocket['disconnect']
   const deferredServerDisconnects: ServerSocket[] = []
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
@@ -610,21 +435,10 @@ describe('relay protection from replaced peers', () => {
     for (const socket of deferredServerDisconnects) {
       originalDisconnect.call(socket, true)
     }
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
+    harness.disconnectClients()
   })
 
-  function connectClient(query: TestQuery): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   it('blocks treatment, device, and casting relays from a replaced VR peer', async () => {
     const roomCode = 'vr-relay-block-room'
@@ -728,55 +542,18 @@ describe('relay protection from replaced peers', () => {
 })
 
 describe('active role peer departure', () => {
-  let httpServer: HttpServer
-  let port: number
-  const clients: ClientSocket[] = []
+  const harness = createSocketTestHarness(connectionHandler)
 
-  beforeAll(async () => {
-    httpServer = createServer()
-    const io = new Server(httpServer, {
-      cors: { origin: '*' },
-    })
-    io.on(CONNECTION_EVENT.CONNECTION, connectionHandler)
-
-    await new Promise<void>((resolve) => {
-      httpServer.listen(0, '127.0.0.1', () => resolve())
-    })
-    port = (httpServer.address() as AddressInfo).port
-  })
-
-  afterAll(async () => {
-    for (const client of clients) {
-      client.disconnect()
-    }
-    await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
-  })
+  beforeAll(() => harness.start())
+  afterAll(() => harness.stop())
 
   beforeEach(() => {
     resetActiveRoomsForTests()
   })
 
-  afterEach(() => {
-    while (clients.length > 0) {
-      clients.pop()?.disconnect()
-    }
-  })
+  afterEach(() => harness.disconnectClients())
 
-  function connectClient(query: TestQuery): ClientSocket {
-    const client = ioClient(`http://127.0.0.1:${port}`, {
-      query,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnection: false,
-    })
-    clients.push(client)
-    return client
-  }
+  const connectClient = harness.connectClient.bind(harness)
 
   async function queryDeviceStatus(
     socket: ClientSocket,
