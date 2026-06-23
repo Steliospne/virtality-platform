@@ -1,4 +1,4 @@
-import { X, Loader2 } from 'lucide-react'
+import { CheckCircle, Loader2, X } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import {
   Select,
@@ -17,7 +17,6 @@ import ErrorToasty from './ErrorToasty'
 import { cn } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
-import { useVrHeadsetPresence } from '@/hooks/use-vr-headset-presence'
 import { isDashboardDeviceSelectable } from '@/lib/patient-dashboard-device-selection'
 import type { DeviceVrPresenceStatus } from '@/lib/vr-presence'
 
@@ -50,7 +49,7 @@ function getClientConnectionLabel(
     case 'failed':
       return connectionError ?? 'Connection failed'
     default:
-      return connected ? 'Online' : 'Offline'
+      return connected ? 'Connected' : 'Disconnected'
   }
 }
 
@@ -90,7 +89,6 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
     connect,
     disconnect,
   } = useSocketConnection({ device: selectedDevice })
-  const headsetPresent = useVrHeadsetPresence(selectedDevice)
   const presenceByDeviceId = useVrPresencePolling({
     enabled: isOpen,
     devices: devices.map((device) => device.data),
@@ -137,27 +135,25 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
   return (
     <div className='p-2'>
       <h1 className='text-center font-semibold'>VR Headset Connection</h1>
-      <div className='flex gap-2'>
+      <div className='flex items-center gap-2'>
         <h4>Client:</h4>
         <span
           className={cn(
+            'inline-flex items-center gap-1',
             getClientConnectionColorClass(connectionState, connected),
           )}
         >
+          {connected && <CheckCircle className='size-4' />}
+          {(connectionState === 'connecting' ||
+            connectionState === 'reconnecting') && (
+            <Loader2 className='size-4 animate-spin' />
+          )}
           {getClientConnectionLabel(
             connectionState,
             reconnectAttempt,
             connected,
             connectionError,
           )}
-        </span>
-      </div>
-      <div className='flex gap-2'>
-        <h4>Device:</h4>
-        <span
-          className={cn(headsetPresent ? 'text-green-500' : 'text-red-500')}
-        >
-          {headsetPresent ? 'Online' : 'Offline'}
         </span>
       </div>
 
