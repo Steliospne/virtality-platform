@@ -38,7 +38,7 @@ import VRControlPanel from '@/components/ui/vr-control-panel'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { cn } from '@/lib/utils'
 import { DeviceContextValue, useDeviceContext } from '@/context/device-context'
-import { useRow } from 'tinybase/ui-react'
+import { useRow, useStore } from 'tinybase/ui-react'
 import { PatientLocalData } from '@/types/models'
 import {
   PROGRAM_EVENT,
@@ -53,6 +53,7 @@ import { usePatient, usePatientSessions } from '@virtality/react-query'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'
 import { useFeatureFlagResult } from 'posthog-js/react'
+import { resolveSavedHeadsetSelection } from '@/lib/patient-dashboard-device-selection'
 
 let wakeLock: WakeLockSentinel | null = null
 
@@ -97,15 +98,18 @@ const ControlPanel = ({
   const missingSettings = !selectedAvatar || !selectedMap
 
   const patientLocalData = useRow('patients', patientId) as PatientLocalData
+  const store = useStore()
 
   useEffect(() => {
-    const newDevice =
-      devices?.find(
-        (device) => device.data.id === patientLocalData?.lastHeadset,
-      ) ?? null
+    const { selectedDevice: restoredDevice, shouldClearSavedHeadset } =
+      resolveSavedHeadsetSelection(devices, patientLocalData?.lastHeadset)
 
-    if (selectedDevice?.data.id !== newDevice?.data.id) {
-      setSelectedDevice(newDevice)
+    if (shouldClearSavedHeadset) {
+      store?.delCell('patients', patientId, 'lastHeadset')
+    }
+
+    if (selectedDevice?.data.id !== restoredDevice?.data.id) {
+      setSelectedDevice(restoredDevice)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [devices, patientLocalData, selectedDevice])

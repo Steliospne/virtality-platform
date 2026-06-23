@@ -19,7 +19,12 @@ import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { subscribe, createDeviceEmitter } from '@/lib/device-event-controller'
 import { ROOM_EVENT } from '@virtality/shared/types'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
+import { isDashboardDeviceSelectable } from '@/lib/patient-dashboard-device-selection'
 import type { DeviceVrPresenceStatus } from '@/lib/vr-presence'
+
+function isDashboardDeviceRowDisabled(device: VRDevice): boolean {
+  return device.socket.connected || !isDashboardDeviceSelectable(device.data)
+}
 
 function getClientConnectionColorClass(
   connectionState: SocketConnectionState,
@@ -118,6 +123,9 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
 
   const handleDeviceSelection = (value: string) => {
     const device = devices?.find((device) => device.data.id === value) ?? null
+    if (device && !isDashboardDeviceSelectable(device.data)) {
+      return
+    }
     setSelectedDevice(device)
     store?.setCell('patients', patientId, 'lastHeadset', device?.data.id ?? '')
   }
@@ -183,7 +191,7 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
             {devices?.map((device) => {
               return (
                 <SelectItem
-                  disabled={device.socket.connected}
+                  disabled={isDashboardDeviceRowDisabled(device)}
                   key={device.data.id}
                   value={device.data.id}
                 >
