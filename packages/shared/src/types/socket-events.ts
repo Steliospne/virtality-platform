@@ -9,6 +9,7 @@ export const CONNECTION_EVENT = {
   DISCONNECTION: 'disconnect',
   ERROR: 'onError',
   DEVICE_STATUS: 'onDeviceStatus',
+  VR_PRESENCE: 'checkVrPresence',
 } as const
 
 export type ConnectionEventKey = keyof typeof CONNECTION_EVENT
@@ -223,6 +224,14 @@ export type ReplacementNoticePayload = {
 
 export type DeviceStatusResponse = {
   status: 'active' | 'inactive'
+}
+
+export type VrPresenceRequest = {
+  roomCodes: string[]
+}
+
+export type VrPresenceResponse = {
+  presence: Record<string, boolean>
 }
 
 export const ROOM_PEER_ROLE = {

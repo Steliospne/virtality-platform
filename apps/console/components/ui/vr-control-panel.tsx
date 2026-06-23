@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import {
   Select,
@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { subscribe, createDeviceEmitter } from '@/lib/device-event-controller'
 import { ROOM_EVENT } from '@virtality/shared/types'
+import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
+import type { DeviceVrPresenceStatus } from '@/lib/vr-presence'
 
 function getClientConnectionColorClass(
   connectionState: SocketConnectionState,
@@ -48,7 +50,29 @@ function getClientConnectionLabel(
   }
 }
 
-const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
+type VRControlPanelProps = {
+  devices: VRDevice[]
+  isOpen: boolean
+}
+
+function DevicePresenceStatus({ status }: { status: DeviceVrPresenceStatus }) {
+  switch (status) {
+    case 'loading':
+      return <Loader2 className='text-muted-foreground size-4 animate-spin' />
+    case 'online':
+      return <span className='text-green-500'>Online</span>
+    case 'offline':
+      return <span className='text-red-500'>Offline</span>
+    case 'unpaired':
+      return <span className='text-muted-foreground'>Unpaired</span>
+    default: {
+      const unhandledStatus: never = status
+      return unhandledStatus
+    }
+  }
+}
+
+const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
   const { state, handler, patientId } = usePatientDashboard()
   const { selectedDevice } = state
   const { setSelectedDevice } = handler
@@ -63,6 +87,10 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
     connect,
     disconnect,
   } = useSocketConnection({ device: selectedDevice })
+  const presenceByDeviceId = useVrPresencePolling({
+    enabled: isOpen,
+    devices: devices.map((device) => device.data),
+  })
 
   const handleVRConnection = async () => {
     const deviceId = selectedDevice?.data.deviceId
@@ -159,7 +187,12 @@ const VRControlPanel = ({ devices }: { devices: VRDevice[] }) => {
                   key={device.data.id}
                   value={device.data.id}
                 >
-                  {device.data.name}
+                  <div className='flex w-full items-center justify-between gap-3'>
+                    <span>{device.data.name}</span>
+                    <DevicePresenceStatus
+                      status={presenceByDeviceId[device.data.id] ?? 'unpaired'}
+                    />
+                  </div>
                 </SelectItem>
               )
             })}

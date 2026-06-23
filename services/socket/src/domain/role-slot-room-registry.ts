@@ -110,6 +110,7 @@ export type RoleSlotRoomRegistry = {
   disconnectRolePeer(input: RoleSlotPeerInput): DisconnectRolePeerOutcome
   getRoomSnapshot(roomCode: string): RoomSnapshot | null
   getDeviceStatus(roomCode: string): DeviceStatus
+  getVrPresence(roomCodes: string[]): Record<string, boolean>
   authorizeRelay(input: RoleSlotPeerInput): RelayAuthorizationOutcome
   evictStaleRooms(now?: number): RoomEvictedOutcome[]
 }
@@ -288,6 +289,18 @@ export function createRoleSlotRoomRegistry(
       }
 
       return 'active'
+    },
+
+    getVrPresence(roomCodes) {
+      const presence: Record<string, boolean> = {}
+
+      for (const roomCode of roomCodes) {
+        const room = rooms.get(roomCode)
+        presence[roomCode] =
+          room?.roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId != null
+      }
+
+      return presence
     },
 
     authorizeRelay({ roomCode, peerSocketId, roomPeerRole }) {

@@ -448,6 +448,59 @@ describe('Role Slot Room Registry', () => {
     })
   })
 
+  describe('getVrPresence', () => {
+    it('returns false for missing rooms', () => {
+      expect(registry.getVrPresence(['missing-room'])).toEqual({
+        'missing-room': false,
+      })
+    })
+
+    it('returns true when the VR Role Slot is occupied', () => {
+      joinVr(registry, 'vr-present-room', 'vr-1')
+
+      expect(registry.getVrPresence(['vr-present-room'])).toEqual({
+        'vr-present-room': true,
+      })
+    })
+
+    it('returns false when only the console Role Slot is occupied', () => {
+      joinConsole(registry, 'console-only-room', 'console-1')
+
+      expect(registry.getVrPresence(['console-only-room'])).toEqual({
+        'console-only-room': false,
+      })
+    })
+
+    it('returns false after the VR peer disconnects normally', () => {
+      joinCompleteRoom(registry, 'vr-departed-room')
+      disconnectVr(registry, 'vr-departed-room', 'vr-1')
+
+      expect(registry.getVrPresence(['vr-departed-room'])).toEqual({
+        'vr-departed-room': false,
+      })
+    })
+
+    it('reflects the active VR peer after replacement', () => {
+      joinCompleteRoom(registry, 'vr-replacement-room')
+      joinVr(registry, 'vr-replacement-room', 'vr-2')
+
+      expect(registry.getVrPresence(['vr-replacement-room'])).toEqual({
+        'vr-replacement-room': true,
+      })
+    })
+
+    it('reports presence for multiple room codes in one call', () => {
+      joinVr(registry, 'room-a', 'vr-a')
+      joinConsole(registry, 'room-b', 'console-b')
+
+      expect(registry.getVrPresence(['room-a', 'room-b', 'room-c'])).toEqual({
+        'room-a': true,
+        'room-b': false,
+        'room-c': false,
+      })
+    })
+  })
+
   describe('authorizeRelay outcomes', () => {
     it('authorizes relay only for the current Active Role Peer', () => {
       joinConsole(registry, 'relay-room', 'console-1')

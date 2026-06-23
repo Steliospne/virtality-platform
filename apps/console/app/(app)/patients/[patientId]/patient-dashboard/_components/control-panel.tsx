@@ -574,7 +574,7 @@ const DeviceSelector = ({ devices, connected }: DeviceSelectorProps) => {
             <X />
           </Button>
         </div>
-        <VRControlPanel devices={devices} />
+        <VRControlPanel devices={devices} isOpen={openDevicePop} />
         <PopoverArrow className='fill-zinc-200 dark:fill-zinc-900' />
       </PopoverContent>
     </Popover>

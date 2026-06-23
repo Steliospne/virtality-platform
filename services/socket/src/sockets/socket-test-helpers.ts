@@ -5,8 +5,9 @@ import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client'
 import { CONNECTION_EVENT } from '@virtality/shared/types'
 
 export type SocketTestQuery = {
-  roomCode: string
+  roomCode?: string
   role?: string
+  mode?: string
 }
 
 export type SocketTestHarness = {

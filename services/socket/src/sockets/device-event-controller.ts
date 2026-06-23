@@ -13,6 +13,8 @@ import {
   type RoomCompletePayload,
   type MemberLeftPayload,
   type ReplacementNoticePayload,
+  type VrPresenceRequest,
+  type VrPresenceResponse,
   parseRoomPeerRole,
   DEVICE_RELAY,
 } from '@virtality/shared/types'
@@ -260,6 +262,29 @@ function registerRoomEvents(
 
 // ── Connection‑level events ────────────────────────────────────────────────
 
+function registerPresenceOnlyEvents(socket: Socket) {
+  socket.on(
+    CONNECTION_EVENT.VR_PRESENCE,
+    (
+      payload: VrPresenceRequest,
+      ack?: (response: VrPresenceResponse) => void,
+    ) => {
+      if (typeof ack !== 'function') {
+        return
+      }
+
+      const roomCodes = Array.isArray(payload?.roomCodes)
+        ? payload.roomCodes
+        : []
+      ack({ presence: roleSlotRoomRegistry.getVrPresence(roomCodes) })
+    },
+  )
+
+  logger.info('socket.presence.connected', {
+    socketId: socket.id,
+  })
+}
+
 function registerConnectionEvents(roomCode: string, socket: Socket) {
   socket.on(
     CONNECTION_EVENT.DEVICE_STATUS,
@@ -368,6 +393,12 @@ function registerSocketHandlers(
 export function connectionHandler(socket: Socket) {
   const isSim = process.env.SIM === 'true'
   const socketWithRole = socket as SocketWithRole
+  const connectionMode = socket.handshake.query.mode
+
+  if (connectionMode === 'presence') {
+    registerPresenceOnlyEvents(socket)
+    return
+  }
 
   const roomCode = socket.handshake.query.roomCode as string
   const roleQuery = socket.handshake.query.role
