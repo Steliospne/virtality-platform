@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from './select'
 import { VRDevice } from '@/types/models'
-import { useEffect, useState, MouseEvent } from 'react'
+import { MouseEvent } from 'react'
 import useSocketConnection, {
   type SocketConnectionState,
 } from '@/hooks/use-socket-connection'
@@ -16,9 +16,8 @@ import { useStore } from 'tinybase/ui-react'
 import ErrorToasty from './ErrorToasty'
 import { cn } from '@/lib/utils'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
-import { subscribe, createDeviceEmitter } from '@/lib/device-event-controller'
-import { ROOM_EVENT } from '@virtality/shared/types'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
+import { useVrHeadsetPresence } from '@/hooks/use-vr-headset-presence'
 import { isDashboardDeviceSelectable } from '@/lib/patient-dashboard-device-selection'
 import type { DeviceVrPresenceStatus } from '@/lib/vr-presence'
 
@@ -81,7 +80,6 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
   const { state, handler, patientId } = usePatientDashboard()
   const { selectedDevice } = state
   const { setSelectedDevice } = handler
-  const [deviceConnected, setDeviceConnected] = useState(false)
 
   const store = useStore()
   const {
@@ -92,6 +90,7 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
     connect,
     disconnect,
   } = useSocketConnection({ device: selectedDevice })
+  const headsetPresent = useVrHeadsetPresence(selectedDevice)
   const presenceByDeviceId = useVrPresencePolling({
     enabled: isOpen,
     devices: devices.map((device) => device.data),
@@ -117,7 +116,6 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
       }
     } else {
       disconnect()
-      setDeviceConnected(false)
     }
   }
 
@@ -135,21 +133,6 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
     setSelectedDevice(null)
     store?.delCell('patients', patientId, 'lastHeadset')
   }
-
-  useEffect(() => {
-    const socket = selectedDevice?.socket
-    if (!socket) return
-
-    const emitter = createDeviceEmitter(socket)
-    emitter.checkDeviceStatus((res) => {
-      setDeviceConnected(res.status === 'active')
-    })
-
-    return subscribe(socket, ROOM_EVENT, {
-      RoomComplete: () => setDeviceConnected(true),
-      MemberLeft: () => setDeviceConnected(false),
-    })
-  }, [selectedDevice])
 
   return (
     <div className='p-2'>
@@ -172,9 +155,9 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
       <div className='flex gap-2'>
         <h4>Device:</h4>
         <span
-          className={cn(deviceConnected ? 'text-green-500' : 'text-red-500')}
+          className={cn(headsetPresent ? 'text-green-500' : 'text-red-500')}
         >
-          {deviceConnected ? 'Online' : 'Offline'}
+          {headsetPresent ? 'Online' : 'Offline'}
         </span>
       </div>
 
