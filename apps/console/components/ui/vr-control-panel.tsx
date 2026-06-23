@@ -22,6 +22,10 @@ import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
 import { isDashboardDeviceSelectable } from '@/lib/patient-dashboard-device-selection'
 import type { DeviceVrPresenceStatus } from '@/lib/vr-presence'
 
+function isDashboardDeviceRowDisabled(device: VRDevice): boolean {
+  return device.socket.connected || !isDashboardDeviceSelectable(device.data)
+}
+
 function getClientConnectionColorClass(
   connectionState: SocketConnectionState,
   connected: boolean,
@@ -187,10 +191,7 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
             {devices?.map((device) => {
               return (
                 <SelectItem
-                  disabled={
-                    device.socket.connected ||
-                    !isDashboardDeviceSelectable(device.data)
-                  }
+                  disabled={isDashboardDeviceRowDisabled(device)}
                   key={device.data.id}
                   value={device.data.id}
                 >

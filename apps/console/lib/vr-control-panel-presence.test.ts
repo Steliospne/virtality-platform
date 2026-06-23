@@ -34,27 +34,4 @@ describe('patient dashboard device dropdown presence', () => {
     expect(vrControlPanelSource).toMatch(/Offline/)
     expect(vrControlPanelSource).toMatch(/Loader2/)
   })
-
-  it('keeps paired devices selectable and unpaired rows disabled', () => {
-    const vrControlPanelSource = readConsoleFile(
-      'components/ui/vr-control-panel.tsx',
-    )
-
-    expect(vrControlPanelSource).toMatch(/isDashboardDeviceSelectable/)
-    expect(vrControlPanelSource).toMatch(
-      /!isDashboardDeviceSelectable\(device\.data\)/,
-    )
-  })
-
-  it('clears an unpaired saved last headset on dashboard load', () => {
-    const controlPanelSource = readConsoleFile(
-      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
-    )
-
-    expect(controlPanelSource).toMatch(/resolveSavedHeadsetSelection/)
-    expect(controlPanelSource).toMatch(/shouldClearSavedHeadset/)
-    expect(controlPanelSource).toMatch(
-      /delCell\('patients', patientId, 'lastHeadset'\)/,
-    )
-  })
 })

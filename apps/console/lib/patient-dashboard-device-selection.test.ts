@@ -2,13 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   isDashboardDeviceSelectable,
   resolveSavedHeadsetSelection,
-} from './patient-dashboard-device-selection'
+  type DashboardDevice,
+} from './patient-dashboard-device-selection.js'
 
 type TestDevice = {
-  data: {
-    id: string
-    deviceId: string | null
-  }
+  data: DashboardDevice
 }
 
 const devices: TestDevice[] = [
@@ -28,6 +26,10 @@ describe('patient dashboard device selection', () => {
   })
 
   it('restores a paired saved last headset without clearing convenience state', () => {
+    expect(resolveSavedHeadsetSelection(devices, 'device-online')).toEqual({
+      selectedDevice: devices[0],
+      shouldClearSavedHeadset: false,
+    })
     expect(resolveSavedHeadsetSelection(devices, 'device-offline')).toEqual({
       selectedDevice: devices[1],
       shouldClearSavedHeadset: false,
@@ -43,6 +45,13 @@ describe('patient dashboard device selection', () => {
 
   it('leaves selection empty when no saved last headset exists', () => {
     expect(resolveSavedHeadsetSelection(devices, undefined)).toEqual({
+      selectedDevice: null,
+      shouldClearSavedHeadset: false,
+    })
+  })
+
+  it('leaves selection empty when the saved last headset is no longer listed', () => {
+    expect(resolveSavedHeadsetSelection(devices, 'missing-device')).toEqual({
       selectedDevice: null,
       shouldClearSavedHeadset: false,
     })
