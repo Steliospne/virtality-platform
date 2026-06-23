@@ -24,15 +24,17 @@ function isDashboardDeviceRowDisabled(device: VRDevice): boolean {
   return device.socket.connected || !isDashboardDeviceSelectable(device.data)
 }
 
-function getClientConnectionColorClass(
+function getClientConnectionBadgeClass(
   connectionState: SocketConnectionState,
   connected: boolean,
 ): string {
   if (connectionState === 'connecting' || connectionState === 'reconnecting') {
-    return 'text-amber-500'
+    return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300'
   }
 
-  return connected ? 'text-green-500' : 'text-red-500'
+  return connected
+    ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300'
+    : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300'
 }
 
 function getClientConnectionLabel(
@@ -59,15 +61,52 @@ type VRControlPanelProps = {
 }
 
 function DevicePresenceStatus({ status }: { status: DeviceVrPresenceStatus }) {
+  const statusClassName =
+    'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium'
+
   switch (status) {
     case 'loading':
-      return <Loader2 className='text-muted-foreground size-4 animate-spin' />
+      return (
+        <span className={cn(statusClassName, 'text-muted-foreground')}>
+          <Loader2 className='size-3 animate-spin' />
+          Checking
+        </span>
+      )
     case 'online':
-      return <span className='text-green-500'>Online</span>
+      return (
+        <span
+          className={cn(
+            statusClassName,
+            'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300',
+          )}
+        >
+          <span className='size-1.5 rounded-full bg-current' />
+          Online
+        </span>
+      )
     case 'offline':
-      return <span className='text-red-500'>Offline</span>
+      return (
+        <span
+          className={cn(
+            statusClassName,
+            'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300',
+          )}
+        >
+          <span className='size-1.5 rounded-full bg-current' />
+          Offline
+        </span>
+      )
     case 'unpaired':
-      return <span className='text-muted-foreground'>Unpaired</span>
+      return (
+        <span
+          className={cn(
+            statusClassName,
+            'bg-muted text-muted-foreground dark:bg-zinc-800',
+          )}
+        >
+          Unpaired
+        </span>
+      )
     default: {
       const unhandledStatus: never = status
       return unhandledStatus
@@ -126,87 +165,124 @@ const VRControlPanel = ({ devices, isOpen }: VRControlPanelProps) => {
     store?.setCell('patients', patientId, 'lastHeadset', device?.data.id ?? '')
   }
 
-  const handleDeviceSelectionClear = (e: MouseEvent) => {
-    e.stopPropagation()
+  const clearDeviceSelection = () => {
     setSelectedDevice(null)
     store?.delCell('patients', patientId, 'lastHeadset')
   }
 
+  const handleDeviceSelectionClear = (e: MouseEvent) => {
+    e.stopPropagation()
+    clearDeviceSelection()
+  }
+
+  const renderClientStatus = (className?: string) => (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium',
+        getClientConnectionBadgeClass(connectionState, connected),
+        className,
+      )}
+    >
+      {connected && <CheckCircle className='size-3.5' />}
+      {(connectionState === 'connecting' ||
+        connectionState === 'reconnecting') && (
+        <Loader2 className='size-3.5 animate-spin' />
+      )}
+      {getClientConnectionLabel(
+        connectionState,
+        reconnectAttempt,
+        connected,
+        connectionError,
+      )}
+    </span>
+  )
+
+  const renderDeviceSelect = () => (
+    <div className='relative'>
+      <Select
+        value={selectedDevice?.data.id ?? ''}
+        onValueChange={handleDeviceSelection}
+      >
+        <SelectTrigger className='w-full' disabled={connected}>
+          <SelectValue placeholder='Select a device' />
+        </SelectTrigger>
+
+        <SelectContent className='dark:bg-zinc-700'>
+          {devices?.map((device) => {
+            return (
+              <SelectItem
+                disabled={isDashboardDeviceRowDisabled(device)}
+                key={device.data.id}
+                value={device.data.id}
+              >
+                <div className='flex w-full items-center justify-between gap-3'>
+                  <span>{device.data.name}</span>
+                  <DevicePresenceStatus
+                    status={presenceByDeviceId[device.data.id] ?? 'unpaired'}
+                  />
+                </div>
+              </SelectItem>
+            )
+          })}
+        </SelectContent>
+      </Select>
+      {selectedDevice && (
+        <Button
+          onClick={handleDeviceSelectionClear}
+          size='icon'
+          variant='ghost'
+          disabled={connected}
+          className='absolute top-[10px] right-[30px] size-4 rounded-sm hover:bg-zinc-200 hover:dark:bg-zinc-600'
+        >
+          <X className='p-0.5' />
+        </Button>
+      )}
+    </div>
+  )
+
+  const renderConnectionButton = (className?: string) => (
+    <Button
+      variant={connected ? 'destructive' : 'primary'}
+      onClick={handleVRConnection}
+      className={cn('w-full', className)}
+    >
+      {connected
+        ? 'Disconnect'
+        : connectionState === 'failed'
+          ? 'Retry'
+          : 'Connect'}
+    </Button>
+  )
+
   return (
-    <div className='p-2'>
-      <h1 className='text-center font-semibold'>VR Headset Connection</h1>
-      <div className='flex items-center gap-2'>
-        <h4>Client:</h4>
+    <div className='space-y-4 p-3'>
+      <div className='grid grid-cols-[3px_1fr] gap-x-3'>
         <span
           className={cn(
-            'inline-flex items-center gap-1',
-            getClientConnectionColorClass(connectionState, connected),
+            'rounded-full',
+            connected ? 'bg-green-500' : 'bg-red-500',
           )}
-        >
-          {connected && <CheckCircle className='size-4' />}
-          {(connectionState === 'connecting' ||
-            connectionState === 'reconnecting') && (
-            <Loader2 className='size-4 animate-spin' />
-          )}
-          {getClientConnectionLabel(
-            connectionState,
-            reconnectAttempt,
-            connected,
-            connectionError,
-          )}
-        </span>
+        />
+
+        <div className='space-y-5'>
+          <div className='space-y-1'>
+            <div className='flex items-center justify-between gap-2'>
+              <h1 className='text-sm font-semibold'>Client</h1>
+              {renderClientStatus()}
+            </div>
+            <p className='text-muted-foreground text-xs'>
+              Console connection to the VR headset.
+            </p>
+          </div>
+
+          <div className='space-y-2'>
+            <h2 className='text-sm font-semibold'>Device</h2>
+            {renderDeviceSelect()}
+          </div>
+        </div>
       </div>
 
-      <div className='relative'>
-        <Select
-          value={selectedDevice?.data.id ?? ''}
-          onValueChange={handleDeviceSelection}
-        >
-          <SelectTrigger className='my-4 w-full' disabled={connected}>
-            <SelectValue placeholder='Select a device' />
-          </SelectTrigger>
-
-          <SelectContent className='dark:bg-zinc-700'>
-            {devices?.map((device) => {
-              return (
-                <SelectItem
-                  disabled={isDashboardDeviceRowDisabled(device)}
-                  key={device.data.id}
-                  value={device.data.id}
-                >
-                  <div className='flex w-full items-center justify-between gap-3'>
-                    <span>{device.data.name}</span>
-                    <DevicePresenceStatus
-                      status={presenceByDeviceId[device.data.id] ?? 'unpaired'}
-                    />
-                  </div>
-                </SelectItem>
-              )
-            })}
-          </SelectContent>
-        </Select>
-        {selectedDevice && (
-          <Button
-            onClick={handleDeviceSelectionClear}
-            size='icon'
-            variant='ghost'
-            disabled={connected}
-            className='absolute top-[10px] right-[30px] size-4 rounded-sm hover:bg-zinc-200 hover:dark:bg-zinc-600'
-          >
-            <X className='p-0.5' />
-          </Button>
-        )}
-      </div>
-
-      <div className='flex flex-col gap-4'>
-        <Button variant='primary' onClick={handleVRConnection}>
-          {connected
-            ? 'Disconnect'
-            : connectionState === 'failed'
-              ? 'Retry'
-              : 'Connect'}
-        </Button>
-      </div>
+      {renderConnectionButton()}
     </div>
   )
 }
