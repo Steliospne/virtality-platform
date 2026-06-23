@@ -17,7 +17,7 @@ describe('patient dashboard session launch seam', () => {
 
     expect(controlPanelSource).toMatch(/setProgramState\('launching'\)/)
     expect(controlPanelSource).toMatch(/isProgramLaunching/)
-    expect(controlPanelSource).toMatch(/disabled=\{isProgramLaunching\}/)
+    expect(controlPanelSource).toMatch(/isProgramLaunching \|\|/)
   })
 
   it('persists started sessions on StartAck via startFromAck', () => {
@@ -47,5 +47,22 @@ describe('patient dashboard session launch seam', () => {
     expect(stateSource).toMatch(/patientLocalData\.lastProgram/)
     expect(selectorSource).toMatch(/orderProgramsForDashboardSelection/)
     expect(selectorSource).toMatch(/lastProgram/)
+  })
+
+  it('gates Start and Warmup on headset presence separate from console connection', () => {
+    const controlPanelSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
+    )
+    const treatmentLaunchSource = readConsoleFile(
+      'lib/patient-dashboard-treatment-launch.ts',
+    )
+
+    expect(controlPanelSource).toMatch(/useVrHeadsetPresence/)
+    expect(controlPanelSource).toMatch(/canLaunchTreatment/)
+    expect(controlPanelSource).toMatch(/getTreatmentLaunchError/)
+    expect(controlPanelSource).toMatch(/treatmentLaunchReady/)
+    expect(treatmentLaunchSource).toMatch(
+      /Waiting for the VR headset to connect\./,
+    )
   })
 })

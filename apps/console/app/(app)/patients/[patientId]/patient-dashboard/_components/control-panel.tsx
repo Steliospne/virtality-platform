@@ -54,6 +54,11 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'
 import { useFeatureFlagResult } from 'posthog-js/react'
 import { resolveSavedHeadsetSelection } from '@/lib/patient-dashboard-device-selection'
+import {
+  canLaunchTreatment,
+  getTreatmentLaunchError,
+} from '@/lib/patient-dashboard-treatment-launch'
+import { useVrHeadsetPresence } from '@/hooks/use-vr-headset-presence'
 
 let wakeLock: WakeLockSentinel | null = null
 
@@ -94,6 +99,11 @@ const ControlPanel = ({
   // const { t } = getClientT(['patient-dashboard', 'common']);
 
   const { connected } = useSocketConnection({ device: selectedDevice })
+  const headsetPresent = useVrHeadsetPresence(selectedDevice)
+  const treatmentLaunchReady = canLaunchTreatment({
+    consoleConnected: connected,
+    headsetPresent,
+  })
 
   const missingSettings = !selectedAvatar || !selectedMap
 
@@ -118,7 +128,11 @@ const ControlPanel = ({
     if (!exercises?.length)
       return ErrorToasty('Please select program or use quick start!')
 
-    if (!connected) return ErrorToasty('Please connect with a device!')
+    const launchError = getTreatmentLaunchError({
+      consoleConnected: connected,
+      headsetPresent,
+    })
+    if (launchError) return ErrorToasty(launchError)
 
     if (!state.selectedAvatar || !state.selectedMap)
       return toast.error(
@@ -209,6 +223,12 @@ const ControlPanel = ({
         'You need to select both an avatar and map. Find them in Scene Settings.',
       )
 
+    const launchError = getTreatmentLaunchError({
+      consoleConnected: connected,
+      headsetPresent,
+    })
+    if (launchError) return ErrorToasty(launchError)
+
     const payload = {
       settings: {
         avatarId: selectedAvatar!.id,
@@ -247,6 +267,7 @@ const ControlPanel = ({
           isProgramInactive={isProgramInactive}
           isProgramActive={isProgramActive}
           isProgramLaunching={isProgramLaunching}
+          treatmentLaunchReady={treatmentLaunchReady}
           programStart={programStart}
           programEnd={programEnd}
           handleWarmupStart={handleWarmupStart}
@@ -298,6 +319,7 @@ interface ControlsProps {
   isProgramInactive: boolean
   isProgramActive: boolean
   isProgramLaunching: boolean
+  treatmentLaunchReady: boolean
   programStart: () => Id | undefined
   programEnd: () => void
   handleWarmupStart: () => Id | undefined
@@ -310,12 +332,17 @@ const Controls = ({
   isProgramInactive,
   isProgramActive,
   isProgramLaunching,
+  treatmentLaunchReady,
   programStart,
   programEnd,
   handleWarmupStart,
   skipExercise,
 }: ControlsProps) => {
   const StartProgramButton = useRef<HTMLButtonElement>(null)
+  const needsHeadsetForLaunch = isProgramInactive || isProgramPaused
+  const isStartDisabled =
+    isProgramLaunching || (needsHeadsetForLaunch && !treatmentLaunchReady)
+  const isWarmupStartDisabled = isProgramInactive && !treatmentLaunchReady
 
   useEffect(() => {
     const buttonRef = StartProgramButton.current
@@ -358,7 +385,7 @@ const Controls = ({
             variant='primary'
             size='icon'
             onClick={programStart}
-            disabled={isProgramLaunching}
+            disabled={isStartDisabled}
           >
             {isProgramInactive || isProgramPaused ? (
               <PlayCircle className='size-6' />
@@ -395,6 +422,7 @@ const Controls = ({
             variant={isProgramInactive ? 'primary' : 'destructive'}
             size='icon'
             onClick={handleWarmupStart}
+            disabled={isWarmupStartDisabled}
           >
             {isProgramInactive ? (
               <PlayCircle className='size-6' />
