@@ -203,7 +203,10 @@ const SessionDialog = () => {
       }}
     >
       <form id='session-completion-form' onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent onPointerDownOutside={handleClicksOutsideDialog}>
+        <DialogContent
+          className='flex max-h-[90vh] flex-col overflow-hidden'
+          onPointerDownOutside={handleClicksOutsideDialog}
+        >
           <DialogHeader>
             <DialogTitle>Session Completed</DialogTitle>
           </DialogHeader>
@@ -212,131 +215,143 @@ const SessionDialog = () => {
             outside VR.
           </DialogDescription>
 
-          <div className='space-y-4'>
-            <div className='space-y-3'>
-              <p className='text-sm font-medium'>Program Library</p>
-              <RadioGroup
-                value={saveChoice}
-                onValueChange={(value) =>
-                  setCompletionState((current) => ({
-                    ...current,
-                    saveChoice: value as SessionCompletionSaveChoice,
-                    showUpdateConfirmation: false,
-                  }))
-                }
-              >
-                <div className='flex items-start gap-3'>
-                  <RadioGroupItem
-                    value={SessionCompletionSaveChoice.FINISH_ONLY}
-                    id='finish-only'
-                  />
-                  <Label htmlFor='finish-only' className='font-normal'>
-                    Finish session only
-                  </Label>
-                </div>
-
-                {showUpdateSourceProgram && (
+          <div className='min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]'>
+            <div className='space-y-4 p-1 pr-3'>
+              <div className='space-y-3'>
+                <p className='text-sm font-medium'>Program Library</p>
+                <RadioGroup
+                  value={saveChoice}
+                  onValueChange={(value) =>
+                    setCompletionState((current) => ({
+                      ...current,
+                      saveChoice: value as SessionCompletionSaveChoice,
+                      showUpdateConfirmation: false,
+                    }))
+                  }
+                >
                   <div className='flex items-start gap-3'>
                     <RadioGroupItem
-                      value={SessionCompletionSaveChoice.UPDATE_SOURCE_PROGRAM}
-                      id='update-source-program'
+                      value={SessionCompletionSaveChoice.FINISH_ONLY}
+                      id='finish-only'
+                    />
+                    <Label htmlFor='finish-only' className='font-normal'>
+                      Finish session only
+                    </Label>
+                  </div>
+
+                  {showUpdateSourceProgram && (
+                    <div className='flex items-start gap-3'>
+                      <RadioGroupItem
+                        value={
+                          SessionCompletionSaveChoice.UPDATE_SOURCE_PROGRAM
+                        }
+                        id='update-source-program'
+                      />
+                      <Label
+                        htmlFor='update-source-program'
+                        className='font-normal'
+                      >
+                        Update this program
+                        {patientSessionData?.sourceProgramName
+                          ? ` (${patientSessionData.sourceProgramName})`
+                          : ''}
+                      </Label>
+                    </div>
+                  )}
+
+                  <div className='flex items-start gap-3'>
+                    <RadioGroupItem
+                      value={SessionCompletionSaveChoice.SAVE_AS_NEW_PROGRAM}
+                      id='save-as-new-program'
                     />
                     <Label
-                      htmlFor='update-source-program'
+                      htmlFor='save-as-new-program'
                       className='font-normal'
                     >
-                      Update this program
-                      {patientSessionData?.sourceProgramName
-                        ? ` (${patientSessionData.sourceProgramName})`
-                        : ''}
+                      Save as new program
                     </Label>
+                  </div>
+                </RadioGroup>
+
+                {saveChoice ===
+                  SessionCompletionSaveChoice.SAVE_AS_NEW_PROGRAM && (
+                  <div className='space-y-2'>
+                    <Label htmlFor='new-program-name'>Program name</Label>
+                    <Input
+                      id='new-program-name'
+                      value={completionState.newProgramName}
+                      onChange={(event) =>
+                        setCompletionState((current) => ({
+                          ...current,
+                          newProgramName: event.target.value,
+                        }))
+                      }
+                    />
                   </div>
                 )}
 
-                <div className='flex items-start gap-3'>
-                  <RadioGroupItem
-                    value={SessionCompletionSaveChoice.SAVE_AS_NEW_PROGRAM}
-                    id='save-as-new-program'
-                  />
-                  <Label htmlFor='save-as-new-program' className='font-normal'>
-                    Save as new program
-                  </Label>
-                </div>
-              </RadioGroup>
+                {saveChoice ===
+                  SessionCompletionSaveChoice.UPDATE_SOURCE_PROGRAM &&
+                  completionState.showUpdateConfirmation && (
+                    <p className='text-muted-foreground text-sm'>
+                      This will overwrite the exercises and settings in your
+                      Program Library program. Past sessions stay unchanged.
+                    </p>
+                  )}
+              </div>
 
-              {saveChoice ===
-                SessionCompletionSaveChoice.SAVE_AS_NEW_PROGRAM && (
-                <div className='space-y-2'>
-                  <Label htmlFor='new-program-name'>Program name</Label>
-                  <Input
-                    id='new-program-name'
-                    value={completionState.newProgramName}
-                    onChange={(event) =>
-                      setCompletionState((current) => ({
-                        ...current,
-                        newProgramName: event.target.value,
-                      }))
+              <div className='space-y-2'>
+                <p className='text-sm font-medium'>Supplemental therapies</p>
+                {supplementalTherapies?.map((method) => (
+                  <FormCheckbox
+                    key={method.id}
+                    control={form.control}
+                    label={
+                      <span className='capitalize'>
+                        {method.name.replaceAll('_', ' ')}
+                      </span>
                     }
+                    // eslint-disable-next-line react-hooks/incompatible-library
+                    checked={form.watch('methods')?.includes(method.id)}
+                    onCheckedChange={(value) => {
+                      const current = form.getValues('methods') ?? []
+
+                      form.setValue(
+                        'methods',
+                        value
+                          ? [...current, method.id]
+                          : current?.filter((id) => id !== method.id),
+                      )
+                    }}
+                    name={method.name as keyof PatientSessionForm}
                   />
-                </div>
-              )}
-
-              {saveChoice ===
-                SessionCompletionSaveChoice.UPDATE_SOURCE_PROGRAM &&
-                completionState.showUpdateConfirmation && (
-                  <p className='text-muted-foreground text-sm'>
-                    This will overwrite the exercises and settings in your
-                    Program Library program. Past sessions stay unchanged.
-                  </p>
-                )}
-            </div>
-
-            <div className='space-y-2'>
-              <p className='text-sm font-medium'>Supplemental therapies</p>
-              {supplementalTherapies?.map((method) => (
+                ))}
                 <FormCheckbox
-                  key={method.id}
+                  label={'Other'}
+                  name={'otherEnabled'}
                   control={form.control}
-                  label={
-                    <span className='capitalize'>
-                      {method.name.replaceAll('_', ' ')}
-                    </span>
-                  }
-                  // eslint-disable-next-line react-hooks/incompatible-library
-                  checked={form.watch('methods')?.includes(method.id)}
-                  onCheckedChange={(value) => {
-                    const current = form.getValues('methods') ?? []
-
-                    form.setValue(
-                      'methods',
-                      value
-                        ? [...current, method.id]
-                        : current?.filter((id) => id !== method.id),
-                    )
-                  }}
-                  name={method.name as keyof PatientSessionForm}
                 />
-              ))}
-              <FormCheckbox
-                label={'Other'}
-                name={'otherEnabled'}
-                control={form.control}
-              />
 
-              {form.watch('otherEnabled') && (
-                <FormInput
-                  key={'other'}
-                  control={form.control}
-                  label={<span className='hidden'>{'otherText'}</span>}
-                  name={'otherText'}
-                  placeholder={'Other therapy used...'}
+                {form.watch('otherEnabled') && (
+                  <FormInput
+                    key={'other'}
+                    control={form.control}
+                    label={<span className='hidden'>{'otherText'}</span>}
+                    name={'otherText'}
+                    placeholder={'Other therapy used...'}
+                  />
+                )}
+              </div>
+
+              <div className='space-y-2 pb-1'>
+                <Label htmlFor='session-notes'>Session notes</Label>
+                <Textarea
+                  id='session-notes'
+                  value={form.watch('notes') ?? ''}
+                  onChange={(e) => form.setValue('notes', e.target.value)}
+                  placeholder='Add notes about this session...'
                 />
-              )}
-
-              <Textarea
-                value={form.watch('notes') ?? ''}
-                onChange={(e) => form.setValue('notes', e.target.value)}
-              />
+              </div>
             </div>
           </div>
 
