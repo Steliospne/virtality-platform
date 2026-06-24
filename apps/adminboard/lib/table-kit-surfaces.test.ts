@@ -20,19 +20,17 @@ function pathExists(relativePath: string): boolean {
   }
 }
 
-describe('adminboard table primitive migration', () => {
-  it('imports shared table primitives in bucket browser', () => {
-    const source = readAdminboardFile('components/bucket/bucket-browser.tsx')
+function expectSharedTablePrimitives(source: string) {
+  expect(source).toMatch(/@virtality\/ui\/components\/table/)
+  expect(source).not.toMatch(/@\/components\/ui\/table/)
+}
 
-    expect(source).toMatch(/@virtality\/ui\/components\/table/)
-    expect(source).not.toMatch(/@\/components\/ui\/table/)
-  })
-
-  it('imports shared table primitives in inline-editable data-table', () => {
-    const source = readAdminboardFile('components/ui/data-table.tsx')
-
-    expect(source).toMatch(/@virtality\/ui\/components\/table/)
-    expect(source).not.toMatch(/@\/components\/ui\/table/)
+describe('adminboard table kit migration', () => {
+  it.each([
+    ['bucket browser', 'components/bucket/bucket-browser.tsx'],
+    ['inline-editable data-table', 'components/ui/data-table.tsx'],
+  ])('imports shared table primitives in %s', (_, relativePath) => {
+    expectSharedTablePrimitives(readAdminboardFile(relativePath))
   })
 
   it('removes adminboard-local table.tsx', () => {
