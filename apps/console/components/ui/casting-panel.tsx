@@ -119,15 +119,17 @@ export function CastingPanel({
   )
 }
 
+type CastingTimeoutPromptProps = {
+  open: boolean
+  onWait: () => void
+  onCancel: () => void
+}
+
 function CastingTimeoutPrompt({
   open,
   onWait,
   onCancel,
-}: {
-  open: boolean
-  onWait: () => void
-  onCancel: () => void
-}) {
+}: CastingTimeoutPromptProps) {
   return (
     <Dialog open={open}>
       <DialogContent showCloseButton={false}>

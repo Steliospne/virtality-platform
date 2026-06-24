@@ -3,38 +3,39 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   CASTING_LOAD_TIMEOUT_MS,
-  shouldClearCastingTimeoutPrompt,
+  isCastingLoadWindow,
   shouldShowCastingTimeoutPrompt,
   type CastingPlayerView,
 } from '@/lib/patient-dashboard-casting-panel'
 
 export function useCastingLoadTimeout(playerView: CastingPlayerView) {
-  const [loadWindowKey, setLoadWindowKey] = useState(0)
-  const [loadWindowTimedOut, setLoadWindowTimedOut] = useState(false)
+  const [loadAttemptKey, setLoadAttemptKey] = useState(0)
+  const [hasLoadTimedOut, setHasLoadTimedOut] = useState(false)
 
   useEffect(() => {
-    if (shouldClearCastingTimeoutPrompt(playerView)) {
-      setLoadWindowTimedOut(false)
-      setLoadWindowKey(0)
+    if (!isCastingLoadWindow(playerView)) {
+      setHasLoadTimedOut(false)
+      setLoadAttemptKey(0)
       return
     }
 
-    setLoadWindowTimedOut(false)
-    const timeoutId = setTimeout(() => {
-      setLoadWindowTimedOut(true)
-    }, CASTING_LOAD_TIMEOUT_MS)
+    setHasLoadTimedOut(false)
+    const timeoutId = setTimeout(
+      () => setHasLoadTimedOut(true),
+      CASTING_LOAD_TIMEOUT_MS,
+    )
 
     return () => clearTimeout(timeoutId)
-  }, [playerView, loadWindowKey])
+  }, [playerView, loadAttemptKey])
 
   const showTimeoutPrompt = shouldShowCastingTimeoutPrompt(
     playerView,
-    loadWindowTimedOut,
+    hasLoadTimedOut,
   )
 
   const handleWait = useCallback(() => {
-    setLoadWindowTimedOut(false)
-    setLoadWindowKey((key) => key + 1)
+    setHasLoadTimedOut(false)
+    setLoadAttemptKey((key) => key + 1)
   }, [])
 
   return { showTimeoutPrompt, handleWait }

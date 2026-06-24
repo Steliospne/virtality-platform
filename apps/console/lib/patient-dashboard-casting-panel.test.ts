@@ -8,7 +8,6 @@ import {
   getCastingStatusLabel,
   isCastingControlDisabled,
   isCastingLoadWindow,
-  shouldClearCastingTimeoutPrompt,
   shouldShowCastingTimeoutPrompt,
   shouldShowVideoControls,
   shouldShowVideoElement,
@@ -88,13 +87,6 @@ describe('patient dashboard casting load timeout', () => {
     expect(shouldShowCastingTimeoutPrompt('loading', false)).toBe(false)
     expect(shouldShowCastingTimeoutPrompt('loading', true)).toBe(true)
     expect(shouldShowCastingTimeoutPrompt('connected', true)).toBe(false)
-  })
-
-  it('clears the timeout prompt when the stream connects or loading ends', () => {
-    expect(shouldClearCastingTimeoutPrompt('connected')).toBe(true)
-    expect(shouldClearCastingTimeoutPrompt('idle')).toBe(true)
-    expect(shouldClearCastingTimeoutPrompt('error')).toBe(true)
-    expect(shouldClearCastingTimeoutPrompt('loading')).toBe(false)
   })
 })
 

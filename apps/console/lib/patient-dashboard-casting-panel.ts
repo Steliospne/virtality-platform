@@ -85,13 +85,7 @@ export function isCastingLoadWindow(view: CastingPlayerView): boolean {
 
 export function shouldShowCastingTimeoutPrompt(
   view: CastingPlayerView,
-  loadWindowTimedOut: boolean,
+  hasLoadTimedOut: boolean,
 ): boolean {
-  return isCastingLoadWindow(view) && loadWindowTimedOut
-}
-
-export function shouldClearCastingTimeoutPrompt(
-  view: CastingPlayerView,
-): boolean {
-  return !isCastingLoadWindow(view)
+  return isCastingLoadWindow(view) && hasLoadTimedOut
 }
