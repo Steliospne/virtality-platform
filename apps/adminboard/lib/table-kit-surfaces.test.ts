@@ -34,6 +34,7 @@ function expectSharedDataTableKit(source: string) {
 function expectSharedTableConfiguration(source: string) {
   expect(
     source.includes('@virtality/ui/lib/table-defaults') ||
+      source.includes('@virtality/ui/lib/use-resource-table') ||
       source.includes('useResourceTable'),
   ).toBe(true)
 }
@@ -89,7 +90,7 @@ describe('adminboard table kit migration', () => {
     )
 
     expectSharedDataTableKit(tableSource)
-    expect(tableSource).toMatch(/@virtality\/ui\/lib\/table-defaults/)
+    expectSharedTableConfiguration(tableSource)
     expect(tableSource).not.toMatch(/isLoading=/)
   })
 

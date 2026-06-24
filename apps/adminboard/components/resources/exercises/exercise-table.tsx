@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useExercise } from '@virtality/react-query'
 import FilterBadge from '@/components/ui/filter-badge'
 import { columns } from '@/components/resources/exercises/columns'
-import { useResourceTable } from '@/hooks/use-resource-table'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 
 const ExerciseTable = () => {
   const { data, isPending } = useExercise({ includeDisabled: true })

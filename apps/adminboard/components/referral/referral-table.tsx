@@ -14,7 +14,7 @@ import {
 } from '@virtality/react-query'
 import { columns } from '@/components/referral/columns'
 import { Button } from '@/components/ui/button'
-import { useResourceTable } from '@/hooks/use-resource-table'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import { getQueryClient } from '@/react-query'
 
 const ReferralTable = () => {

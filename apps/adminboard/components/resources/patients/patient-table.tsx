@@ -6,7 +6,7 @@ import {
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
 import { usePatients } from '@virtality/react-query'
-import { useResourceTable } from '@/hooks/use-resource-table'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import { columns } from './columns'
 
 const PatientTable = () => {

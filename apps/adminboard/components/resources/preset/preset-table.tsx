@@ -8,7 +8,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { usePresets } from '@virtality/react-query/legacy'
 import { columns } from '@/app/resources/preset/columns'
-import { useResourceTable } from '@/hooks/use-resource-table'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import PresetPopover from './preset-popover'
 
 const PresetTable = () => {

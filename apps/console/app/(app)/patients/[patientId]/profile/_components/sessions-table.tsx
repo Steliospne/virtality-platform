@@ -1,17 +1,11 @@
 'use client'
 
 import {
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from '@tanstack/react-table'
-import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
-import { tableDefaults } from '@virtality/ui/lib/table-defaults'
-import { useState } from 'react'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import { usePatientSessions } from '@virtality/react-query'
 import { sessionsColumns } from './sessions-columns'
 import type { ExtendedPatientSession } from '@/types/models'
@@ -28,11 +22,6 @@ const SessionsTable = ({
   onSessionSelect,
   sessions: sessionsProp,
 }: SessionsTableProps) => {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-
   const { data: fetchedSessions, isPending } = usePatientSessions({
     input: {
       where: {
@@ -49,21 +38,9 @@ const SessionsTable = ({
   const tableData =
     (usesProvidedSessions ? sessionsProp : fetchedSessions) ?? []
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useResourceTable({
     data: tableData,
     columns: sessionsColumns,
-    ...tableDefaults.models,
-    state: {
-      sorting,
-      globalFilter,
-      rowSelection,
-      columnVisibility,
-    },
-    onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
   })
 
   const rowNavigation = (id: string) => {

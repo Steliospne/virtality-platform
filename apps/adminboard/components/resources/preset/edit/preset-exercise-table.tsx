@@ -20,17 +20,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useExercise } from '@virtality/react-query'
 import { getDisplayName, getUUID } from '@/lib/utils'
 import { PresetExercise } from '@virtality/db'
-import {
-  ColumnDef,
-  RowData,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from '@tanstack/react-table'
-import { tableDefaults } from '@virtality/ui/lib/table-defaults'
+import { ColumnDef, RowData } from '@tanstack/react-table'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import uniq from 'lodash.uniq'
 import { Info, PlusCircle, PlusSquare } from 'lucide-react'
-import { Fragment, SetStateAction, useMemo, useState } from 'react'
+import { Fragment, SetStateAction, useMemo } from 'react'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,25 +47,9 @@ const PresetExerciseTable = ({
   columns,
   className,
 }: PresetExerciseTableProps) => {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useResourceTable({
     data: data ?? [],
     columns,
-    ...tableDefaults.models,
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-      globalFilter,
-      rowSelection,
-      columnVisibility,
-    },
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
     meta: {
       updateData: (rowIndex, columnId, value) => {
         setData?.((old) =>

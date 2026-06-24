@@ -13,6 +13,10 @@
       "types": "./src/lib/table-defaults.ts",
       "default": "./dist/src/lib/table-defaults.js"
     },
+    "./lib/use-resource-table": {
+      "types": "./src/lib/use-resource-table.ts",
+      "default": "./dist/src/lib/use-resource-table.js"
+    },
     "./components/*": {
       "types": "./src/components/*.tsx",
       "default": "./dist/src/components/*.js"

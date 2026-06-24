@@ -1,21 +1,15 @@
 'use client'
 
 import {
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from '@tanstack/react-table'
-import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
-import { tableDefaults } from '@virtality/ui/lib/table-defaults'
+import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import { useRouter } from 'next/navigation'
 import { Button } from '@virtality/ui/components/button'
 import Link from 'next/link'
 import { PlusSquare, Trash2 } from 'lucide-react'
-import { useState } from 'react'
 import { columns } from './patients-columns'
 import DeleteConfirmDialog from '@/components/ui/delete-confirm-dialog'
 import useIsAuthed from '@/hooks/use-is-authed'
@@ -35,28 +29,17 @@ const PatientsTable = () => {
   const orpc = useORPC()
   const router = useRouter()
 
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-
   const { data: tableData, isPending } = usePatients()
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const {
+    table,
+    globalFilter,
+    setGlobalFilter,
+    rowSelection,
+    setRowSelection,
+  } = useResourceTable({
     data: tableData ?? [],
     columns,
-    ...tableDefaults.models,
-    state: {
-      sorting,
-      globalFilter,
-      rowSelection,
-      columnVisibility,
-    },
-    onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
   })
 
   const selectedRow = tableData?.filter((_, index) =>
