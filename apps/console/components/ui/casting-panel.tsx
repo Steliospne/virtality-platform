@@ -10,7 +10,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@virtality/ui/components/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { CastingStatus } from '@/hooks/use-casting-handshake'
+import { useCastingLoadTimeout } from '@/hooks/use-casting-load-timeout'
 import {
   getCastingControlAction,
   getCastingControlLabelForAction,
@@ -46,6 +55,7 @@ export function CastingPanel({
   const mountVideo = shouldShowVideoElement(playerView)
   const showVideoControls = shouldShowVideoControls(playerView)
   const isStreamVisible = playerView === 'connected'
+  const { showTimeoutPrompt, handleWait } = useCastingLoadTimeout(playerView)
 
   const handleControlClick = () => {
     if (controlAction === 'start') {
@@ -99,7 +109,45 @@ export function CastingPanel({
           </div>
         </div>
       </CardContent>
+
+      <CastingTimeoutPrompt
+        open={showTimeoutPrompt}
+        onWait={handleWait}
+        onCancel={onStopCasting}
+      />
     </Card>
+  )
+}
+
+function CastingTimeoutPrompt({
+  open,
+  onWait,
+  onCancel,
+}: {
+  open: boolean
+  onWait: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Dialog open={open}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Casting is taking longer than expected</DialogTitle>
+          <DialogDescription>
+            The VR headset stream has not appeared yet. You can keep waiting or
+            cancel casting.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant='outline' onClick={onWait}>
+            Wait
+          </Button>
+          <Button variant='destructive' onClick={onCancel}>
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

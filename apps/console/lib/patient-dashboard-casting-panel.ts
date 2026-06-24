@@ -4,6 +4,8 @@ export type CastingPlayerView = 'idle' | 'loading' | 'connected' | 'error'
 
 export type CastingControlAction = 'start' | 'stop'
 
+export const CASTING_LOAD_TIMEOUT_MS = 30_000
+
 export const CASTING_CONTROL_LABELS: Record<CastingControlAction, string> = {
   start: 'Start casting',
   stop: 'Stop casting',
@@ -75,4 +77,21 @@ export function shouldShowVideoElement(view: CastingPlayerView): boolean {
 
 export function shouldShowVideoControls(_view: CastingPlayerView): boolean {
   return false
+}
+
+export function isCastingLoadWindow(view: CastingPlayerView): boolean {
+  return view === 'loading'
+}
+
+export function shouldShowCastingTimeoutPrompt(
+  view: CastingPlayerView,
+  loadWindowTimedOut: boolean,
+): boolean {
+  return isCastingLoadWindow(view) && loadWindowTimedOut
+}
+
+export function shouldClearCastingTimeoutPrompt(
+  view: CastingPlayerView,
+): boolean {
+  return !isCastingLoadWindow(view)
 }
