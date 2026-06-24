@@ -26,6 +26,16 @@ function expectSharedDataTableKit(source: string) {
 }
 
 describe('console table kit migration', () => {
+  it('migrates patients table to shared kit with fetch loading', () => {
+    const tableSource = readConsoleFile(
+      'app/(app)/patients/_components/patients-table.tsx',
+    )
+
+    expectSharedDataTableKit(tableSource)
+    expect(tableSource).toMatch(/isPending/)
+    expect(tableSource).toMatch(/isLoading=\{isPending\}/)
+  })
+
   it('migrates program library table to shared kit with fetch loading', () => {
     const tableSource = readConsoleFile(
       'app/(app)/programs/_components/program-library-table.tsx',
