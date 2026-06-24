@@ -1,7 +1,14 @@
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@virtality/ui': path.resolve(__dirname, './src'),
+    },
+  },
   test: {
+    environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['./vitest.setup.ts'],
   },

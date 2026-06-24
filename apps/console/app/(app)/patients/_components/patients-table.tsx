@@ -5,12 +5,12 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table'
-import { tableDefaults } from '@/components/tables/tanstack-table'
 import {
   DataTableBody,
   DataTableFooter,
   DataTableHeader,
-} from '@/components/tables/data-table'
+} from '@virtality/ui/components/data-table'
+import { tableDefaults } from '@virtality/ui/lib/table-defaults'
 import { useRouter } from 'next/navigation'
 import { Button } from '@virtality/ui/components/button'
 import Link from 'next/link'
@@ -40,7 +40,7 @@ const PatientsTable = () => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
-  const { data: tableData } = usePatients()
+  const { data: tableData, isPending } = usePatients()
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -118,6 +118,7 @@ const PatientsTable = () => {
         columns={columns}
         rowNavigation={rowNavigation}
         className='flex-1'
+        isLoading={isPending}
       />
       <DataTableFooter table={table} />
     </div>
