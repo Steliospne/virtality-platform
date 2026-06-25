@@ -34,6 +34,8 @@ import {
 
 interface ExerciseLibraryListProps {
   className?: string
+  /** When false, hides the legacy Exercise Library button and nested dialog. */
+  showExerciseLibraryAccess?: boolean
 }
 
 function segmentRowKey(ex: CompleteExercise): {
@@ -187,7 +189,10 @@ function segmentExpandedSettings({
   )
 }
 
-const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
+const ExerciseLibraryList = ({
+  className,
+  showExerciseLibraryAccess = true,
+}: ExerciseLibraryListProps) => {
   const { state, handler } = useExerciseLibrary()
   const { data: defaultExercises } = useExercise()
   const { selectedExercises, globalCheck, selectedItems, deferredRemovalIds } =
@@ -332,17 +337,19 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
           <p className='text-muted-foreground text-sm'>Select all</p>
         </div>
 
-        <div className='flex items-center gap-2'>
-          <span>Exercise library</span>
+        {showExerciseLibraryAccess && (
+          <div className='flex items-center gap-2'>
+            <span>Exercise library</span>
 
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={() => setLibraryOpen(true)}
-          >
-            <FolderClosed />
-          </Button>
-        </div>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setLibraryOpen(true)}
+            >
+              <FolderClosed />
+            </Button>
+          </div>
+        )}
 
         <div className='flex items-center'>
           <span>Remove Selected</span>
@@ -521,7 +528,7 @@ const ExerciseLibraryList = ({ className }: ExerciseLibraryListProps) => {
         )}
       </ul>
 
-      <ExerciseLibraryDialog />
+      {showExerciseLibraryAccess && <ExerciseLibraryDialog />}
     </div>
   )
 }
