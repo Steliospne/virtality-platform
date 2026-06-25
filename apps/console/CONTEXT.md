@@ -24,6 +24,10 @@ _Avoid_: Autosave to program, live save prompt
 An ad hoc treatment path that starts a patient session without choosing a **Reusable Program** first.
 _Avoid_: Blank program, temporary program
 
+**Catalog-First Authoring**:
+Program authoring and editing flows that open on the exercise catalog, then proceed to the selected **Program Exercise** list/settings step. **Quick Start**, scratch **Reusable Program** creation, **Starter Template** creation, and **Reusable Program** editing all follow this two-step model. The catalog step is for discovery and selection; the selected-list step is for tuning, naming, and final actions. Selection and settings persist when navigating back to the catalog.
+_Avoid_: Selected-list-first authoring, nested Exercise Library dialog, parallel exercise-picker paths
+
 **Session Launch Attempt**:
 The period after a clinician asks the VR to start treatment but before the VR confirms that treatment has started.
 _Avoid_: Patient session, started session
@@ -155,3 +159,9 @@ Domain expert: "Use **Stage-Aware Removal** so we stay fast in selection and saf
 
 Dev: "Do we support more direction labels right now?"  
 Domain expert: "No, use the **Direction Set (Near-Term)** of Left and Right."
+
+Dev: "Should clinicians see an empty selected list before they can pick exercises?"  
+Domain expert: "No, use **Catalog-First Authoring** so exercise selection always starts in the catalog."
+
+Dev: "Can they still open a separate Exercise Library dialog from the settings step?"  
+Domain expert: "Not in **Catalog-First Authoring** flows — go back to the catalog to add or remove exercises."

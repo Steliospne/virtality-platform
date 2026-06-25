@@ -1,5 +1,5 @@
 /**
- * Manual QA checklist for catalog-first program authoring (PRD #98, issue #108).
+ * Manual QA checklist for catalog-first program authoring (PRD #98).
  * Covers browser verification for each target flow after rollout.
  */
 
