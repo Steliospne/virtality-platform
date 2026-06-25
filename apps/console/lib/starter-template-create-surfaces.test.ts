@@ -1,23 +1,14 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { canSubmitReusableProgram } from './program-library-submit.js'
-
-const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
-
-const CREATE_FLOW_PATH =
-  'app/(app)/programs/new/_components/reusable-program-create-flow.tsx'
-const CREATE_FORM_PATH =
-  'app/(app)/programs/new/_components/reusable-program-form.tsx'
-
-function readConsoleFile(relativePath: string): string {
-  return readFileSync(join(consoleRoot, relativePath), 'utf8')
-}
+import {
+  REUSABLE_PROGRAM_CREATE_FLOW_PATH,
+  REUSABLE_PROGRAM_CREATE_FORM_PATH,
+  readConsoleFile,
+} from './catalog-first-authoring-surface-seams.js'
 
 describe('starter template catalog-first create flow', () => {
-  const createFlowSource = readConsoleFile(CREATE_FLOW_PATH)
-  const formSource = readConsoleFile(CREATE_FORM_PATH)
+  const createFlowSource = readConsoleFile(REUSABLE_PROGRAM_CREATE_FLOW_PATH)
+  const formSource = readConsoleFile(REUSABLE_PROGRAM_CREATE_FORM_PATH)
 
   it('routes template creation through template picker then the editor', () => {
     expect(createFlowSource).toMatch(/StarterTemplatePicker/)
@@ -46,7 +37,6 @@ describe('starter template catalog-first create flow', () => {
   it('shows selected exercise count near the catalog Next action for templates', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
-    expect(formSource).toMatch(/canGoToSelectedList/)
   })
 
   it('shows the suggested template name only on the selected-list step', () => {

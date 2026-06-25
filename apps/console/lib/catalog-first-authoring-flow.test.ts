@@ -9,40 +9,6 @@ import {
   isSelectedListStep,
 } from './catalog-first-authoring-flow.js'
 
-type SampleSelection = { id: string; exerciseId: string }
-
-const sampleSelection: SampleSelection[] = [
-  { id: 'row-1', exerciseId: 'ex-1' },
-  { id: 'row-2', exerciseId: 'ex-2' },
-]
-
-function selectionSnapshot<T>(selected: readonly T[]): readonly T[] {
-  return [...selected]
-}
-
-function selectionsEqual<T>(
-  a: readonly T[],
-  b: readonly T[],
-  key: (item: T) => string,
-): boolean {
-  if (a.length !== b.length) return false
-  const aKeys = a.map(key).sort()
-  const bKeys = b.map(key).sort()
-  return aKeys.every((value, index) => value === bKeys[index])
-}
-
-function selectionPreservedAcrossStepTransitions<T>(
-  beforeAdvance: readonly T[],
-  duringSelectedList: readonly T[],
-  afterReturnToCatalog: readonly T[],
-  key: (item: T) => string,
-): boolean {
-  return (
-    selectionsEqual(beforeAdvance, duringSelectedList, key) &&
-    selectionsEqual(beforeAdvance, afterReturnToCatalog, key)
-  )
-}
-
 describe('catalog-first authoring step order', () => {
   it('defines catalog then selected-list as the canonical step order', () => {
     expect(CATALOG_FIRST_AUTHORING_STEPS).toEqual(['catalog', 'selected-list'])
@@ -90,7 +56,7 @@ describe('catalog-first authoring step order', () => {
 
 describe('catalog-first authoring navigation guards', () => {
   it('allows advancing to selected-list with zero selected exercises', () => {
-    expect(canAdvanceFromCatalogToSelectedList(0)).toBe(true)
+    expect(canAdvanceFromCatalogToSelectedList()).toBe(true)
 
     let state = createCatalogFirstAuthoringFlowState()
     state = catalogFirstAuthoringFlowReducer(state, {
@@ -118,46 +84,19 @@ describe('catalog-first selected exercise count label', () => {
   })
 })
 
-describe('catalog-first selection preservation', () => {
-  it('keeps selection snapshots stable across step transitions', () => {
-    const before = selectionSnapshot(sampleSelection)
+describe('catalog-first selection ownership', () => {
+  it('only mutates step state so callers keep exercise selection across navigation', () => {
+    let state = createCatalogFirstAuthoringFlowState()
+    expect(state).toEqual({ step: 'catalog' })
 
-    let flowState = createCatalogFirstAuthoringFlowState()
-    flowState = catalogFirstAuthoringFlowReducer(flowState, {
+    state = catalogFirstAuthoringFlowReducer(state, {
       type: 'advanceToSelectedList',
     })
-    const duringSelectedList = selectionSnapshot(sampleSelection)
+    expect(state).toEqual({ step: 'selected-list' })
 
-    flowState = catalogFirstAuthoringFlowReducer(flowState, {
+    state = catalogFirstAuthoringFlowReducer(state, {
       type: 'returnToCatalog',
     })
-    const afterReturnToCatalog = selectionSnapshot(sampleSelection)
-
-    expect(
-      selectionPreservedAcrossStepTransitions(
-        before,
-        duringSelectedList,
-        afterReturnToCatalog,
-        (item) => item.id,
-      ),
-    ).toBe(true)
-  })
-
-  it('compares selections by row id for preservation checks', () => {
-    const reordered = [
-      { id: 'row-2', exerciseId: 'ex-2' },
-      { id: 'row-1', exerciseId: 'ex-1' },
-    ]
-
-    expect(selectionsEqual(sampleSelection, reordered, (item) => item.id)).toBe(
-      true,
-    )
-    expect(
-      selectionsEqual(
-        sampleSelection,
-        [{ id: 'row-3', exerciseId: 'ex-3' }],
-        (item) => item.id,
-      ),
-    ).toBe(false)
+    expect(state).toEqual({ step: 'catalog' })
   })
 })

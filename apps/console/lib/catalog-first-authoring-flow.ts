@@ -1,5 +1,5 @@
 /**
- * Shared catalog-first program authoring flow (PRD #98, GitHub #99).
+ * Shared catalog-first program authoring flow (PRD #98).
  * Step one is the exercise catalog; step two is the selected Program Exercise list/settings.
  * Exercise selection and settings live outside this reducer — callers must not reset them on back navigation.
  */
@@ -48,9 +48,7 @@ export function catalogFirstAuthoringFlowReducer(
 }
 
 /** Catalog -> selected-list is always allowed, including with zero exercises. */
-export function canAdvanceFromCatalogToSelectedList(
-  _selectedExerciseCount: number,
-): boolean {
+export function canAdvanceFromCatalogToSelectedList(): boolean {
   return true
 }
 

@@ -2,6 +2,19 @@
  * Shared path and regex seams for catalog-first authoring surface tests.
  */
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
+
+export function readConsoleFile(relativePath: string): string {
+  return readFileSync(join(consoleRoot, relativePath), 'utf8')
+}
+
+export const PATIENT_DASHBOARD_PATH =
+  'app/(app)/patients/[patientId]/patient-dashboard/_components/patient-dashboard.tsx'
+
 export const QUICKSTART_DIALOG_PATH =
   'app/(app)/patients/[patientId]/patient-dashboard/_components/quickstart-dialog.tsx'
 
