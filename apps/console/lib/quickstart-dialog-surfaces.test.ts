@@ -1,18 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-
-const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
-
-const QUICKSTART_DIALOG_PATH =
-  'app/(app)/patients/[patientId]/patient-dashboard/_components/quickstart-dialog.tsx'
-const PATIENT_DASHBOARD_PATH =
-  'app/(app)/patients/[patientId]/patient-dashboard/_components/patient-dashboard.tsx'
-
-function readConsoleFile(relativePath: string): string {
-  return readFileSync(join(consoleRoot, relativePath), 'utf8')
-}
+import {
+  PATIENT_DASHBOARD_PATH,
+  QUICKSTART_DIALOG_PATH,
+  readConsoleFile,
+} from './catalog-first-authoring-surface-seams.js'
 
 describe('quick start dialog surfaces', () => {
   const source = readConsoleFile(QUICKSTART_DIALOG_PATH)

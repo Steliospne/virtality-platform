@@ -48,9 +48,7 @@ export function catalogFirstAuthoringFlowReducer(
 }
 
 /** Catalog -> selected-list is always allowed, including with zero exercises. */
-export function canAdvanceFromCatalogToSelectedList(
-  _selectedExerciseCount: number,
-): boolean {
+export function canAdvanceFromCatalogToSelectedList(): boolean {
   return true
 }
 

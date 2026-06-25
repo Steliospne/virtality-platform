@@ -75,7 +75,6 @@ const ReusableProgramFormView = ({
     goToSelectedList,
     goToCatalog,
     selectedExerciseCountLabel,
-    canGoToSelectedList,
   } = useCatalogFirstAuthoringFlow()
   const isCatalogFirstCatalogStep = isCatalogFirstCreate && isCatalogStep
   const isCatalogFirstSelectedListStep =
@@ -204,11 +203,7 @@ const ReusableProgramFormView = ({
               <Button onClick={secondaryNav.onClick}>
                 {secondaryNav.label}
               </Button>
-              <Button
-                variant='primary'
-                onClick={goToSelectedList}
-                disabled={!canGoToSelectedList(selectedCount)}
-              >
+              <Button variant='primary' onClick={goToSelectedList}>
                 Next
               </Button>
             </div>

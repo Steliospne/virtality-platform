@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { CATALOG_FIRST_AUTHORING_STEPS } from './catalog-first-authoring-flow.js'
 import {
@@ -10,12 +7,11 @@ import {
   REUSABLE_PROGRAM_CREATE_FLOW_PATH,
   REUSABLE_PROGRAM_CREATE_FORM_PATH,
   REUSABLE_PROGRAM_EDIT_FORM_PATH,
+  readConsoleFile,
 } from './catalog-first-authoring-surface-seams.js'
 import { CATALOG_FIRST_AUTHORING_MANUAL_QA } from './catalog-first-authoring-manual-qa.js'
 import { canSubmitReusableProgram } from './program-library-submit.js'
 import { canQuickStartFinalAction } from './quickstart-authoring-flow.js'
-
-const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
 
 type CatalogFirstFlowSurface = {
   readonly id: string
@@ -25,7 +21,6 @@ type CatalogFirstFlowSurface = {
   readonly legacyLibraryHidden: RegExp
   readonly flowMarker?: RegExp
   readonly seedPattern?: RegExp
-  readonly requiresCanGoToSelectedList?: boolean
   readonly companionPath?: string
   readonly companionPatterns?: readonly RegExp[]
 }
@@ -37,7 +32,6 @@ const CATALOG_FIRST_FLOW_SURFACES: readonly CatalogFirstFlowSurface[] = [
     catalogStepPattern: /isCatalogStep/,
     selectedListPattern: /isSelectedListStep/,
     legacyLibraryHidden: LEGACY_LIBRARY_ACCESS_DISABLED,
-    requiresCanGoToSelectedList: false,
   },
   {
     id: 'scratch-create',
@@ -70,23 +64,11 @@ const CATALOG_FIRST_FLOW_SURFACES: readonly CatalogFirstFlowSurface[] = [
   },
 ]
 
-function readConsoleFile(relativePath: string): string {
-  return readFileSync(join(consoleRoot, relativePath), 'utf8')
-}
-
-function expectCatalogFirstAuthoringHook(
-  source: string,
-  {
-    requiresCanGoToSelectedList = true,
-  }: { requiresCanGoToSelectedList?: boolean } = {},
-) {
+function expectCatalogFirstAuthoringHook(source: string) {
   expect(source).toMatch(/useCatalogFirstAuthoringFlow/)
   expect(source).toMatch(/goToSelectedList/)
   expect(source).toMatch(/goToCatalog/)
   expect(source).toMatch(/selectedExerciseCountLabel/)
-  if (requiresCanGoToSelectedList) {
-    expect(source).toMatch(/canGoToSelectedList/)
-  }
 }
 
 function expectCatalogBeforeSelectedList(source: string) {
@@ -111,9 +93,7 @@ describe('catalog-first authoring rollout seam', () => {
       const source = readConsoleFile(flow.path)
 
       it('wires the shared catalog-first authoring hook', () => {
-        expectCatalogFirstAuthoringHook(source, {
-          requiresCanGoToSelectedList: flow.requiresCanGoToSelectedList ?? true,
-        })
+        expectCatalogFirstAuthoringHook(source)
         if (flow.flowMarker) {
           expect(source).toMatch(flow.flowMarker)
         }

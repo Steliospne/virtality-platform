@@ -1,20 +1,12 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { canSubmitReusableProgram } from './program-library-submit.js'
-
-const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
-
-const EDIT_FORM_PATH =
-  'app/(app)/programs/[programId]/edit/_components/reusable-program-edit-form.tsx'
-
-function readConsoleFile(relativePath: string): string {
-  return readFileSync(join(consoleRoot, relativePath), 'utf8')
-}
+import {
+  REUSABLE_PROGRAM_EDIT_FORM_PATH,
+  readConsoleFile,
+} from './catalog-first-authoring-surface-seams.js'
 
 describe('reusable program catalog-first edit flow', () => {
-  const formSource = readConsoleFile(EDIT_FORM_PATH)
+  const formSource = readConsoleFile(REUSABLE_PROGRAM_EDIT_FORM_PATH)
 
   it('wires edit through the catalog-first authoring hook', () => {
     expect(formSource).toMatch(/useCatalogFirstAuthoringFlow/)
@@ -31,7 +23,6 @@ describe('reusable program catalog-first edit flow', () => {
   it('shows selected exercise count near the catalog Next action', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
-    expect(formSource).toMatch(/canGoToSelectedList/)
   })
 
   it('renders the existing program name only on the selected-list step', () => {
