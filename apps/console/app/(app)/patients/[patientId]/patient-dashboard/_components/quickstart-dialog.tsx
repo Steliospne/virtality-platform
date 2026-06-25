@@ -38,6 +38,8 @@ import { ZERO_ENABLED_VARIANTS_MESSAGE } from '@/lib/program-submit-enabled-vari
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
 import { canQuickStartFinalAction } from '@/lib/quickstart-authoring-flow'
 
+const scrollableStepContentClass = 'min-h-0 flex-1 overflow-auto'
+
 const applyExercises = (
   exerciseInfo: Exercise[],
   selectedExercises: ExerciseWithSettings[],
@@ -191,7 +193,7 @@ const QuickStartDialog = () => {
 
         <div className='flex min-h-0 flex-1 flex-col space-y-4 overflow-hidden'>
           {isCatalogStep ? (
-            <div className='min-h-0 flex-1 overflow-hidden'>
+            <div className={scrollableStepContentClass}>
               <ExerciseGrid />
             </div>
           ) : (
@@ -206,7 +208,7 @@ const QuickStartDialog = () => {
                   label='Program Name'
                 />
               </form>
-              <div className='min-h-0 flex-1 overflow-auto'>
+              <div className={scrollableStepContentClass}>
                 <ExerciseLibraryList showExerciseLibraryAccess={false} />
               </div>
             </>

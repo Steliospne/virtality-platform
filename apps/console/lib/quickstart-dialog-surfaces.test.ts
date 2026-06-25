@@ -4,6 +4,7 @@ import {
   PATIENT_DASHBOARD_PATH,
   QUICKSTART_DIALOG_PATH,
   readConsoleFile,
+  readQuickstartCatalogGridWrapperClass,
   readQuickstartDialogContentClass,
   VIEWPORT_WIDTH_DIALOG_CLASS,
 } from './catalog-first-authoring-surface-seams.js'
@@ -22,6 +23,13 @@ describe('quick start dialog surfaces', () => {
 
   it('shows the exercise catalog on the first step', () => {
     expect(source).toMatch(/<ExerciseGrid/)
+  })
+
+  it('allows scrolling on the catalog step so all exercises are reachable', () => {
+    const catalogGridWrapper = readQuickstartCatalogGridWrapperClass(source)
+
+    expect(catalogGridWrapper).toMatch(/overflow-auto/)
+    expect(catalogGridWrapper).not.toMatch(/overflow-hidden/)
   })
 
   it('shows selected-list settings without the legacy library button on the second step', () => {

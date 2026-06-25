@@ -38,6 +38,9 @@ export const LEGACY_LIBRARY_ACCESS_DISABLED_ON_CATALOG_FIRST_SELECTED_LIST =
 export const QUICKSTART_DIALOG_CONTENT_CLASS_ATTR =
   /<DialogContent className='([^']+)'/
 
+export const QUICKSTART_CATALOG_GRID_WRAPPER_CLASS_ATTR =
+  /isCatalogStep\s*\?[\s\S]*?<div className=\{scrollableStepContentClass\}>\s*<ExerciseGrid/
+
 /** At least 70% viewport width (e.g. w-4/5 = 80%, w-3/4 = 75%). */
 export const VIEWPORT_WIDTH_DIALOG_CLASS = /w-4\/5|w-3\/4|w-\[[7-8]\dvw\]/
 
@@ -46,4 +49,18 @@ export const BREAKPOINT_SPECIFIC_WIDTH_CLASS = /\b(?:md|lg|xl|2xl):w-/
 
 export function readQuickstartDialogContentClass(source: string): string {
   return source.match(QUICKSTART_DIALOG_CONTENT_CLASS_ATTR)?.[1] ?? ''
+}
+
+export function readQuickstartCatalogGridWrapperClass(source: string): string {
+  if (QUICKSTART_CATALOG_GRID_WRAPPER_CLASS_ATTR.test(source)) {
+    return (
+      source.match(/const scrollableStepContentClass = '([^']+)'/)?.[1] ?? ''
+    )
+  }
+
+  return (
+    source.match(
+      /isCatalogStep\s*\?[\s\S]*?<div className='([^']+)'>\s*<ExerciseGrid/,
+    )?.[1] ?? ''
+  )
 }
