@@ -7,9 +7,6 @@ import {
   createCatalogFirstAuthoringFlowState,
   isCatalogStep,
   isSelectedListStep,
-  selectionPreservedAcrossStepTransitions,
-  selectionsEqual,
-  selectionSnapshot,
 } from './catalog-first-authoring-flow.js'
 
 type SampleSelection = { id: string; exerciseId: string }
@@ -18,6 +15,33 @@ const sampleSelection: SampleSelection[] = [
   { id: 'row-1', exerciseId: 'ex-1' },
   { id: 'row-2', exerciseId: 'ex-2' },
 ]
+
+function selectionSnapshot<T>(selected: readonly T[]): readonly T[] {
+  return [...selected]
+}
+
+function selectionsEqual<T>(
+  a: readonly T[],
+  b: readonly T[],
+  key: (item: T) => string,
+): boolean {
+  if (a.length !== b.length) return false
+  const aKeys = a.map(key).sort()
+  const bKeys = b.map(key).sort()
+  return aKeys.every((value, index) => value === bKeys[index])
+}
+
+function selectionPreservedAcrossStepTransitions<T>(
+  beforeAdvance: readonly T[],
+  duringSelectedList: readonly T[],
+  afterReturnToCatalog: readonly T[],
+  key: (item: T) => string,
+): boolean {
+  return (
+    selectionsEqual(beforeAdvance, duringSelectedList, key) &&
+    selectionsEqual(beforeAdvance, afterReturnToCatalog, key)
+  )
+}
 
 describe('catalog-first authoring step order', () => {
   it('defines catalog then selected-list as the canonical step order', () => {

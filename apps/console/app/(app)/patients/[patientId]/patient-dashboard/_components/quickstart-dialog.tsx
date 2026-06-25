@@ -7,8 +7,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
-import ExerciseLibraryList from '@/components/ui/exercise-library-list'
 import ExerciseGrid from '@/components/ui/exercise-grid'
+import ExerciseLibraryList from '@/components/ui/exercise-library-list'
 import { Button } from '@virtality/ui/components/button'
 import { useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Save, Zap } from 'lucide-react'
@@ -41,15 +41,14 @@ import { canQuickStartFinalAction } from '@/lib/quickstart-authoring-flow'
 const applyExercises = (
   exerciseInfo: Exercise[],
   selectedExercises: ExerciseWithSettings[],
-) => {
-  const quickStartExercises = selectedExercises.map((se) => {
-    const exercise = exerciseInfo.filter((info) => info.id === se.exerciseId)[0]
+) =>
+  selectedExercises.map((selectedExercise) => {
+    const exercise = exerciseInfo.find(
+      (info) => info.id === selectedExercise.exerciseId,
+    )
 
-    return { exercise, ...se }
+    return { exercise, ...selectedExercise }
   })
-
-  return quickStartExercises
-}
 
 const QuickStartDialog = () => {
   const queryClient = getQueryClient()
@@ -131,10 +130,15 @@ const QuickStartDialog = () => {
     setInQuickStart(open)
   }
 
+  const canFinalize = canQuickStartFinalAction(
+    selectedExercises,
+    deferredRemovalIds,
+  )
+
   const continueHandler = () => {
     if (!exerciseInfo) return
 
-    if (!canQuickStartFinalAction(selectedExercises, deferredRemovalIds)) {
+    if (!canFinalize) {
       return ErrorToasty(ZERO_ENABLED_VARIANTS_MESSAGE)
     }
 
@@ -150,7 +154,7 @@ const QuickStartDialog = () => {
   }
 
   const saveAsHandler = async (values: ReusableProgramForm) => {
-    if (!canQuickStartFinalAction(selectedExercises, deferredRemovalIds)) {
+    if (!canFinalize) {
       return ErrorToasty(ZERO_ENABLED_VARIANTS_MESSAGE)
     }
 
@@ -172,11 +176,6 @@ const QuickStartDialog = () => {
       exercises,
     })
   }
-
-  const canFinalize = canQuickStartFinalAction(
-    selectedExercises,
-    deferredRemovalIds,
-  )
 
   return (
     <Dialog open={inQuickStart} onOpenChange={handleOpenChange}>
@@ -204,7 +203,7 @@ const QuickStartDialog = () => {
                 <FormInput
                   name='name'
                   control={form.control}
-                  label={'Program Name'}
+                  label='Program Name'
                 />
               </form>
               <div className='min-h-0 flex-1 overflow-auto'>

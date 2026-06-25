@@ -6,24 +6,26 @@ import { canSubmitReusableProgram } from './program-library-submit.js'
 
 const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
 
-const SCRATCH_CREATE_FORM_PATH =
-  'app/(app)/programs/new/_components/reusable-program-form.tsx'
+const EDIT_FORM_PATH =
+  'app/(app)/programs/[programId]/edit/_components/reusable-program-edit-form.tsx'
 
 function readConsoleFile(relativePath: string): string {
   return readFileSync(join(consoleRoot, relativePath), 'utf8')
 }
 
-describe('scratch reusable program catalog-first create flow', () => {
-  const formSource = readConsoleFile(SCRATCH_CREATE_FORM_PATH)
+describe('reusable program catalog-first edit flow', () => {
+  const formSource = readConsoleFile(EDIT_FORM_PATH)
 
-  it('wires scratch creation through the catalog-first authoring hook', () => {
+  it('wires edit through the catalog-first authoring hook', () => {
     expect(formSource).toMatch(/useCatalogFirstAuthoringFlow/)
-    expect(formSource).toMatch(/editorSource\.kind === 'scratch'/)
+    expect(formSource).toMatch(/isCatalogStep/)
+    expect(formSource).toMatch(/isSelectedListStep/)
   })
 
-  it('opens scratch creation on the exercise catalog step', () => {
-    expect(formSource).toMatch(/isCatalogStep/)
+  it('opens edit on the exercise catalog with existing exercises seeded', () => {
     expect(formSource).toMatch(/<ExerciseGrid/)
+    expect(formSource).toMatch(/reusableProgramExercisesForCatalogSeed/)
+    expect(formSource).toMatch(/updateExercises\(withRom\(seededExercises\)\)/)
   })
 
   it('shows selected exercise count near the catalog Next action', () => {
@@ -32,12 +34,11 @@ describe('scratch reusable program catalog-first create flow', () => {
     expect(formSource).toMatch(/canGoToSelectedList/)
   })
 
-  it('renders the program name field only on the selected-list step', () => {
+  it('renders the existing program name only on the selected-list step', () => {
     const catalogStepBlock =
-      formSource.match(
-        /if \(isCatalogFirstCatalogStep\) \{[\s\S]*?\n  \}/,
-      )?.[0] ?? ''
+      formSource.match(/if \(isCatalogStep\) \{[\s\S]*?\n  \}/)?.[0] ?? ''
 
+    expect(formSource).toMatch(/reusableProgramMetadataForEdit/)
     expect(formSource).toMatch(/showProgramNameField/)
     expect(formSource).toMatch(
       /showProgramNameField[\s\S]*<FormField[\s\S]*name=['"]name['"]/,
@@ -47,15 +48,13 @@ describe('scratch reusable program catalog-first create flow', () => {
   })
 
   it('uses selected-list settings without the legacy exercise library access', () => {
-    expect(formSource).toMatch(/isCatalogFirstCreate/)
-    expect(formSource).toMatch(/isCatalogFirstSelectedListStep/)
-    expect(formSource).toMatch(
-      /showExerciseLibraryAccess=\{!isCatalogFirstSelectedListStep\}/,
-    )
     expect(formSource).toMatch(/goToCatalog/)
+    expect(formSource).toMatch(
+      /<ExerciseLibraryList[\s\S]*?showExerciseLibraryAccess=\{false\}/,
+    )
   })
 
-  it('blocks final submit when no enabled exercise variants remain', () => {
+  it('blocks final update when no enabled exercise variants remain', () => {
     expect(formSource).toMatch(/canSubmitReusableProgram/)
     expect(formSource).toMatch(/ZERO_ENABLED_VARIANTS_MESSAGE/)
 
@@ -63,5 +62,11 @@ describe('scratch reusable program catalog-first create flow', () => {
       ok: false,
       reason: 'exercises',
     })
+  })
+
+  it('keeps starter templates non-editable', () => {
+    expect(formSource).toMatch(/isStarterTemplateProgram/)
+    expect(formSource).toMatch(/Starter templates cannot be edited/)
+    expect(formSource).toMatch(/router\.replace\('\/programs'\)/)
   })
 })

@@ -5,9 +5,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useClientT } from '@/i18n/use-client-t'
 import { redirect, useRouter } from 'next/navigation'
-import { H2 } from '@/components/ui/typography'
+import { H2, P } from '@/components/ui/typography'
 import capitalize from 'lodash.capitalize'
 import ExerciseLibraryList from '@/components/ui/exercise-library-list'
+import ExerciseGrid from '@/components/ui/exercise-grid'
 import {
   Form,
   FormControl,
@@ -42,10 +43,14 @@ import {
   reusableProgramExercisesForEditSubmit,
 } from '@/lib/program-library-submit'
 import { ZERO_ENABLED_VARIANTS_MESSAGE } from '@/lib/program-submit-enabled-variants'
+import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
 
 interface ReusableProgramEditFormProps {
   programId: string
 }
+
+const PAGE_SHELL_CLASSNAME =
+  'h-screen-with-nav container mx-auto flex flex-col gap-6 p-4'
 
 const ReusableProgramEditForm = ({
   programId,
@@ -58,6 +63,14 @@ const ReusableProgramEditForm = ({
   const { updateExercises } = handler
   const { t } = useClientT('common')
   const { data: exercises, isLoading: isLoadingExercises } = useExercise()
+  const {
+    isCatalogStep,
+    isSelectedListStep,
+    goToSelectedList,
+    goToCatalog,
+    selectedExerciseCountLabel,
+    canGoToSelectedList,
+  } = useCatalogFirstAuthoringFlow()
 
   const { data: existingProgram, isLoading } = useReusableProgram({
     id: programId,
@@ -139,9 +152,18 @@ const ReusableProgramEditForm = ({
 
   const handleCancel = () => redirect('/programs')
 
+  const showProgramNameField = isSelectedListStep
+
+  let secondaryNav: { onClick: () => void; label: string }
+  if (isSelectedListStep) {
+    secondaryNav = { onClick: goToCatalog, label: t('btn.back') }
+  } else {
+    secondaryNav = { onClick: handleCancel, label: t('btn.cancel') }
+  }
+
   if (isLoading || isLoadingExercises || isUpdating || isUpdatingExercises) {
     return (
-      <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-4'>
+      <div className={PAGE_SHELL_CLASSNAME}>
         <LoadingScreen />
       </div>
     )
@@ -151,14 +173,54 @@ const ReusableProgramEditForm = ({
     return null
   }
 
+  if (isCatalogStep) {
+    const selectedCount = selectedExercises.length
+
+    return (
+      <div className={PAGE_SHELL_CLASSNAME}>
+        <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
+          <div className='flex items-start justify-between gap-4'>
+            <div>
+              <H2>Edit program</H2>
+              <P className='text-muted-foreground'>
+                Review exercises in the catalog, then continue to settings
+                before saving.
+              </P>
+            </div>
+
+            <div className='flex shrink-0 items-center gap-3'>
+              <span className='text-muted-foreground text-sm'>
+                {selectedExerciseCountLabel(selectedCount)}
+              </span>
+              <Button onClick={secondaryNav.onClick}>
+                {secondaryNav.label}
+              </Button>
+              <Button
+                variant='primary'
+                onClick={goToSelectedList}
+                disabled={!canGoToSelectedList(selectedCount)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+
+          <div className='min-h-0 flex-1 overflow-auto'>
+            <ExerciseGrid />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-4'>
+    <div className={PAGE_SHELL_CLASSNAME}>
       <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
         <div className='flex justify-between'>
           <H2>Edit program</H2>
 
           <div className='flex gap-2'>
-            <Button onClick={handleCancel}>{t('btn.cancel')}</Button>
+            <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
             <Button variant='primary' form='reusableProgramEditForm'>
               {t('btn.submit')}
             </Button>
@@ -169,23 +231,25 @@ const ReusableProgramEditForm = ({
             id='reusableProgramEditForm'
             onSubmit={form.handleSubmit(onSubmit)}
           >
-            <FormField
-              name='name'
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{capitalize(field.name)}</FormLabel>
-                  <FormControl>
-                    <Input {...field} className='max-w-[250px]' />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {showProgramNameField && (
+              <FormField
+                name='name'
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{capitalize(field.name)}</FormLabel>
+                    <FormControl>
+                      <Input {...field} className='max-w-[250px]' />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </form>
         </Form>
         <div className='overflow-auto'>
-          <ExerciseLibraryList />
+          <ExerciseLibraryList showExerciseLibraryAccess={false} />
         </div>
       </div>
     </div>

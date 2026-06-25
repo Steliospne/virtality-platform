@@ -7,12 +7,11 @@ const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
 
 const EXERCISE_LIBRARY_LIST_PATH = 'components/ui/exercise-library-list.tsx'
 
-const LEGACY_EXERCISE_LIBRARY_LIST_CONSUMERS = [
-  'app/(app)/programs/[programId]/edit/_components/reusable-program-edit-form.tsx',
-] as const
+const LEGACY_EXERCISE_LIBRARY_LIST_CONSUMERS = [] as const
 
 const CATALOG_FIRST_EXERCISE_LIBRARY_LIST_CONSUMERS = [
   'app/(app)/patients/[patientId]/patient-dashboard/_components/quickstart-dialog.tsx',
+  'app/(app)/programs/[programId]/edit/_components/reusable-program-edit-form.tsx',
 ] as const
 
 function readConsoleFile(relativePath: string): string {
@@ -40,14 +39,15 @@ describe('exercise library list surfaces', () => {
     }
   })
 
-  it('hides legacy exercise library access on scratch catalog-first selected-list', () => {
-    const scratchFormSource = readConsoleFile(
+  it('hides legacy exercise library access on catalog-first selected-list', () => {
+    const createFormSource = readConsoleFile(
       'app/(app)/programs/new/_components/reusable-program-form.tsx',
     )
 
-    expect(scratchFormSource).toMatch(/isScratchSelectedListStep/)
-    expect(scratchFormSource).toMatch(
-      /showExerciseLibraryAccess=\{!isScratchSelectedListStep\}/,
+    expect(createFormSource).toMatch(/isCatalogFirstCreate/)
+    expect(createFormSource).toMatch(/isCatalogFirstSelectedListStep/)
+    expect(createFormSource).toMatch(
+      /showExerciseLibraryAccess=\{!isCatalogFirstSelectedListStep\}/,
     )
   })
 

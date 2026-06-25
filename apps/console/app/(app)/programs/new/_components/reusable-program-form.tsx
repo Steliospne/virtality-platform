@@ -67,6 +67,8 @@ const ReusableProgramFormView = ({
   const { t } = useClientT('common')
   const { data: exercises, isLoading: isLoadingExercises } = useExercise()
   const isScratch = editorSource.kind === 'scratch'
+  const isTemplate = editorSource.kind === 'template'
+  const isCatalogFirstCreate = isScratch || isTemplate
   const {
     isCatalogStep,
     isSelectedListStep,
@@ -75,6 +77,9 @@ const ReusableProgramFormView = ({
     selectedExerciseCountLabel,
     canGoToSelectedList,
   } = useCatalogFirstAuthoringFlow()
+  const isCatalogFirstCatalogStep = isCatalogFirstCreate && isCatalogStep
+  const isCatalogFirstSelectedListStep =
+    isCatalogFirstCreate && isSelectedListStep
 
   const { mutateAsync: createProgram, isPending: isCreating } =
     useCreateReusableProgram({})
@@ -90,10 +95,9 @@ const ReusableProgramFormView = ({
       },
     })
 
-  const suggestedName =
-    editorSource.kind === 'template'
-      ? suggestedProgramNameFromTemplate(editorSource.template.name)
-      : ''
+  const suggestedName = isTemplate
+    ? suggestedProgramNameFromTemplate(editorSource.template.name)
+    : ''
 
   const form = useForm<ReusableProgramForm>({
     resolver: zodResolver(ReusableProgramFormSchema),
@@ -151,11 +155,10 @@ const ReusableProgramFormView = ({
 
   const handleCancel = () => router.push('/programs')
 
-  const isScratchSelectedListStep = isScratch && isSelectedListStep
-  const showProgramNameField = !isScratch || isSelectedListStep
+  const showProgramNameField = isSelectedListStep
 
   let secondaryNav: { onClick: () => void; label: string }
-  if (isScratchSelectedListStep) {
+  if (isCatalogFirstSelectedListStep) {
     secondaryNav = { onClick: goToCatalog, label: t('btn.back') }
   } else if (onBack) {
     secondaryNav = { onClick: onBack, label: t('btn.back') }
@@ -163,11 +166,7 @@ const ReusableProgramFormView = ({
     secondaryNav = { onClick: handleCancel, label: t('btn.cancel') }
   }
 
-  if (
-    isCreating ||
-    isCreatingExercises ||
-    (editorSource.kind === 'template' && isLoadingExercises)
-  ) {
+  if (isCreating || isCreatingExercises || (isTemplate && isLoadingExercises)) {
     return (
       <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-8'>
         <LoadingScreen />
@@ -175,19 +174,27 @@ const ReusableProgramFormView = ({
     )
   }
 
-  if (isScratch && isCatalogStep) {
+  if (isCatalogFirstCatalogStep) {
     const selectedCount = selectedExercises.length
+    const catalogCopy = isTemplate
+      ? {
+          heading: 'Build from starter template',
+          description:
+            'Review the template exercises in the catalog, add or remove variants, then continue to settings.',
+        }
+      : {
+          heading: 'Create program',
+          description:
+            'Choose exercises from the catalog, then review settings before saving.',
+        }
 
     return (
       <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-8'>
         <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
           <div className='flex items-start justify-between gap-4'>
             <div>
-              <H2>Create program</H2>
-              <P className='text-muted-foreground'>
-                Choose exercises from the catalog, then review settings before
-                saving.
-              </P>
+              <H2>{catalogCopy.heading}</H2>
+              <P className='text-muted-foreground'>{catalogCopy.description}</P>
             </div>
 
             <div className='flex shrink-0 items-center gap-3'>
@@ -215,10 +222,9 @@ const ReusableProgramFormView = ({
     )
   }
 
-  const heading =
-    editorSource.kind === 'template'
-      ? 'Finalize program from template'
-      : 'Create program'
+  const heading = isTemplate
+    ? 'Finalize program from template'
+    : 'Create program'
 
   return (
     <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-8'>
@@ -254,7 +260,7 @@ const ReusableProgramFormView = ({
         </Form>
         <div className='overflow-auto'>
           <ExerciseLibraryList
-            showExerciseLibraryAccess={!isScratchSelectedListStep}
+            showExerciseLibraryAccess={!isCatalogFirstSelectedListStep}
           />
         </div>
       </div>

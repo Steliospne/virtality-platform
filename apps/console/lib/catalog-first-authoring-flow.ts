@@ -68,30 +68,3 @@ export function catalogFirstSelectedExerciseCountLabel(count: number): string {
   if (count === 1) return '1 exercise selected'
   return `${count} exercises selected`
 }
-
-export function selectionSnapshot<T>(selected: readonly T[]): readonly T[] {
-  return [...selected]
-}
-
-export function selectionsEqual<T>(
-  a: readonly T[],
-  b: readonly T[],
-  key: (item: T) => string,
-): boolean {
-  if (a.length !== b.length) return false
-  const aKeys = a.map(key).sort()
-  const bKeys = b.map(key).sort()
-  return aKeys.every((value, index) => value === bKeys[index])
-}
-
-export function selectionPreservedAcrossStepTransitions<T>(
-  beforeAdvance: readonly T[],
-  duringSelectedList: readonly T[],
-  afterReturnToCatalog: readonly T[],
-  key: (item: T) => string,
-): boolean {
-  return (
-    selectionsEqual(beforeAdvance, duringSelectedList, key) &&
-    selectionsEqual(beforeAdvance, afterReturnToCatalog, key)
-  )
-}
