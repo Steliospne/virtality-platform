@@ -158,7 +158,7 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
       </div>
 
       {/* Right Container - Patient Information */}
-      <Card className='border bg-white/80 p-0 backdrop-blur-sm'>
+      <Card className='border p-0 backdrop-blur-sm'>
         <CardHeader className='from-vital-blue-700 to-vital-blue-600 rounded-t-lg bg-linear-to-br p-2 text-zinc-200'>
           <CardTitle className='flex items-center gap-2'>
             <User className='size-4' />
