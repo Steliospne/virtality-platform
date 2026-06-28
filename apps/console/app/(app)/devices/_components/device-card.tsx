@@ -8,13 +8,6 @@ import { Badge } from '@virtality/ui/components/badge'
 import { Wifi, WifiOff } from 'lucide-react'
 import { VRDevice } from '@/types/models'
 import useSocketConnection from '@/hooks/use-socket-connection'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import useDeviceCardState from '@/hooks/use-device-card-state'
 import { Input } from '@virtality/ui/components/input'
 import placeholder from '@/public/placeholder.svg'
@@ -43,22 +36,13 @@ const DeviceCard = ({ device }: DeviceProps) => {
     device,
   })
 
-  const {
-    status,
-    isCodeFieldOpen,
-    error,
-    verificationCode,
-    isRePairDialogOpen,
-  } = state
+  const { status, isCodeFieldOpen, error, verificationCode } = state
 
-  const {
-    startPairing,
-    cancelPairing,
-    resetPairing,
-    setRePairDialogOpen,
-    updateDeviceCardState,
-    resetState,
-  } = handler
+  const { startPairing, cancelPairing, updateDeviceCardState, resetState } =
+    handler
+
+  const isPaired = Boolean(device.data.deviceId)
+  const [countdown, setCountdown] = useState(300)
 
   const { mutate: setDeviceId } = useSetDeviceId({
     onSuccess: () => {
@@ -111,8 +95,6 @@ const DeviceCard = ({ device }: DeviceProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [device, status])
 
-  const [countdown, setCountdown] = useState(300)
-
   useEffect(() => {
     if (countdown <= 0) return
     const interval = isCodeFieldOpen
@@ -123,124 +105,122 @@ const DeviceCard = ({ device }: DeviceProps) => {
     return () => clearInterval(interval)
   }, [countdown, isCodeFieldOpen])
 
+  const renderFooterActions = () => {
+    if (isCodeFieldOpen) {
+      if (error) {
+        return (
+          <div className='flex w-full flex-col'>
+            <div className='flex gap-2'>
+              <Button onClick={cancelPairing} className='flex-1'>
+                Cancel
+              </Button>
+              <Button onClick={startPairing} className='flex-1'>
+                Retry
+              </Button>
+            </div>
+          </div>
+        )
+      }
+
+      return (
+        <div className='flex gap-2'>
+          <Input
+            type='text'
+            name='verificationCode'
+            id='verificationCode'
+            value={verificationCode}
+            className='w-full text-center'
+            disabled
+          />
+          <Button onClick={cancelPairing}>Cancel</Button>
+        </div>
+      )
+    }
+
+    if (isPaired) {
+      return (
+        <Button
+          variant='destructive'
+          onClick={handleRemoveDevice}
+          className='w-full'
+        >
+          Remove
+        </Button>
+      )
+    }
+
+    return (
+      <div className='flex w-full gap-2'>
+        <Button
+          variant='destructive'
+          disabled={status === 'pairing'}
+          onClick={handleRemoveDevice}
+          className='flex-1'
+        >
+          Remove
+        </Button>
+        <Button variant='default' onClick={handlePairing} className='flex-1'>
+          Pair
+        </Button>
+      </div>
+    )
+  }
+
   if (removeDevice.isPending) return <DeviceCardSkeleton />
 
   return (
-    <>
-      <Card className='aspect-4/5 w-full max-w-[320px] overflow-hidden'>
-        <div className='relative h-48 bg-white'>
-          <Image
-            src={
-              (device.data.model?.replaceAll(' ', '') === 'MetaQuest3' &&
-                MetaQuest3) ||
-              (device.data.model?.replaceAll(' ', '') === 'MetaQuest3S' &&
-                MetaQuest3s) ||
-              placeholder
-            }
-            alt={`${device.data.model} device`}
-            fill
-            priority
-            sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-            className='object-contain p-4'
-          />
-          <Badge
-            variant='outline'
-            className='absolute -top-3 right-3 dark:bg-black dark:text-white'
-          >
-            {status === 'paired' ? (
-              <>
-                <Wifi className='mr-1 size-3' /> Paired
-              </>
-            ) : (
-              <>
-                <WifiOff className='mr-1 size-3' /> Not Paired
-              </>
-            )}
-          </Badge>
-        </div>
-        <CardContent>
-          <div className='space-y-3'>
-            <div className='flex items-center gap-2'>
-              <H3 className='truncate text-xl font-semibold'>
-                {device.data.name}
-              </H3>
-              <span
-                className={cn(
-                  'size-3 rounded-full',
-                  connected ? 'bg-green-500' : 'bg-red-500',
-                )}
-              ></span>
-            </div>
-            <div className='text-muted-foreground flex items-center justify-between text-sm'>
-              <P className='text-sm'>{device.data.model}</P>
-              {isCodeFieldOpen && <span>Remaining time: {countdown} sec</span>}
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className=''>
-          {isCodeFieldOpen ? (
-            error ? (
-              <div className='flex w-full flex-col'>
-                <div className='flex gap-2'>
-                  <Button onClick={cancelPairing} className='flex-1'>
-                    Cancel
-                  </Button>
-                  <Button onClick={startPairing} className='flex-1'>
-                    Retry
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className='flex gap-2'>
-                <Input
-                  type='text'
-                  name='verificationCode'
-                  id='verificationCode'
-                  value={verificationCode}
-                  className='w-full text-center'
-                  disabled
-                />
-                <Button onClick={cancelPairing}>Cancel</Button>
-              </div>
-            )
+    <Card className='aspect-4/5 w-full max-w-[320px] overflow-hidden'>
+      <div className='relative h-48 bg-white'>
+        <Image
+          src={
+            (device.data.model?.replaceAll(' ', '') === 'MetaQuest3' &&
+              MetaQuest3) ||
+            (device.data.model?.replaceAll(' ', '') === 'MetaQuest3S' &&
+              MetaQuest3s) ||
+            placeholder
+          }
+          alt={`${device.data.model} device`}
+          fill
+          priority
+          sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+          className='object-contain p-4'
+        />
+        <Badge
+          variant='outline'
+          className='absolute -top-3 right-3 dark:bg-black dark:text-white'
+        >
+          {isPaired ? (
+            <>
+              <Wifi className='mr-1 size-3' /> Paired
+            </>
           ) : (
-            <div className='flex w-full gap-2'>
-              <Button
-                variant={'destructive'}
-                disabled={status === 'pairing'}
-                onClick={handleRemoveDevice}
-                className='flex-1'
-              >
-                {'Remove Device'}
-              </Button>
-              <Button
-                variant={'default'}
-                onClick={handlePairing}
-                className='flex-1'
-              >
-                {'Pair Device'}
-              </Button>
-            </div>
+            <>
+              <WifiOff className='mr-1 size-3' /> Not Paired
+            </>
           )}
-        </CardFooter>
-      </Card>
-
-      <Dialog open={isRePairDialogOpen} onOpenChange={setRePairDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className='text-yellow-500'>Warning!</DialogTitle>
-            <hr />
-          </DialogHeader>
-          <p>You are about to re-pair your headset.</p>
-          <DialogFooter>
-            <Button onClick={setRePairDialogOpen}>Cancel</Button>
-            <Button variant='primary' onClick={resetPairing}>
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </Badge>
+      </div>
+      <CardContent>
+        <div className='space-y-3'>
+          <div className='flex items-center gap-2'>
+            <H3 className='truncate text-xl font-semibold'>
+              {device.data.name}
+            </H3>
+            <span
+              className={cn(
+                'size-3 rounded-full',
+                connected ? 'bg-green-500' : 'bg-red-500',
+              )}
+            ></span>
+          </div>
+          <div className='text-muted-foreground flex items-center justify-between text-sm'>
+            <P className='text-sm'>{device.data.model}</P>
+            {isCodeFieldOpen && <span>Remaining time: {countdown} sec</span>}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>{renderFooterActions()}</CardFooter>
+    </Card>
   )
 }
 

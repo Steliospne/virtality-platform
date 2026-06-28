@@ -2,17 +2,11 @@ import { useEffect, useReducer, useRef } from 'react'
 import { progressiveRetry } from '@/lib/utils'
 import { VRDevice } from '@/types/models'
 import { useRow, useStore } from 'tinybase/ui-react'
-import {
-  useORPC,
-  useResetDeviceId,
-  getQueryClient,
-} from '@virtality/react-query'
 import useSocketConnection from './use-socket-connection'
 
 type State = {
   status: 'paired' | 'pairing' | 'unpaired'
   isCodeFieldOpen: boolean
-  isRePairDialogOpen: boolean
   verificationCode: string
   error: string
 }
@@ -20,14 +14,12 @@ type State = {
 const initialState: State = {
   status: 'unpaired',
   isCodeFieldOpen: false,
-  isRePairDialogOpen: false,
   verificationCode: '',
   error: '',
 }
 
 type Action =
   | { type: 'setStatus'; payload: State['status'] }
-  | { type: 'setRePairDialogOpen'; payload: State['isRePairDialogOpen'] }
   | { type: 'setCodeFieldOpen'; payload: State['isCodeFieldOpen'] }
   | { type: 'setVerificationCode'; payload: State['verificationCode'] }
   | { type: 'setError'; payload: State['error'] }
@@ -39,8 +31,6 @@ const stateReducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'setStatus':
       return { ...state, status: action.payload }
-    case 'setRePairDialogOpen':
-      return { ...state, isRePairDialogOpen: action.payload }
     case 'setCodeFieldOpen':
       return { ...state, isCodeFieldOpen: action.payload }
     case 'setVerificationCode':
@@ -63,8 +53,6 @@ interface useDeviceCardStateProps {
 }
 
 const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
-  const queryClient = getQueryClient()
-  const orpc = useORPC()
   const store = useStore()
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const socket = device.socket
@@ -75,13 +63,6 @@ const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
   }
 
   const hasStartedPairing = useRef(false)
-  const { mutate: resetDeviceId } = useResetDeviceId({
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orpc.device.list.key(),
-      })
-    },
-  })
 
   useEffect(() => {
     if (device.data.deviceId) {
@@ -127,12 +108,6 @@ const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
   }
 
   const startPairing = async () => {
-    if (device.data.deviceId)
-      return dispatch({
-        type: 'setRePairDialogOpen',
-        payload: !state.isRePairDialogOpen,
-      })
-
     try {
       dispatch({ type: 'setStatus', payload: 'pairing' })
       const code = await handleCodeGeneration()
@@ -155,29 +130,11 @@ const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
     }
   }
 
-  const resetPairing = async () => {
-    setRePairDialogOpen()
-    resetDeviceId({ id: device.data.id })
-    device.mutations.clearDeviceRoomCode()
-
-    await startPairing()
-  }
-
   const cancelPairing = () => {
     socket.disconnect()
     dispatch({ type: 'resetState' })
     hasStartedPairing.current = false
     store?.delRow('devices', device.data.id)
-  }
-
-  const setRePairDialogOpen = () =>
-    dispatch({
-      type: 'setRePairDialogOpen',
-      payload: !state.isRePairDialogOpen,
-    })
-
-  const setDeviceStatus = (payload: State['status']) => {
-    dispatch({ type: 'setStatus', payload })
   }
 
   const resetState = () => dispatch({ type: 'resetState' })
@@ -188,14 +145,9 @@ const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
 
   return {
     state,
-    dispatch,
     handler: {
-      VRConnection,
-      setRePairDialogOpen,
       startPairing,
-      resetPairing,
       cancelPairing,
-      setDeviceStatus,
       resetState,
       updateDeviceCardState,
     },
