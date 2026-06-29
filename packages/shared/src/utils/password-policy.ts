@@ -2,6 +2,8 @@ import type { ParsePayload } from 'zod/v4/core'
 
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 16
+export const INVALID_APPROVAL_LINK_MESSAGE =
+  'This approval link is invalid or has expired.'
 
 export const isValidPassword = (ctx: ParsePayload<string>) => {
   if (
@@ -38,4 +40,13 @@ export const isValidPassword = (ctx: ParsePayload<string>) => {
       code: 'digit' as 'custom',
     })
   }
+}
+
+export const collectPasswordIssues = (password: string) => {
+  const issues: { message: string }[] = []
+  isValidPassword({
+    value: password,
+    issues,
+  } as Parameters<typeof isValidPassword>[0])
+  return issues
 }

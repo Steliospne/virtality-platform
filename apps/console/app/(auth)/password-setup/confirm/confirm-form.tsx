@@ -19,6 +19,36 @@ import {
   useORPC,
 } from '@virtality/react-query'
 import { useQueryClient } from '@tanstack/react-query'
+import { INVALID_APPROVAL_LINK_MESSAGE } from '@virtality/shared/utils'
+
+type Session = ReturnType<typeof authClient.useSession>['data']
+
+const getReturnPath = (session: Session) =>
+  session?.user ? `/user/${session.user.id}/profile` : '/sign-in'
+
+const getReturnLabel = (session: Session) =>
+  session?.user ? 'Back to profile' : 'Sign in'
+
+const navigateAfterApproval = (
+  router: ReturnType<typeof useRouter>,
+  session: Session,
+) => {
+  router.push(getReturnPath(session))
+}
+
+const InvalidLinkCard = ({ session }: { session: Session }) => (
+  <Card className='w-full max-w-lg'>
+    <CardHeader>
+      <CardTitle className='text-2xl font-bold'>Invalid link</CardTitle>
+      <CardDescription>{INVALID_APPROVAL_LINK_MESSAGE}</CardDescription>
+    </CardHeader>
+    <CardFooter>
+      <Button asChild className='ml-auto'>
+        <Link href={getReturnPath(session)}>{getReturnLabel(session)}</Link>
+      </Button>
+    </CardFooter>
+  </Card>
+)
 
 const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
   const router = useRouter()
@@ -47,7 +77,7 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
         setErrorMessage(null)
       },
       onError: () => {
-        setErrorMessage('This approval link is invalid or has expired.')
+        setErrorMessage(INVALID_APPROVAL_LINK_MESSAGE)
       },
     })
 
@@ -57,27 +87,7 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
   }, [inspect, token])
 
   if (!token) {
-    return (
-      <Card className='w-full max-w-lg'>
-        <CardHeader>
-          <CardTitle className='text-2xl font-bold'>Invalid link</CardTitle>
-          <CardDescription>
-            This approval link is invalid or has expired.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button asChild className='ml-auto'>
-            <Link
-              href={
-                session?.user ? `/user/${session.user.id}/profile` : '/sign-in'
-              }
-            >
-              {session?.user ? 'Back to profile' : 'Sign in'}
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
-    )
+    return <InvalidLinkCard session={session} />
   }
 
   if (isInspecting || inspectResult === undefined) {
@@ -96,27 +106,7 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
   }
 
   if (!inspectResult.valid) {
-    return (
-      <Card className='w-full max-w-lg'>
-        <CardHeader>
-          <CardTitle className='text-2xl font-bold'>Invalid link</CardTitle>
-          <CardDescription>
-            This approval link is invalid or has expired.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button asChild className='ml-auto'>
-            <Link
-              href={
-                session?.user ? `/user/${session.user.id}/profile` : '/sign-in'
-              }
-            >
-              {session?.user ? 'Back to profile' : 'Sign in'}
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
-    )
+    return <InvalidLinkCard session={session} />
   }
 
   if (isApproved) {
@@ -132,15 +122,9 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
         <CardFooter>
           <Button
             className='ml-auto'
-            onClick={() => {
-              if (session?.user) {
-                router.push(`/user/${session.user.id}/profile`)
-                return
-              }
-              router.push('/sign-in')
-            }}
+            onClick={() => navigateAfterApproval(router, session)}
           >
-            {session?.user ? 'Back to profile' : 'Sign in'}
+            {getReturnLabel(session)}
           </Button>
         </CardFooter>
       </Card>
@@ -169,13 +153,7 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
       </CardContent>
       <CardFooter className='flex gap-2'>
         <Button asChild variant='outline'>
-          <Link
-            href={
-              session?.user ? `/user/${session.user.id}/profile` : '/sign-in'
-            }
-          >
-            Cancel
-          </Link>
+          <Link href={getReturnPath(session)}>Cancel</Link>
         </Button>
         <Button
           className='ml-auto'

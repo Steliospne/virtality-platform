@@ -29,7 +29,11 @@ import {
   useUpdateUserInfo,
 } from '@virtality/react-query'
 import z from 'zod/v4'
-import { isValidPassword } from '@virtality/shared/utils'
+import {
+  isValidPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '@virtality/shared/utils'
 import { Trash2, UserIcon, X } from 'lucide-react'
 import { SOCIAL_PROVIDERS } from '@/data/static/providers'
 import { Badge } from '@virtality/ui/components/badge'
@@ -325,25 +329,11 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
           <CardTitle className='text-xl font-bold'>Password</CardTitle>
         </CardHeader>
 
-        {isLoadingHasPassword || isLoadingPendingPasswordChange ? (
-          <>
-            <CardContent>
-              <Skeleton className='h-10 w-full' />
-            </CardContent>
-            <CardFooter className='border-t'>
-              <Skeleton className='ml-auto h-10 w-24' />
-            </CardFooter>
-          </>
-        ) : hasPassword ? (
-          <PasswordField />
-        ) : activePendingPasswordChange ? (
-          <PendingPasswordSetupState
-            destinationEmail={activePendingPasswordChange.destinationEmail}
-            expiresAt={activePendingPasswordChange.expiresAt}
-          />
-        ) : (
-          <SetPasswordField />
-        )}
+        <PasswordCardBody
+          isLoading={isLoadingHasPassword || isLoadingPendingPasswordChange}
+          hasPassword={hasPassword}
+          activePendingPasswordChange={activePendingPasswordChange}
+        />
       </Card>
 
       <Card>
@@ -372,6 +362,48 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
 }
 
 export default ProfileInfo
+
+type ActivePendingPasswordChange = ReturnType<
+  typeof useActivePendingPasswordChange
+>['data']
+
+const PasswordCardBody = ({
+  isLoading,
+  hasPassword,
+  activePendingPasswordChange,
+}: {
+  isLoading: boolean
+  hasPassword: boolean | undefined
+  activePendingPasswordChange: ActivePendingPasswordChange
+}) => {
+  if (isLoading) {
+    return (
+      <>
+        <CardContent>
+          <Skeleton className='h-10 w-full' />
+        </CardContent>
+        <CardFooter className='border-t'>
+          <Skeleton className='ml-auto h-10 w-24' />
+        </CardFooter>
+      </>
+    )
+  }
+
+  if (hasPassword) {
+    return <PasswordField />
+  }
+
+  if (activePendingPasswordChange) {
+    return (
+      <PendingPasswordSetupState
+        destinationEmail={activePendingPasswordChange.destinationEmail}
+        expiresAt={activePendingPasswordChange.expiresAt}
+      />
+    )
+  }
+
+  return <SetPasswordField />
+}
 
 const SignInMethods = () => {
   const orpc = useORPC()
@@ -637,7 +669,7 @@ const setPasswordFormField = {
     label: 'New Password',
     placeholder: '********',
     description: 'Choose a password for email and password sign-in.',
-    hint: 'Password must be 8-16 characters with upper, lower, and digit.',
+    hint: `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters with upper, lower, and digit.`,
   },
 } satisfies FieldMeta<SetPasswordForm>
 

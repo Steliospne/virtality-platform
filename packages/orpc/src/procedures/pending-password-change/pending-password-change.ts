@@ -1,9 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { ORPCError } from '@orpc/server'
 import type { PrismaClient } from '@virtality/db'
-import { hashPassword } from 'better-auth/crypto'
-import { createRandomStringGenerator } from '@virtality/shared/utils'
-import { isValidPassword } from '@virtality/shared/utils'
+import { hashPassword } from '@virtality/auth/lib/password'
+import {
+  collectPasswordIssues,
+  createRandomStringGenerator,
+  INVALID_APPROVAL_LINK_MESSAGE,
+} from '@virtality/shared/utils'
 
 export const PENDING_PASSWORD_CHANGE_EXPIRY_MS = 30 * 60 * 1000
 
@@ -13,22 +16,6 @@ export type PendingPasswordChangeStatus =
   | 'APPROVED'
   | 'CANCELLED'
   | 'SUPERSEDED'
-
-export type PendingPasswordChangeRecord = {
-  id: string
-  userId: string
-  kind: PendingPasswordChangeKind
-  status: PendingPasswordChangeStatus
-  pendingPasswordHash: string
-  approvalTokenHash: string
-  initiatingSessionId: string | null
-  destinationEmail: string
-  expiresAt: Date
-  createdAt: Date
-  approvedAt: Date | null
-  cancelledAt: Date | null
-  supersededAt: Date | null
-}
 
 export type PendingPasswordChangeDeps = Pick<
   PrismaClient,
@@ -71,10 +58,7 @@ export function hashApprovalToken(token: string): string {
 }
 
 export function assertPasswordPolicy(password: string) {
-  const issues: Parameters<typeof isValidPassword>[0]['issues'] = []
-  isValidPassword({ value: password, issues } as Parameters<
-    typeof isValidPassword
-  >[0])
+  const issues = collectPasswordIssues(password)
 
   if (issues.length > 0) {
     throw new ORPCError('BAD_REQUEST', {
@@ -239,13 +223,13 @@ export async function approvePendingPasswordSetup(
 
   if (!pending || pending.kind !== 'SETUP') {
     throw new ORPCError('BAD_REQUEST', {
-      message: 'This approval link is invalid or has expired.',
+      message: INVALID_APPROVAL_LINK_MESSAGE,
     })
   }
 
   if (await userHasPassword(deps.account, pending.userId)) {
     throw new ORPCError('BAD_REQUEST', {
-      message: 'This approval link is invalid or has expired.',
+      message: INVALID_APPROVAL_LINK_MESSAGE,
     })
   }
 

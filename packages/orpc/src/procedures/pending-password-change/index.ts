@@ -1,4 +1,5 @@
 import { z } from 'zod/v4'
+import type { PrismaClient } from '@virtality/db'
 import { isValidPassword } from '@virtality/shared/utils'
 import { getConsoleUrl } from '@virtality/shared/types'
 import { sendPendingPasswordChange } from '@virtality/nodemailer'
@@ -21,6 +22,12 @@ const TokenInputSchema = z.object({
 
 const baseURL = getConsoleUrl()
 
+const pendingPasswordChangeDeps = (prisma: PrismaClient) => ({
+  pendingPasswordChange: prisma.pendingPasswordChange,
+  account: prisma.account,
+  session: prisma.session,
+})
+
 const startSetup = authed
   .route({ path: '/pending-password-change/start-setup', method: 'POST' })
   .input(StartSetupInputSchema)
@@ -28,11 +35,7 @@ const startSetup = authed
     const { prisma, user, session } = context
 
     const result = await createPendingPasswordSetup(
-      {
-        pendingPasswordChange: prisma.pendingPasswordChange,
-        account: prisma.account,
-        session: prisma.session,
-      },
+      pendingPasswordChangeDeps(prisma),
       {
         userId: user.id,
         email: user.email,
@@ -79,11 +82,7 @@ const inspect = base
     const { prisma } = context
 
     return inspectPendingPasswordChange(
-      {
-        pendingPasswordChange: prisma.pendingPasswordChange,
-        account: prisma.account,
-        session: prisma.session,
-      },
+      pendingPasswordChangeDeps(prisma),
       input.token,
     )
   })
@@ -95,11 +94,7 @@ const approve = base
     const { prisma } = context
 
     return approvePendingPasswordSetup(
-      {
-        pendingPasswordChange: prisma.pendingPasswordChange,
-        account: prisma.account,
-        session: prisma.session,
-      },
+      pendingPasswordChangeDeps(prisma),
       input.token,
     )
   })
