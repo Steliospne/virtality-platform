@@ -20,10 +20,12 @@ import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
 import { account } from './procedures/account/index.ts'
+import { pendingPasswordChange } from './procedures/pending-password-change/index.ts'
 
 export const router = {
   me,
   user,
+  pendingPasswordChange,
   patient,
   patientSession,
   medicalHistory,

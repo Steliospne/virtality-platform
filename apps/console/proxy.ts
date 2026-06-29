@@ -22,7 +22,7 @@ export const config = {
   matcher: [
     {
       source:
-        '/((?!^$|api|ph|_next/static|_next/image|favicon.ico|sign-in|sign-up|verify-email|forgot-password|reset-password|goodbye|error).*)',
+        '/((?!^$|api|ph|_next/static|_next/image|favicon.ico|sign-in|sign-up|verify-email|forgot-password|reset-password|password-setup|goodbye|error).*)',
       missing: [
         { type: 'header', key: 'next-action' },
         { type: 'header', key: 'x-action' },

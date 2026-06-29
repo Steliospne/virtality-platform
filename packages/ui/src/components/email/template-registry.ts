@@ -6,6 +6,7 @@ import WaitingListEmail from './waitinglist-email.js'
 import MeetVirtality from './meet-virtality.js'
 import ProductUpdate from './product-update.js'
 import ProductUpdateV0109 from './product-update-v0-1-09.js'
+import PendingPasswordChangeEmail from './pending-password-change.js'
 
 export type EmailTemplateMeta = {
   id: string
@@ -116,6 +117,27 @@ export const EMAIL_TEMPLATES: {
     render: (p) =>
       ProductUpdate({
         companyName: p.companyName as string,
+      }),
+  },
+  {
+    meta: {
+      id: 'pending-password-change',
+      title: 'Pending Password Change',
+      category: 'auth',
+      subject: 'Approve password setup - Action required',
+    },
+    sampleProps: {
+      url: SAMPLE_URL,
+      name: 'John',
+      companyName: 'Virtality',
+      variant: 'setup',
+    },
+    render: (p) =>
+      PendingPasswordChangeEmail({
+        url: p.url as string,
+        name: p.name as string,
+        companyName: p.companyName as string,
+        variant: p.variant as 'setup' | 'change',
       }),
   },
   {

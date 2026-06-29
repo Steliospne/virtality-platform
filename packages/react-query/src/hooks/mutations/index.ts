@@ -3,6 +3,9 @@
 // User mutations
 export { useUpdateUserInfo } from './user/use-update-user-info.js'
 export { useUpdateUserEmail } from './user/use-update-user-email.ts'
+export { useStartPasswordSetup } from './user/use-start-password-setup.js'
+export { useInspectPendingPasswordChange } from './user/use-inspect-pending-password-change.js'
+export { useApprovePendingPasswordChange } from './user/use-approve-pending-password-change.js'
 
 // Reusable program mutations
 export { useCreateReusableProgram } from './reusable-program/use-create-reusable-program.js'

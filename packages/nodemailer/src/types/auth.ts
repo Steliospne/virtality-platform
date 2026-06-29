@@ -17,3 +17,9 @@ export type ChangeEmailData = {
   url: string
   token: string
 }
+
+export type PendingPasswordChangeData = {
+  user: StriptedUser
+  url: string
+  variant: 'setup' | 'change'
+}
