@@ -4,6 +4,9 @@
 export { useUpdateUserInfo } from './user/use-update-user-info.js'
 export { useUpdateUserEmail } from './user/use-update-user-email.ts'
 export { useStartPasswordSetup } from './user/use-start-password-setup.js'
+export { useStartPasswordChange } from './user/use-start-password-change.js'
+export { useResendPendingPasswordChange } from './user/use-resend-pending-password-change.js'
+export { useCancelPendingPasswordChange } from './user/use-cancel-pending-password-change.js'
 export { useInspectPendingPasswordChange } from './user/use-inspect-pending-password-change.js'
 export { useApprovePendingPasswordChange } from './user/use-approve-pending-password-change.js'
 

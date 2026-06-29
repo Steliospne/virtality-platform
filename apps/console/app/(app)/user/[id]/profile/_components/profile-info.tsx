@@ -21,10 +21,14 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
 import { Separator } from '@virtality/ui/components/separator'
 import { UserSchema } from '@virtality/db/definitions'
 import {
+  type ActivePendingPasswordChange,
   useActivePendingPasswordChange,
+  useCancelPendingPasswordChange,
   useHasPassword,
   useListAccounts,
   useORPC,
+  useResendPendingPasswordChange,
+  useStartPasswordChange,
   useStartPasswordSetup,
   useUpdateUserInfo,
 } from '@virtality/react-query'
@@ -37,7 +41,7 @@ import {
 import { Trash2, UserIcon, X } from 'lucide-react'
 import { SOCIAL_PROVIDERS } from '@/data/static/providers'
 import { Badge } from '@virtality/ui/components/badge'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { ControllerField } from '@/components/ui/controller'
 import { Account } from 'better-auth'
 import {
@@ -65,7 +69,7 @@ const EmailFormSchema = UserSchema.pick({ email: true })
 
 const PasswordFormSchema = z.object({
   currentPassword: z.string().nonempty('Current password is required').trim(),
-  newPassword: z.string().nonempty('New password is required').trim(),
+  newPassword: z.string().trim().check(isValidPassword),
 })
 
 const SetPasswordFormSchema = z.object({
@@ -363,9 +367,24 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
 
 export default ProfileInfo
 
-type ActivePendingPasswordChange = ReturnType<
-  typeof useActivePendingPasswordChange
->['data']
+const PENDING_PASSWORD_KIND_LABEL = {
+  SETUP: 'Password setup',
+  CHANGE: 'Password change',
+} as const satisfies Record<ActivePendingPasswordChange['kind'], string>
+
+const PENDING_PASSWORD_CANCEL_SUCCESS = {
+  SETUP: 'Password setup request cancelled.',
+  CHANGE: 'Password change request cancelled.',
+} as const satisfies Record<ActivePendingPasswordChange['kind'], string>
+
+const invalidateActivePendingPasswordChange = async (
+  queryClient: QueryClient,
+  orpc: ReturnType<typeof useORPC>,
+) => {
+  await queryClient.invalidateQueries({
+    queryKey: orpc.pendingPasswordChange.getActive.key(),
+  })
+}
 
 const PasswordCardBody = ({
   isLoading,
@@ -374,7 +393,7 @@ const PasswordCardBody = ({
 }: {
   isLoading: boolean
   hasPassword: boolean | undefined
-  activePendingPasswordChange: ActivePendingPasswordChange
+  activePendingPasswordChange: ActivePendingPasswordChange | null | undefined
 }) => {
   if (isLoading) {
     return (
@@ -389,17 +408,12 @@ const PasswordCardBody = ({
     )
   }
 
-  if (hasPassword) {
-    return <PasswordField />
+  if (activePendingPasswordChange) {
+    return <PendingPasswordState pending={activePendingPasswordChange} />
   }
 
-  if (activePendingPasswordChange) {
-    return (
-      <PendingPasswordSetupState
-        destinationEmail={activePendingPasswordChange.destinationEmail}
-        expiresAt={activePendingPasswordChange.expiresAt}
-      />
-    )
+  if (hasPassword) {
+    return <PasswordField />
   }
 
   return <SetPasswordField />
@@ -582,30 +596,34 @@ const ImageField = ({ field, user }: ImageFieldProps) => {
 }
 
 const PasswordField = () => {
+  const orpc = useORPC()
+  const queryClient = useQueryClient()
   const changePasswordForm = useForm<PasswordForm>({
     resolver: zodResolver(PasswordFormSchema),
     defaultValues: { currentPassword: '', newPassword: '' },
   })
 
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const { mutate: startPasswordChange, isPending } = useStartPasswordChange({
+    onSuccess: async () => {
+      changePasswordForm.reset(
+        { currentPassword: '', newPassword: '' },
+        { keepDirty: false },
+      )
+      await queryClient.invalidateQueries({
+        queryKey: orpc.pendingPasswordChange.getActive.key(),
+      })
+      toast.success('Check your email to approve the password change.')
+    },
+    onError: (error) => {
+      console.error(error)
+      toast.error('Failed to start password change')
+    },
+  })
 
-  const onSubmitChangePassword = async (data: PasswordForm) => {
-    setIsUpdatingPassword(true)
-
-    await authClient.changePassword({
-      newPassword: data.newPassword,
+  const onSubmitChangePassword = (data: PasswordForm) => {
+    startPasswordChange({
       currentPassword: data.currentPassword,
-      fetchOptions: {
-        onSuccess: () => {
-          void toast.success('Password changed successfully')
-          setIsUpdatingPassword(false)
-        },
-        onError: (error) => {
-          console.error(error)
-          toast.error('Failed to change password')
-          setIsUpdatingPassword(false)
-        },
-      },
+      newPassword: data.newPassword,
     })
   }
 
@@ -655,9 +673,9 @@ const PasswordField = () => {
         <Button
           type='submit'
           className='ml-auto'
-          disabled={!changePasswordForm.formState.isDirty || isUpdatingPassword}
+          disabled={!changePasswordForm.formState.isDirty || isPending}
         >
-          {isUpdatingPassword ? 'Saving...' : 'Change'}
+          {isPending ? 'Sending...' : 'Change'}
         </Button>
       </CardFooter>
     </form>
@@ -684,9 +702,7 @@ const SetPasswordField = () => {
   const { mutate: startPasswordSetup, isPending } = useStartPasswordSetup({
     onSuccess: async () => {
       setPasswordForm.reset({ newPassword: '' }, { keepDirty: false })
-      await queryClient.invalidateQueries({
-        queryKey: orpc.pendingPasswordChange.getActive.key(),
-      })
+      await invalidateActivePendingPasswordChange(queryClient, orpc)
       toast.success('Check your email to approve password setup.')
     },
     onError: (error) => {
@@ -740,20 +756,47 @@ const SetPasswordField = () => {
   )
 }
 
-const PendingPasswordSetupState = ({
-  destinationEmail,
-  expiresAt,
+const PendingPasswordState = ({
+  pending,
 }: {
-  destinationEmail: string
-  expiresAt: Date | string
+  pending: ActivePendingPasswordChange
 }) => {
+  const orpc = useORPC()
+  const queryClient = useQueryClient()
+  const { kind, destinationEmail, expiresAt } = pending
   const expiry = new Date(expiresAt)
+
+  const { mutate: resend, isPending: isResending } =
+    useResendPendingPasswordChange({
+      onSuccess: async () => {
+        await invalidateActivePendingPasswordChange(queryClient, orpc)
+        toast.success('Approval email resent.')
+      },
+      onError: (error) => {
+        console.error(error)
+        toast.error('Failed to resend approval email')
+      },
+    })
+
+  const { mutate: cancel, isPending: isCancelling } =
+    useCancelPendingPasswordChange({
+      onSuccess: async () => {
+        await invalidateActivePendingPasswordChange(queryClient, orpc)
+        toast.success(PENDING_PASSWORD_CANCEL_SUCCESS[kind])
+      },
+      onError: (error) => {
+        console.error(error)
+        toast.error('Failed to cancel pending password request')
+      },
+    })
+
+  const isActionPending = isResending || isCancelling
 
   return (
     <>
       <CardContent className='space-y-2'>
         <p className='text-sm'>
-          Password setup is pending approval. Check{' '}
+          {PENDING_PASSWORD_KIND_LABEL[kind]} is pending approval. Check{' '}
           <span className='font-medium'>{destinationEmail}</span> for the
           approval email.
         </p>
@@ -761,9 +804,22 @@ const PendingPasswordSetupState = ({
           The approval link expires at {expiry.toLocaleString()}.
         </p>
       </CardContent>
-      <CardFooter className='border-t'>
-        <Button type='button' className='ml-auto' disabled>
-          Approval pending
+      <CardFooter className='flex gap-2 border-t'>
+        <Button
+          type='button'
+          variant='outline'
+          disabled={isActionPending}
+          onClick={() => cancel(undefined)}
+        >
+          {isCancelling ? 'Cancelling...' : 'Cancel request'}
+        </Button>
+        <Button
+          type='button'
+          className='ml-auto'
+          disabled={isActionPending}
+          onClick={() => resend(undefined)}
+        >
+          {isResending ? 'Resending...' : 'Resend email'}
         </Button>
       </CardFooter>
     </>

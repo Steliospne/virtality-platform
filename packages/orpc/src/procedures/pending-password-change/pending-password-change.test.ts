@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  approvePendingPasswordChange,
   approvePendingPasswordSetup,
+  cancelPendingPasswordChange,
+  createPendingPasswordChange,
   createPendingPasswordSetup,
   hashApprovalToken,
   inspectPendingPasswordChange,
   pendingPasswordChangePersistencePayload,
   PENDING_PASSWORD_CHANGE_EXPIRY_MS,
+  resendPendingPasswordChange,
   userHasPassword,
   type PendingPasswordChangeDeps,
 } from './pending-password-change.ts'
@@ -160,6 +164,10 @@ function createDeps(overrides: {
       session,
       now: () => now,
       hashPasswordFn: vi.fn(async () => 'opaque-password-hash'),
+      verifyPasswordFn: vi.fn(
+        async ({ password }: { password: string }) =>
+          password === 'CurrentPass1',
+      ),
       generateToken: () => 'raw-token-123',
       generateId: () => 'pending-1',
     } as unknown as PendingPasswordChangeDeps,
@@ -307,6 +315,247 @@ describe('pending password setup lifecycle', () => {
     await expect(
       approvePendingPasswordSetup(deps, 'old-token'),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('resend rotates the approval token and expiry while preserving the pending password hash', async () => {
+    const originalTokenHash = hashApprovalToken('original-token')
+    const { deps, pendingRecords } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: originalTokenHash,
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+    deps.generateToken = () => 'resend-token-456'
+    const sendApprovalEmail = vi.fn()
+
+    const result = await resendPendingPasswordChange(
+      deps,
+      'user-1',
+      sendApprovalEmail,
+      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+    )
+
+    expect(result).toEqual({
+      destinationEmail: 'user@example.com',
+      expiresAt: new Date(now.getTime() + PENDING_PASSWORD_CHANGE_EXPIRY_MS),
+    })
+    expect(pendingRecords[0]).toMatchObject({
+      pendingPasswordHash: 'hashed:ValidPass1',
+      approvalTokenHash: hashApprovalToken('resend-token-456'),
+      status: 'PENDING',
+    })
+    expect(sendApprovalEmail).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      name: 'user@example.com',
+      approvalUrl:
+        'https://console.test/password-setup/confirm?token=resend-token-456',
+      kind: 'SETUP',
+    })
+  })
+
+  it('invalidates older approval links after resend', async () => {
+    const { deps } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('original-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+    deps.generateToken = () => 'resend-token-456'
+
+    await resendPendingPasswordChange(
+      deps,
+      'user-1',
+      vi.fn(),
+      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+    )
+
+    expect(await inspectPendingPasswordChange(deps, 'original-token')).toEqual({
+      valid: false,
+    })
+    await expect(
+      approvePendingPasswordSetup(deps, 'original-token'),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('cancels an active pending request without current-password proof', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('cancel-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    const result = await cancelPendingPasswordChange(deps, 'user-1')
+
+    expect(result).toEqual({ cancelled: true })
+    expect(pendingRecords[0]).toMatchObject({
+      status: 'CANCELLED',
+      cancelledAt: now,
+    })
+  })
+
+  it('prevents approval after cancellation', async () => {
+    const { deps } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('cancel-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    await cancelPendingPasswordChange(deps, 'user-1')
+
+    expect(await inspectPendingPasswordChange(deps, 'cancel-token')).toEqual({
+      valid: false,
+    })
+    await expect(
+      approvePendingPasswordSetup(deps, 'cancel-token'),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('creates a pending change request after current-password proof', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: {
+        id: 'credential-1',
+        providerId: 'credential',
+        password: 'stored-hash',
+      },
+    })
+    const sendApprovalEmail = vi.fn()
+
+    const result = await createPendingPasswordChange(
+      deps,
+      {
+        ...baseInput,
+        currentPassword: 'CurrentPass1',
+        newPassword: 'ValidPass1',
+      },
+      sendApprovalEmail,
+      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+    )
+
+    expect(result).toEqual({
+      destinationEmail: 'user@example.com',
+      expiresAt: new Date(now.getTime() + PENDING_PASSWORD_CHANGE_EXPIRY_MS),
+    })
+    expect(sendApprovalEmail).toHaveBeenCalledOnce()
+    expect(pendingRecords[0]).toMatchObject({
+      kind: 'CHANGE',
+      status: 'PENDING',
+      pendingPasswordHash: 'opaque-password-hash',
+      approvalTokenHash: hashApprovalToken('raw-token-123'),
+      destinationEmail: 'user@example.com',
+    })
+    expect(JSON.stringify(pendingRecords)).not.toContain('ValidPass1')
+    expect(JSON.stringify(pendingRecords)).not.toContain('CurrentPass1')
+  })
+
+  it('does not create a pending change or send email when current-password proof fails', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: {
+        id: 'credential-1',
+        providerId: 'credential',
+        password: 'stored-hash',
+      },
+    })
+    const sendApprovalEmail = vi.fn()
+
+    await expect(
+      createPendingPasswordChange(
+        deps,
+        {
+          ...baseInput,
+          currentPassword: 'WrongPass1',
+          newPassword: 'ValidPass1',
+        },
+        sendApprovalEmail,
+        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+
+    expect(pendingRecords).toHaveLength(0)
+    expect(sendApprovalEmail).not.toHaveBeenCalled()
+  })
+
+  it('approves a valid change token, preserves the initiating session, and revokes others', async () => {
+    const approvalTokenHash = hashApprovalToken('change-token')
+    const { deps, session, accounts } = createDeps({
+      account: {
+        id: 'credential-1',
+        providerId: 'credential',
+        password: 'old-hash',
+      },
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'CHANGE',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:NewPass1',
+          approvalTokenHash,
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    const result = await approvePendingPasswordChange(deps, 'change-token')
+
+    expect(result).toEqual({ approved: true })
+    expect(session.deleteMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        id: { not: 'session-1' },
+      },
+    })
+    expect(
+      accounts.find((item) => item.providerId === 'credential')?.password,
+    ).toBe('hashed:NewPass1')
   })
 
   it('detects whether a user already has a password', async () => {

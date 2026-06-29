@@ -109,14 +109,19 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
     return <InvalidLinkCard session={session} />
   }
 
+  const isChange = inspectResult.kind === 'CHANGE'
+
   if (isApproved) {
     return (
       <Card className='w-full max-w-lg'>
         <CardHeader>
-          <CardTitle className='text-2xl font-bold'>Password set</CardTitle>
+          <CardTitle className='text-2xl font-bold'>
+            {isChange ? 'Password changed' : 'Password set'}
+          </CardTitle>
           <CardDescription>
-            Your password has been approved. You can now sign in with email and
-            password.
+            {isChange
+              ? 'Your new password has been approved and is now active.'
+              : 'Your password has been approved. You can now sign in with email and password.'}
           </CardDescription>
         </CardHeader>
         <CardFooter>
@@ -135,10 +140,12 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
     <Card className='w-full max-w-lg'>
       <CardHeader>
         <CardTitle className='text-2xl font-bold'>
-          Approve password setup
+          {isChange ? 'Approve password change' : 'Approve password setup'}
         </CardTitle>
         <CardDescription>
-          Confirm that you want to add password sign-in to your account.
+          {isChange
+            ? 'Confirm that you want to change your account password.'
+            : 'Confirm that you want to add password sign-in to your account.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -146,8 +153,9 @@ const PasswordSetupConfirmForm = ({ token }: { token?: string }) => {
           <p className='text-destructive text-sm'>{errorMessage}</p>
         ) : (
           <p className='text-muted-foreground text-sm'>
-            Press approve to finish setting your password. Opening this page did
-            not change your account.
+            Press approve to finish{' '}
+            {isChange ? 'changing your password' : 'setting your password'}.
+            Opening this page did not change your account.
           </p>
         )}
       </CardContent>

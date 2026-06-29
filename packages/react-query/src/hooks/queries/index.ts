@@ -5,7 +5,10 @@ export { useUserName } from './user/use-user-name.js'
 export { useIsUserVerified } from './user/use-is-user-verified.js'
 export { useUsers } from './user/use-users.js'
 export { useHasPassword } from './user/use-has-password.js'
-export { useActivePendingPasswordChange } from './user/use-active-pending-password-change.js'
+export {
+  useActivePendingPasswordChange,
+  type ActivePendingPasswordChange,
+} from './user/use-active-pending-password-change.js'
 
 // Account queries
 export { useListAccounts } from './account/use-list-accounts.js'

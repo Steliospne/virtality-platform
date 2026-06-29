@@ -6,7 +6,10 @@ import WaitingListEmail from './waitinglist-email.js'
 import MeetVirtality from './meet-virtality.js'
 import ProductUpdate from './product-update.js'
 import ProductUpdateV0109 from './product-update-v0-1-09.js'
-import PendingPasswordChangeEmail from './pending-password-change.js'
+import PendingPasswordChangeEmail, {
+  getPendingPasswordChangeSubject,
+  type PendingPasswordChangeVariant,
+} from './pending-password-change.js'
 
 export type EmailTemplateMeta = {
   id: string
@@ -19,6 +22,33 @@ export type SampleProps = Record<string, unknown>
 
 const SAMPLE_URL = 'https://example.com/verify'
 const SAMPLE_EMAIL = 'recipient@example.com'
+
+function createPendingPasswordChangeTemplate(
+  variant: PendingPasswordChangeVariant,
+  titleLabel: string,
+) {
+  return {
+    meta: {
+      id: `pending-password-change-${variant}`,
+      title: `Pending Password Change (${titleLabel})`,
+      category: 'auth',
+      subject: getPendingPasswordChangeSubject(variant),
+    },
+    sampleProps: {
+      url: SAMPLE_URL,
+      name: 'John',
+      companyName: 'Virtality',
+      variant,
+    },
+    render: (p: SampleProps) =>
+      PendingPasswordChangeEmail({
+        url: p.url as string,
+        name: p.name as string,
+        companyName: p.companyName as string,
+        variant,
+      }),
+  }
+}
 
 export const EMAIL_TEMPLATES: {
   meta: EmailTemplateMeta
@@ -119,27 +149,8 @@ export const EMAIL_TEMPLATES: {
         companyName: p.companyName as string,
       }),
   },
-  {
-    meta: {
-      id: 'pending-password-change',
-      title: 'Pending Password Change',
-      category: 'auth',
-      subject: 'Approve password setup - Action required',
-    },
-    sampleProps: {
-      url: SAMPLE_URL,
-      name: 'John',
-      companyName: 'Virtality',
-      variant: 'setup',
-    },
-    render: (p) =>
-      PendingPasswordChangeEmail({
-        url: p.url as string,
-        name: p.name as string,
-        companyName: p.companyName as string,
-        variant: p.variant as 'setup' | 'change',
-      }),
-  },
+  createPendingPasswordChangeTemplate('setup', 'Setup'),
+  createPendingPasswordChangeTemplate('change', 'Change'),
   {
     meta: {
       id: 'product-update-v0-1-09',
