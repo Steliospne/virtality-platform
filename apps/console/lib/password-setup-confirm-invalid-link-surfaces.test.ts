@@ -16,7 +16,7 @@ describe('password setup confirm invalid link surfaces', () => {
   it('routes matching signed-in users back to profile on invalid links', () => {
     expect(source).toMatch(/canReturnToProfile/)
     expect(source).toMatch(/Back to profile/)
-    expect(source).toMatch(/getReturnPath\(session, canReturnToProfile\)/)
+    expect(source).toMatch(/getReturnNavigation\(session, canReturnToProfile\)/)
   })
 
   it('offers sign-in only when profile return is unavailable', () => {

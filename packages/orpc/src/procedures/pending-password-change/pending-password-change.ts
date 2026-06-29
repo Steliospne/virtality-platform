@@ -374,18 +374,13 @@ async function findPendingByTokenHash(
   })
 }
 
-async function findValidPendingByToken(
+async function validatePendingTokenRecord(
   deps: PendingPasswordChangeDeps,
-  token: string,
+  pending: NonNullable<Awaited<ReturnType<typeof findPendingByTokenHash>>>,
 ) {
   const now = deps.now?.() ?? new Date()
-  const approvalTokenHash = hashApprovalToken(token)
-  const pending = await deps.pendingPasswordChange.findFirst({
-    where: { approvalTokenHash, status: 'PENDING' },
-    orderBy: { createdAt: 'desc' },
-  })
 
-  if (!pending || pending.expiresAt <= now) {
+  if (pending.status !== 'PENDING' || pending.expiresAt <= now) {
     return null
   }
 
@@ -401,17 +396,32 @@ async function findValidPendingByToken(
   return pending
 }
 
+async function findValidPendingByToken(
+  deps: PendingPasswordChangeDeps,
+  token: string,
+) {
+  const record = await findPendingByTokenHash(deps.pendingPasswordChange, token)
+  if (!record) {
+    return null
+  }
+
+  return validatePendingTokenRecord(deps, record)
+}
+
 export async function inspectPendingPasswordChange(
   deps: PendingPasswordChangeDeps,
   token: string,
   viewerUserId?: string,
 ): Promise<InspectPendingPasswordChangeResult> {
-  const pending = await findValidPendingByToken(deps, token)
-  if (pending) {
-    return { valid: true, kind: pending.kind }
+  const record = await findPendingByTokenHash(deps.pendingPasswordChange, token)
+  const validPending = record
+    ? await validatePendingTokenRecord(deps, record)
+    : null
+
+  if (validPending) {
+    return { valid: true, kind: validPending.kind }
   }
 
-  const record = await findPendingByTokenHash(deps.pendingPasswordChange, token)
   const canReturnToProfile =
     viewerUserId !== undefined && record?.userId === viewerUserId
 
