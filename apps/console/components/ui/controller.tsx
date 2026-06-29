@@ -15,6 +15,7 @@ import {
   FieldSet,
 } from './field'
 import { FieldMeta } from '@virtality/shared/types'
+import { cn } from '@virtality/ui/lib/utils'
 
 type FieldMetaPath<TFieldValues extends FieldValues> = FieldPath<TFieldValues> &
   keyof FieldMeta<TFieldValues>
@@ -25,6 +26,7 @@ type ControllerFieldProps<
 > = {
   name: TName
   meta: FieldMeta<TFieldValues>[TName]
+  labelClassName?: string
   control: Control<TFieldValues>
   children: (props: {
     field: ControllerRenderProps<TFieldValues, TName>
@@ -41,6 +43,7 @@ type ControllerFieldFn = <
 
 export const ControllerField: ControllerFieldFn = ({
   name,
+  labelClassName,
   control,
   meta,
   children,
@@ -52,7 +55,10 @@ export const ControllerField: ControllerFieldFn = ({
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldSet className='relative'>
-            <FieldLabel htmlFor={field.name} className='text-xl font-bold'>
+            <FieldLabel
+              htmlFor={field.name}
+              className={cn('text-xl font-bold', labelClassName)}
+            >
               {meta.label}
             </FieldLabel>
           </FieldSet>

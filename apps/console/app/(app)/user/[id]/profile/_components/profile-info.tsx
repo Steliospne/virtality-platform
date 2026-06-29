@@ -10,11 +10,18 @@ import { FieldMeta, getConsoleUrl } from '@virtality/shared/types'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Card, CardContent, CardFooter } from '@virtality/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@virtality/ui/components/card'
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
 import { Separator } from '@virtality/ui/components/separator'
 import { UserSchema } from '@virtality/db/definitions'
 import {
+  useHasPassword,
   useListAccounts,
   useORPC,
   useUpdateUserInfo,
@@ -32,6 +39,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const baseURL = getConsoleUrl()
 
@@ -47,6 +55,13 @@ const BasicInfoFormSchema = UserSchema.extend({
 type EmailForm = Pick<z.infer<typeof UserSchema>, 'email'>
 
 const EmailFormSchema = UserSchema.pick({ email: true })
+
+const PasswordFormSchema = z.object({
+  currentPassword: z.string().nonempty('Current password is required').trim(),
+  newPassword: z.string().nonempty('New password is required').trim(),
+})
+
+type PasswordForm = z.infer<typeof PasswordFormSchema>
 
 const basicInfoFormFields = {
   image: {
@@ -78,6 +93,21 @@ const emailFormField = {
   },
 } satisfies FieldMeta<EmailForm>
 
+const passwordFormField = {
+  currentPassword: {
+    label: 'Current Password',
+    placeholder: '********',
+    description: 'Please enter your current password.',
+    hint: 'Please enter your current password.',
+  },
+  newPassword: {
+    label: 'New Password',
+    placeholder: '********',
+    description: 'Please enter your new password.',
+    hint: 'Please enter your new password.',
+  },
+} satisfies FieldMeta<PasswordForm>
+
 type SessionUser = NonNullable<
   ReturnType<typeof authClient.useSession>['data']
 >['user']
@@ -94,6 +124,9 @@ interface ProfileInfoProps {
 
 const ProfileInfo = ({ user }: ProfileInfoProps) => {
   const { refetch: refetchSession } = authClient.useSession()
+
+  const { data: hasPassword, isLoading: isLoadingHasPassword } =
+    useHasPassword()
 
   usePageViewTracking({
     props: { route_group: 'user', tab_view: 'user-profile' },
@@ -275,18 +308,42 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
         </form>
       </Card>
 
-      <div className='relative flex flex-col rounded-lg border shadow-md dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200'>
-        <div className='p-4'>
-          <h2 className='text-xl font-bold'>Delete Account</h2>
-          <div className='my-4'>
-            <div className='flex-1'>
-              Permanently remove your Personal Account and all of its contents
-              from Virtality. This action is not reversible, so please continue
-              with caution.
-            </div>
-          </div>
-        </div>
-        <footer className='flex items-center border-t p-4 text-sm text-zinc-400 dark:border-zinc-600'>
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-xl font-bold'>Password</CardTitle>
+        </CardHeader>
+
+        {isLoadingHasPassword ? (
+          <>
+            <CardContent>
+              <Skeleton className='h-10 w-full' />
+            </CardContent>
+            <CardFooter className='border-t'>
+              <Skeleton className='ml-auto h-10 w-24' />
+            </CardFooter>
+          </>
+        ) : hasPassword ? (
+          <PasswordField />
+        ) : (
+          <>
+            <CardContent>You have not set a password yet.</CardContent>
+            <CardFooter className='border-t'>
+              <Button className='ml-auto'>Set Password</Button>
+            </CardFooter>
+          </>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Delete Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          Permanently remove your Personal Account and all of its contents from
+          Virtality. This action is not reversible, so please continue with
+          caution.
+        </CardContent>
+        <CardFooter className='border-t'>
           <Button
             type='submit'
             variant='destructive'
@@ -296,8 +353,8 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
           >
             {isDeleting ? 'Deleting...' : 'Delete account'}
           </Button>
-        </footer>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
@@ -477,5 +534,87 @@ const ImageField = ({ field, user }: ImageFieldProps) => {
         }}
       />
     </FieldLabel>
+  )
+}
+
+const PasswordField = () => {
+  const changePasswordForm = useForm<PasswordForm>({
+    resolver: zodResolver(PasswordFormSchema),
+    defaultValues: { currentPassword: '', newPassword: '' },
+  })
+
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+
+  const onSubmitChangePassword = async (data: PasswordForm) => {
+    setIsUpdatingPassword(true)
+
+    await authClient.changePassword({
+      newPassword: data.newPassword,
+      currentPassword: data.currentPassword,
+      fetchOptions: {
+        onSuccess: () => {
+          void toast.success('Password changed successfully')
+          setIsUpdatingPassword(false)
+        },
+        onError: (error) => {
+          console.error(error)
+          toast.error('Failed to change password')
+        },
+      },
+    })
+  }
+
+  return (
+    <form onSubmit={changePasswordForm.handleSubmit(onSubmitChangePassword)}>
+      <CardContent>
+        <FieldGroup className='mb-6'>
+          <ControllerField
+            name='currentPassword'
+            control={changePasswordForm.control}
+            meta={passwordFormField['currentPassword']}
+            labelClassName='text-base'
+          >
+            {({ field, fieldState }) => (
+              <Input
+                {...field}
+                id={field.name}
+                type='password'
+                name={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder={passwordFormField['currentPassword'].placeholder}
+                value={(field.value ?? '') as string}
+              />
+            )}
+          </ControllerField>
+          <ControllerField
+            labelClassName='text-base'
+            name='newPassword'
+            control={changePasswordForm.control}
+            meta={passwordFormField['newPassword']}
+          >
+            {({ field, fieldState }) => (
+              <Input
+                {...field}
+                id={field.name}
+                type='password'
+                name={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder={passwordFormField['newPassword'].placeholder}
+                value={(field.value ?? '') as string}
+              />
+            )}
+          </ControllerField>
+        </FieldGroup>
+      </CardContent>
+      <CardFooter className='border-t'>
+        <Button
+          type='submit'
+          className='ml-auto'
+          disabled={!changePasswordForm.formState.isDirty || isUpdatingPassword}
+        >
+          {isUpdatingPassword ? 'Saving...' : 'Change'}
+        </Button>
+      </CardFooter>
+    </form>
   )
 }

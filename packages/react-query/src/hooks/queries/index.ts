@@ -4,6 +4,7 @@
 export { useUserName } from './user/use-user-name.js'
 export { useIsUserVerified } from './user/use-is-user-verified.js'
 export { useUsers } from './user/use-users.js'
+export { useHasPassword } from './user/use-has-password.js'
 
 // Account queries
 export { useListAccounts } from './account/use-list-accounts.js'
