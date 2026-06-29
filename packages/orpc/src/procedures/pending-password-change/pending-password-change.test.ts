@@ -278,6 +278,7 @@ describe('pending password setup lifecycle', () => {
 
     expect(await inspectPendingPasswordChange(deps, 'expired-token')).toEqual({
       valid: false,
+      canReturnToProfile: false,
     })
   })
 
@@ -393,6 +394,7 @@ describe('pending password setup lifecycle', () => {
 
     expect(await inspectPendingPasswordChange(deps, 'original-token')).toEqual({
       valid: false,
+      canReturnToProfile: false,
     })
     await expect(
       approvePendingPasswordSetup(deps, 'original-token'),
@@ -450,6 +452,7 @@ describe('pending password setup lifecycle', () => {
 
     expect(await inspectPendingPasswordChange(deps, 'cancel-token')).toEqual({
       valid: false,
+      canReturnToProfile: false,
     })
     await expect(
       approvePendingPasswordSetup(deps, 'cancel-token'),

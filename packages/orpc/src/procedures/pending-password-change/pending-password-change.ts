@@ -40,7 +40,7 @@ export type ActivePendingPasswordChange = {
 
 export type InspectPendingPasswordChangeResult =
   | { valid: true; kind: PendingPasswordChangeKind }
-  | { valid: false }
+  | { valid: false; canReturnToProfile: boolean }
 
 export type CreatePendingPasswordSetupInput = {
   userId: string
@@ -363,6 +363,17 @@ export async function getActivePendingPasswordChange(
   }
 }
 
+async function findPendingByTokenHash(
+  pendingPasswordChange: PendingPasswordChangeDeps['pendingPasswordChange'],
+  token: string,
+) {
+  const approvalTokenHash = hashApprovalToken(token)
+  return pendingPasswordChange.findFirst({
+    where: { approvalTokenHash },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 async function findValidPendingByToken(
   deps: PendingPasswordChangeDeps,
   token: string,
@@ -393,13 +404,18 @@ async function findValidPendingByToken(
 export async function inspectPendingPasswordChange(
   deps: PendingPasswordChangeDeps,
   token: string,
+  viewerUserId?: string,
 ): Promise<InspectPendingPasswordChangeResult> {
   const pending = await findValidPendingByToken(deps, token)
-  if (!pending) {
-    return { valid: false }
+  if (pending) {
+    return { valid: true, kind: pending.kind }
   }
 
-  return { valid: true, kind: pending.kind }
+  const record = await findPendingByTokenHash(deps.pendingPasswordChange, token)
+  const canReturnToProfile =
+    viewerUserId !== undefined && record?.userId === viewerUserId
+
+  return { valid: false, canReturnToProfile }
 }
 
 export async function approvePendingPasswordSetup(

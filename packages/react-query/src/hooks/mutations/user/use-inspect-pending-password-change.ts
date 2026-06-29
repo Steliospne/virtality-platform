@@ -12,7 +12,7 @@ type InspectPendingPasswordChangeInput = {
 
 type InspectPendingPasswordChangeResult =
   | { valid: true; kind: 'SETUP' | 'CHANGE' }
-  | { valid: false }
+  | { valid: false; canReturnToProfile: boolean }
 
 export function useInspectPendingPasswordChange(
   props?: UseInspectPendingPasswordChangeProps,

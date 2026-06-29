@@ -166,11 +166,12 @@ const inspect = base
   .route({ path: '/pending-password-change/inspect', method: 'POST' })
   .input(TokenInputSchema)
   .handler(async ({ context, input }) => {
-    const { prisma } = context
+    const { prisma, user } = context
 
     return inspectPendingPasswordChange(
       pendingPasswordChangeDeps(prisma),
       input.token,
+      user?.id,
     )
   })
 
