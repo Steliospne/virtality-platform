@@ -9,63 +9,6 @@ function readProcedureFile(relativePath: string): string {
   return readFileSync(join(procedureRoot, relativePath), 'utf8')
 }
 
-const PROCEDURE_INDEX = 'index.ts'
-
-const AUTHENTICATED_PROCEDURES = [
-  {
-    exportName: 'startSetup',
-    path: '/pending-password-change/start-setup',
-    method: 'POST',
-    lifecycleFn: 'createPendingPasswordSetup',
-    inputSchema: 'StartSetupInputSchema',
-  },
-  {
-    exportName: 'startChange',
-    path: '/pending-password-change/start-change',
-    method: 'POST',
-    lifecycleFn: 'createPendingPasswordChange',
-    inputSchema: 'StartChangeInputSchema',
-  },
-  {
-    exportName: 'getActive',
-    path: '/pending-password-change/active',
-    method: 'GET',
-    lifecycleFn: 'getActivePendingPasswordChange',
-    inputSchema: null,
-  },
-  {
-    exportName: 'resend',
-    path: '/pending-password-change/resend',
-    method: 'POST',
-    lifecycleFn: 'resendPendingPasswordChange',
-    inputSchema: null,
-  },
-  {
-    exportName: 'cancel',
-    path: '/pending-password-change/cancel',
-    method: 'POST',
-    lifecycleFn: 'cancelPendingPasswordChange',
-    inputSchema: null,
-  },
-] as const
-
-const TOKEN_ONLY_PROCEDURES = [
-  {
-    exportName: 'inspect',
-    path: '/pending-password-change/inspect',
-    method: 'POST',
-    lifecycleFn: 'inspectPendingPasswordChange',
-    inputSchema: 'TokenInputSchema',
-  },
-  {
-    exportName: 'approve',
-    path: '/pending-password-change/approve',
-    method: 'POST',
-    lifecycleFn: 'approvePendingPasswordChange',
-    inputSchema: 'TokenInputSchema',
-  },
-] as const
-
 function readProcedureBlock(source: string, exportName: string): string {
   return (
     source.match(
@@ -76,52 +19,128 @@ function readProcedureBlock(source: string, exportName: string): string {
   )
 }
 
+function readZodObjectSchema(source: string, schemaName: string): string {
+  return (
+    source.match(
+      new RegExp(`const ${schemaName} = z\\.object\\(\\{[\\s\\S]*?\\}\\)`),
+    )?.[0] ?? ''
+  )
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/\//g, '\\/')
+}
+
+type ProcedureSpec = {
+  exportName: string
+  path: string
+  method: string
+  lifecycleFn: string
+  inputSchema: string | null
+  auth: 'authed' | 'base'
+}
+
+const PROCEDURES: ProcedureSpec[] = [
+  {
+    exportName: 'startSetup',
+    path: '/pending-password-change/start-setup',
+    method: 'POST',
+    lifecycleFn: 'createPendingPasswordSetup',
+    inputSchema: 'StartSetupInputSchema',
+    auth: 'authed',
+  },
+  {
+    exportName: 'startChange',
+    path: '/pending-password-change/start-change',
+    method: 'POST',
+    lifecycleFn: 'createPendingPasswordChange',
+    inputSchema: 'StartChangeInputSchema',
+    auth: 'authed',
+  },
+  {
+    exportName: 'getActive',
+    path: '/pending-password-change/active',
+    method: 'GET',
+    lifecycleFn: 'getActivePendingPasswordChange',
+    inputSchema: null,
+    auth: 'authed',
+  },
+  {
+    exportName: 'resend',
+    path: '/pending-password-change/resend',
+    method: 'POST',
+    lifecycleFn: 'resendPendingPasswordChange',
+    inputSchema: null,
+    auth: 'authed',
+  },
+  {
+    exportName: 'cancel',
+    path: '/pending-password-change/cancel',
+    method: 'POST',
+    lifecycleFn: 'cancelPendingPasswordChange',
+    inputSchema: null,
+    auth: 'authed',
+  },
+  {
+    exportName: 'inspect',
+    path: '/pending-password-change/inspect',
+    method: 'POST',
+    lifecycleFn: 'inspectPendingPasswordChange',
+    inputSchema: 'TokenInputSchema',
+    auth: 'base',
+  },
+  {
+    exportName: 'approve',
+    path: '/pending-password-change/approve',
+    method: 'POST',
+    lifecycleFn: 'approvePendingPasswordChange',
+    inputSchema: 'TokenInputSchema',
+    auth: 'base',
+  },
+]
+
+function expectProcedureRegistered(source: string, spec: ProcedureSpec) {
+  const procedureBlock = readProcedureBlock(source, spec.exportName)
+
+  expect(procedureBlock).toMatch(
+    new RegExp(`path: '${escapeRegex(spec.path)}'`),
+  )
+  expect(procedureBlock).toMatch(new RegExp(`method: '${spec.method}'`))
+  expect(procedureBlock).toMatch(new RegExp(`${spec.lifecycleFn}\\(`))
+  if (spec.inputSchema) {
+    expect(procedureBlock).toMatch(
+      new RegExp(`\\.input\\(${spec.inputSchema}\\)`),
+    )
+  }
+  expect(procedureBlock).toMatch(new RegExp(`= ${spec.auth}`))
+}
+
 describe('pending password change ORPC procedures', () => {
-  const source = readProcedureFile(PROCEDURE_INDEX)
+  const source = readProcedureFile('index.ts')
 
-  it.each(AUTHENTICATED_PROCEDURES)(
+  it.each(PROCEDURES.filter((spec) => spec.auth === 'authed'))(
     'registers authenticated $exportName at $path',
-    ({ exportName, path, method, lifecycleFn, inputSchema }) => {
-      const procedureBlock = readProcedureBlock(source, exportName)
-
-      expect(procedureBlock).toMatch(
-        new RegExp(`path: '${path.replace(/\//g, '\\/')}'`),
-      )
-      expect(procedureBlock).toMatch(new RegExp(`method: '${method}'`))
-      expect(procedureBlock).toMatch(new RegExp(`${lifecycleFn}\\(`))
-      if (inputSchema) {
-        expect(procedureBlock).toMatch(
-          new RegExp(`\\.input\\(${inputSchema}\\)`),
-        )
-      }
-      expect(procedureBlock).toMatch(/= authed/)
+    (spec) => {
+      expectProcedureRegistered(source, spec)
     },
   )
 
-  it.each(TOKEN_ONLY_PROCEDURES)(
+  it.each(PROCEDURES.filter((spec) => spec.auth === 'base'))(
     'registers token-only $exportName at $path',
-    ({ exportName, path, method, lifecycleFn, inputSchema }) => {
-      const procedureBlock = readProcedureBlock(source, exportName)
-
-      expect(procedureBlock).toMatch(
-        new RegExp(`path: '${path.replace(/\//g, '\\/')}'`),
-      )
-      expect(procedureBlock).toMatch(new RegExp(`method: '${method}'`))
-      expect(procedureBlock).toMatch(new RegExp(`\\.input\\(${inputSchema}\\)`))
-      expect(procedureBlock).toMatch(new RegExp(`${lifecycleFn}\\(`))
-      expect(procedureBlock).toMatch(/= base/)
+    (spec) => {
+      expectProcedureRegistered(source, spec)
     },
   )
 
   it('requires current password for start-change but not start-setup', () => {
-    const startSetupSchema =
-      source.match(
-        /const StartSetupInputSchema = z\.object\(\{[\s\S]*?\}\)/,
-      )?.[0] ?? ''
-    const startChangeSchema =
-      source.match(
-        /const StartChangeInputSchema = z\.object\(\{[\s\S]*?\}\)/,
-      )?.[0] ?? ''
+    const startSetupSchema = readZodObjectSchema(
+      source,
+      'StartSetupInputSchema',
+    )
+    const startChangeSchema = readZodObjectSchema(
+      source,
+      'StartChangeInputSchema',
+    )
 
     expect(startChangeSchema).toMatch(/currentPassword/)
     expect(startChangeSchema).toMatch(/newPassword/)
@@ -142,12 +161,10 @@ describe('pending password change ORPC procedures', () => {
     expect(source).toMatch(/encodeURIComponent\(token\)/)
   })
 
-  it('exports all profile and approval procedures from the module', () => {
-    for (const { exportName } of [
-      ...AUTHENTICATED_PROCEDURES,
-      ...TOKEN_ONLY_PROCEDURES,
-    ]) {
+  it.each(PROCEDURES)(
+    'exports $exportName from the module',
+    ({ exportName }) => {
       expect(source).toMatch(new RegExp(`${exportName},`))
-    }
-  })
+    },
+  )
 })

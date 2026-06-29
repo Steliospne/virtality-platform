@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readConsoleFile } from './catalog-first-authoring-surface-seams.js'
-
-const CONFIRM_FORM_PATH = 'app/(auth)/password-setup/confirm/confirm-form.tsx'
+import { CONFIRM_FORM_PATH, readConsoleFile } from './password-surface-seams.js'
 
 describe('password setup confirm route regression surfaces', () => {
   const source = readConsoleFile(CONFIRM_FORM_PATH)
@@ -17,8 +15,11 @@ describe('password setup confirm route regression surfaces', () => {
     expect(source).toMatch(/isInspecting \|\| inspectResult === undefined/)
   })
 
-  it('shows setup and change approval states for valid pending requests', () => {
+  it('routes invalid inspect results to the invalid link card', () => {
     expect(source).toMatch(/!inspectResult\.valid/)
+  })
+
+  it('shows setup and change approval states for valid pending requests', () => {
     expect(source).toMatch(/inspectResult\.kind === 'CHANGE'/)
     expect(source).toMatch(/Approve password change/)
     expect(source).toMatch(/Approve password setup/)

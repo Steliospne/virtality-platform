@@ -1,16 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { readConsoleFile } from './catalog-first-authoring-surface-seams.js'
-
-const PROFILE_INFO_PATH =
-  'app/(app)/user/[id]/profile/_components/profile-info.tsx'
-
-function readPasswordCardBody(source: string): string {
-  return (
-    source.match(
-      /const PasswordCardBody = \([\s\S]*?\n\}\n\nconst SignInMethods/,
-    )?.[0] ?? ''
-  )
-}
+import {
+  PROFILE_INFO_PATH,
+  readConsoleFile,
+  readPasswordCardBody,
+  readZodObjectSchema,
+} from './password-surface-seams.js'
 
 describe('profile password card regression surfaces', () => {
   const source = readConsoleFile(PROFILE_INFO_PATH)
@@ -33,10 +27,10 @@ describe('profile password card regression surfaces', () => {
   })
 
   it('renders the first-time setup form when the user has no password', () => {
-    const setPasswordFormSchema =
-      source.match(
-        /const SetPasswordFormSchema = z\.object\(\{[\s\S]*?\}\)/,
-      )?.[0] ?? ''
+    const setPasswordFormSchema = readZodObjectSchema(
+      source,
+      'SetPasswordFormSchema',
+    )
 
     expect(passwordCardBody).toMatch(/<SetPasswordField \/>/)
     expect(source).toMatch(/You have not set a password yet/)

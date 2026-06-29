@@ -17,6 +17,25 @@ import {
 
 const now = new Date('2026-06-29T12:00:00.000Z')
 
+const buildTestApprovalUrl = (token: string) =>
+  `https://console.test/password-setup/confirm?token=${token}`
+
+function pendingRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'pending-1',
+    userId: 'user-1',
+    kind: 'SETUP',
+    status: 'PENDING',
+    pendingPasswordHash: 'hashed:ValidPass1',
+    approvalTokenHash: hashApprovalToken('token'),
+    initiatingSessionId: 'session-1',
+    destinationEmail: 'user@example.com',
+    expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+    createdAt: now,
+    ...overrides,
+  }
+}
+
 const baseInput = {
   userId: 'user-1',
   email: 'user@example.com',
@@ -197,7 +216,7 @@ describe('pending password change lifecycle regression', () => {
       deps,
       baseInput,
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -228,7 +247,7 @@ describe('pending password change lifecycle regression', () => {
       deps,
       baseInput,
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(deps.verifyPasswordFn).not.toHaveBeenCalled()
@@ -243,7 +262,7 @@ describe('pending password change lifecycle regression', () => {
         deps,
         { ...baseInput, newPassword: 'weak' },
         sendApprovalEmail,
-        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+        buildTestApprovalUrl,
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
 
@@ -369,7 +388,7 @@ describe('pending password change lifecycle regression', () => {
       deps,
       'user-1',
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -414,7 +433,7 @@ describe('pending password change lifecycle regression', () => {
       deps,
       'user-1',
       vi.fn(),
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(await inspectPendingPasswordChange(deps, 'original-token')).toEqual({
@@ -508,7 +527,7 @@ describe('pending password change lifecycle regression', () => {
       deps,
       baseInput,
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(pendingRecords[0]).toMatchObject({
@@ -655,7 +674,7 @@ describe('pending password change lifecycle regression', () => {
           newPassword: 'weak',
         },
         sendApprovalEmail,
-        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+        buildTestApprovalUrl,
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
 
@@ -681,7 +700,7 @@ describe('pending password change lifecycle regression', () => {
         newPassword: 'ValidPass1',
       },
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -719,7 +738,7 @@ describe('pending password change lifecycle regression', () => {
           newPassword: 'ValidPass1',
         },
         sendApprovalEmail,
-        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+        buildTestApprovalUrl,
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
 
