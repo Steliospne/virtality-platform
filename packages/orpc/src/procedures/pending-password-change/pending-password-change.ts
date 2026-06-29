@@ -55,12 +55,11 @@ export type PendingPasswordChangeOutcome = {
   expiresAt: Date
 }
 
-export type StartPendingPasswordChangeResult = PendingPasswordChangeOutcome
-
-type ApprovalEmailData = {
+export type ApprovalEmailData = {
   email: string
   name: string
   approvalUrl: string
+  kind: PendingPasswordChangeKind
 }
 
 export type CreatePendingPasswordChangeInput = {
@@ -71,8 +70,6 @@ export type CreatePendingPasswordChangeInput = {
   newPassword: string
   initiatingSessionId: string
 }
-
-export type CreatePendingPasswordSetupResult = PendingPasswordChangeOutcome
 
 const generateApprovalToken = createRandomStringGenerator('a-z', 'A-Z', '0-9')
 
@@ -124,7 +121,7 @@ async function persistPendingPasswordRequest(
   },
   sendApprovalEmail: (data: ApprovalEmailData) => Promise<void>,
   buildApprovalUrl: (token: string) => string,
-): Promise<StartPendingPasswordChangeResult> {
+): Promise<PendingPasswordChangeOutcome> {
   const now = deps.now?.() ?? new Date()
   const pendingPasswordHash = await (deps.hashPasswordFn ?? hashPassword)(
     input.newPassword,
@@ -155,6 +152,7 @@ async function persistPendingPasswordRequest(
     email: input.email,
     name: input.email,
     approvalUrl,
+    kind: input.kind,
   })
 
   return {
@@ -168,7 +166,7 @@ export async function createPendingPasswordSetup(
   input: CreatePendingPasswordSetupInput,
   sendApprovalEmail: (data: ApprovalEmailData) => Promise<void>,
   buildApprovalUrl: (token: string) => string,
-): Promise<CreatePendingPasswordSetupResult> {
+): Promise<PendingPasswordChangeOutcome> {
   assertPasswordPolicy(input.newPassword)
 
   if (!input.emailVerified) {
@@ -202,7 +200,7 @@ export async function createPendingPasswordChange(
   input: CreatePendingPasswordChangeInput,
   sendApprovalEmail: (data: ApprovalEmailData) => Promise<void>,
   buildApprovalUrl: (token: string) => string,
-): Promise<StartPendingPasswordChangeResult> {
+): Promise<PendingPasswordChangeOutcome> {
   assertPasswordPolicy(input.newPassword)
 
   if (!input.emailVerified) {
@@ -267,12 +265,7 @@ async function findActivePendingRecord(
 export async function resendPendingPasswordChange(
   deps: PendingPasswordChangeDeps,
   userId: string,
-  sendApprovalEmail: (data: {
-    email: string
-    name: string
-    approvalUrl: string
-    kind: PendingPasswordChangeKind
-  }) => Promise<void>,
+  sendApprovalEmail: (data: ApprovalEmailData) => Promise<void>,
   buildApprovalUrl: (token: string) => string,
 ): Promise<PendingPasswordChangeOutcome> {
   const now = deps.now?.() ?? new Date()
@@ -428,18 +421,15 @@ export async function inspectPendingPasswordChange(
   return { valid: false, canReturnToProfile }
 }
 
-export async function approvePendingPasswordSetup(
+type ValidatedPendingRecord = NonNullable<
+  Awaited<ReturnType<typeof findValidPendingByToken>>
+>
+
+async function approveValidatedPendingSetup(
   deps: PendingPasswordChangeDeps,
-  token: string,
+  pending: ValidatedPendingRecord,
 ): Promise<{ approved: true }> {
   const now = deps.now?.() ?? new Date()
-  const pending = await findValidPendingByToken(deps, token)
-
-  if (!pending || pending.kind !== 'SETUP') {
-    throw new ORPCError('BAD_REQUEST', {
-      message: INVALID_APPROVAL_LINK_MESSAGE,
-    })
-  }
 
   if (await userHasPassword(deps.account, pending.userId)) {
     throw new ORPCError('BAD_REQUEST', {
@@ -479,6 +469,21 @@ export async function approvePendingPasswordSetup(
   return { approved: true }
 }
 
+export async function approvePendingPasswordSetup(
+  deps: PendingPasswordChangeDeps,
+  token: string,
+): Promise<{ approved: true }> {
+  const pending = await findValidPendingByToken(deps, token)
+
+  if (!pending || pending.kind !== 'SETUP') {
+    throw new ORPCError('BAD_REQUEST', {
+      message: INVALID_APPROVAL_LINK_MESSAGE,
+    })
+  }
+
+  return approveValidatedPendingSetup(deps, pending)
+}
+
 export async function approvePendingPasswordChange(
   deps: PendingPasswordChangeDeps,
   token: string,
@@ -493,7 +498,7 @@ export async function approvePendingPasswordChange(
   }
 
   if (pending.kind === 'SETUP') {
-    return approvePendingPasswordSetup(deps, token)
+    return approveValidatedPendingSetup(deps, pending)
   }
 
   const credentialAccount = await deps.account.findFirst({
@@ -525,12 +530,4 @@ export async function approvePendingPasswordChange(
   })
 
   return { approved: true }
-}
-
-export function pendingPasswordChangePersistencePayload(input: {
-  pendingPasswordHash: string
-  approvalTokenHash: string
-  destinationEmail: string
-}) {
-  return input
 }

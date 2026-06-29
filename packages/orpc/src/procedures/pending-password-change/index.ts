@@ -13,6 +13,8 @@ import {
   getActivePendingPasswordChange,
   inspectPendingPasswordChange,
   resendPendingPasswordChange,
+  type ApprovalEmailData,
+  type PendingPasswordChangeKind,
 } from './pending-password-change.ts'
 
 const StartSetupInputSchema = z.object({
@@ -36,29 +38,26 @@ const pendingPasswordChangeDeps = (prisma: PrismaClient) => ({
   session: prisma.session,
 })
 
+const pendingPasswordChangeReadDeps = (prisma: PrismaClient) => ({
+  pendingPasswordChange: prisma.pendingPasswordChange,
+})
+
 const buildApprovalUrl = (token: string) =>
   `${baseURL}/password-setup/confirm?token=${encodeURIComponent(token)}`
 
+const emailVariantForKind = (kind: PendingPasswordChangeKind) =>
+  kind === 'SETUP' ? 'setup' : 'change'
+
 const sendApprovalEmail =
-  (
-    user: {
-      id: string
-      email: string
-      emailVerified: boolean
-      createdAt: Date
-      updatedAt: Date
-    },
-    variant: 'setup' | 'change',
-  ) =>
-  async ({
-    email,
-    name,
-    approvalUrl,
-  }: {
+  (user: {
+    id: string
     email: string
-    name: string
-    approvalUrl: string
-  }) => {
+    emailVerified: boolean
+    createdAt: Date
+    updatedAt: Date
+  }) =>
+  async (data: ApprovalEmailData) => {
+    const { email, name, approvalUrl, kind } = data
     await sendPendingPasswordChange({
       user: {
         id: user.id,
@@ -69,7 +68,7 @@ const sendApprovalEmail =
         updatedAt: user.updatedAt,
       },
       url: approvalUrl,
-      variant,
+      variant: emailVariantForKind(kind),
     })
   }
 
@@ -88,7 +87,7 @@ const startSetup = authed
         newPassword: input.newPassword,
         initiatingSessionId: session.id,
       },
-      sendApprovalEmail(user, 'setup'),
+      sendApprovalEmail(user),
       buildApprovalUrl,
     )
 
@@ -111,7 +110,7 @@ const startChange = authed
         newPassword: input.newPassword,
         initiatingSessionId: session.id,
       },
-      sendApprovalEmail(user, 'change'),
+      sendApprovalEmail(user),
       buildApprovalUrl,
     )
 
@@ -124,7 +123,7 @@ const getActive = authed
     const { prisma, user } = context
 
     return getActivePendingPasswordChange(
-      { pendingPasswordChange: prisma.pendingPasswordChange },
+      pendingPasswordChangeReadDeps(prisma),
       user.id,
     )
   })
@@ -137,16 +136,7 @@ const resend = authed
     return resendPendingPasswordChange(
       pendingPasswordChangeDeps(prisma),
       user.id,
-      async ({ email, name, approvalUrl, kind }) => {
-        await sendApprovalEmail(
-          user,
-          kind === 'SETUP' ? 'setup' : 'change',
-        )({
-          email,
-          name,
-          approvalUrl,
-        })
-      },
+      sendApprovalEmail(user),
       buildApprovalUrl,
     )
   })
@@ -157,7 +147,7 @@ const cancel = authed
     const { prisma, user } = context
 
     return cancelPendingPasswordChange(
-      pendingPasswordChangeDeps(prisma),
+      pendingPasswordChangeReadDeps(prisma),
       user.id,
     )
   })

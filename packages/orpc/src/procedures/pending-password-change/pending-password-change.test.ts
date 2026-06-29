@@ -8,7 +8,6 @@ import {
   getActivePendingPasswordChange,
   hashApprovalToken,
   inspectPendingPasswordChange,
-  pendingPasswordChangePersistencePayload,
   PENDING_PASSWORD_CHANGE_EXPIRY_MS,
   resendPendingPasswordChange,
   userHasPassword,
@@ -228,14 +227,13 @@ describe('pending password change lifecycle regression', () => {
       name: 'user@example.com',
       approvalUrl:
         'https://console.test/password-setup/confirm?token=raw-token-123',
+      kind: 'SETUP',
     })
-    expect(pendingRecords[0]).toMatchObject(
-      pendingPasswordChangePersistencePayload({
-        pendingPasswordHash: 'opaque-password-hash',
-        approvalTokenHash: hashApprovalToken('raw-token-123'),
-        destinationEmail: 'user@example.com',
-      }),
-    )
+    expect(pendingRecords[0]).toMatchObject({
+      pendingPasswordHash: 'opaque-password-hash',
+      approvalTokenHash: hashApprovalToken('raw-token-123'),
+      destinationEmail: 'user@example.com',
+    })
     expect(JSON.stringify(pendingRecords)).not.toContain('ValidPass1')
   })
 
