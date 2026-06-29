@@ -5,6 +5,7 @@ import {
   cancelPendingPasswordChange,
   createPendingPasswordChange,
   createPendingPasswordSetup,
+  getActivePendingPasswordChange,
   hashApprovalToken,
   inspectPendingPasswordChange,
   pendingPasswordChangePersistencePayload,
@@ -15,6 +16,25 @@ import {
 } from './pending-password-change.ts'
 
 const now = new Date('2026-06-29T12:00:00.000Z')
+
+const buildTestApprovalUrl = (token: string) =>
+  `https://console.test/password-setup/confirm?token=${token}`
+
+function pendingRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'pending-1',
+    userId: 'user-1',
+    kind: 'SETUP',
+    status: 'PENDING',
+    pendingPasswordHash: 'hashed:ValidPass1',
+    approvalTokenHash: hashApprovalToken('token'),
+    initiatingSessionId: 'session-1',
+    destinationEmail: 'user@example.com',
+    expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+    createdAt: now,
+    ...overrides,
+  }
+}
 
 const baseInput = {
   userId: 'user-1',
@@ -177,7 +197,17 @@ function createDeps(overrides: {
   }
 }
 
-describe('pending password setup lifecycle', () => {
+describe('pending password change lifecycle regression', () => {
+  it('hashes approval tokens deterministically without storing raw tokens', () => {
+    const token = 'approval-token-abc'
+    const firstHash = hashApprovalToken(token)
+    const secondHash = hashApprovalToken(token)
+
+    expect(firstHash).toBe(secondHash)
+    expect(firstHash).not.toBe(token)
+    expect(hashApprovalToken('other-token')).not.toBe(firstHash)
+  })
+
   it('creates a pending setup request with hashed material and no plaintext password persistence', async () => {
     const { deps, pendingRecords } = createDeps({ account: null })
     const sendApprovalEmail = vi.fn()
@@ -186,7 +216,7 @@ describe('pending password setup lifecycle', () => {
       deps,
       baseInput,
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -209,6 +239,20 @@ describe('pending password setup lifecycle', () => {
     expect(JSON.stringify(pendingRecords)).not.toContain('ValidPass1')
   })
 
+  it('does not require current-password proof for first-time setup', async () => {
+    const { deps } = createDeps({ account: null })
+    const sendApprovalEmail = vi.fn()
+
+    await createPendingPasswordSetup(
+      deps,
+      baseInput,
+      sendApprovalEmail,
+      buildTestApprovalUrl,
+    )
+
+    expect(deps.verifyPasswordFn).not.toHaveBeenCalled()
+  })
+
   it('rejects first-time setup when the shared password policy fails', async () => {
     const { deps } = createDeps({ account: null })
     const sendApprovalEmail = vi.fn()
@@ -218,7 +262,7 @@ describe('pending password setup lifecycle', () => {
         deps,
         { ...baseInput, newPassword: 'weak' },
         sendApprovalEmail,
-        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+        buildTestApprovalUrl,
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
 
@@ -344,7 +388,7 @@ describe('pending password setup lifecycle', () => {
       deps,
       'user-1',
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -389,7 +433,7 @@ describe('pending password setup lifecycle', () => {
       deps,
       'user-1',
       vi.fn(),
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(await inspectPendingPasswordChange(deps, 'original-token')).toEqual({
@@ -459,6 +503,185 @@ describe('pending password setup lifecycle', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
   })
 
+  it('supersedes an existing pending request when a new one is created', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-old',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:OldPass1',
+          approvalTokenHash: hashApprovalToken('old-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: new Date(now.getTime() - 60_000),
+        },
+      ],
+    })
+    const sendApprovalEmail = vi.fn()
+
+    await createPendingPasswordSetup(
+      deps,
+      baseInput,
+      sendApprovalEmail,
+      buildTestApprovalUrl,
+    )
+
+    expect(pendingRecords[0]).toMatchObject({
+      status: 'SUPERSEDED',
+      supersededAt: now,
+    })
+    expect(pendingRecords[1]).toMatchObject({
+      status: 'PENDING',
+      approvalTokenHash: hashApprovalToken('raw-token-123'),
+    })
+    expect(await inspectPendingPasswordChange(deps, 'old-token')).toEqual({
+      valid: false,
+      canReturnToProfile: false,
+    })
+  })
+
+  it('returns the active pending request for read operations', async () => {
+    const expiresAt = new Date(now.getTime() + 5 * 60 * 1000)
+    const { deps } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'CHANGE',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('active-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt,
+          createdAt: now,
+        },
+      ],
+    })
+
+    expect(await getActivePendingPasswordChange(deps, 'user-1')).toEqual({
+      id: 'pending-1',
+      kind: 'CHANGE',
+      destinationEmail: 'user@example.com',
+      expiresAt,
+    })
+  })
+
+  it('treats expired pending requests as inactive for read operations', async () => {
+    const { deps } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('expired-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() - 1_000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    expect(await getActivePendingPasswordChange(deps, 'user-1')).toBeNull()
+  })
+
+  it('inspects valid tokens without mutating lifecycle state', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash: hashApprovalToken('inspect-token'),
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    expect(await inspectPendingPasswordChange(deps, 'inspect-token')).toEqual({
+      valid: true,
+      kind: 'SETUP',
+    })
+    expect(pendingRecords[0]).toMatchObject({ status: 'PENDING' })
+  })
+
+  it('consumes approval tokens so they cannot be approved twice', async () => {
+    const approvalTokenHash = hashApprovalToken('consume-token')
+    const { deps, pendingRecords } = createDeps({
+      account: null,
+      pendingRecords: [
+        {
+          id: 'pending-1',
+          userId: 'user-1',
+          kind: 'SETUP',
+          status: 'PENDING',
+          pendingPasswordHash: 'hashed:ValidPass1',
+          approvalTokenHash,
+          initiatingSessionId: 'session-1',
+          destinationEmail: 'user@example.com',
+          expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+          createdAt: now,
+        },
+      ],
+    })
+
+    await approvePendingPasswordSetup(deps, 'consume-token')
+
+    expect(pendingRecords[0]).toMatchObject({
+      status: 'APPROVED',
+      approvedAt: now,
+    })
+    await expect(
+      approvePendingPasswordSetup(deps, 'consume-token'),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expect(await inspectPendingPasswordChange(deps, 'consume-token')).toEqual({
+      valid: false,
+      canReturnToProfile: false,
+    })
+  })
+
+  it('rejects password changes when the shared password policy fails', async () => {
+    const { deps, pendingRecords } = createDeps({
+      account: {
+        id: 'credential-1',
+        providerId: 'credential',
+        password: 'stored-hash',
+      },
+    })
+    const sendApprovalEmail = vi.fn()
+
+    await expect(
+      createPendingPasswordChange(
+        deps,
+        {
+          ...baseInput,
+          currentPassword: 'CurrentPass1',
+          newPassword: 'weak',
+        },
+        sendApprovalEmail,
+        buildTestApprovalUrl,
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+
+    expect(pendingRecords).toHaveLength(0)
+    expect(sendApprovalEmail).not.toHaveBeenCalled()
+  })
+
   it('creates a pending change request after current-password proof', async () => {
     const { deps, pendingRecords } = createDeps({
       account: {
@@ -477,7 +700,7 @@ describe('pending password setup lifecycle', () => {
         newPassword: 'ValidPass1',
       },
       sendApprovalEmail,
-      (token) => `https://console.test/password-setup/confirm?token=${token}`,
+      buildTestApprovalUrl,
     )
 
     expect(result).toEqual({
@@ -515,7 +738,7 @@ describe('pending password setup lifecycle', () => {
           newPassword: 'ValidPass1',
         },
         sendApprovalEmail,
-        (token) => `https://console.test/password-setup/confirm?token=${token}`,
+        buildTestApprovalUrl,
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
 

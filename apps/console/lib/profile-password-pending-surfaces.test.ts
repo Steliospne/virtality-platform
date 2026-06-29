@@ -1,11 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { readConsoleFile } from './catalog-first-authoring-surface-seams.js'
+import {
+  PROFILE_INFO_PATH,
+  readConsoleFile,
+  readPasswordCardBody,
+  readZodObjectSchema,
+} from './password-surface-seams.js'
 
-const PROFILE_INFO_PATH =
-  'app/(app)/user/[id]/profile/_components/profile-info.tsx'
-
-describe('profile password pending state surfaces', () => {
+describe('profile password card regression surfaces', () => {
   const source = readConsoleFile(PROFILE_INFO_PATH)
+  const passwordCardBody = readPasswordCardBody(source)
+
+  it('shows a loading skeleton while password state is resolving', () => {
+    expect(passwordCardBody).toMatch(/if \(isLoading\)/)
+    expect(passwordCardBody).toMatch(/<Skeleton/)
+    expect(source).toMatch(
+      /isLoadingHasPassword \|\| isLoadingPendingPasswordChange/,
+    )
+  })
+
+  it('renders the change-password form when the user already has a password', () => {
+    expect(passwordCardBody).toMatch(/if \(hasPassword\)/)
+    expect(passwordCardBody).toMatch(/<PasswordField \/>/)
+    expect(source).toMatch(/currentPassword/)
+    expect(source).toMatch(/useStartPasswordChange/)
+    expect(source).toMatch(/PasswordFormSchema/)
+  })
+
+  it('renders the first-time setup form when the user has no password', () => {
+    const setPasswordFormSchema = readZodObjectSchema(
+      source,
+      'SetPasswordFormSchema',
+    )
+
+    expect(passwordCardBody).toMatch(/<SetPasswordField \/>/)
+    expect(source).toMatch(/You have not set a password yet/)
+    expect(source).toMatch(/useStartPasswordSetup/)
+    expect(setPasswordFormSchema).toMatch(/newPassword/)
+    expect(setPasswordFormSchema).not.toMatch(/currentPassword/)
+  })
 
   it('shows pending state before password setup or change forms', () => {
     const pendingBranch =
@@ -35,5 +67,11 @@ describe('profile password pending state surfaces', () => {
     expect(source).toMatch(/PENDING_PASSWORD_KIND_LABEL/)
     expect(source).toMatch(/Password setup/)
     expect(source).toMatch(/Password change/)
+  })
+
+  it('uses shared password policy validation in profile forms', () => {
+    expect(source).toMatch(/isValidPassword/)
+    expect(source).toMatch(/PASSWORD_MIN_LENGTH/)
+    expect(source).toMatch(/PASSWORD_MAX_LENGTH/)
   })
 })

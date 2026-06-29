@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readConsoleFile } from './catalog-first-authoring-surface-seams.js'
-
-const CONFIRM_FORM_PATH = 'app/(auth)/password-setup/confirm/confirm-form.tsx'
+import { CONFIRM_FORM_PATH, readConsoleFile } from './password-surface-seams.js'
 
 describe('password setup confirm invalid link surfaces', () => {
   const source = readConsoleFile(CONFIRM_FORM_PATH)
