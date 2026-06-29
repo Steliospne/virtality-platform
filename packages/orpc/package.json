@@ -33,6 +33,7 @@
     "@virtality/shared": "workspace:*",
     "@virtality/nodemailer": "workspace:*",
     "@virtality/ui": "workspace:*",
+    "better-auth": "1.5.5",
     "superjson": "2.2.6",
     "zod": "4.3.6"
   },

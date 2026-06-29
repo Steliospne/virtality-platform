@@ -21,12 +21,15 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
 import { Separator } from '@virtality/ui/components/separator'
 import { UserSchema } from '@virtality/db/definitions'
 import {
+  useActivePendingPasswordChange,
   useHasPassword,
   useListAccounts,
   useORPC,
+  useStartPasswordSetup,
   useUpdateUserInfo,
 } from '@virtality/react-query'
 import z from 'zod/v4'
+import { isValidPassword } from '@virtality/shared/utils'
 import { Trash2, UserIcon, X } from 'lucide-react'
 import { SOCIAL_PROVIDERS } from '@/data/static/providers'
 import { Badge } from '@virtality/ui/components/badge'
@@ -61,7 +64,12 @@ const PasswordFormSchema = z.object({
   newPassword: z.string().nonempty('New password is required').trim(),
 })
 
+const SetPasswordFormSchema = z.object({
+  newPassword: z.string().trim().check(isValidPassword),
+})
+
 type PasswordForm = z.infer<typeof PasswordFormSchema>
+type SetPasswordForm = z.infer<typeof SetPasswordFormSchema>
 
 const basicInfoFormFields = {
   image: {
@@ -127,6 +135,10 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
 
   const { data: hasPassword, isLoading: isLoadingHasPassword } =
     useHasPassword()
+  const {
+    data: activePendingPasswordChange,
+    isLoading: isLoadingPendingPasswordChange,
+  } = useActivePendingPasswordChange()
 
   usePageViewTracking({
     props: { route_group: 'user', tab_view: 'user-profile' },
@@ -313,7 +325,7 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
           <CardTitle className='text-xl font-bold'>Password</CardTitle>
         </CardHeader>
 
-        {isLoadingHasPassword ? (
+        {isLoadingHasPassword || isLoadingPendingPasswordChange ? (
           <>
             <CardContent>
               <Skeleton className='h-10 w-full' />
@@ -324,13 +336,13 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
           </>
         ) : hasPassword ? (
           <PasswordField />
+        ) : activePendingPasswordChange ? (
+          <PendingPasswordSetupState
+            destinationEmail={activePendingPasswordChange.destinationEmail}
+            expiresAt={activePendingPasswordChange.expiresAt}
+          />
         ) : (
-          <>
-            <CardContent>You have not set a password yet.</CardContent>
-            <CardFooter className='border-t'>
-              <Button className='ml-auto'>Set Password</Button>
-            </CardFooter>
-          </>
+          <SetPasswordField />
         )}
       </Card>
 
@@ -559,6 +571,7 @@ const PasswordField = () => {
         onError: (error) => {
           console.error(error)
           toast.error('Failed to change password')
+          setIsUpdatingPassword(false)
         },
       },
     })
@@ -616,5 +629,111 @@ const PasswordField = () => {
         </Button>
       </CardFooter>
     </form>
+  )
+}
+
+const setPasswordFormField = {
+  newPassword: {
+    label: 'New Password',
+    placeholder: '********',
+    description: 'Choose a password for email and password sign-in.',
+    hint: 'Password must be 8-16 characters with upper, lower, and digit.',
+  },
+} satisfies FieldMeta<SetPasswordForm>
+
+const SetPasswordField = () => {
+  const orpc = useORPC()
+  const queryClient = useQueryClient()
+  const setPasswordForm = useForm<SetPasswordForm>({
+    resolver: zodResolver(SetPasswordFormSchema),
+    defaultValues: { newPassword: '' },
+  })
+
+  const { mutate: startPasswordSetup, isPending } = useStartPasswordSetup({
+    onSuccess: async () => {
+      setPasswordForm.reset({ newPassword: '' }, { keepDirty: false })
+      await queryClient.invalidateQueries({
+        queryKey: orpc.pendingPasswordChange.getActive.key(),
+      })
+      toast.success('Check your email to approve password setup.')
+    },
+    onError: (error) => {
+      console.error(error)
+      toast.error('Failed to start password setup')
+    },
+  })
+
+  const onSubmitSetPassword = (data: SetPasswordForm) => {
+    startPasswordSetup({ newPassword: data.newPassword })
+  }
+
+  return (
+    <form onSubmit={setPasswordForm.handleSubmit(onSubmitSetPassword)}>
+      <CardContent>
+        <p className='text-muted-foreground mb-4 text-sm'>
+          You have not set a password yet. Add one to sign in with email and
+          password.
+        </p>
+        <FieldGroup className='mb-6'>
+          <ControllerField
+            labelClassName='text-base'
+            name='newPassword'
+            control={setPasswordForm.control}
+            meta={setPasswordFormField['newPassword']}
+          >
+            {({ field, fieldState }) => (
+              <Input
+                {...field}
+                id={field.name}
+                type='password'
+                name={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder={setPasswordFormField['newPassword'].placeholder}
+                value={(field.value ?? '') as string}
+              />
+            )}
+          </ControllerField>
+        </FieldGroup>
+      </CardContent>
+      <CardFooter className='border-t'>
+        <Button
+          type='submit'
+          className='ml-auto'
+          disabled={!setPasswordForm.formState.isDirty || isPending}
+        >
+          {isPending ? 'Sending...' : 'Set Password'}
+        </Button>
+      </CardFooter>
+    </form>
+  )
+}
+
+const PendingPasswordSetupState = ({
+  destinationEmail,
+  expiresAt,
+}: {
+  destinationEmail: string
+  expiresAt: Date | string
+}) => {
+  const expiry = new Date(expiresAt)
+
+  return (
+    <>
+      <CardContent className='space-y-2'>
+        <p className='text-sm'>
+          Password setup is pending approval. Check{' '}
+          <span className='font-medium'>{destinationEmail}</span> for the
+          approval email.
+        </p>
+        <p className='text-muted-foreground text-sm'>
+          The approval link expires at {expiry.toLocaleString()}.
+        </p>
+      </CardContent>
+      <CardFooter className='border-t'>
+        <Button type='button' className='ml-auto' disabled>
+          Approval pending
+        </Button>
+      </CardFooter>
+    </>
   )
 }

@@ -10,6 +10,7 @@ const hiddenRoutes = [
   '/sign-up',
   '/forgot-password',
   '/reset-password',
+  '/password-setup',
   '/verify-email',
   '/goodbye',
 ]

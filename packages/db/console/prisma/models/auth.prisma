@@ -32,6 +32,7 @@ model User {
   adminEmailDraftsRestored     AdminEmailDraft[]      @relation("AdminEmailDraftRestoredBy")
   adminEmailSentRecordsCreated AdminEmailSentRecord[] @relation("AdminEmailSentRecordCreator")
   adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
+  pendingPasswordChanges       PendingPasswordChange[]
 }
 
 model Account {

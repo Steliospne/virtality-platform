@@ -1,7 +1,8 @@
 import type { User } from '@/auth-client'
 import type { Member } from '@virtality/db'
 import { z } from 'zod/v4'
-import { isValidNumber, isValidPassword } from './utils'
+import { isValidNumber } from './utils'
+import { isValidPassword } from '@virtality/shared/utils'
 
 export const RoleEnum = z.enum(['admin', 'owner', 'user', 'employee'])
 
