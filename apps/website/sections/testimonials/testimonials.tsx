@@ -72,7 +72,7 @@ const Testimonials = () => {
 
               return (
                 <CarouselItem
-                  key={item.saidBy}
+                  key={item.saidBy + index}
                   className='basis-[85%] pl-5 sm:basis-[70%] md:basis-[55%] lg:basis-[42%]'
                 >
                   <figure
