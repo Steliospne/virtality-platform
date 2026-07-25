@@ -1,53 +1,11 @@
 'use client'
 
-import {
-  QueryClient,
-  QueryClientProvider,
-  defaultShouldDehydrateQuery,
-  isServer,
-} from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import React, { type ReactNode } from 'react'
-import superjson from 'superjson'
+import { getQueryClient } from './get-query-client.js'
 
-const staleTime = 60 * 1000
-
-/**
- * Create a QueryClient with Virtality defaults (staleTime, superjson serialization, SSR-friendly dehydrate/hydrate).
- */
-function makeQueryClient(): QueryClient {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime,
-      },
-      dehydrate: {
-        serializeData: superjson.serialize,
-        shouldDehydrateQuery: (query) =>
-          defaultShouldDehydrateQuery(query) ||
-          query.state.status === 'pending',
-        shouldRedactErrors: () => false,
-      },
-      hydrate: { deserializeData: superjson.deserialize },
-    },
-  })
-}
-
-let browserQueryClient: QueryClient | undefined
-
-/**
- * Returns a QueryClient (per-request on server, singleton in browser).
- * Use this when you need the client outside of React (e.g. prefetch, invalidation in non-hook code).
- */
-export function getQueryClient(): QueryClient {
-  if (isServer) {
-    return makeQueryClient()
-  }
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient()
-  }
-  return browserQueryClient
-}
+export { getQueryClient } from './get-query-client.js'
 
 export interface QueryProviderProps {
   children?: ReactNode
