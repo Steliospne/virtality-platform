@@ -49,10 +49,19 @@ const HeroTitle = ({
   const isLarge = emphasis === 'large'
 
   useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+
     document.fonts.ready.then(() => {
       if (!containerRef.current) return
 
       containerRef.current.style.visibility = 'visible'
+
+      if (prefersReducedMotion) return
 
       const { words, chars } = splitText(
         containerRef.current.querySelector('h1')!,
@@ -86,7 +95,7 @@ const HeroTitle = ({
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col ${isLarge ? 'gap-5' : 'gap-7'} ${
+      className={`flex flex-col ${isLarge ? 'gap-5' : 'gap-5 sm:gap-7'} ${
         isLeftAligned ? 'items-start text-left' : 'items-center text-center'
       }`}
     >
@@ -94,10 +103,15 @@ const HeroTitle = ({
         <Image
           src='/virtality_cyan.png'
           alt='Virtality'
-          width={1368}
-          height={138}
+          width={273}
+          height={28}
           priority
-          className={isLarge ? 'h-10.5 w-auto sm:h-12' : 'h-7 w-auto sm:h-8'}
+          sizes='(min-width: 640px) 312px, 273px'
+          className={
+            isLarge
+              ? 'h-10.5! w-auto! max-w-none sm:h-12!'
+              : 'h-4! w-auto! max-w-none sm:h-5!'
+          }
         />
       ) : (
         <div className='inline-flex items-center gap-2 rounded-full border border-vital-blue-700/25 bg-white/70 px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-vital-blue-800 uppercase shadow-sm shadow-vital-blue-900/5 backdrop-blur-sm dark:bg-white/10 dark:text-vital-blue-200'>
@@ -118,7 +132,7 @@ const HeroTitle = ({
 
       {showSupportingCopy ? (
         <p
-          className={`text-lg leading-relaxed text-slate-600 md:text-xl dark:text-gray-300 ${
+          className={`text-base leading-relaxed text-slate-700 sm:text-lg md:text-xl dark:text-gray-300 ${
             isLeftAligned ? 'max-w-md' : 'max-w-lg'
           }`}
         >

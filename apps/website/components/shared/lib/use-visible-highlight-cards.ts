@@ -1,6 +1,6 @@
 'use client'
 
-import { useHighlightCards } from '@virtality/react-query'
+import { useHighlightCards } from '@/lib/marketing-queries'
 import type { HighlightCardCollection } from '@virtality/shared/types'
 import { shouldShowHighlightCards } from './highlight-card-visibility'
 

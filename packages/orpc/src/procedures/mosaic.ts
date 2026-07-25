@@ -10,7 +10,7 @@ import {
   type MosaicTileRecord,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
-import { base } from '../context.ts'
+import { base, bustWebsiteMarketingCache } from '../context.ts'
 
 const LANDING_MOSAIC_ID = 'landing'
 
@@ -98,11 +98,13 @@ const saveMosaicProcedure = authed
   .input(saveMosaicInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await saveMosaicBoard(
+      const result = await saveMosaicBoard(
         createPrismaMosaicStore(context.prisma),
         { generateId: generateUUID },
         input,
       )
+      await bustWebsiteMarketingCache(context, { tag: 'mosaic' })
+      return result
     } catch (error) {
       throwMosaicOrpcError(error)
     }

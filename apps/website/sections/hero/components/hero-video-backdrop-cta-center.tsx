@@ -12,18 +12,21 @@ import HeroTitle from './hero-title'
 
 const demoBookingUrl = getDemoBookingUrl()
 
-const HERO_VIDEO_SRC = '/hero/ManNeuralFlipped-loop.mp4'
-const HERO_VIDEO_POSTER = '/hero/ManNeuralFlipped-poster.jpg'
+const HERO_VIDEO_SRC_MOBILE = '/hero/ManNeuralFlipped-loop-zoomed-out.mp4'
+const HERO_VIDEO_POSTER_MOBILE = '/hero/ManNeuralFlipped-poster-zoomed-out.jpg'
+const HERO_VIDEO_SRC_DESKTOP = '/hero/ManNeuralFlipped-loop.mp4'
+const HERO_VIDEO_POSTER_DESKTOP = '/hero/ManNeuralFlipped-poster.jpg'
 const HERO_VIDEO_ALT =
   'Patient wearing a VR headset during a guided therapy session with neural motion overlay'
 
 /**
  * Full-bleed looped video backdrop take with CTAs at the center bottom.
- * Same layout as the image backdrop hero; video is muted, autoplaying, and
- * ping-pong looped so the seam is seamless.
+ * Mobile uses a zoomed-out master (subject scaled to 65% with studio-gray pad)
+ * so object-cover crops less aggressively; desktop keeps the original framing.
  */
 const HeroVideoBackdropCtaCenter = () => {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const mobileVideoRef = useRef<HTMLVideoElement>(null)
+  const desktopVideoRef = useRef<HTMLVideoElement>(null)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
   useEffect(() => {
@@ -41,54 +44,91 @@ const HeroVideoBackdropCtaCenter = () => {
   }, [])
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) {
-      return
-    }
+    const videos = [mobileVideoRef.current, desktopVideoRef.current]
 
-    if (prefersReducedMotion) {
-      video.pause()
-      return
-    }
+    for (const video of videos) {
+      if (!video) continue
 
-    void video.play().catch(() => {
-      video.pause()
-    })
+      if (prefersReducedMotion) {
+        video.pause()
+        continue
+      }
+
+      void video.play().catch(() => {
+        video.pause()
+      })
+    }
   }, [prefersReducedMotion])
 
   return (
-    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#fbfaf7] dark:bg-zinc-900'>
+    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#CAD6D6] sm:bg-[#fbfaf7] dark:bg-zinc-900'>
       {/* Full-bleed backdrop video */}
       <div className='absolute inset-0'>
-        {prefersReducedMotion ? (
-          <Image
-            src={HERO_VIDEO_POSTER}
-            alt={HERO_VIDEO_ALT}
-            fill
-            priority
-            sizes='100vw'
-            className='object-cover object-[48%_center] sm:object-[52%_center] md:object-[60%_center] lg:object-[68%_center]'
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            aria-label={HERO_VIDEO_ALT}
-            className='absolute inset-0 size-full object-cover object-[48%_center] sm:object-[52%_center] md:object-[60%_center] lg:object-[68%_center]'
-            poster={HERO_VIDEO_POSTER}
-            muted
-            playsInline
-            loop
-            autoPlay
-            preload='auto'
-          >
-            <source src={HERO_VIDEO_SRC} type='video/mp4' />
-          </video>
-        )}
+        {/* Mobile media + wash */}
+        <div className='absolute inset-0 sm:hidden'>
+          {prefersReducedMotion ? (
+            <Image
+              src={HERO_VIDEO_POSTER_MOBILE}
+              alt={HERO_VIDEO_ALT}
+              fill
+              priority
+              sizes='100vw'
+              className='object-cover object-[62%_center]'
+            />
+          ) : (
+            <video
+              ref={mobileVideoRef}
+              aria-label={HERO_VIDEO_ALT}
+              className='absolute inset-0 size-full object-cover object-[62%_center]'
+              poster={HERO_VIDEO_POSTER_MOBILE}
+              muted
+              playsInline
+              loop
+              autoPlay
+              preload='auto'
+            >
+              <source src={HERO_VIDEO_SRC_MOBILE} type='video/mp4' />
+            </video>
+          )}
 
-        {/* Legibility scrim: light wash where the copy sits, image breathes toward the right */}
-        <div className='absolute inset-0 bg-linear-to-r from-[#fbfaf7] via-[#fbfaf7]/92 to-[#fbfaf7]/35 sm:via-[#fbfaf7]/88 sm:to-[#fbfaf7]/20 md:via-[#fbfaf7]/82 md:to-[#fbfaf7]/10 lg:via-[#fbfaf7]/65 lg:to-transparent dark:from-zinc-900 dark:via-zinc-900/88 dark:to-zinc-900/15' />
-        {/* Bottom fade so the media resolves into the next section */}
-        <div className='absolute inset-0 bg-linear-to-t from-[#fbfaf7] via-transparent to-transparent dark:from-zinc-900' />
+          {/* Steep left wash for copy; subject stays clear on the right */}
+          <div className='absolute inset-0 bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
+          <div className='absolute inset-0 bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
+        </div>
+
+        {/* Desktop media + wash */}
+        <div className='absolute inset-0 hidden sm:block'>
+          {prefersReducedMotion ? (
+            <Image
+              src={HERO_VIDEO_POSTER_DESKTOP}
+              alt={HERO_VIDEO_ALT}
+              fill
+              priority
+              sizes='100vw'
+              className='object-cover object-[52%_center] md:object-[60%_center] lg:object-[68%_center]'
+            />
+          ) : (
+            <video
+              ref={desktopVideoRef}
+              aria-label={HERO_VIDEO_ALT}
+              className='absolute inset-0 size-full object-cover object-[52%_center] md:object-[60%_center] lg:object-[68%_center]'
+              poster={HERO_VIDEO_POSTER_DESKTOP}
+              muted
+              playsInline
+              loop
+              autoPlay
+              preload='auto'
+            >
+              <source src={HERO_VIDEO_SRC_DESKTOP} type='video/mp4' />
+            </video>
+          )}
+
+          {/* Light wash where the copy sits, image breathes toward the right */}
+          <div className='absolute inset-0 bg-linear-to-r from-[#fbfaf7] via-[#fbfaf7]/88 to-[#fbfaf7]/20 md:via-[#fbfaf7]/82 md:to-[#fbfaf7]/10 lg:via-[#fbfaf7]/65 lg:to-transparent dark:from-zinc-900 dark:via-zinc-900/88 dark:to-zinc-900/15' />
+        </div>
+
+        {/* Bottom fade into the white page below */}
+        <div className='absolute inset-0 bg-linear-to-t from-white from-8% via-transparent via-40% to-transparent sm:from-15% dark:from-zinc-900' />
       </div>
 
       {/* Grain */}
@@ -100,9 +140,9 @@ const HeroVideoBackdropCtaCenter = () => {
         }}
       />
 
-      {/* Title — original left / vertical-center placement */}
+      {/* Title — vertically centered like desktop */}
       <div className='relative z-1 container m-auto flex flex-1 flex-col justify-center px-4 py-16 pb-28 md:px-8 md:py-20 md:pb-32'>
-        <div className='max-w-xl'>
+        <div className='w-full max-w-[21rem] sm:max-w-xl'>
           <HeroTitle align='left' badge='logo' showCtas={false} />
         </div>
       </div>

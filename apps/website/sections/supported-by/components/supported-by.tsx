@@ -1,6 +1,6 @@
 'use client'
 
-import { usePartnerLogos } from '@virtality/react-query'
+import { usePartnerLogos } from '@/lib/marketing-queries'
 import CredibilitySectionHeader from './credibility-section-header'
 import ClinicalPartners from './clinical-partners'
 import PressLogos from './press-logos'

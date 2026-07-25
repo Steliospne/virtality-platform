@@ -20,7 +20,7 @@ import {
   type PartnerLogoStore,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
-import { base } from '../context.ts'
+import { base, bustWebsiteMarketingCache } from '../context.ts'
 
 function createPrismaPartnerLogoStore(prisma: PrismaClient): PartnerLogoStore {
   return {
@@ -92,35 +92,41 @@ const listPartnerLogosProcedure = base
 const createPartnerLogoProcedure = authed
   .route({ path: '/partner-logo/create', method: 'POST' })
   .input(createPartnerLogoInputSchema)
-  .handler(({ context, input }) =>
-    withPartnerLogoStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withPartnerLogoStore(context.prisma, (store) =>
       createPartnerLogo(store, { generateId: generateUUID }, input),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, { tag: 'partner-logos' })
+    return result
+  })
 
 const updatePartnerLogoProcedure = authed
   .route({ path: '/partner-logo/update', method: 'POST' })
   .input(updatePartnerLogoInputSchema)
-  .handler(({ context, input }) =>
-    withPartnerLogoStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withPartnerLogoStore(context.prisma, (store) =>
       updatePartnerLogo(store, input),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, { tag: 'partner-logos' })
+    return result
+  })
 
 const reorderPartnerLogoProcedure = authed
   .route({ path: '/partner-logo/reorder', method: 'POST' })
   .input(reorderPartnerLogoInputSchema)
-  .handler(({ context, input }) =>
-    withPartnerLogoStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withPartnerLogoStore(context.prisma, (store) =>
       reorderPartnerLogo(store, input),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, { tag: 'partner-logos' })
+    return result
+  })
 
 const removePartnerLogoProcedure = authed
   .route({ path: '/partner-logo/remove', method: 'DELETE' })
   .input(removePartnerLogoInputSchema)
-  .handler(({ context, input }) =>
-    withPartnerLogoStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withPartnerLogoStore(context.prisma, (store) =>
       removePartnerLogo(
         store,
         {
@@ -135,8 +141,10 @@ const removePartnerLogoProcedure = authed
         },
         input,
       ),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, { tag: 'partner-logos' })
+    return result
+  })
 
 export const partnerLogo = {
   list: listPartnerLogosProcedure,

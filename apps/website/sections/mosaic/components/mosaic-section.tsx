@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useMosaic } from '@virtality/react-query'
+import { useMosaic } from '@/lib/marketing-queries'
 import type { MosaicTileListItem } from '@virtality/shared/types'
 import { MOSAIC_SECTION_CONTENT } from '../content'
 import { MOSAIC_GRID_MOBILE_SCALE_CLASS } from '../lib/mosaic-grid'
