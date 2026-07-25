@@ -3,6 +3,7 @@ import type { PrismaClient } from '@virtality/db'
 import * as lucideReact from 'lucide-react'
 import {
   createHighlightCardInputSchema,
+  highlightCardsCacheTag,
   listHighlightCardsInputSchema,
   removeHighlightCardInputSchema,
   reorderHighlightCardInputSchema,
@@ -21,7 +22,7 @@ import {
   type HighlightCardStore,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
-import { base } from '../context.ts'
+import { base, bustWebsiteMarketingCache } from '../context.ts'
 
 function createPrismaHighlightCardStore(
   prisma: PrismaClient,
@@ -91,8 +92,8 @@ const listHighlightCardsProcedure = base
 const createHighlightCardProcedure = authed
   .route({ path: '/highlight-card/create', method: 'POST' })
   .input(createHighlightCardInputSchema)
-  .handler(({ context, input }) =>
-    withHighlightCardStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withHighlightCardStore(context.prisma, (store) =>
       createHighlightCard(
         store,
         {
@@ -101,35 +102,71 @@ const createHighlightCardProcedure = authed
         },
         input,
       ),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, {
+      tag: highlightCardsCacheTag(result.collection),
+    })
+    return result
+  })
 
 const updateHighlightCardProcedure = authed
   .route({ path: '/highlight-card/update', method: 'POST' })
   .input(updateHighlightCardInputSchema)
-  .handler(({ context, input }) =>
-    withHighlightCardStore(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const result = await withHighlightCardStore(context.prisma, (store) =>
       updateHighlightCard(store, { lucideModule: lucideReact }, input),
-    ),
-  )
+    )
+    await bustWebsiteMarketingCache(context, {
+      tag: highlightCardsCacheTag(result.collection),
+    })
+    return result
+  })
 
 const reorderHighlightCardProcedure = authed
   .route({ path: '/highlight-card/reorder', method: 'POST' })
   .input(reorderHighlightCardInputSchema)
-  .handler(({ context, input }) =>
-    withHighlightCardStore(context.prisma, (store) =>
-      reorderHighlightCard(store, input),
-    ),
-  )
+  .handler(async ({ context, input }) => {
+    const outcome = await withHighlightCardStore(
+      context.prisma,
+      async (store) => {
+        const existing = await store.findById(input.id)
+        const result = await reorderHighlightCard(store, input)
+        return {
+          result,
+          collection: existing?.collection,
+        }
+      },
+    )
+    if (outcome.collection) {
+      await bustWebsiteMarketingCache(context, {
+        tag: highlightCardsCacheTag(outcome.collection),
+      })
+    }
+    return outcome.result
+  })
 
 const removeHighlightCardProcedure = authed
   .route({ path: '/highlight-card/remove', method: 'DELETE' })
   .input(removeHighlightCardInputSchema)
-  .handler(({ context, input }) =>
-    withHighlightCardStore(context.prisma, (store) =>
-      removeHighlightCard(store, input),
-    ),
-  )
+  .handler(async ({ context, input }) => {
+    const outcome = await withHighlightCardStore(
+      context.prisma,
+      async (store) => {
+        const existing = await store.findById(input.id)
+        const result = await removeHighlightCard(store, input)
+        return {
+          result,
+          collection: existing?.collection,
+        }
+      },
+    )
+    if (outcome.collection) {
+      await bustWebsiteMarketingCache(context, {
+        tag: highlightCardsCacheTag(outcome.collection),
+      })
+    }
+    return outcome.result
+  })
 
 export const highlightCard = {
   list: listHighlightCardsProcedure,

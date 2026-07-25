@@ -1,6 +1,6 @@
 'use client'
 
-import { usePromoVideo } from '@virtality/react-query'
+import { usePromoVideo } from '@/lib/marketing-queries'
 import { Play } from 'lucide-react'
 import { useRef, useState } from 'react'
 
