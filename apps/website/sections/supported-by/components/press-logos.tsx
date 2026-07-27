@@ -27,17 +27,14 @@ import { cn } from '@/lib/utils'
 const PRESS_MARQUEE_GAP_CLASS = 'gap-8 pe-8 md:gap-10 md:pe-10'
 const PRESS_MARQUEE_DURATION_MS = 40_000
 
-function getPressLogoClassName(item: PressLogoItem): string {
+function getPressLogoHeightClass(item: PressLogoItem): string {
   if (item.wide) {
-    // Compact wordmarks (short aspect) share wide height but a tighter width.
-    if (item.compact) {
-      return 'h-8 w-16 md:h-10 md:w-24'
-    }
-
-    return 'h-8 w-36 md:h-10 md:w-44'
+    // Wordmarks share one height; width follows the asset aspect ratio.
+    return 'h-8 md:h-10'
   }
 
-  return 'size-14 md:size-16'
+  // Square marks need more height to match wordmark visual weight.
+  return 'h-14 md:h-16'
 }
 
 function PressLogo({ item }: { item: PressLogoItem }) {
@@ -45,7 +42,7 @@ function PressLogo({ item }: { item: PressLogoItem }) {
     <CredibilityLogo
       item={item}
       size='secondary'
-      className={getPressLogoClassName(item)}
+      className={getPressLogoHeightClass(item)}
     />
   )
   const href = item.href?.trim()

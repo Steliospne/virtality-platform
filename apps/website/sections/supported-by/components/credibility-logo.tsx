@@ -1,58 +1,55 @@
-import Image from 'next/image'
 import type { CredibilityLogoItem } from '../content'
 import { cn } from '@/lib/utils'
 
 type CredibilityLogoProps = {
   item: CredibilityLogoItem
   size?: 'primary' | 'secondary'
+  /** Merged onto the image (use for height overrides). */
   className?: string
 }
 
-function getCredibilityLogoDimensions(
+/** Height-only; width follows the logo’s intrinsic aspect ratio (no letterboxing). */
+function getCredibilityLogoHeight(
   size: 'primary' | 'secondary',
   item: CredibilityLogoItem,
 ): string {
   if (size === 'primary') {
-    return 'w-56 h-20'
+    return 'h-12 sm:h-14'
   }
 
-  if (item.wide) {
-    return 'w-44 h-12 sm:w-56 sm:h-14'
+  if (item.wide || item.compact) {
+    return 'h-10 sm:h-12'
   }
 
-  if (item.compact) {
-    return 'w-20 h-12 sm:w-24 sm:h-14'
-  }
-
-  return 'w-32 h-12 sm:w-40 sm:h-14'
+  return 'h-12 sm:h-14'
 }
 
-/** Partner logos at full opacity with brand colours. */
+/**
+ * Partner logos at full opacity with brand colours.
+ * Plain img so the browser uses the file’s real aspect ratio; next/image
+ * width/height attrs were forcing a wrong box and letterboxing height.
+ */
 const CredibilityLogo = ({
   item,
   size = 'primary',
   className,
 }: CredibilityLogoProps) => {
-  const dimensions = getCredibilityLogoDimensions(size, item)
-
   return (
-    <div
-      className={cn(
-        'group relative flex flex-col items-center gap-4 opacity-100',
-        dimensions,
-        className,
-      )}
-    >
-      <div className={cn('relative h-full w-full', item.className)}>
-        <Image
-          src={item.src}
-          alt={item.alt}
-          fill
-          className={cn('absolute object-contain grayscale-0', item.className)}
-        />
-      </div>
+    <div className='group relative inline-flex flex-col items-center'>
+      {/* Logos are tiny local/CDN assets; intrinsic sizing matters more than optimizer. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={item.src}
+        alt={item.alt}
+        className={cn(
+          'block w-auto max-w-none grayscale-0',
+          getCredibilityLogoHeight(size, item),
+          className,
+          item.className,
+        )}
+      />
       {size === 'primary' ? (
-        <div className='w-2/3 h-0.5 rounded-full bg-linear-to-r from-transparent via-vital-blue-400 to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300' />
+        <div className='pointer-events-none absolute inset-x-0 -bottom-2 mx-auto h-0.5 w-2/3 rounded-full bg-linear-to-r from-transparent via-vital-blue-400 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-70' />
       ) : null}
     </div>
   )
