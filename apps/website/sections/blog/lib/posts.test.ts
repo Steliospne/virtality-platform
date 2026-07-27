@@ -15,9 +15,9 @@ describe('blog post read helpers', () => {
   })
 
   it('looks up a post by slug', () => {
-    const post = getPostBySlug('vivatech-2026')
+    const post = getPostBySlug('panhellenic-physiotherapy-conference')
 
-    expect(post?.slug).toBe('vivatech-2026')
+    expect(post?.slug).toBe('panhellenic-physiotherapy-conference')
     expect(post?.author.name).toBe('Katerina Tsiraki')
     expect(post?.body.some((block) => block.kind === 'heading')).toBe(true)
     expect(post?.body.some((block) => block.kind === 'paragraph')).toBe(true)
@@ -27,10 +27,16 @@ describe('blog post read helpers', () => {
     expect(getPostBySlug('does-not-exist')).toBeUndefined()
   })
 
-  it('returns the featured post', () => {
+  it('returns the featured post when one is flagged', () => {
     const featured = getFeaturedPost()
+    const flagged = getPosts().filter((post) => post.featured)
+
+    if (flagged.length === 0) {
+      expect(featured).toBeUndefined()
+      return
+    }
 
     expect(featured?.featured).toBe(true)
-    expect(featured?.slug).toBe('vivatech-2026')
+    expect(featured?.slug).toBe(flagged[0]!.slug)
   })
 })
