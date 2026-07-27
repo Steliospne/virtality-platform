@@ -10,7 +10,7 @@ export type ParagraphBlock = {
   text: string
 }
 
-/** Body heading — levels 2–3 only; the Post title owns level 1. */
+/** Body heading: levels 2-3 only; the Post title owns level 1. */
 export type HeadingBlock = {
   kind: 'heading'
   level: 2 | 3

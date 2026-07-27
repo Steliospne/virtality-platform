@@ -1,4 +1,4 @@
-/** Display-only date — content stores YYYY-MM-DD. */
+/** Display-only date: content stores YYYY-MM-DD. */
 export function formatPostDate(isoDate: string): string {
   const date = new Date(`${isoDate}T12:00:00Z`)
   return new Intl.DateTimeFormat('en-US', {

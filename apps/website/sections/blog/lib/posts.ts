@@ -28,7 +28,7 @@ export function getPostBySlug(slug: string): ResolvedPost | undefined {
   return post ? resolvePost(post) : undefined
 }
 
-/** Soft uniqueness — returns the first Featured Post when several are flagged. */
+/** Soft uniqueness: returns the first Featured Post when several are flagged. */
 export function getFeaturedPost(): ResolvedPost | undefined {
   return getPosts().find((post) => post.featured)
 }

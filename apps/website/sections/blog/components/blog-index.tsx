@@ -22,7 +22,7 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
               Notes from clinic floors and recovery rooms
             </h1>
             <p className='mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-400'>
-              Quiet writing on immersive rehab — no marketing kit, just the
+              Quiet writing on immersive rehab: no marketing kit, just the
               questions teams ask between sessions.
             </p>
           </div>
