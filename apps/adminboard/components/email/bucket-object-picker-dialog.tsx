@@ -9,43 +9,87 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@virtality/ui/components/input'
+import { Badge } from '@virtality/ui/components/badge'
 import {
   filterBucketImagePickerFolders,
   filterBucketImagePickerObjects,
 } from '@/lib/bucket-image-picker'
 import { filterBucketMp4PickerObjects } from '@/lib/promo-video'
+import { cn } from '@/lib/utils'
 import { useBucket } from '@virtality/react-query'
 import { getBucketBreadcrumbs } from '@virtality/shared/utils'
-import { ChevronRight, Folder, Film } from 'lucide-react'
+import { Check, ChevronRight, Folder, Film } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 export type BucketObjectPickerKind = 'image' | 'mp4'
 
-type BucketObjectPickerDialogProps = {
+type BucketObjectPickerDialogBaseProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelect: (objectKey: string) => void
   objectKind?: BucketObjectPickerKind
+  disabledObjectKeys?: ReadonlySet<string> | readonly string[]
+  disabledReason?: string
 }
+
+type BucketObjectPickerDialogSingleProps = BucketObjectPickerDialogBaseProps & {
+  selectionMode?: 'single'
+  onSelect: (objectKey: string) => void
+  onConfirm?: never
+}
+
+type BucketObjectPickerDialogMultipleProps =
+  BucketObjectPickerDialogBaseProps & {
+    selectionMode: 'multiple'
+    onSelect?: never
+    onConfirm: (objectKeys: string[]) => void
+  }
+
+export type BucketObjectPickerDialogProps =
+  | BucketObjectPickerDialogSingleProps
+  | BucketObjectPickerDialogMultipleProps
 
 const pickerRowClassName =
   'hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left'
 
-export const BucketObjectPickerDialog = ({
-  open,
-  onOpenChange,
-  onSelect,
-  objectKind = 'image',
-}: BucketObjectPickerDialogProps) => {
+function toDisabledKeySet(
+  disabledObjectKeys: BucketObjectPickerDialogBaseProps['disabledObjectKeys'],
+): ReadonlySet<string> {
+  if (!disabledObjectKeys) {
+    return new Set()
+  }
+
+  return disabledObjectKeys instanceof Set
+    ? disabledObjectKeys
+    : new Set(disabledObjectKeys)
+}
+
+export const BucketObjectPickerDialog = (
+  props: BucketObjectPickerDialogProps,
+) => {
+  const {
+    open,
+    onOpenChange,
+    objectKind = 'image',
+    disabledObjectKeys,
+    disabledReason = 'Unavailable',
+    selectionMode = 'single',
+  } = props
+  const isMultiple = selectionMode === 'multiple'
   const [query, setQuery] = useState('')
   const [prefix, setPrefix] = useState('')
+  const [selectedObjectKeys, setSelectedObjectKeys] = useState<string[]>([])
   const { data, isLoading } = useBucket({ prefix })
+  const disabledKeySet = useMemo(
+    () => toDisabledKeySet(disabledObjectKeys),
+    [disabledObjectKeys],
+  )
 
   useEffect(() => {
     if (!open) {
       setQuery('')
       setPrefix('')
+      setSelectedObjectKeys([])
     }
   }, [open])
 
@@ -75,7 +119,42 @@ export const BucketObjectPickerDialog = ({
   const description =
     objectKind === 'mp4'
       ? 'Browse folders in the platform media bucket and choose an MP4 video. External URLs are not supported.'
-      : 'Browse folders in the platform media bucket and choose an image. External URLs are not supported.'
+      : isMultiple
+        ? 'Browse folders in the platform media bucket and choose one or more images. External URLs are not supported.'
+        : 'Browse folders in the platform media bucket and choose an image. External URLs are not supported.'
+
+  const toggleObjectKey = (objectKey: string) => {
+    setSelectedObjectKeys((current) => {
+      if (current.includes(objectKey)) {
+        return current.filter((key) => key !== objectKey)
+      }
+
+      return [...current, objectKey]
+    })
+  }
+
+  const handleObjectClick = (objectKey: string) => {
+    if (disabledKeySet.has(objectKey)) {
+      return
+    }
+
+    if (isMultiple) {
+      toggleObjectKey(objectKey)
+      return
+    }
+
+    props.onSelect?.(objectKey)
+    onOpenChange(false)
+  }
+
+  const handleConfirm = () => {
+    if (!isMultiple || selectedObjectKeys.length === 0) {
+      return
+    }
+
+    props.onConfirm?.(selectedObjectKeys)
+    onOpenChange(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,42 +231,84 @@ export const BucketObjectPickerDialog = ({
                 </button>
               ))}
 
-              {selectableObjects.map((object) => (
-                <button
-                  key={object.objectKey}
-                  type='button'
-                  onClick={() => {
-                    onSelect(object.objectKey)
-                    onOpenChange(false)
-                  }}
-                  className={pickerRowClassName}
-                >
-                  {objectKind === 'mp4' ? (
-                    <div className='bg-muted flex size-12 items-center justify-center rounded'>
-                      <Film className='text-muted-foreground size-6' />
+              {selectableObjects.map((object) => {
+                const isDisabled = disabledKeySet.has(object.objectKey)
+                const isSelected = selectedObjectKeys.includes(object.objectKey)
+
+                return (
+                  <button
+                    key={object.objectKey}
+                    type='button'
+                    disabled={isDisabled}
+                    aria-pressed={isMultiple ? isSelected : undefined}
+                    onClick={() => handleObjectClick(object.objectKey)}
+                    className={cn(
+                      pickerRowClassName,
+                      isSelected &&
+                        'border-primary bg-primary/5 ring-primary ring-1',
+                      isDisabled && 'cursor-not-allowed opacity-60',
+                    )}
+                  >
+                    {objectKind === 'mp4' ? (
+                      <div className='bg-muted flex size-12 items-center justify-center rounded'>
+                        <Film className='text-muted-foreground size-6' />
+                      </div>
+                    ) : (
+                      <Image
+                        src={object.cdnUrl}
+                        alt={object.name}
+                        width={48}
+                        height={48}
+                        className='size-12 rounded object-cover'
+                      />
+                    )}
+                    <div className='min-w-0 flex-1'>
+                      <p className='truncate font-medium'>{object.name}</p>
+                      <p className='text-muted-foreground truncate font-mono text-xs'>
+                        {object.objectKey}
+                      </p>
                     </div>
-                  ) : (
-                    <Image
-                      src={object.cdnUrl}
-                      alt={object.name}
-                      width={48}
-                      height={48}
-                      className='size-12 rounded object-cover'
-                    />
-                  )}
-                  <div className='min-w-0 flex-1'>
-                    <p className='truncate font-medium'>{object.name}</p>
-                    <p className='text-muted-foreground truncate font-mono text-xs'>
-                      {object.objectKey}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                    {isDisabled ? (
+                      <Badge variant='secondary' className='shrink-0 text-xs'>
+                        {disabledReason}
+                      </Badge>
+                    ) : null}
+                    {isSelected ? (
+                      <Check
+                        className='text-primary size-5 shrink-0'
+                        aria-hidden='true'
+                      />
+                    ) : null}
+                  </button>
+                )
+              })}
             </>
           )}
         </div>
 
-        <div className='flex justify-end'>
+        <div className='flex items-center justify-end gap-2'>
+          {isMultiple ? (
+            <>
+              <p className='text-muted-foreground mr-auto text-sm'>
+                {selectedObjectKeys.length} selected
+              </p>
+              {selectedObjectKeys.length > 0 ? (
+                <Button
+                  variant='outline'
+                  onClick={() => setSelectedObjectKeys([])}
+                >
+                  Clear
+                </Button>
+              ) : null}
+              <Button
+                variant='primary'
+                disabled={selectedObjectKeys.length === 0}
+                onClick={handleConfirm}
+              >
+                Confirm
+              </Button>
+            </>
+          ) : null}
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

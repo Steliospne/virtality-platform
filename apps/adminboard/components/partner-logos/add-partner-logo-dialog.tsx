@@ -25,10 +25,11 @@ import type { PartnerLogoCategory } from '@virtality/shared/types'
 import { bucketCdnUrl } from '@virtality/shared/utils'
 import {
   useCreatePartnerLogo,
+  usePartnerLogos,
   useUploadBucketObjects,
 } from '@virtality/react-query'
 import { ImageIcon, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { PartnerLogoCategorySelect } from '@/components/partner-logos/partner-logo-category-select'
 
@@ -39,13 +40,27 @@ type AddPartnerLogoDialogProps = {
 
 type SourceMode = 'pick' | 'upload'
 
-type UploadAssignmentQueue = {
+type AssignmentQueue = {
   pendingKeys: string[]
   total: number
 }
 
 function isSourceMode(value: string): value is SourceMode {
   return value === 'pick' || value === 'upload'
+}
+
+function startAssignmentQueue(objectKeys: string[]): {
+  objectKey: string
+  queue: AssignmentQueue
+} {
+  const [firstObjectKey, ...remainingObjectKeys] = objectKeys
+  return {
+    objectKey: firstObjectKey,
+    queue: {
+      pendingKeys: remainingObjectKeys,
+      total: objectKeys.length,
+    },
+  }
 }
 
 export const AddPartnerLogoDialog = ({
@@ -61,19 +76,24 @@ export const AddPartnerLogoDialog = ({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [addAnother, setAddAnother] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [uploadQueue, setUploadQueue] = useState<UploadAssignmentQueue | null>(
-    null,
-  )
+  const [assignmentQueue, setAssignmentQueue] =
+    useState<AssignmentQueue | null>(null)
   const { mutate: createPartnerLogo, isPending: isSaving } =
     useCreatePartnerLogo()
   const uploadMutation = useUploadBucketObjects()
+  const { data: partnerLogos = [] } = usePartnerLogos()
+  const assignedObjectKeys = useMemo(
+    () => partnerLogos.map((logo) => logo.objectKey),
+    [partnerLogos],
+  )
 
   const isPending = isSaving || uploadMutation.isPending
   const uploadTargetPrefix = getPartnerLogoUploadPrefix(category)
-  const hasPendingAssignments = (uploadQueue?.pendingKeys.length ?? 0) > 0
-  const showAssignmentProgress = uploadQueue !== null && uploadQueue.total > 1
-  const assignmentPosition = uploadQueue
-    ? uploadQueue.total - uploadQueue.pendingKeys.length
+  const hasPendingAssignments = (assignmentQueue?.pendingKeys.length ?? 0) > 0
+  const showAssignmentProgress =
+    assignmentQueue !== null && assignmentQueue.total > 1
+  const assignmentPosition = assignmentQueue
+    ? assignmentQueue.total - assignmentQueue.pendingKeys.length
     : 0
 
   const resetForm = () => {
@@ -83,7 +103,7 @@ export const AddPartnerLogoDialog = ({
     setPickerOpen(false)
     setAddAnother(false)
     setSelectedFiles([])
-    setUploadQueue(null)
+    setAssignmentQueue(null)
     setSourceMode('pick')
     uploadMutation.reset()
   }
@@ -95,14 +115,14 @@ export const AddPartnerLogoDialog = ({
   }, [open])
 
   const advanceToNextAssignment = () => {
-    if (!uploadQueue || uploadQueue.pendingKeys.length === 0) {
+    if (!assignmentQueue || assignmentQueue.pendingKeys.length === 0) {
       return false
     }
 
-    const [nextObjectKey, ...remainingKeys] = uploadQueue.pendingKeys
+    const [nextObjectKey, ...remainingKeys] = assignmentQueue.pendingKeys
     setObjectKey(nextObjectKey)
     setAlt('')
-    setUploadQueue({ ...uploadQueue, pendingKeys: remainingKeys })
+    setAssignmentQueue({ ...assignmentQueue, pendingKeys: remainingKeys })
     return true
   }
 
@@ -155,6 +175,30 @@ export const AddPartnerLogoDialog = ({
     uploadMutation.reset()
   }
 
+  const beginAssignmentQueue = (objectKeys: string[]) => {
+    if (objectKeys.length === 0) {
+      return
+    }
+
+    const { objectKey: firstObjectKey, queue } =
+      startAssignmentQueue(objectKeys)
+    setObjectKey(firstObjectKey)
+    setAlt('')
+    setAssignmentQueue(queue)
+    setSourceMode('pick')
+  }
+
+  const handlePickConfirm = (objectKeys: string[]) => {
+    beginAssignmentQueue(objectKeys)
+
+    if (objectKeys.length === 1) {
+      toast.success('Image selected. Add alt text and save to assign.')
+      return
+    }
+
+    toast.success(`${objectKeys.length} images selected. Assign each in turn.`)
+  }
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       toast.error('Select at least one image to upload.')
@@ -176,15 +220,8 @@ export const AddPartnerLogoDialog = ({
       const uploadedObjectKeys = outcome.uploads.map(
         (upload) => upload.objectKey,
       )
-      const [firstObjectKey, ...remainingObjectKeys] = uploadedObjectKeys
-
-      setObjectKey(firstObjectKey)
-      setUploadQueue({
-        pendingKeys: remainingObjectKeys,
-        total: uploadedObjectKeys.length,
-      })
+      beginAssignmentQueue(uploadedObjectKeys)
       setSelectedFiles([])
-      setSourceMode('pick')
 
       const uploadedCount = outcome.uploads.length
       const failedCount = outcome.failures.length
@@ -208,8 +245,8 @@ export const AddPartnerLogoDialog = ({
           <DialogHeader>
             <DialogTitle>Add partner logo</DialogTitle>
             <DialogDescription>
-              Pick an existing Bucket Object or upload new images, set alt text,
-              and choose whether it appears in the strategic or clinical list.
+              Pick existing Bucket Objects or upload new images, set alt text,
+              and choose whether each appears in the strategic or clinical list.
               Changes go live immediately.
             </DialogDescription>
           </DialogHeader>
@@ -242,7 +279,7 @@ export const AddPartnerLogoDialog = ({
                     onClick={() => setPickerOpen(true)}
                   >
                     <ImageIcon className='mr-2 size-4' />
-                    {objectKey ? 'Change image' : 'Select image'}
+                    {objectKey ? 'Change image' : 'Select images'}
                   </Button>
                   {objectKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -326,7 +363,8 @@ export const AddPartnerLogoDialog = ({
                 </p>
                 {showAssignmentProgress ? (
                   <p className='text-muted-foreground text-xs'>
-                    Assigning logo {assignmentPosition} of {uploadQueue.total}.
+                    Assigning logo {assignmentPosition} of{' '}
+                    {assignmentQueue.total}.
                   </p>
                 ) : null}
               </div>
@@ -385,7 +423,10 @@ export const AddPartnerLogoDialog = ({
       <BucketObjectPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={setObjectKey}
+        selectionMode='multiple'
+        onConfirm={handlePickConfirm}
+        disabledObjectKeys={assignedObjectKeys}
+        disabledReason='Already in use'
       />
     </>
   )
