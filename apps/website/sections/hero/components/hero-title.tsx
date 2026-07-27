@@ -106,11 +106,11 @@ const HeroTitle = ({
           width={273}
           height={28}
           priority
-          sizes='(min-width: 640px) 312px, 273px'
+          sizes='(min-width: 768px) 420px, (min-width: 640px) 312px, 273px'
           className={
             isLarge
               ? 'h-10.5! w-auto! max-w-none sm:h-12!'
-              : 'h-4! w-auto! max-w-none sm:h-5!'
+              : 'h-4! w-auto! max-w-none sm:h-5! md:h-7!'
           }
         />
       ) : (
