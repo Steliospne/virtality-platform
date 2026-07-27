@@ -1,11 +1,12 @@
 /**
- * PROTOTYPE sample content — English posts against the locked schema.
- * Not production content; the live Greek/HTML conference post is ignored.
+ * In-repo blog catalog (Authors + Posts). Short-lived until Adminboard authoring.
+ * Interim English posts against the locked schema — the old Greek/HTML conference
+ * post is not carried forward.
  */
 
-import type { Author, Post, ResolvedPost } from './types'
+import type { Author, Post } from './types'
 
-export const PROTOTYPE_AUTHORS: Author[] = [
+export const authors: Author[] = [
   {
     id: 'katerina-tsiraki',
     name: 'Katerina Tsiraki',
@@ -14,16 +15,16 @@ export const PROTOTYPE_AUTHORS: Author[] = [
   },
 ]
 
-const kate = PROTOTYPE_AUTHORS[0]!
+const katerina = authors[0]!
 
-export const PROTOTYPE_POSTS: Post[] = [
+export const posts: Post[] = [
   {
     slug: 'rewiring-recovery',
     title: 'Rewiring recovery: how VR engages neuroplasticity',
     excerpt:
       'Immersive therapy is not a gadget layer on top of rehab — it is a way to recruit the brain’s capacity to relearn movement, attention, and confidence.',
     cover: '/conf_img.png',
-    authorId: kate.id,
+    authorId: katerina.id,
     publishedAt: '2025-09-19',
     featured: true,
     body: [
@@ -65,7 +66,7 @@ export const PROTOTYPE_POSTS: Post[] = [
     excerpt:
       'Instructions fail when they compete with pain, fear, or cognitive load. Better cues are sparse, spatial, and timed to the movement itself.',
     cover: '/hero/ManNeuralFlipped-poster.jpg',
-    authorId: kate.id,
+    authorId: katerina.id,
     publishedAt: '2025-11-03',
     featured: false,
     body: [
@@ -97,7 +98,7 @@ export const PROTOTYPE_POSTS: Post[] = [
       'Before the headset comes out of the box, teams want clarity on workflow, measurement, staff confidence, and what “better outcomes” will look like in their rooms.',
     cover:
       'https://cdn.virtality.app/2e78ac55ab9e56ef44091705aabeced201df5db4e6c6a92b2133ca556a93bbee',
-    authorId: kate.id,
+    authorId: katerina.id,
     publishedAt: '2026-01-14',
     featured: false,
     body: [
@@ -121,7 +122,7 @@ export const PROTOTYPE_POSTS: Post[] = [
     excerpt:
       'Gains fade when practice stops at the door. Continuity means the same therapeutic intent travels home in a form patients can actually complete.',
     cover: '/site_front.png',
-    authorId: kate.id,
+    authorId: katerina.id,
     publishedAt: '2026-03-02',
     featured: false,
     body: [
@@ -147,33 +148,3 @@ export const PROTOTYPE_POSTS: Post[] = [
     ],
   },
 ]
-
-export function getPrototypeAuthor(authorId: string): Author {
-  const author = PROTOTYPE_AUTHORS.find((entry) => entry.id === authorId)
-  if (!author) {
-    throw new Error(`Unknown prototype author: ${authorId}`)
-  }
-  return author
-}
-
-export function resolvePrototypePost(post: Post): ResolvedPost {
-  return {
-    ...post,
-    author: getPrototypeAuthor(post.authorId),
-  }
-}
-
-export function getPrototypePosts(): ResolvedPost[] {
-  return PROTOTYPE_POSTS.map(resolvePrototypePost).sort((a, b) =>
-    b.publishedAt.localeCompare(a.publishedAt),
-  )
-}
-
-export function getPrototypePostBySlug(slug: string): ResolvedPost | undefined {
-  const post = PROTOTYPE_POSTS.find((entry) => entry.slug === slug)
-  return post ? resolvePrototypePost(post) : undefined
-}
-
-export function getFeaturedPrototypePost(): ResolvedPost | undefined {
-  return getPrototypePosts().find((post) => post.featured)
-}

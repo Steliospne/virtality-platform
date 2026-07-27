@@ -1,26 +1,10 @@
-import {
-  BlogPrototypeIndex,
-  getFeaturedPrototypePost,
-  getPrototypePosts,
-  parseBlogPrototypeVariant,
-} from '@/sections/blog-prototype'
+import { BlogIndex, getFeaturedPost, getPosts } from '@/sections/blog'
 
-type BlogPageProps = {
-  searchParams: Promise<{ variant?: string | string[] }>
-}
+const BlogPage = () => {
+  const posts = getPosts()
+  const featured = getFeaturedPost()
 
-/**
- * PROTOTYPE host — existing /blog route renders look-and-feel variants via ?variant=
- */
-const BlogPage = async ({ searchParams }: BlogPageProps) => {
-  const params = await searchParams
-  const variant = parseBlogPrototypeVariant(params.variant)
-  const posts = getPrototypePosts()
-  const featured = getFeaturedPrototypePost()
-
-  return (
-    <BlogPrototypeIndex posts={posts} featured={featured} variant={variant} />
-  )
+  return <BlogIndex posts={posts} featured={featured} />
 }
 
 export default BlogPage

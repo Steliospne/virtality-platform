@@ -1,5 +1,3 @@
-/** PROTOTYPE — throwaway types matching the locked blog content model. */
-
 export type Author = {
   id: string
   name: string
@@ -42,25 +40,3 @@ export type Post = {
 export type ResolvedPost = Post & {
   author: Author
 }
-
-export const BLOG_PROTOTYPE_VARIANTS = [
-  {
-    key: 'A',
-    name: 'Spotlight stack',
-  },
-  {
-    key: 'B',
-    name: 'Meta rail',
-  },
-  {
-    key: 'C',
-    name: 'Cover mosaic',
-  },
-  {
-    key: 'D',
-    name: 'Quiet essay',
-  },
-] as const
-
-export type BlogPrototypeVariantKey =
-  (typeof BLOG_PROTOTYPE_VARIANTS)[number]['key']

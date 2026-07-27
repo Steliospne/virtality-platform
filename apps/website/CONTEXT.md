@@ -93,6 +93,8 @@ sections/<section>/
 
 Posts and Authors follow the same section layout: a single `content.ts` holds the in-repo catalog (short-lived until Adminboard authoring). `index.ts` is the public API — UI plus read helpers (`getPosts`, `getPostBySlug`, Featured as needed). Helpers return resolved Posts (Author joined in-section). Raw arrays stay private; blog routes import only from `@/sections/blog`.
 
+Look-and-feel is the meta-rail layout (date/author rail + copy + cover): index and post under `components/`.
+
 ### Adding a section
 
 1. Create `sections/<name>/` with `index.ts` and `content.ts` (if there is copy).

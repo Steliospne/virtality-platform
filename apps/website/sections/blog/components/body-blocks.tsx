@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import type { BodyBlock } from '../types'
-import { youtubeEmbedUrl } from '../lib/prototype-utils'
+import { youtubeEmbedUrl } from '../lib/format'
 
 type BodyBlocksProps = {
   blocks: BodyBlock[]
