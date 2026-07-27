@@ -28,20 +28,27 @@ const jetbrainsMono = JetBrains_Mono({
 const websiteURL = getWebsiteUrl()
 const baseURL = getServerUrl()
 
+const metaTitle = 'Virtality - Because every move matters'
+
+const metaDescription =
+  'Where physiotherapists bridge neuroscience and technology to unlock movement faster.'
+
+const metaImage = '/open-graph/og-image.png'
+
 export const metadata: Metadata = {
   metadataBase: new URL(websiteURL),
-  title: 'Virtality',
-  description: 'Because every move matters.',
+  title: metaTitle,
+  description: metaDescription,
   openGraph: {
-    title: 'Virtality',
-    description: 'Because every move matters.',
-    images: [{ url: '/site_front.png', width: 2537, height: 1227 }],
+    title: metaTitle,
+    description: metaDescription,
+    images: [{ url: metaImage, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Virtality',
-    description: 'Because every move matters.',
-    images: ['/site_front.png'],
+    title: metaTitle,
+    description: metaDescription,
+    images: [metaImage],
   },
 }
 export default function RootLayout({
