@@ -1,0 +1,27 @@
+---
+description: Never use em dashes in copy or prose
+alwaysApply: true
+---
+
+# No em dashes
+
+Never use the em dash (`—`) in copy, marketing text, UI strings, blog posts, docs meant for readers, or any other prose.
+
+Prefer:
+
+- a colon for labels or introductions (`Photo placeholder: booth view`)
+- a comma or period to break a sentence
+- parentheses for asides
+
+```text
+❌ Quiet writing on immersive rehab — no marketing kit
+✅ Quiet writing on immersive rehab: no marketing kit
+
+❌ Crete — a keynote on interactive rehab
+✅ Crete: a keynote on interactive rehab
+
+❌ Institute — ranked top globally — the program
+✅ Institute (ranked top globally), the program
+```
+
+En dashes in numeric ranges (`17-19` or `17–19`) are fine. Do not substitute an em dash for a hyphen, comma, colon, or parenthesis.
