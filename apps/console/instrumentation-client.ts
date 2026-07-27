@@ -1,5 +1,8 @@
 import posthog from 'posthog-js'
 import { authClient } from './auth-client'
+import { installTranslateCrashGuard } from './lib/translate-crash-guard'
+
+installTranslateCrashGuard()
 
 if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
   throw new Error('POSTHOG_KEY is not set')
