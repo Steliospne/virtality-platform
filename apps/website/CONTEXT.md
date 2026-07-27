@@ -8,6 +8,46 @@ Public marketing site — landing, blog, waitlist, and contact.
 A landing-page content unit with a title, body copy, and a Lucide icon name. Website owns presentation; Adminboard owns the managed copy and icon.
 _Avoid_: Feature card, benefit card, info card
 
+**Post**:
+A blog content unit identified by a slug, with a title, excerpt, required Cover, `authorId`, ISO `publishedAt` (`YYYY-MM-DD`), optional Featured flag, and a structured body of Body Blocks.
+_Avoid_: Article, blog post, blog entry
+
+**Excerpt**:
+The short supporting copy for a Post, shown on the index and under the title on the post page.
+_Avoid_: Subtitle, description, summary, dek
+
+**Author**:
+A person credited on Posts, with a stable string `id`, a name, optional Role, and optional image (CDN URL). Shared across Posts via `authorId` on the Post; not a public profile.
+_Avoid_: Writer, contributor, byline person
+
+**Role**:
+An Author's optional short byline label under their name (e.g. job or practice focus).
+_Avoid_: Specialty, title, job title, credential
+
+**Cover**:
+The required primary image for a Post (CDN URL), used on the index and typically at the top of the post page. Distinct from images inside the body. Presentation may fall back to a placeholder if the asset is unavailable.
+_Avoid_: Thumbnail, hero image, featured image, banner
+
+**Featured**:
+A Post flag marking it for the index spotlight. Soft uniqueness — content should keep at most one Featured Post; the schema does not enforce it.
+_Avoid_: Pinned, highlighted, promoted
+
+**Body Block**:
+One ordered unit in a Post's structured body. Kinds in this model: paragraph, image, and video.
+_Avoid_: Section, content block, rich-text node, slice
+
+**Paragraph Block**:
+A Body Block of plain text prose — no Markdown or HTML inside the text.
+_Avoid_: Text block, copy block, rich text
+
+**Image Block**:
+A Body Block for an inline image inside the Post body (not the Cover). Required CDN `src` and `alt`; optional `caption`. Layout owns sizing — not part of the content model.
+_Avoid_: Inline image, media image
+
+**Video Block**:
+A Body Block for video inside the Post body. Discriminated by `source`: `cdn` (native playback from a cdn.virtality.app URL) or `youtube` (external embed). Both store a `url` — CDN asset URL, or a normal YouTube watch/share URL (not a raw video id; not required to be an embed URL). Optional `caption` (same idea as Image Block).
+_Avoid_: Media block, embed block
+
 ## Section layout
 
 Landing and marketing UI is organized by **section** (feature), not by technical layer. A section owns its UI, copy, and section-private helpers.
@@ -44,6 +84,14 @@ sections/<section>/
 | Promo video    | `sections/promo-video/`   |
 | Supported by   | `sections/supported-by/`  |
 | Call to action | `sections/cta/`           |
+
+### Blog section
+
+| Section | Path             |
+| ------- | ---------------- |
+| Blog    | `sections/blog/` |
+
+Posts and Authors follow the same section layout: a single `content.ts` holds the in-repo catalog (short-lived until Adminboard authoring). `index.ts` is the public API — UI plus read helpers (`getPosts`, `getPostBySlug`, Featured as needed). Helpers return resolved Posts (Author joined in-section). Raw arrays stay private; blog routes import only from `@/sections/blog`.
 
 ### Adding a section
 
