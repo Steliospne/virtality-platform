@@ -1,36 +1,11 @@
 import Image from 'next/image'
-import { CREDIBILITY_LOGO_HOVER_CLASS } from '../lib/partner-press'
 import type { CredibilityLogoItem } from '../content'
-import type { SupportedByLogoTone } from '../prototype/logo-style-variants'
 import { cn } from '@/lib/utils'
 
 type CredibilityLogoProps = {
   item: CredibilityLogoItem
   size?: 'primary' | 'secondary'
   className?: string
-  /** PROTOTYPE — full-opacity logo colour treatments */
-  tone?: SupportedByLogoTone
-}
-
-function logoToneClasses(tone?: SupportedByLogoTone) {
-  if (tone === 'greyscale-full') {
-    return {
-      wrapper: 'opacity-100 hover:opacity-100',
-      image: 'grayscale',
-    }
-  }
-
-  if (tone === 'brand-full') {
-    return {
-      wrapper: 'opacity-100 hover:opacity-100',
-      image: 'grayscale-0',
-    }
-  }
-
-  return {
-    wrapper: undefined,
-    image: undefined,
-  }
 }
 
 function getCredibilityLogoDimensions(
@@ -52,21 +27,18 @@ function getCredibilityLogoDimensions(
   return 'w-32 h-12 sm:w-40 sm:h-14'
 }
 
+/** Partner logos at full opacity with brand colours. */
 const CredibilityLogo = ({
   item,
   size = 'primary',
   className,
-  tone,
 }: CredibilityLogoProps) => {
   const dimensions = getCredibilityLogoDimensions(size, item)
-  const toneClasses = logoToneClasses(tone)
 
   return (
     <div
       className={cn(
-        'group relative flex flex-col items-center gap-4',
-        CREDIBILITY_LOGO_HOVER_CLASS,
-        toneClasses.wrapper,
+        'group relative flex flex-col items-center gap-4 opacity-100',
         dimensions,
         className,
       )}
@@ -76,11 +48,7 @@ const CredibilityLogo = ({
           src={item.src}
           alt={item.alt}
           fill
-          className={cn(
-            'absolute object-contain',
-            toneClasses.image,
-            item.className,
-          )}
+          className={cn('absolute object-contain grayscale-0', item.className)}
         />
       </div>
       {size === 'primary' ? (

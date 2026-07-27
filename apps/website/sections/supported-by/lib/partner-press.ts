@@ -1,8 +1,5 @@
 import type { CredibilityLogoItem, PressLogoItem } from '../content'
 
-export const CREDIBILITY_LOGO_HOVER_CLASS =
-  'opacity-35 hover:opacity-80 transition-opacity duration-500'
-
 export type PartnerRow = {
   kind: 'strategic' | 'clinical'
   logos: CredibilityLogoItem[]
