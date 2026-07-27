@@ -43,14 +43,15 @@ const Dashboard = ({ isImpersonating }: { isImpersonating?: boolean }) => {
 
       <div className='container'>
         <H1>
-          Welcome,{' '}
+          <span>Welcome, </span>
           {isPending || !mounted ? (
             <Skeleton className='inline-block h-6 w-40' />
           ) : (
-            user?.name
+            <span>{user?.name}</span>
           )}
-          , to the
-          <span className='text-vital-blue-700'> Virtality </span> Console.
+          <span>, to the</span>
+          <span className='text-vital-blue-700'> Virtality </span>
+          <span>Console.</span>
         </H1>
       </div>
       <div className='flex flex-1 items-center'>
