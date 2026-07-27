@@ -28,7 +28,6 @@ import {
   useUploadBucketObjects,
 } from '@virtality/react-query'
 import { ImageIcon, Upload } from 'lucide-react'
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PartnerLogoCategorySelect } from '@/components/partner-logos/partner-logo-category-select'
@@ -246,12 +245,11 @@ export const AddPartnerLogoDialog = ({
                     {objectKey ? 'Change image' : 'Select image'}
                   </Button>
                   {objectKey ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={bucketCdnUrl(objectKey)}
                       alt={alt || 'Selected logo'}
-                      width={64}
-                      height={64}
-                      className='size-16 rounded object-contain'
+                      className='block h-12 w-auto max-w-28 rounded'
                     />
                   ) : null}
                 </div>

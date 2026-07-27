@@ -6,7 +6,6 @@ import { getErrorMessage } from '@/lib/get-error-message'
 import type { PartnerLogoListItem } from '@virtality/shared/types'
 import { useReorderPartnerLogo } from '@virtality/react-query'
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react'
-import Image from 'next/image'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
@@ -21,6 +20,14 @@ type PartnerLogoCategoryListProps = {
 type PartnerLogoListProps = {
   logos: PartnerLogoListItem[]
   onEdit: (logo: PartnerLogoListItem) => void
+}
+
+function PartnerLogoThumb({ src, alt }: { src: string; alt: string }) {
+  return (
+    // Tiny admin preview; hug intrinsic aspect ratio.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className='block h-12 w-auto max-w-28 rounded' />
+  )
 }
 
 function PartnerLogoList({ logos, onEdit }: PartnerLogoListProps) {
@@ -52,13 +59,7 @@ function PartnerLogoList({ logos, onEdit }: PartnerLogoListProps) {
             key={logo.id}
             className='flex items-center gap-4 rounded-lg border p-3'
           >
-            <Image
-              src={logo.cdnUrl}
-              alt={logo.alt}
-              width={64}
-              height={64}
-              className='size-16 rounded bg-white object-contain p-1'
-            />
+            <PartnerLogoThumb src={logo.cdnUrl} alt={logo.alt} />
             <div className='min-w-0 flex-1'>
               <p className='font-medium'>{logo.alt}</p>
               <p className='text-muted-foreground truncate font-mono text-xs'>
