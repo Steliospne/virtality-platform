@@ -1,6 +1,7 @@
 export type {
   Author,
   BodyBlock,
+  HeadingBlock,
   ImageBlock,
   ParagraphBlock,
   Post,

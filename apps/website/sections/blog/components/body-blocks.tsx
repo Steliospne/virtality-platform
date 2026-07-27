@@ -24,6 +24,28 @@ const BodyBlocks = ({ blocks, className }: BodyBlocksProps) => {
           )
         }
 
+        if (block.kind === 'heading') {
+          if (block.level === 3) {
+            return (
+              <h3
+                key={key}
+                className='text-xl font-medium tracking-tight text-slate-900 dark:text-slate-100'
+              >
+                {block.text}
+              </h3>
+            )
+          }
+
+          return (
+            <h2
+              key={key}
+              className='text-2xl font-medium tracking-tight text-slate-900 dark:text-slate-100'
+            >
+              {block.text}
+            </h2>
+          )
+        }
+
         if (block.kind === 'image') {
           return (
             <figure key={key} className='space-y-3'>

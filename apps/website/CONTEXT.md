@@ -25,7 +25,7 @@ An Author's optional short byline label under their name (e.g. job or practice f
 _Avoid_: Specialty, title, job title, credential
 
 **Cover**:
-The required primary image for a Post (CDN URL), used on the index and typically at the top of the post page. Distinct from images inside the body. Presentation may fall back to a placeholder if the asset is unavailable.
+The required primary image for a Post (CDN URL), used on the index. Distinct from images inside the body. Presentation may fall back to a placeholder if the asset is unavailable.
 _Avoid_: Thumbnail, hero image, featured image, banner
 
 **Featured**:
@@ -33,12 +33,16 @@ A Post flag marking it for the index spotlight. Soft uniqueness — content shou
 _Avoid_: Pinned, highlighted, promoted
 
 **Body Block**:
-One ordered unit in a Post's structured body. Kinds in this model: paragraph, image, and video.
+One ordered unit in a Post's structured body. Kinds in this model: paragraph, heading, image, and video.
 _Avoid_: Section, content block, rich-text node, slice
 
 **Paragraph Block**:
 A Body Block of plain text prose — no Markdown or HTML inside the text.
 _Avoid_: Text block, copy block, rich text
+
+**Heading Block**:
+A Body Block for an in-body section title. Plain `text` plus `level` 2 or 3 — the Post title owns level 1.
+_Avoid_: Title, subtitle, section header, H2
 
 **Image Block**:
 A Body Block for an inline image inside the Post body (not the Cover). Required CDN `src` and `alt`; optional `caption`. Layout owns sizing — not part of the content model.

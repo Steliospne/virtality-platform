@@ -10,6 +10,13 @@ export type ParagraphBlock = {
   text: string
 }
 
+/** Body heading — levels 2–3 only; the Post title owns level 1. */
+export type HeadingBlock = {
+  kind: 'heading'
+  level: 2 | 3
+  text: string
+}
+
 export type ImageBlock = {
   kind: 'image'
   src: string
@@ -24,7 +31,7 @@ export type VideoBlock = {
   caption?: string
 }
 
-export type BodyBlock = ParagraphBlock | ImageBlock | VideoBlock
+export type BodyBlock = ParagraphBlock | HeadingBlock | ImageBlock | VideoBlock
 
 export type Post = {
   slug: string

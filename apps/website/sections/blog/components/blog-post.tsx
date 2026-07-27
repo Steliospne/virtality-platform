@@ -55,16 +55,6 @@ const BlogPostView = ({ post }: BlogPostViewProps) => {
           <p className='mt-6 text-xl text-slate-600 text-pretty dark:text-slate-300'>
             {post.excerpt}
           </p>
-          <div className='relative mt-10 aspect-[4/3] overflow-hidden bg-slate-200 dark:bg-zinc-800'>
-            <Image
-              src={post.cover}
-              alt=''
-              fill
-              priority
-              className='object-cover'
-              sizes='(max-width: 768px) 100vw, 672px'
-            />
-          </div>
           <BodyBlocks blocks={post.body} className='mt-10 space-y-8' />
         </div>
       </div>

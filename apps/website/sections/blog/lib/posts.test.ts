@@ -15,11 +15,12 @@ describe('blog post read helpers', () => {
   })
 
   it('looks up a post by slug', () => {
-    const post = getPostBySlug('rewiring-recovery')
+    const post = getPostBySlug('vivatech-2026')
 
-    expect(post?.slug).toBe('rewiring-recovery')
+    expect(post?.slug).toBe('vivatech-2026')
     expect(post?.author.name).toBe('Katerina Tsiraki')
-    expect(post?.body.some((block) => block.kind === 'video')).toBe(true)
+    expect(post?.body.some((block) => block.kind === 'heading')).toBe(true)
+    expect(post?.body.some((block) => block.kind === 'paragraph')).toBe(true)
   })
 
   it('returns undefined for an unknown slug', () => {
@@ -30,6 +31,6 @@ describe('blog post read helpers', () => {
     const featured = getFeaturedPost()
 
     expect(featured?.featured).toBe(true)
-    expect(featured?.slug).toBe('rewiring-recovery')
+    expect(featured?.slug).toBe('vivatech-2026')
   })
 })
