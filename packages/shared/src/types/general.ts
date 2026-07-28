@@ -6,7 +6,7 @@ export const ORPC_PREFIX = `${API_PREFIX}/rpc`
 // Production URLs
 export const CONSOLE_URL = 'https://console.virtality.app'
 export const ADMINBOARD_URL = 'https://admin.virtality.app'
-export const WEBSITE_URL = 'https://virtality.app'
+export const WEBSITE_URL = 'https://www.virtality.app'
 export const SERVER_URL = 'https://service.virtality.app'
 export const CDN_URL = 'https://cdn.virtality.app'
 export const SOCKET_URL = 'https://socket.virtality.app'
