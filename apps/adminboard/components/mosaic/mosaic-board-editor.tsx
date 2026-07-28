@@ -7,17 +7,19 @@ import {
   getEmptyMosaicCells,
   getLegalMosaicSpansForTile,
   mosaicSpansEqual,
+  MOSAIC_BOARD_TILE_DRAG_MIME,
   MOSAIC_TRAY_DRAG_MIME,
   type MosaicEditorTile,
   type MosaicSpan,
 } from '@/lib/mosaic-editor'
+import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { cn } from '@/lib/utils'
 import type { MosaicLiveEligibility } from '@virtality/shared/types'
 import {
   assessMosaicLiveEligibility,
   bucketCdnUrl,
 } from '@virtality/shared/utils'
-import { Film, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
 
@@ -78,6 +80,11 @@ function MosaicPlacedTile({
   return (
     <button
       type='button'
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.setData(MOSAIC_BOARD_TILE_DRAG_MIME, tile.id)
+        event.dataTransfer.effectAllowed = 'move'
+      }}
       className={cn(
         'relative overflow-hidden rounded-md border bg-zinc-100 text-left dark:bg-zinc-900',
         isSelected
@@ -90,7 +97,7 @@ function MosaicPlacedTile({
         onSelect()
       }}
       aria-pressed={isSelected}
-      aria-label={`${tile.alt}, span ${formatMosaicSpan(tile)}`}
+      aria-label={`${tile.alt}, span ${formatMosaicSpan(tile)}. Drag back to the tray to remove.`}
     >
       {tile.mediaKind === 'image' ? (
         <Image
@@ -101,10 +108,12 @@ function MosaicPlacedTile({
           sizes='(min-width: 768px) 200px, 120px'
         />
       ) : (
-        <div className='flex size-full items-center justify-center'>
-          <Film className='text-muted-foreground size-8' aria-hidden='true' />
-          <span className='sr-only'>{tile.alt}</span>
-        </div>
+        <BucketVideoPreview
+          src={bucketCdnUrl(tile.objectKey)}
+          label={tile.alt}
+          fill
+          playOnHover
+        />
       )}
     </button>
   )
@@ -166,8 +175,9 @@ const MosaicBoardEditor = ({
       <div>
         <h2 className='text-sm font-medium'>Board editor</h2>
         <p className='text-muted-foreground text-sm'>
-          Drop tray items onto empty cells, then click a tile to resize or
-          remove it. Gaps and validation update live below the grid.
+          Drop tray items onto empty cells, or drag board tiles back to the tray
+          to remove them. Click a tile to resize. Gaps and validation update
+          live below the grid.
         </p>
       </div>
 

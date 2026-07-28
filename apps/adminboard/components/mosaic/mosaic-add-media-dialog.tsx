@@ -25,8 +25,9 @@ import {
   bucketCdnUrl,
   validateBucketTargetPrefix,
 } from '@virtality/shared/utils'
+import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { useUploadBucketObjects } from '@virtality/react-query'
-import { Film, ImageIcon, Upload } from 'lucide-react'
+import { ImageIcon, Upload } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -34,10 +35,14 @@ import { toast } from 'sonner'
 type MosaicAddMediaDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddToTray: (item: MosaicTrayItem) => void
+  onAddToTray: (items: MosaicTrayItem[]) => void
 }
 
 type SourceMode = 'pick' | 'upload'
+
+type PendingTrayMedia = MosaicMediaSelection & {
+  alt: string
+}
 
 function isSourceMode(value: string): value is SourceMode {
   return value === 'pick' || value === 'upload'
@@ -57,16 +62,29 @@ function SelectedMediaPreview({
         alt={alt || 'Selected media'}
         width={64}
         height={64}
-        className='size-16 rounded object-cover'
+        className='size-16 shrink-0 rounded object-cover'
       />
     )
   }
 
   return (
-    <div className='bg-muted flex size-16 items-center justify-center rounded'>
-      <Film className='text-muted-foreground size-8' />
-    </div>
+    <BucketVideoPreview
+      src={bucketCdnUrl(selection.objectKey)}
+      label={alt || 'Selected media'}
+      className='size-16 shrink-0 rounded'
+      fallbackClassName='bg-muted size-16 shrink-0 rounded'
+      iconClassName='text-muted-foreground size-8'
+    />
   )
+}
+
+function toPendingTrayMedia(
+  selections: MosaicMediaSelection[],
+): PendingTrayMedia[] {
+  return selections.map((selection) => ({
+    ...selection,
+    alt: '',
+  }))
 }
 
 export const MosaicAddMediaDialog = ({
@@ -75,8 +93,7 @@ export const MosaicAddMediaDialog = ({
   onAddToTray,
 }: MosaicAddMediaDialogProps) => {
   const [sourceMode, setSourceMode] = useState<SourceMode>('pick')
-  const [selection, setSelection] = useState<MosaicMediaSelection | null>(null)
-  const [alt, setAlt] = useState('')
+  const [pendingItems, setPendingItems] = useState<PendingTrayMedia[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
   const [targetPrefix, setTargetPrefix] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -90,8 +107,7 @@ export const MosaicAddMediaDialog = ({
 
   const resetForm = () => {
     setSourceMode('pick')
-    setSelection(null)
-    setAlt('')
+    setPendingItems([])
     setPickerOpen(false)
     setTargetPrefix('')
     setSelectedFiles([])
@@ -104,24 +120,48 @@ export const MosaicAddMediaDialog = ({
     }
   }, [open])
 
+  const handlePickConfirm = (selections: MosaicMediaSelection[]) => {
+    setPendingItems(toPendingTrayMedia(selections))
+    setSourceMode('pick')
+
+    if (selections.length === 1) {
+      toast.success('Media selected. Add alt text and move it to the tray.')
+      return
+    }
+
+    toast.success(
+      `${selections.length} media items selected. Add alt text for each, then add them to the tray.`,
+    )
+  }
+
+  const handleAltChange = (objectKey: string, alt: string) => {
+    setPendingItems((current) =>
+      current.map((item) =>
+        item.objectKey === objectKey ? { ...item, alt } : item,
+      ),
+    )
+  }
+
   const handleAddToTray = () => {
-    if (!selection) {
+    if (pendingItems.length === 0) {
       toast.error('Select or upload bucket media before adding to the tray.')
       return
     }
 
-    const trimmedAlt = alt.trim()
-    if (!trimmedAlt) {
-      toast.error('Alt text is required.')
+    const missingAlt = pendingItems.some((item) => !item.alt.trim())
+    if (missingAlt) {
+      toast.error('Alt text is required for every selected item.')
       return
     }
 
-    onAddToTray({
-      id: crypto.randomUUID(),
-      objectKey: selection.objectKey,
-      mediaKind: selection.mediaKind,
-      alt: trimmedAlt,
-    })
+    onAddToTray(
+      pendingItems.map((item) => ({
+        id: crypto.randomUUID(),
+        objectKey: item.objectKey,
+        mediaKind: item.mediaKind,
+        alt: item.alt.trim(),
+      })),
+    )
     onOpenChange(false)
   }
 
@@ -154,18 +194,29 @@ export const MosaicAddMediaDialog = ({
         return
       }
 
-      const upload = outcome.uploads[0]
-      const mediaKind = inferMosaicMediaKindFromContentType(upload.contentType)
+      const selections: MosaicMediaSelection[] = []
 
-      if (!mediaKind) {
-        toast.error('Uploaded file is not a supported mosaic media type.')
+      for (const upload of outcome.uploads) {
+        const mediaKind = inferMosaicMediaKindFromContentType(
+          upload.contentType,
+        )
+
+        if (!mediaKind) {
+          continue
+        }
+
+        selections.push({
+          objectKey: upload.objectKey,
+          mediaKind,
+        })
+      }
+
+      if (selections.length === 0) {
+        toast.error('Uploaded files are not supported mosaic media types.')
         return
       }
 
-      setSelection({
-        objectKey: upload.objectKey,
-        mediaKind,
-      })
+      setPendingItems(toPendingTrayMedia(selections))
       setSelectedFiles([])
       setSourceMode('pick')
 
@@ -173,13 +224,22 @@ export const MosaicAddMediaDialog = ({
         toast.warning(
           `${outcome.uploads.length} uploaded, ${outcome.failures.length} failed.`,
         )
-      } else {
+      } else if (selections.length === 1) {
         toast.success('Media uploaded. Add alt text and move it to the tray.')
+      } else {
+        toast.success(
+          `${selections.length} media items uploaded. Add alt text for each, then add them to the tray.`,
+        )
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Upload failed.'))
     }
   }
+
+  const addButtonLabel =
+    pendingItems.length > 1
+      ? `Add ${pendingItems.length} to tray`
+      : 'Add to tray'
 
   return (
     <>
@@ -188,8 +248,8 @@ export const MosaicAddMediaDialog = ({
           <DialogHeader>
             <DialogTitle>Add media to tray</DialogTitle>
             <DialogDescription>
-              Pick an existing Bucket Object or upload media into a folder you
-              choose, then add it to the staging tray with required alt text.
+              Pick existing Bucket Objects or upload media into a folder you
+              choose, then add them to the staging tray with required alt text.
             </DialogDescription>
           </DialogHeader>
 
@@ -212,21 +272,16 @@ export const MosaicAddMediaDialog = ({
               </TabsList>
 
               <TabsContent value='pick' className='space-y-2'>
-                <p className='text-sm font-medium'>Bucket Object</p>
-                <div className='flex items-center gap-3'>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    disabled={isUploadPending}
-                    onClick={() => setPickerOpen(true)}
-                  >
-                    <ImageIcon className='mr-2 size-4' />
-                    {selection ? 'Change media' : 'Select media'}
-                  </Button>
-                  {selection ? (
-                    <SelectedMediaPreview selection={selection} alt={alt} />
-                  ) : null}
-                </div>
+                <p className='text-sm font-medium'>Bucket Objects</p>
+                <Button
+                  type='button'
+                  variant='outline'
+                  disabled={isUploadPending}
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <ImageIcon className='mr-2 size-4' />
+                  {pendingItems.length > 0 ? 'Change media' : 'Select media'}
+                </Button>
               </TabsContent>
 
               <TabsContent
@@ -289,25 +344,40 @@ export const MosaicAddMediaDialog = ({
               </TabsContent>
             </Tabs>
 
-            {selection ? (
-              <p
-                className='text-muted-foreground truncate font-mono text-xs'
-                title={selection.objectKey}
-              >
-                {selection.objectKey}
-              </p>
+            {pendingItems.length > 0 ? (
+              <ul className='max-h-64 space-y-3 overflow-y-auto'>
+                {pendingItems.map((item, index) => (
+                  <li
+                    key={item.objectKey}
+                    className='flex items-start gap-3 rounded-lg border p-3'
+                  >
+                    <SelectedMediaPreview selection={item} alt={item.alt} />
+                    <div className='min-w-0 flex-1 space-y-2'>
+                      <p
+                        className='text-muted-foreground truncate font-mono text-xs'
+                        title={item.objectKey}
+                      >
+                        {item.objectKey}
+                      </p>
+                      <div className='space-y-1'>
+                        <Label htmlFor={`mosaic-tray-alt-${index}`}>
+                          Alt text
+                        </Label>
+                        <Input
+                          id={`mosaic-tray-alt-${index}`}
+                          value={item.alt}
+                          disabled={isUploadPending}
+                          onChange={(event) =>
+                            handleAltChange(item.objectKey, event.target.value)
+                          }
+                          placeholder='Accessible description of the media'
+                        />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             ) : null}
-
-            <div className='space-y-2'>
-              <Label htmlFor='mosaic-tray-alt'>Alt text</Label>
-              <Input
-                id='mosaic-tray-alt'
-                value={alt}
-                disabled={isUploadPending}
-                onChange={(event) => setAlt(event.target.value)}
-                placeholder='Accessible description of the media'
-              />
-            </div>
           </div>
 
           <DialogFooter>
@@ -322,10 +392,10 @@ export const MosaicAddMediaDialog = ({
             <Button
               type='button'
               variant='primary'
-              disabled={isUploadPending}
+              disabled={isUploadPending || pendingItems.length === 0}
               onClick={handleAddToTray}
             >
-              Add to tray
+              {addButtonLabel}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -334,7 +404,8 @@ export const MosaicAddMediaDialog = ({
       <MosaicMediaPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={setSelection}
+        selectionMode='multiple'
+        onConfirm={handlePickConfirm}
       />
     </>
   )

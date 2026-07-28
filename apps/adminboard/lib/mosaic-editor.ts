@@ -13,6 +13,9 @@ import {
 export const MOSAIC_TRAY_DRAG_MIME =
   'application/x-virtality-mosaic-tray-item-id'
 
+export const MOSAIC_BOARD_TILE_DRAG_MIME =
+  'application/x-virtality-mosaic-board-tile-id'
+
 export type MosaicTrayItem = {
   id: string
   objectKey: string

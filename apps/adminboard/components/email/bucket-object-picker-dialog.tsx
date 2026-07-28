@@ -16,9 +16,10 @@ import {
 } from '@/lib/bucket-image-picker'
 import { filterBucketMp4PickerObjects } from '@/lib/promo-video'
 import { cn } from '@/lib/utils'
+import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { useBucket } from '@virtality/react-query'
 import { getBucketBreadcrumbs } from '@virtality/shared/utils'
-import { Check, ChevronRight, Folder, Film } from 'lucide-react'
+import { Check, ChevronRight, Folder } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -250,9 +251,13 @@ export const BucketObjectPickerDialog = (
                     )}
                   >
                     {objectKind === 'mp4' ? (
-                      <div className='bg-muted flex size-12 items-center justify-center rounded'>
-                        <Film className='text-muted-foreground size-6' />
-                      </div>
+                      <BucketVideoPreview
+                        src={object.cdnUrl}
+                        label={object.name}
+                        className='rounded'
+                        fallbackClassName='bg-muted rounded'
+                        iconClassName='text-muted-foreground size-6'
+                      />
                     ) : (
                       <Image
                         src={object.cdnUrl}

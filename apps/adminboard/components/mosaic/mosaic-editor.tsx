@@ -33,9 +33,21 @@ const MosaicEditor = () => {
   const [emptySaveOpen, setEmptySaveOpen] = useState(false)
   const { mutateAsync: saveMosaic, isPending: isSaving } = useSaveMosaic()
 
-  const handleAddToTray = (item: MosaicTrayItem) => {
-    setEditorState((current) => addMosaicTrayItem(current, item))
-    toast.success('Media added to the staging tray.')
+  const handleAddToTray = (items: MosaicTrayItem[]) => {
+    if (items.length === 0) {
+      return
+    }
+
+    setEditorState((current) =>
+      items.reduce((state, item) => addMosaicTrayItem(state, item), current),
+    )
+
+    if (items.length === 1) {
+      toast.success('Media added to the staging tray.')
+      return
+    }
+
+    toast.success(`${items.length} media items added to the staging tray.`)
   }
 
   const handlePlaceTile = (trayItemId: string, row: number, col: number) => {
@@ -155,8 +167,9 @@ const MosaicEditor = () => {
       <div className='flex flex-wrap items-center justify-between gap-4'>
         <div>
           <p className='text-muted-foreground max-w-2xl text-sm'>
-            Stage bucket media in the tray, drag items onto the board, resize
-            tiles into legal spans, then save a perfect tiling to publish.
+            Stage bucket media in the tray, drag items onto the board, drag
+            tiles back to the tray to remove them, resize into legal spans, then
+            save a perfect tiling to publish.
           </p>
         </div>
         <div className='ml-auto flex flex-wrap items-center gap-2'>
@@ -188,7 +201,7 @@ const MosaicEditor = () => {
         </div>
       </div>
 
-      <MosaicTray items={editorState.tray} />
+      <MosaicTray items={editorState.tray} onReturnTile={handleRemoveTile} />
 
       <MosaicBoardEditor
         tiles={editorState.tiles}

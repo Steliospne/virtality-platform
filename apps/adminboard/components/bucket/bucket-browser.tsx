@@ -34,7 +34,6 @@ import {
   Copy,
   Ellipsis,
   FileIcon,
-  Film,
   Folder,
   FolderInput,
   Info,
@@ -49,6 +48,7 @@ import { BucketObjectReplaceDialog } from './bucket-object-replace-dialog'
 import { BucketObjectMoveDialog } from './bucket-object-move-dialog'
 import { BucketObjectRenameDialog } from './bucket-object-rename-dialog'
 import { BucketUploadDialog } from './bucket-upload-dialog'
+import { BucketVideoPreview } from './bucket-video-preview'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -106,7 +106,7 @@ function ObjectPreview({ object }: { object: BucketObjectRow }) {
   }
 
   if (isVideoContentType(object.contentType)) {
-    return <Film className='size-12 text-zinc-400' aria-hidden='true' />
+    return <BucketVideoPreview src={object.cdnUrl} label={object.name} />
   }
 
   return <FileIcon className='size-12 text-zinc-400' aria-hidden='true' />

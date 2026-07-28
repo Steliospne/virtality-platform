@@ -1,5 +1,6 @@
 'use client'
 
+import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getMosaicTileGridStyle } from '@/lib/mosaic-grid'
 import type {
@@ -45,15 +46,7 @@ function MosaicTilePreview({ tile }: { tile: MosaicTileListItem }) {
         sizes='(min-width: 768px) 200px, 120px'
       />
     ) : (
-      <video
-        src={tile.cdnUrl}
-        aria-label={tile.alt}
-        className='size-full object-cover'
-        muted
-        playsInline
-        loop
-        autoPlay
-      />
+      <BucketVideoPreview src={tile.cdnUrl} label={tile.alt} fill playOnHover />
     )
 
   return (
