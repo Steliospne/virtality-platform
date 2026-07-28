@@ -4,7 +4,12 @@ import { useState } from 'react'
 import { useMosaic } from '@/lib/marketing-queries'
 import type { MosaicTileListItem } from '@virtality/shared/types'
 import { MOSAIC_SECTION_CONTENT } from '../content'
-import { MOSAIC_GRID_MOBILE_SCALE_CLASS } from '../lib/mosaic-grid'
+import {
+  MOSAIC_GRID_CLASS,
+  MOSAIC_GRID_MOBILE_SCALE_CLASS,
+  MOSAIC_GRID_SQUARE_SHELL_CLASS,
+  MOSAIC_GRID_SQUARE_SPACER_CLASS,
+} from '../lib/mosaic-grid'
 import { shouldShowMosaicSection } from '../lib/mosaic-visibility'
 import MosaicImageTile from './mosaic-image-tile'
 import MosaicLightbox from './mosaic-lightbox'
@@ -77,11 +82,14 @@ const MosaicSection = () => {
         </div>
 
         <div className={MOSAIC_GRID_MOBILE_SCALE_CLASS}>
-          <div
-            className='grid aspect-square grid-cols-3 grid-rows-3 gap-2 md:gap-3'
-            aria-label='Virtality in the wild media mosaic'
-          >
-            {tiles.map(renderTile)}
+          <div className={MOSAIC_GRID_SQUARE_SHELL_CLASS}>
+            <div className={MOSAIC_GRID_SQUARE_SPACER_CLASS} aria-hidden />
+            <div
+              className={MOSAIC_GRID_CLASS}
+              aria-label='Virtality in the wild media mosaic'
+            >
+              {tiles.map(renderTile)}
+            </div>
           </div>
         </div>
       </div>

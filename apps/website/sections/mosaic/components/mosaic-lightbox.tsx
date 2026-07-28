@@ -53,11 +53,10 @@ const MosaicLightboxVideo = ({
     controls
     playsInline
     preload='metadata'
+    src={content.src}
     aria-label={content.alt}
     className={`${MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS} w-full bg-black`}
-  >
-    <source src={content.src} type={content.mimeType} />
-  </video>
+  />
 )
 
 const MosaicLightboxMedia = ({

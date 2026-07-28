@@ -32,7 +32,7 @@ const MosaicImageTile = ({ tile, onOpen }: MosaicImageTileProps) => {
       className={cn(
         MOSAIC_TILE_FRAME_CLASS,
         MOSAIC_TILE_OPEN_HOVER_CLASS,
-        'block w-full p-0 text-left',
+        'block p-0 text-left',
       )}
       style={getMosaicTileGridStyle(tile)}
     >

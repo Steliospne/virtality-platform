@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   getMosaicTileGridStyle,
+  MOSAIC_GRID_CLASS,
   MOSAIC_GRID_MOBILE_SCALE_CLASS,
+  MOSAIC_GRID_SQUARE_SHELL_CLASS,
+  MOSAIC_GRID_SQUARE_SPACER_CLASS,
+  MOSAIC_TILE_FRAME_CLASS,
 } from './mosaic-grid'
 
 describe('mosaic grid placement', () => {
@@ -21,8 +25,18 @@ describe('mosaic grid placement', () => {
     })
   })
 
-  it('keeps a scaled mobile wrapper class for the fixed 3×3 composition', () => {
-    expect(MOSAIC_GRID_MOBILE_SCALE_CLASS).toMatch(/scale-/)
-    expect(MOSAIC_GRID_MOBILE_SCALE_CLASS).toMatch(/sm:scale-100/)
+  it('keeps a width-based mobile shrink without transform scale', () => {
+    expect(MOSAIC_GRID_MOBILE_SCALE_CLASS).toMatch(/w-\[82%\]/)
+    expect(MOSAIC_GRID_MOBILE_SCALE_CLASS).toMatch(/sm:w-full/)
+    expect(MOSAIC_GRID_MOBILE_SCALE_CLASS).not.toMatch(/scale-/)
+  })
+
+  it('uses a padding-bottom square shell so older Safari keeps 1:1 cells', () => {
+    expect(MOSAIC_GRID_SQUARE_SHELL_CLASS).toMatch(/relative/)
+    expect(MOSAIC_GRID_SQUARE_SPACER_CLASS).toMatch(/pb-\[100%\]/)
+    expect(MOSAIC_GRID_CLASS).toMatch(/absolute inset-0/)
+    expect(MOSAIC_TILE_FRAME_CLASS).toMatch(/min-h-0/)
+    expect(MOSAIC_TILE_FRAME_CLASS).toMatch(/min-w-0/)
+    expect(MOSAIC_TILE_FRAME_CLASS).toMatch(/size-full/)
   })
 })

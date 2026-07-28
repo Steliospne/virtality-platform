@@ -72,3 +72,17 @@ export function getMosaicVideoTileProps(
     mimeType: inferMosaicVideoMimeType(tile.objectKey),
   }
 }
+
+/**
+ * Chromium reports canPlayType('video/quicktime') as "" and skips
+ * `<source type="video/quicktime">` even when the same .mov plays via `<video src>`.
+ * Prefer a bare src (promo-video pattern) so the browser can sniff the container.
+ */
+export function getMosaicVideoElementSrcProps(
+  tileVideo: Pick<MosaicTileVideo, 'src' | 'alt'>,
+): { src: string; 'aria-label': string } {
+  return {
+    src: tileVideo.src,
+    'aria-label': tileVideo.alt,
+  }
+}

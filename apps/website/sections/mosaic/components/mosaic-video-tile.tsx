@@ -9,6 +9,7 @@ import {
   getMosaicTileGridStyle,
 } from '../lib/mosaic-grid'
 import {
+  getMosaicVideoElementSrcProps,
   getMosaicVideoTileProps,
   type MosaicTileVideo,
 } from '../lib/mosaic-tile'
@@ -34,7 +35,8 @@ const MosaicVideoTilePlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [isIntersecting, setIsIntersecting] = useState(false)
-  const { src, alt, mimeType } = tileVideo
+  const { alt } = tileVideo
+  const videoSrcProps = getMosaicVideoElementSrcProps(tileVideo)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -99,15 +101,13 @@ const MosaicVideoTilePlayer = ({
     >
       <video
         ref={videoRef}
-        aria-label={alt}
         className='size-full object-cover'
         muted
         playsInline
         loop
         preload='metadata'
-      >
-        <source src={src} type={mimeType} />
-      </video>
+        {...videoSrcProps}
+      />
       <button
         type='button'
         onClick={onOpen}

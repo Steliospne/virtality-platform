@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { getMosaicImageTileProps, getMosaicVideoTileProps } from './mosaic-tile'
+import {
+  getMosaicImageTileProps,
+  getMosaicVideoElementSrcProps,
+  getMosaicVideoTileProps,
+} from './mosaic-tile'
 
 describe('mosaic image tile rendering', () => {
   it('maps live image tiles to accessible CDN image props', () => {
@@ -71,5 +75,17 @@ describe('mosaic video tile rendering', () => {
         alt: 'Therapist guiding a patient',
       }),
     ).toBeNull()
+  })
+
+  it('exposes bare video src attrs so Chromium is not gated on video/quicktime', () => {
+    expect(
+      getMosaicVideoElementSrcProps({
+        src: 'https://cdn.virtality.app/marketing/videos/clip.mov',
+        alt: 'Clinic walkthrough',
+      }),
+    ).toEqual({
+      src: 'https://cdn.virtality.app/marketing/videos/clip.mov',
+      'aria-label': 'Clinic walkthrough',
+    })
   })
 })
