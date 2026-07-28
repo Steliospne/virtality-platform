@@ -59,12 +59,12 @@ const HeroVideoBackdropCtaCenter = () => {
   }, [prefersReducedMotion])
 
   return (
-    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#CAD6D6] sm:bg-[#fbfaf7] dark:bg-zinc-900'>
+    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#CAD6D6] max-sm:-mb-36 sm:bg-[#fbfaf7] dark:bg-zinc-900'>
       {/* Full-bleed backdrop video */}
       <div className='absolute inset-0'>
         {/* Mobile media + wash: 62% height, studio pad below */}
         <div className='absolute inset-0 sm:hidden'>
-          <div className='absolute inset-x-0 top-0 h-[50%]'>
+          <div className='absolute inset-x-0 top-0 h-[62%]'>
             {prefersReducedMotion ? (
               <Image
                 src={HERO_VIDEO_POSTER}
@@ -92,8 +92,8 @@ const HeroVideoBackdropCtaCenter = () => {
           </div>
 
           {/* Steep left wash for copy; subject stays clear on the right */}
-          <div className='absolute inset-x-0 top-0 h-[50%] bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
-          <div className='absolute inset-x-0 top-0 h-[50%] bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
+          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
+          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
         </div>
 
         {/* Desktop media + wash */}

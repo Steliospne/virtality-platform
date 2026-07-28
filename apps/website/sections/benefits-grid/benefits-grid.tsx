@@ -11,7 +11,7 @@ const BenefitsGrid = () => {
   return (
     <section
       id='benefits-grid'
-      className='relative dark:bg-zinc-900 flex py-24 overflow-hidden'
+      className='relative z-10 flex overflow-hidden pt-16 pb-24 md:py-24 dark:bg-zinc-900'
     >
       <div className='absolute inset-0 bg-linear-to-b from-slate-50 via-white to-vital-blue-50/20'></div>
       <div
@@ -24,7 +24,7 @@ const BenefitsGrid = () => {
         }}
       ></div>
 
-      <div className='container relative z-10 m-auto px-4 md:px-8 py-16'>
+      <div className='container relative z-10 m-auto px-4 pt-10 pb-16 md:px-8 md:py-16'>
         <div className='mx-auto mb-16 max-w-5xl'>
           <div className='mb-10 text-center'>
             <div className='inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 mb-6'>

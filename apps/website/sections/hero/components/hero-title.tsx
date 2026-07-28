@@ -132,10 +132,14 @@ const HeroTitle = ({
 
       {showSupportingCopy ? (
         <p
-          className={`text-base leading-relaxed text-slate-700 sm:text-lg md:text-xl dark:text-gray-300 ${
+          className={`relative text-base leading-relaxed text-slate-800 sm:text-lg sm:text-slate-700 md:text-xl dark:text-gray-200 ${
             isLeftAligned ? 'max-w-md' : 'max-w-lg'
           }`}
         >
+          <span
+            aria-hidden
+            className='pointer-events-none absolute -inset-x-3 -inset-y-2 -z-10 bg-white/50 blur-2xl dark:bg-zinc-900/45'
+          />
           {HERO_SUPPORTING_COPY}
         </p>
       ) : null}
