@@ -30,11 +30,12 @@ const PRESS_MARQUEE_DURATION_MS = 40_000
 function getPressLogoHeightClass(item: PressLogoItem): string {
   if (item.wide) {
     // Wordmarks share one height; width follows the asset aspect ratio.
-    return 'h-8 md:h-10'
+    // Slightly under the old letterboxed box so intrinsic sizing matches prior visual weight.
+    return 'h-4 md:h-6'
   }
 
   // Square marks need more height to match wordmark visual weight.
-  return 'h-14 md:h-16'
+  return 'h-12 md:h-14'
 }
 
 function PressLogo({ item }: { item: PressLogoItem }) {
