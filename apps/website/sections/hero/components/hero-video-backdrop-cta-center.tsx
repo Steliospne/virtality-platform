@@ -12,17 +12,15 @@ import HeroTitle from './hero-title'
 
 const demoBookingUrl = getDemoBookingUrl()
 
-const HERO_VIDEO_SRC_MOBILE = '/hero/ManNeuralFlipped-loop-zoomed-out.mp4'
-const HERO_VIDEO_POSTER_MOBILE = '/hero/ManNeuralFlipped-poster-zoomed-out.jpg'
-const HERO_VIDEO_SRC_DESKTOP = '/hero/ManNeuralFlipped-loop.mp4'
-const HERO_VIDEO_POSTER_DESKTOP = '/hero/ManNeuralFlipped-poster.jpg'
+const HERO_VIDEO_SRC = '/hero/ManNeuralFlipped-loop.mp4'
+const HERO_VIDEO_POSTER = '/hero/ManNeuralFlipped-poster.jpg'
 const HERO_VIDEO_ALT =
   'Patient wearing a VR headset during a guided therapy session with neural motion overlay'
 
 /**
  * Full-bleed looped video backdrop take with CTAs at the center bottom.
- * Mobile uses a zoomed-out master (subject scaled to 65% with studio-gray pad)
- * so object-cover crops less aggressively; desktop keeps the original framing.
+ * Mobile frames the same master at 62% height (studio pad below) so CTAs stay
+ * clear; desktop keeps the original full-bleed framing.
  */
 const HeroVideoBackdropCtaCenter = () => {
   const mobileVideoRef = useRef<HTMLVideoElement>(null)
@@ -64,43 +62,45 @@ const HeroVideoBackdropCtaCenter = () => {
     <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#CAD6D6] sm:bg-[#fbfaf7] dark:bg-zinc-900'>
       {/* Full-bleed backdrop video */}
       <div className='absolute inset-0'>
-        {/* Mobile media + wash */}
+        {/* Mobile media + wash: 62% height, studio pad below */}
         <div className='absolute inset-0 sm:hidden'>
-          {prefersReducedMotion ? (
-            <Image
-              src={HERO_VIDEO_POSTER_MOBILE}
-              alt={HERO_VIDEO_ALT}
-              fill
-              priority
-              sizes='100vw'
-              className='object-cover object-[62%_center]'
-            />
-          ) : (
-            <video
-              ref={mobileVideoRef}
-              aria-label={HERO_VIDEO_ALT}
-              className='absolute inset-0 size-full object-cover object-[62%_center]'
-              poster={HERO_VIDEO_POSTER_MOBILE}
-              muted
-              playsInline
-              loop
-              autoPlay
-              preload='auto'
-            >
-              <source src={HERO_VIDEO_SRC_MOBILE} type='video/mp4' />
-            </video>
-          )}
+          <div className='absolute inset-x-0 top-0 h-[50%]'>
+            {prefersReducedMotion ? (
+              <Image
+                src={HERO_VIDEO_POSTER}
+                alt={HERO_VIDEO_ALT}
+                fill
+                priority
+                sizes='100vw'
+                className='object-cover object-[62%_center]'
+              />
+            ) : (
+              <video
+                ref={mobileVideoRef}
+                aria-label={HERO_VIDEO_ALT}
+                className='absolute inset-0 size-full object-cover object-[62%_center]'
+                poster={HERO_VIDEO_POSTER}
+                muted
+                playsInline
+                loop
+                autoPlay
+                preload='auto'
+              >
+                <source src={HERO_VIDEO_SRC} type='video/mp4' />
+              </video>
+            )}
+          </div>
 
           {/* Steep left wash for copy; subject stays clear on the right */}
-          <div className='absolute inset-0 bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
-          <div className='absolute inset-0 bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
+          <div className='absolute inset-x-0 top-0 h-[50%] bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
+          <div className='absolute inset-x-0 top-0 h-[50%] bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
         </div>
 
         {/* Desktop media + wash */}
         <div className='absolute inset-0 hidden sm:block'>
           {prefersReducedMotion ? (
             <Image
-              src={HERO_VIDEO_POSTER_DESKTOP}
+              src={HERO_VIDEO_POSTER}
               alt={HERO_VIDEO_ALT}
               fill
               priority
@@ -112,14 +112,14 @@ const HeroVideoBackdropCtaCenter = () => {
               ref={desktopVideoRef}
               aria-label={HERO_VIDEO_ALT}
               className='absolute inset-0 size-full object-cover object-[52%_center] md:object-[60%_center] lg:object-[68%_center]'
-              poster={HERO_VIDEO_POSTER_DESKTOP}
+              poster={HERO_VIDEO_POSTER}
               muted
               playsInline
               loop
               autoPlay
               preload='auto'
             >
-              <source src={HERO_VIDEO_SRC_DESKTOP} type='video/mp4' />
+              <source src={HERO_VIDEO_SRC} type='video/mp4' />
             </video>
           )}
 
@@ -147,8 +147,8 @@ const HeroVideoBackdropCtaCenter = () => {
         </div>
       </div>
 
-      {/* CTAs — center bottom of the hero */}
-      <div className='pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center px-4 md:bottom-12'>
+      {/* CTAs — under the mobile video band; bottom-anchored on desktop */}
+      <div className='pointer-events-none absolute inset-x-0 top-[calc(62%+1.25rem)] z-10 flex justify-center px-4 sm:top-auto sm:bottom-12'>
         <div className='pointer-events-auto flex flex-col items-center gap-4 sm:flex-row sm:gap-5'>
           <Button
             variant='primary'
