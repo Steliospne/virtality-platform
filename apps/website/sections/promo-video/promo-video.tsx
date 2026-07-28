@@ -4,6 +4,8 @@ import { usePromoVideo } from '@/lib/marketing-queries'
 import { Play } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+const PROMO_VIDEO_POSTER_URL = '/promo_video_poster.png'
+
 const PromoVideo = () => {
   const { data: promoVideo, isPending } = usePromoVideo()
   const [isPlaying, setPlaying] = useState(false)
@@ -76,6 +78,7 @@ const PromoVideo = () => {
                 ref={videoRef}
                 controls
                 controlsList='nodownload'
+                poster={PROMO_VIDEO_POSTER_URL}
                 src={promoVideo.cdnUrl}
                 className='w-full'
               />

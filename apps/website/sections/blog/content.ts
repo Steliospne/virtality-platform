@@ -12,12 +12,19 @@ export const authors: Author[] = [
   {
     id: 'katerina-tsiraki',
     name: 'Katerina Tsiraki',
-    role: 'Cognitive Engineer',
+    role: 'CEO & Cognitive Engineer',
     image: '/kate_auth_img.jpg',
+  },
+  {
+    id: 'virtality-team',
+    name: 'Virtality',
+    image: '/virtality_small_rounded.png',
   },
 ]
 
 const katerina = authors[0]!
+
+const virtalityTeam = authors[1]!
 
 export const posts: Post[] = [
   {
@@ -26,7 +33,7 @@ export const posts: Post[] = [
     excerpt:
       'Our first major public debut in Crete: a keynote on interactive rehab for sports injuries, a round-table with athletes, and our first exhibition booth.',
     cover: 'https://cdn.virtality.app/marketing/blogs/conf_img-r41z017u.png',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2025-09-06',
     featured: false,
     body: [
@@ -94,7 +101,7 @@ export const posts: Post[] = [
       'From over 64 applicants to the final ten. Demo Day at the Goulandris Foundation marked the close of an intensive accelerator journey.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/piraeus-startup-accelerator-top-10-1-wviloqcf.jpg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2025-10-21',
     featured: false,
     body: [
@@ -142,7 +149,7 @@ export const posts: Post[] = [
     excerpt:
       'From a hackathon idea to booth Δ07: live demos, investor conversations, and strong talent interest at InnoDays Crete.',
     cover: 'https://cdn.virtality.app/marketing/blogs/innodays-1-zvwwy3r3.jpg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2025-11-29',
     featured: false,
     body: [
@@ -185,7 +192,7 @@ export const posts: Post[] = [
       'Back on stage as a previous winner, sharing founder growth lessons with the next accelerator cohort in Xanthi.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/piraeus-startup-accelerator-xanthi-1-sfss19po.jpeg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-02-06',
     featured: false,
     body: [
@@ -236,7 +243,7 @@ export const posts: Post[] = [
       'Invited by a pilot clinic to present how VR and AI support ACL recovery, then live demos for the next generation of physiotherapists.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/physiotherapy-seminar-acl-1-mjqhpiu6.jpg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-03-27',
     featured: false,
     body: [
@@ -281,7 +288,7 @@ export const posts: Post[] = [
       'On the EQUALL panel at Delphi, sharing what founder growth looks like when building a high-impact health-tech company.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/delphi-economic-forum-1-l833dhwq.jpg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-04-24',
     featured: false,
     body: [
@@ -330,10 +337,10 @@ export const posts: Post[] = [
     title:
       'Virtality Named a Top 10 Laureate in the International WE4G 2026 Program',
     excerpt:
-      'Selected from 335 international applications, entering the HEC Paris Incubator as a WE4G Top 10 Laureate.',
+      'Selected from 335 international projects and 56 countries, entering the HEC Paris Incubator as a WE4G Top 10 Laureate.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/women-entrepreneurs-4-good-vlg21lno.png',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-05-05',
     featured: false,
     body: [
@@ -345,7 +352,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'Out of 335 international applications, Virtality has been selected as one of the final Top 10 Laureates for the prestigious WomenEntrepreneurs4Good (WE4G) 2026 program. Organized by the Women’s Forum for the Economy & Society, Bank of America, and the HEC Paris Innovation & Entrepreneurship Institute (consistently ranked among the absolute top business schools globally), the WE4G initiative is an elite accelerator backing purposeful ventures capable of driving real-world health and social impact. The rigorous global selection process narrowed the field down to 88 semi-finalists, ultimately recognizing just 10 exceptional projects from 8 countries as this year’s official laureates.',
+        text: 'Out of 335 international projects and 56 countries, Virtality has been selected as one of the final Top 10 Laureates for the prestigious WomenEntrepreneurs4Good (WE4G) 2026 program. Organized by the Women’s Forum for the Economy & Society, Bank of America, and the HEC Paris Innovation & Entrepreneurship Institute (consistently ranked among the absolute top business schools globally), the WE4G initiative is an elite accelerator backing purposeful ventures capable of driving real-world health and social impact. The rigorous global selection process narrowed the field down to 88 semi-finalists, ultimately recognizing just 10 exceptional projects from 8 countries as this year’s official laureates.',
       },
       {
         kind: 'heading',
@@ -378,7 +385,7 @@ export const posts: Post[] = [
       'Live VR demos at the Piraeus Bank pavilion, bringing clinical rehab tech into a public festival setting.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/panathenea-startup-showcase-1-nv4rant8.jpg',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-05-29',
     featured: false,
     body: [
@@ -429,7 +436,7 @@ export const posts: Post[] = [
       'Two booths in Athens (Startup Village and the Region of Crete pavilion) while the team also ran VivaTech in Paris.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/beyond-expo-2026-1-uno3epb5.webp',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-06-19',
     featured: false,
     body: [
@@ -477,7 +484,7 @@ export const posts: Post[] = [
       'As a WE4G Top 10 Laureate, Virtality presented on the VivaTech stage and left Paris with HEC Paris Incubator momentum.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/vivatech-2026-1-w0txvk4q.png',
-    authorId: katerina.id,
+    authorId: virtalityTeam.id,
     publishedAt: '2026-06-26',
     featured: true,
     body: [

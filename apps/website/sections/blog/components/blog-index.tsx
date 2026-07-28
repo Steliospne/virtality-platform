@@ -19,11 +19,11 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
           </p>
           <div>
             <h1 className='max-w-3xl text-4xl font-medium tracking-tight text-balance md:text-5xl'>
-              Notes from clinic floors and recovery rooms
+              Notes from latest news and updates
             </h1>
             <p className='mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-400'>
-              Quiet writing on immersive rehab: no marketing kit, just the
-              questions teams ask between sessions.
+              Short notes on immersive rehab, clinic pilots, and what we are
+              building next.
             </p>
           </div>
         </div>
