@@ -78,6 +78,7 @@ export const PRESS_LOGO_ITEMS: PressLogoItem[] = [
     href: 'https://youtu.be/LSxk7x2QZJw?si=ACf_05SeX39G_fFk&t=348',
     wide: true,
     compact: true,
+    className: 'h-6 md:h-8',
   },
   {
     src: '/press/hec-paris-logo.png',
@@ -85,6 +86,7 @@ export const PRESS_LOGO_ITEMS: PressLogoItem[] = [
     href: 'https://www.hec.edu/en/innovation-entrepreneurship-institute/news/we4g-2026-meet-10-finalists',
     wide: true,
     compact: true,
+    className: 'h-6 md:h-8',
   },
   {
     src: '/press/elculture-logo.png',
