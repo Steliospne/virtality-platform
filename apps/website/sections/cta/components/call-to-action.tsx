@@ -85,12 +85,12 @@ const CallToAction = () => {
                     </Button>
                   )}
 
-                  <PartnerRowLabel label='have questions?' />
+                  <PartnerRowLabel label='have questions?' size='large' />
 
                   <Button
                     asChild
                     variant='outline'
-                    className='h-auto w-full px-6 py-4 text-base font-semibold border-2 border-vital-blue-700 text-vital-blue-700 hover:bg-vital-blue-50'
+                    className='h-auto w-3/4 self-center px-6 py-4 text-base font-semibold border-2 border-vital-blue-700 text-vital-blue-700 hover:bg-vital-blue-50'
                   >
                     <Link
                       href={demoBookingUrl}
