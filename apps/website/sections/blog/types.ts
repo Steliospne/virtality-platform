@@ -38,6 +38,8 @@ export type Post = {
   title: string
   excerpt: string
   cover: string
+  /** Vertical Cover focus: 0 keeps the top, 50 centers, 100 keeps the bottom. */
+  coverFocusY?: number
   authorId: string
   publishedAt: string
   featured: boolean

@@ -288,6 +288,7 @@ export const posts: Post[] = [
       'On the EQUALL panel at Delphi, sharing what founder growth looks like when building a high-impact health-tech company.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/delphi-economic-forum-1-l833dhwq.jpg',
+    coverFocusY: 30,
     authorId: virtalityTeam.id,
     publishedAt: '2026-04-24',
     featured: false,
@@ -436,6 +437,7 @@ export const posts: Post[] = [
       'Two booths in Athens (Startup Village and the Region of Crete pavilion) while the team also ran VivaTech in Paris.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/beyond-expo-2026-1-uno3epb5.webp',
+    coverFocusY: 30,
     authorId: virtalityTeam.id,
     publishedAt: '2026-06-19',
     featured: false,
@@ -462,8 +464,8 @@ export const posts: Post[] = [
       {
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/beyond-expo-2026-2-ns6ii2sg.jpeg',
-        alt: 'Speaking at BEYOND booth',
-        caption: 'Photo: Speaking at BEYOND booth.',
+        alt: 'Speaking at BEYOND TV',
+        caption: 'Photo: Speaking at BEYOND TV.',
       },
       {
         kind: 'heading',

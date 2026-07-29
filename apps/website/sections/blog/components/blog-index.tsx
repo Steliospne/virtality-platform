@@ -14,17 +14,11 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
     <div className='min-h-screen bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-slate-100'>
       <header className='border-b border-slate-300/70 dark:border-zinc-800'>
         <div className='container mx-auto grid gap-8 px-4 py-16 md:grid-cols-[180px_1fr] md:px-8 md:py-20'>
-          <p className='font-mono text-xs tracking-[0.18em] text-slate-500 uppercase'>
-            Journal
-          </p>
+          <p className='font-mono text-xs tracking-[0.18em] text-slate-500 uppercase'></p>
           <div>
-            <h1 className='max-w-3xl text-4xl font-medium tracking-tight text-balance md:text-5xl'>
-              Notes from latest news and updates
+            <h1 className='max-w-3xl text-vital-blue-700 text-4xl font-medium tracking-tight text-balance md:text-5xl'>
+              Our latest news and updates
             </h1>
-            <p className='mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-400'>
-              Short notes on immersive rehab, clinic pilots, and what we are
-              building next.
-            </p>
           </div>
         </div>
       </header>
@@ -32,6 +26,10 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
       <ul className='container mx-auto px-4 md:px-8'>
         {posts.map((post) => {
           const isFeatured = post.slug === featured?.slug
+          const coverFocusY = Math.min(
+            100,
+            Math.max(0, post.coverFocusY ?? 50),
+          )
           return (
             <li
               key={post.slug}
@@ -65,7 +63,10 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
                     alt=''
                     fill
                     className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
-                    sizes='240px'
+                    sizes='(max-width: 767px) calc(100vw - 2rem), 240px'
+                    style={{
+                      objectPosition: `center ${coverFocusY}%`,
+                    }}
                   />
                 </div>
               </Link>
