@@ -28,7 +28,7 @@ const CallToAction = () => {
   const [showWaitlistForm, setShowWaitlistForm] = useState(false)
 
   return (
-    <section id='cta' className='relative py-24 overflow-hidden'>
+    <section id='cta' className='relative overflow-hidden py-14 md:py-24'>
       {/* Background */}
       <div className='absolute inset-0 bg-linear-to-br from-slate-50 via-vital-blue-50/30 to-white'></div>
       <div
@@ -51,8 +51,8 @@ const CallToAction = () => {
             {/* Top accent bar */}
             <div className='h-2 bg-linear-to-r from-vital-blue-700 via-vital-blue-600 to-vital-blue-700'></div>
 
-            <div className='p-8 md:p-12'>
-              <div className='text-center mb-10'>
+            <div className='p-6 md:p-12'>
+              <div className='mb-8 text-center md:mb-10'>
                 <h2 className='text-3xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight'>
                   Join the Future of{' '}
                   <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
@@ -60,7 +60,7 @@ const CallToAction = () => {
                   </span>
                 </h2>
 
-                <p className='text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto'>
+                <p className='mx-auto max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg'>
                   Be among the healthcare professionals to access our
                   clinical-grade VR rehabilitation platform and transform your
                   patient outcomes.
@@ -103,23 +103,23 @@ const CallToAction = () => {
                 </div>
               </div>
 
-              <div className='mt-10 border-t border-vital-blue-100 pt-10'>
-                <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
+              <div className='mt-8 border-t border-vital-blue-100 pt-8 md:mt-10 md:pt-10'>
+                <div className='grid grid-cols-3 gap-2 md:gap-8'>
                   {CTA_TRUST_POINTS.map((point) => {
                     const Icon = trustPointIcons[point.icon]
 
                     return (
                       <div key={point.label} className='group text-center'>
-                        <div className='mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 transition-transform group-hover:scale-110'>
-                          <Icon className='h-6 w-6 text-white' />
+                        <div className='mb-2 inline-flex size-9 items-center justify-center rounded-lg bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 transition-transform group-hover:scale-110 md:mb-3 md:size-12 md:rounded-xl'>
+                          <Icon className='size-4 text-white md:size-6' />
                         </div>
-                        <div className='mb-1 text-3xl font-bold text-vital-blue-700'>
+                        <div className='mb-1 text-xl font-bold text-vital-blue-700 md:text-3xl'>
                           {point.emphasis}
                         </div>
-                        <div className='text-sm font-medium text-slate-600'>
+                        <div className='text-[11px] leading-tight font-medium text-slate-600 md:text-sm'>
                           {point.label}
                         </div>
-                        <div className='mt-1 text-xs text-slate-500'>
+                        <div className='mt-1 hidden text-xs text-slate-500 sm:block'>
                           {point.caption}
                         </div>
                       </div>

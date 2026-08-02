@@ -11,7 +11,7 @@ const BenefitsGrid = () => {
   return (
     <section
       id='benefits-grid'
-      className='relative z-10 flex overflow-hidden pt-16 pb-24 md:py-24 dark:bg-zinc-900'
+      className='relative z-10 flex overflow-hidden pt-10 pb-14 md:py-24 dark:bg-zinc-900'
     >
       <div className='absolute inset-0 bg-linear-to-b from-slate-50 via-white to-vital-blue-50/20'></div>
       <div
@@ -24,13 +24,13 @@ const BenefitsGrid = () => {
         }}
       ></div>
 
-      <div className='container relative z-10 m-auto px-4 pt-10 pb-16 md:px-8 md:py-16'>
-        <div className='mx-auto mb-16 max-w-5xl'>
-          <div className='mb-10 text-center'>
-            <div className='inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 mb-6'>
+      <div className='container relative z-10 m-auto px-4 py-8 md:px-8 md:py-16'>
+        <div className='mx-auto mb-10 max-w-5xl md:mb-16'>
+          <div className='mb-6 text-center md:mb-10'>
+            <div className='mb-4 inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 md:mb-6'>
               <span>{BENEFITS_GRID_SECTION_CONTENT.eyebrow}</span>
             </div>
-            <h2 className='text-4xl font-bold md:text-5xl text-slate-900 dark:text-white'>
+            <h2 className='text-3xl font-bold text-slate-900 md:text-5xl dark:text-white'>
               {BENEFITS_GRID_SECTION_CONTENT.titleLead}{' '}
               <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
                 {BENEFITS_GRID_SECTION_CONTENT.titleAccent}
@@ -38,17 +38,17 @@ const BenefitsGrid = () => {
             </h2>
           </div>
 
-          <div className='rounded-2xl border border-vital-blue-100/50 bg-white p-8 shadow-xl dark:bg-zinc-800'>
-            <div className='grid grid-cols-1 gap-8 divide-y divide-vital-blue-100 text-center md:grid-cols-3 md:divide-x md:divide-y-0'>
+          <div className='border-y border-vital-blue-100 bg-transparent py-5 sm:rounded-2xl sm:border sm:border-vital-blue-100/50 sm:bg-white sm:p-8 sm:shadow-xl dark:border-zinc-700 sm:dark:bg-zinc-800'>
+            <div className='grid grid-cols-3 divide-x divide-vital-blue-100 text-center'>
               {PILOT_PROOF_CONTENT.metrics.map((metric) => (
-                <div key={metric.label} className='pt-8 md:pt-0 md:px-4'>
-                  <div className='mb-2 text-4xl font-bold text-vital-blue-700'>
+                <div key={metric.label} className='px-2 md:px-4'>
+                  <div className='mb-1 text-2xl font-bold text-vital-blue-700 md:mb-2 md:text-4xl'>
                     {metric.value}
                   </div>
-                  <div className='text-sm font-medium text-slate-600 dark:text-gray-300'>
+                  <div className='text-[11px] leading-tight font-medium text-slate-600 md:text-sm dark:text-gray-300'>
                     {metric.label}
                   </div>
-                  <div className='mt-1 text-xs text-slate-500'>
+                  <div className='mt-1 text-[10px] leading-tight text-slate-500 sm:text-xs'>
                     {metric.caption}
                   </div>
                 </div>

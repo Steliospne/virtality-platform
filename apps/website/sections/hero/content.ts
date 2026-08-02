@@ -7,6 +7,4 @@ export const HERO_SUPPORTING_COPY =
 
 export const HERO_PRIMARY_CTA_LABEL = 'Try Virtality free for two weeks'
 
-export const HERO_SECONDARY_CTA_LABEL = 'Book a 20-minute demo'
-
 export const NAV_BOOK_DEMO_LABEL = 'Book a demo'

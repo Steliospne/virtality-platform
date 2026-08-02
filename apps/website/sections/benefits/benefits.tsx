@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import { BENEFITS_LIST_ITEMS, BENEFITS_SECTION_CONTENT } from './content'
 
@@ -17,8 +17,8 @@ const Benefits = () => {
         }}
       ></div>
 
-      <div className='container relative z-10 m-auto px-4 md:px-8 py-20'>
-        <div className='grid items-center gap-16 lg:grid-cols-2'>
+      <div className='container relative z-10 m-auto px-4 py-14 md:px-8 md:py-20'>
+        <div className='grid items-center gap-10 lg:grid-cols-2 lg:gap-16'>
           <div className='relative order-2 lg:order-1 group'>
             <div className='absolute -inset-6 bg-linear-to-br from-vital-blue-600/20 to-vital-blue-400/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-500'></div>
             <div className='absolute -top-8 -left-8 w-32 h-32 border-2 border-vital-blue-600/30 rounded-full'></div>
@@ -35,23 +35,44 @@ const Benefits = () => {
             </div>
           </div>
 
-          <div className='order-1 space-y-8 lg:order-2'>
+          <div className='order-1 space-y-6 sm:space-y-8 lg:order-2'>
             <div>
-              <div className='inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 mb-6'>
+              <div className='mb-4 inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 sm:mb-6'>
                 <span>{BENEFITS_SECTION_CONTENT.eyebrow}</span>
               </div>
-              <h2 className='text-4xl font-bold md:text-5xl text-slate-900 dark:text-white mb-6'>
+              <h2 className='mb-4 text-3xl font-bold text-slate-900 sm:mb-6 md:text-5xl dark:text-white'>
                 {BENEFITS_SECTION_CONTENT.titleLead}{' '}
                 <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
                   {BENEFITS_SECTION_CONTENT.titleAccent}
                 </span>
               </h2>
-              <p className='text-lg leading-relaxed text-slate-600 dark:text-gray-300'>
+              <p className='text-base leading-relaxed text-slate-600 sm:text-lg dark:text-gray-300'>
                 {BENEFITS_SECTION_CONTENT.intro}
               </p>
             </div>
 
-            <ul className='space-y-6'>
+            <ul className='space-y-3 sm:hidden'>
+              {BENEFITS_LIST_ITEMS.map((item) => (
+                <li key={item.title}>
+                  <details className='group rounded-xl border border-vital-blue-100/70 bg-white/80 shadow-sm'>
+                    <summary className='flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden'>
+                      <div className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-md'>
+                        <CheckCircle2 className='size-4.5 text-white' />
+                      </div>
+                      <h3 className='min-w-0 flex-1 text-base leading-snug font-bold text-slate-900 dark:text-white'>
+                        {item.title}
+                      </h3>
+                      <ChevronDown className='size-5 shrink-0 text-vital-blue-700 transition-transform duration-200 group-open:rotate-180' />
+                    </summary>
+                    <p className='px-4 pb-4 pl-16 text-sm leading-6 text-slate-600 dark:text-gray-300'>
+                      {item.description}
+                    </p>
+                  </details>
+                </li>
+              ))}
+            </ul>
+
+            <ul className='hidden space-y-6 sm:block'>
               {BENEFITS_LIST_ITEMS.map((item) => (
                 <li key={item.title} className='flex items-start group'>
                   <div className='mr-4 mt-0.5 shrink-0'>

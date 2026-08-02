@@ -1,6 +1,7 @@
 'use client'
 
 import { resolveLucideIconFromModule } from '@virtality/shared/utils'
+import { ChevronDown } from 'lucide-react'
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react'
 
 type HighlightCardProps = {
@@ -45,29 +46,49 @@ const HighlightCard = ({
   }, [iconName])
 
   return (
-    <div
-      className='group relative rounded-2xl border-2 border-vital-blue-100/50 bg-white p-8 shadow-sm hover:shadow-xl hover:shadow-vital-blue-700/5 transition-all duration-300 dark:border-zinc-700 dark:bg-zinc-800 hover:border-vital-blue-300 dark:hover:border-vital-blue-700'
-      style={{
-        animation: `fadeInUp 0.6s ease-out ${(index ?? 0) * 0.1}s both`,
-      }}
-    >
-      <div className='absolute top-0 right-0 w-20 h-20 bg-linear-to-br from-vital-blue-600/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity'></div>
+    <>
+      <details className='group rounded-xl border border-vital-blue-100/70 bg-white/90 shadow-sm sm:hidden dark:border-zinc-700 dark:bg-zinc-800'>
+        <summary className='flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden'>
+          <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-md shadow-vital-blue-700/15'>
+            <div className='*:size-5 text-white'>{icon}</div>
+          </div>
 
-      <div className='flex flex-col h-full'>
-        <div className='mb-5 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 group-hover:scale-110 transition-transform duration-300'>
-          <div className='*:size-6 text-white'>{icon}</div>
-        </div>
+          <h3 className='min-w-0 flex-1 text-base leading-snug font-bold text-slate-900 dark:text-white'>
+            {title}
+          </h3>
 
-        <h3 className='mb-4 text-xl font-bold text-slate-900 dark:text-white group-hover:text-vital-blue-700 transition-colors'>
-          {title}
-        </h3>
+          <ChevronDown className='size-5 shrink-0 text-vital-blue-700 transition-transform duration-200 group-open:rotate-180' />
+        </summary>
 
-        <p className='text-slate-600 dark:text-gray-300 leading-relaxed flex-1'>
+        <p className='px-4 pb-4 pl-[4.25rem] text-sm leading-6 text-slate-600 dark:text-gray-300'>
           {body}
         </p>
+      </details>
 
-        <div className='mt-6 pt-4 border-t border-vital-blue-100 dark:border-zinc-700'>
-          <div className='h-1 w-0 bg-linear-to-r from-vital-blue-700 to-vital-blue-600 rounded-full group-hover:w-full transition-all duration-500'></div>
+      <div
+        className='group relative hidden rounded-2xl border-2 border-vital-blue-100/50 bg-white p-8 shadow-sm transition-all duration-300 hover:border-vital-blue-300 hover:shadow-xl hover:shadow-vital-blue-700/5 sm:block dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-vital-blue-700'
+        style={{
+          animation: `fadeInUp 0.6s ease-out ${(index ?? 0) * 0.1}s both`,
+        }}
+      >
+        <div className='absolute top-0 right-0 h-20 w-20 rounded-bl-full bg-linear-to-br from-vital-blue-600/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100'></div>
+
+        <div className='flex h-full flex-col'>
+          <div className='mb-5 flex size-14 items-center justify-center rounded-xl bg-linear-to-br from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-700/20 transition-transform duration-300 group-hover:scale-110'>
+            <div className='*:size-6 text-white'>{icon}</div>
+          </div>
+
+          <h3 className='mb-4 text-xl font-bold text-slate-900 transition-colors group-hover:text-vital-blue-700 dark:text-white'>
+            {title}
+          </h3>
+
+          <p className='flex-1 leading-relaxed text-slate-600 dark:text-gray-300'>
+            {body}
+          </p>
+
+          <div className='mt-6 border-t border-vital-blue-100 pt-4 dark:border-zinc-700'>
+            <div className='h-1 w-0 rounded-full bg-linear-to-r from-vital-blue-700 to-vital-blue-600 transition-all duration-500 group-hover:w-full'></div>
+          </div>
         </div>
       </div>
 
@@ -83,7 +104,7 @@ const HighlightCard = ({
           }
         }
       `}</style>
-    </div>
+    </>
   )
 }
 

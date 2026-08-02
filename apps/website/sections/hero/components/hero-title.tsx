@@ -1,17 +1,14 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@virtality/ui/components/button'
 import { ArrowRight, Activity } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Fraunces } from 'next/font/google'
-import { getDemoBookingUrl } from '@/lib/demo-booking'
 import {
   HERO_BADGE_LABEL,
   HERO_HEADLINE,
   HERO_PRIMARY_CTA_LABEL,
-  HERO_SECONDARY_CTA_LABEL,
   HERO_SUPPORTING_COPY,
 } from '../content'
 import { scrollToFinalCta } from '@/lib/scroll-to-cta'
@@ -23,8 +20,6 @@ const fraunces = Fraunces({
   weight: ['500', '600'],
   style: ['normal', 'italic'],
 })
-
-const demoBookingUrl = getDemoBookingUrl()
 
 type HeroTitleProps = {
   align?: 'center' | 'left'
@@ -110,7 +105,7 @@ const HeroTitle = ({
           className={
             isLarge
               ? 'h-10.5! w-auto! max-w-none sm:h-12!'
-              : 'h-4! w-auto! max-w-none sm:h-5! md:h-7!'
+              : 'h-4.5! w-auto! max-w-none sm:h-5! md:h-7!'
           }
         />
       ) : (
@@ -159,20 +154,6 @@ const HeroTitle = ({
               {HERO_PRIMARY_CTA_LABEL}
               <ArrowRight className='size-4 transition-transform group-hover:translate-x-1' />
             </span>
-          </Button>
-
-          <Button
-            asChild
-            variant='ghost'
-            className='h-auto rounded-full px-2 py-4 text-base font-semibold text-slate-700 underline-offset-4 hover:text-vital-blue-700 hover:underline dark:text-gray-200'
-          >
-            <Link
-              href={demoBookingUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              {HERO_SECONDARY_CTA_LABEL}
-            </Link>
           </Button>
         </div>
       ) : null}

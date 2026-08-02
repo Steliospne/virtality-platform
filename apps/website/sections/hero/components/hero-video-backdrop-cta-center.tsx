@@ -1,16 +1,12 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@virtality/ui/components/button'
-import { getDemoBookingUrl } from '@/lib/demo-booking'
-import { HERO_PRIMARY_CTA_LABEL, HERO_SECONDARY_CTA_LABEL } from '../content'
+import { HERO_PRIMARY_CTA_LABEL } from '../content'
 import { scrollToFinalCta } from '@/lib/scroll-to-cta'
 import HeroTitle from './hero-title'
-
-const demoBookingUrl = getDemoBookingUrl()
 
 const HERO_VIDEO_SRC = '/hero/ManNeuralFlipped-loop.mp4'
 const HERO_VIDEO_POSTER = '/hero/ManNeuralFlipped-poster.jpg'
@@ -59,7 +55,7 @@ const HeroVideoBackdropCtaCenter = () => {
   }, [prefersReducedMotion])
 
   return (
-    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#CAD6D6] max-sm:-mb-36 sm:bg-[#fbfaf7] dark:bg-zinc-900'>
+    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#fbfaf7] max-sm:-mb-36 dark:bg-zinc-900'>
       {/* Full-bleed backdrop video */}
       <div className='absolute inset-0'>
         {/* Mobile media + wash: 62% height, studio pad below */}
@@ -91,9 +87,12 @@ const HeroVideoBackdropCtaCenter = () => {
             )}
           </div>
 
-          {/* Steep left wash for copy; subject stays clear on the right */}
-          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-r from-[#CAD6D6] from-0% via-[#CAD6D6]/88 via-40% to-transparent to-70% dark:from-zinc-900 dark:via-zinc-900/88' />
-          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-b from-[#CAD6D6]/50 from-0% via-transparent via-28% to-transparent dark:from-zinc-900/50' />
+          {/* White wash matching the larger breakpoints */}
+          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-r from-[#fbfaf7] from-0% via-[#fbfaf7]/88 via-40% to-[#fbfaf7]/10 to-75% dark:from-zinc-900 dark:via-zinc-900/88 dark:to-zinc-900/10' />
+          <div className='absolute inset-x-0 top-0 h-[62%] bg-white/10 dark:bg-zinc-900/10' />
+
+          {/* Smooth the bottom of the cropped video into the page */}
+          <div className='absolute inset-x-0 top-0 h-[62%] bg-linear-to-b from-transparent from-52% via-white/55 via-80% to-white dark:via-zinc-900/55 dark:to-zinc-900' />
         </div>
 
         {/* Desktop media + wash */}
@@ -148,7 +147,7 @@ const HeroVideoBackdropCtaCenter = () => {
       </div>
 
       {/* CTAs — under the mobile video band; bottom-anchored on desktop */}
-      <div className='pointer-events-none absolute inset-x-0 top-[calc(62%+1.25rem)] z-10 flex justify-center px-4 sm:top-auto sm:bottom-12'>
+      <div className='pointer-events-none absolute inset-x-0 top-[calc(62%+3rem)] z-10 flex justify-center px-4 sm:top-auto sm:bottom-12'>
         <div className='pointer-events-auto flex flex-col items-center gap-4 sm:flex-row sm:gap-5'>
           <Button
             variant='primary'
@@ -159,20 +158,6 @@ const HeroVideoBackdropCtaCenter = () => {
               {HERO_PRIMARY_CTA_LABEL}
               <ArrowRight className='size-4' />
             </span>
-          </Button>
-
-          <Button
-            asChild
-            variant='ghost'
-            className='h-auto rounded-full px-4 py-4 text-base font-semibold text-slate-700 underline-offset-4 hover:text-vital-blue-700 hover:underline dark:text-gray-200'
-          >
-            <Link
-              href={demoBookingUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              {HERO_SECONDARY_CTA_LABEL}
-            </Link>
           </Button>
         </div>
       </div>
