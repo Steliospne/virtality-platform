@@ -55,7 +55,7 @@ const HeroVideoBackdropCtaCenter = () => {
   }, [prefersReducedMotion])
 
   return (
-    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#fbfaf7] max-sm:-mb-36 dark:bg-zinc-900'>
+    <section className='min-h-screen-with-nav relative flex flex-col overflow-hidden bg-[#fbfaf7] max-sm:-mb-16 dark:bg-zinc-900'>
       {/* Full-bleed backdrop video */}
       <div className='absolute inset-0'>
         {/* Mobile media + wash: 62% height, studio pad below */}

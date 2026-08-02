@@ -80,7 +80,7 @@ const WaitlistForm = ({
                   <div className='flex flex-row overflow-hidden rounded-xl border-2 border-vital-blue-100 focus-within:border-vital-blue-700 focus-within:ring-2 focus-within:ring-vital-blue-700/20'>
                     <Input
                       type='email'
-                      placeholder='Enter your professional email'
+                      placeholder='Enter your email'
                       required
                       className='h-14 min-w-0 flex-1 rounded-none border-0 px-5 text-base shadow-none focus-visible:ring-0'
                       {...field}
