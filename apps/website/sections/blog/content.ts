@@ -128,9 +128,9 @@ export const posts: Post[] = [
       {
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/piraeus-startup-accelerator-top-10-2-zsrn8gnr.jpg',
-        alt: 'Group photo of the Piraeus Startup Accelerator participants',
+        alt: 'Group photo of the Piraeus Startup Accelerator finalists',
         caption:
-          'Photo: Group photo of the Piraeus Startup Accelerator participants.',
+          'Photo: Group photo of the Piraeus Startup Accelerator finalists.',
       },
       {
         kind: 'heading',
@@ -175,8 +175,8 @@ export const posts: Post[] = [
       {
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/innodays-2-z3cjp14z.jpg',
-        alt: 'Kid trying the Virtality VR headset',
-        caption: 'Photo: Kid trying the Virtality VR headset.',
+        alt: 'Live VR demo at the booth',
+        caption: 'Photo: Live VR demo at the booth.',
       },
       {
         kind: 'paragraph',
@@ -218,8 +218,8 @@ export const posts: Post[] = [
       {
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/piraeus-startup-accelerator-xanthi-2-ae1kwsda.jpg',
-        alt: 'Panel discussion photo',
-        caption: 'Photo: Panel discussion with new applicants.',
+        alt: 'Piraeus startup accelerator alumni panel',
+        caption: 'Photo: Piraeus startup accelerator alumni panel.',
       },
       {
         kind: 'heading',
@@ -251,7 +251,7 @@ export const posts: Post[] = [
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/physiotherapy-seminar-acl-1-mjqhpiu6.jpg',
         alt: 'Seminar photo',
-        caption: 'Photo: From the ACL rehabilitation seminar.',
+        caption: 'Photo: ACL seminar poster and featured speakers.',
       },
       {
         kind: 'paragraph',
@@ -349,7 +349,7 @@ export const posts: Post[] = [
         kind: 'image',
         src: 'https://cdn.virtality.app/marketing/blogs/women-entrepreneurs-4-good-vlg21lno.png',
         alt: 'WE4G program photo',
-        caption: 'Photo: WE4G Meet the finalists.',
+        caption: 'Photo: WE4G final top 10 winners.',
       },
       {
         kind: 'paragraph',
@@ -498,7 +498,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'June reached an unforgettable international climax for Virtality as our team traveled to Paris to step onto the global stage at Viva Technology 2026, Europe’s largest and most prestigious innovation and startup arena. As a newly named Top 10 Global Laureate of the WomenEntrepreneurs4Good (WE4G) program, Virtality was selected to present our platform directly to an international audience of impact investors, healthcare pioneers, and global tech leaders.',
+        text: 'June reached an unforgettable international climax for Virtality as our team traveled to Paris to step onto the global stage at Viva Technology 2026, Europe’s largest and most prestigious innovation and technology conference. As a newly named Top 10 Global Laureate of the WomenEntrepreneurs4Good (WE4G) program, Virtality was selected to present our platform directly to an international audience of impact investors, healthcare pioneers, and global tech leaders.',
       },
       {
         kind: 'heading',
