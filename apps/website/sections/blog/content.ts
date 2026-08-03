@@ -98,7 +98,7 @@ export const posts: Post[] = [
     slug: 'piraeus-startup-accelerator-top-10',
     title: 'Virtality Named a Top 10 Team in the Piraeus Startup Accelerator',
     excerpt:
-      'From over 64 applicants to the final ten. Demo Day at the Goulandris Foundation marked the close of an intensive accelerator journey.',
+      'From over 64 applicants to the final ten, awarded a €5,000 grant at Demo Day at the Goulandris Foundation.',
     cover:
       'https://cdn.virtality.app/marketing/blogs/piraeus-startup-accelerator-top-10-1-wviloqcf.jpg',
     authorId: virtalityTeam.id,
@@ -114,7 +114,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'One stage. A few minutes. Months of hard work. We are thrilled to announce that Virtality was showcased as one of the Top 10 graduating teams of the prestigious Piraeus Startup Accelerator. What began as a highly competitive pool of over 64 applicants was narrowed down to 35 teams for the initial phase, and finally down to the top 10. Making it to the final stage marks the completion of an intensive growth journey where our commercial viability and social impact took clear shape. The grand finale took place at a high-profile Demo Day at the Basil & Eliza Goulandris Foundation Museum of Modern Art, attended by the Executive Management of Piraeus Bank, venture capital investors, academic leaders, and key stakeholders from the Greek tech ecosystem.',
+        text: 'One stage. A few minutes. Months of hard work. We are thrilled to announce that Virtality was showcased as one of the Top 10 graduating teams of the prestigious Piraeus Startup Accelerator. What began as a highly competitive pool of over 64 applicants was narrowed down to 35 teams for the initial phase, and finally down to the top 10. Making it to the final stage marks the completion of an intensive growth journey where our commercial viability and social impact took clear shape. The grand finale took place at a high-profile Demo Day at the Basil & Eliza Goulandris Foundation Museum of Modern Art, attended by the Executive Management of Piraeus Bank, venture capital investors, academic leaders, and key stakeholders from the Greek tech ecosystem. As part of this final showcase, Virtality was awarded a €5,000 grant prize in recognition of our work, market potential and scalable tech.',
       },
       {
         kind: 'heading',
