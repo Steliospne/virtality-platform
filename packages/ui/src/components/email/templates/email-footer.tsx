@@ -11,7 +11,9 @@ const EmailFooter = ({ companyName }: EmailFooterProps) => {
       <Text style={footerText}>
         {/* {companyName}, 123 Business St, City, State 12345 */}
       </Text>
-      <Text style={footerText}>© 2025 {companyName}. All rights reserved.</Text>
+      <Text style={footerText}>
+        © {new Date().getFullYear()} {companyName}. All rights reserved.
+      </Text>
     </Section>
   )
 }

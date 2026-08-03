@@ -27,6 +27,7 @@ describe('WaitingListEmail', () => {
     expect(html).toContain('Hi there,')
     expect(html).toContain('What happens next?')
     expect(html).toContain('Book your onboarding session')
+    expect(html).toContain('Virtality team')
   })
 
   it('links to onboarding and the Virtality website', async () => {

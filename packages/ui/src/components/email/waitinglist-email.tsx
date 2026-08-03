@@ -110,7 +110,7 @@ export const WaitingListEmail = ({
         <Text style={text}>
           Best regards,
           <br />
-          {companyName}
+          {companyName} team
           <br />
           <Link href={companyUrl} style={link}>
             www.virtality.app
