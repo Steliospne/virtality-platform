@@ -57,21 +57,32 @@ function createDeps(
 }
 
 describe('getWaitlistNotifyRecipient', () => {
-  it('reads WAITLIST_NOTIFY_EMAIL from the environment', () => {
+  it('adds WAITLIST_NOTIFY_EMAIL recipients alongside info@virtality.app', () => {
     expect(
       getWaitlistNotifyRecipient({
         WAITLIST_NOTIFY_EMAIL: '  team@virtality.app  ',
       } as NodeJS.ProcessEnv),
-    ).toBe('team@virtality.app')
+    ).toBe('info@virtality.app, team@virtality.app')
   })
 
-  it('returns undefined when WAITLIST_NOTIFY_EMAIL is missing or blank', () => {
-    expect(getWaitlistNotifyRecipient({} as NodeJS.ProcessEnv)).toBeUndefined()
+  it('uses info@virtality.app when WAITLIST_NOTIFY_EMAIL is missing or blank', () => {
+    expect(getWaitlistNotifyRecipient({} as NodeJS.ProcessEnv)).toBe(
+      'info@virtality.app',
+    )
     expect(
       getWaitlistNotifyRecipient({
         WAITLIST_NOTIFY_EMAIL: '   ',
       } as NodeJS.ProcessEnv),
-    ).toBeUndefined()
+    ).toBe('info@virtality.app')
+  })
+
+  it('does not duplicate info@virtality.app when configured explicitly', () => {
+    expect(
+      getWaitlistNotifyRecipient({
+        WAITLIST_NOTIFY_EMAIL:
+          'info@virtality.app, notifications@virtality.app',
+      } as NodeJS.ProcessEnv),
+    ).toBe('info@virtality.app, notifications@virtality.app')
   })
 })
 
@@ -100,7 +111,7 @@ describe('notifyWaitlistTeam', () => {
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
-  it('skips notification and warns when WAITLIST_NOTIFY_EMAIL is not configured', async () => {
+  it('skips notification and warns when no recipient is available', async () => {
     const sendWaitlistNotification = vi.fn().mockResolvedValue(undefined)
     const logger = { warn: vi.fn(), info: vi.fn() }
 

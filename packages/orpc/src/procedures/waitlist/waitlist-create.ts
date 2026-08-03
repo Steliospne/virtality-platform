@@ -4,6 +4,8 @@ import type { AppLogger } from '@virtality/shared/observability'
 
 export type WaitlistNotifyLogger = Pick<AppLogger, 'info' | 'warn'>
 
+export const DEFAULT_WAITLIST_NOTIFY_EMAIL = 'info@virtality.app'
+
 export type CreateWaitlistDeps = {
   prisma: {
     waitingList: {
@@ -40,9 +42,15 @@ export type NotifyWaitlistTeamDeps = Pick<
 
 export function getWaitlistNotifyRecipient(
   env: NodeJS.ProcessEnv = process.env,
-): string | undefined {
-  const value = env.WAITLIST_NOTIFY_EMAIL?.trim()
-  return value || undefined
+): string {
+  const additionalRecipients =
+    env.WAITLIST_NOTIFY_EMAIL?.split(',')
+      .map((email) => email.trim())
+      .filter(Boolean) ?? []
+
+  return [
+    ...new Set([DEFAULT_WAITLIST_NOTIFY_EMAIL, ...additionalRecipients]),
+  ].join(', ')
 }
 
 export async function notifyWaitlistTeam(

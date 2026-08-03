@@ -8,7 +8,7 @@ export const BENEFITS_SECTION_CONTENT = {
   titleLead: 'Practical problems,',
   titleAccent: 'solved in clinics.',
   intro:
-    'Built for private clinic owners and lead physiotherapists who need patients moving again without adding operational friction.',
+    'Built for private clinic owners and lead physiotherapists who prioritize active recovery over passive symptom relief, without adding operational friction.',
 } as const
 
 export const BENEFITS_LIST_ITEMS: BenefitsListItem[] = [

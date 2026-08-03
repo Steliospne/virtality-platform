@@ -3,7 +3,13 @@
 import Link from 'next/link'
 import { Card, CardContent } from '@virtality/ui/components/card'
 import { Button } from '@virtality/ui/components/button'
-import { ArrowRight, Sparkles, Mail, Gift, Check } from 'lucide-react'
+import {
+  ArrowRight,
+  CalendarCheck,
+  Check,
+  Gift,
+  Sparkles,
+} from 'lucide-react'
 import { animate } from 'motion/react'
 import { useEffect, useRef } from 'react'
 
@@ -74,18 +80,14 @@ const ThankYouPage = () => {
               data-thank-you-item
               className='text-3xl md:text-4xl font-bold text-slate-800 mb-3'
             >
-              You&apos;re on the list
+              You&apos;re all set! Welcome to Virtality. 🚀
             </h1>
             <p
               data-thank-you-item
               className='text-lg text-slate-600 mb-8 max-w-[45ch] mx-auto'
             >
-              Thanks for joining the Virtality waitlist. We&apos;ll be in touch
-              soon with early access and your{' '}
-              <span className='font-semibold text-vital-blue-700'>
-                special discount
-              </span>
-              .
+              We just sent an email to your inbox with everything you need to
+              get started.
             </p>
 
             {/* What's next */}
@@ -93,31 +95,22 @@ const ThankYouPage = () => {
               data-thank-you-item
               className='grid sm:grid-cols-2 gap-4 mb-8 text-left'
             >
-              <div className='flex gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
+              <div className='flex items-center gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
                 <div className='shrink-0 w-10 h-10 rounded-lg bg-vital-blue-100 flex items-center justify-center'>
-                  <Mail className='size-5 text-vital-blue-700' />
+                  <CalendarCheck className='size-5 text-vital-blue-700' />
                 </div>
-                <div>
-                  <p className='font-semibold text-slate-800 text-sm'>
-                    Check your inbox
-                  </p>
-                  <p className='text-slate-600 text-sm'>
-                    We&apos;ve sent a confirmation to your email.
-                  </p>
-                </div>
+                <p className='font-semibold text-slate-800 text-sm'>
+                  Book your 1-on-1 onboarding session to get instant access.
+                </p>
               </div>
-              <div className='flex gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
+              <div className='flex items-center gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
                 <div className='shrink-0 w-10 h-10 rounded-lg bg-vital-blue-100 flex items-center justify-center'>
                   <Gift className='size-5 text-vital-blue-700' />
                 </div>
-                <div>
-                  <p className='font-semibold text-slate-800 text-sm'>
-                    Early access & offers
-                  </p>
-                  <p className='text-slate-600 text-sm'>
-                    First to know when we launch + exclusive pricing.
-                  </p>
-                </div>
+                <p className='font-semibold text-slate-800 text-sm'>
+                  As an early member, you&apos;ll receive special pricing and
+                  personalized support.
+                </p>
               </div>
             </div>
 

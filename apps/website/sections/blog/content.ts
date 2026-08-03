@@ -29,7 +29,8 @@ const virtalityTeam = authors[1]!
 export const posts: Post[] = [
   {
     slug: 'panhellenic-physiotherapy-conference',
-    title: 'Virtality at the Panhellenic Physiotherapy Conference',
+    title:
+      'Virtality Featured as an Invited Speaker at the Panhellenic Physiotherapy Conference',
     excerpt:
       'Our first major public debut in Crete: a keynote on interactive rehab for sports injuries, a round-table with athletes, and our first exhibition booth.',
     cover: 'https://cdn.virtality.app/marketing/blogs/conf_img-r41z017u.png',
@@ -123,7 +124,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'The Piraeus Startup Accelerator is designed to bridge the funding gap in the market, empowering startups to transform ideas into internationally competitive products. For Virtality, this program was a catalyst. We refined our business model, proving that our vision aligning cognitive neuroscience, AI, and VR rehabilitation is a highly scalable solution capable of disrupting the physical therapy market while driving meaningful social impact. Throughout the accelerator, we received intensive guidance from ecosystem mentors and top-tier banking executives, sharpening our market strategy and investor readiness.',
+        text: 'The Piraeus Startup Accelerator is designed to bridge the funding gap for young innovators across regional Greece, empowering startups to transform ideas into internationally competitive products. For Virtality, this program was a catalyst. We refined our business model, proving that our vision: aligning cognitive neuroscience, AI, and VR rehabilitation is a highly scalable solution capable of disrupting the physical therapy market while driving meaningful social impact. Throughout the accelerator, we received intensive guidance from ecosystem mentors and top-tier banking executives, sharpening our market strategy and investor readiness.',
       },
       {
         kind: 'image',

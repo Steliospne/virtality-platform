@@ -2,7 +2,9 @@ import type { ReactElement } from 'react'
 import EmailVerification from './email-verification.js'
 import ResetPassword from './reset-password.js'
 import DeleteUserEmail from './delete-user-email.js'
-import WaitingListEmail from './waitinglist-email.js'
+import WaitingListEmail, {
+  WAITING_LIST_EMAIL_SUBJECT,
+} from './waitinglist-email.js'
 import MeetVirtality from './meet-virtality.js'
 import ProductUpdate from './product-update.js'
 import ProductUpdateV0109 from './product-update-v0-1-09.js'
@@ -104,18 +106,18 @@ export const EMAIL_TEMPLATES: {
       id: 'waitinglist-email',
       title: 'Thank You (Waitlist)',
       category: 'marketing',
-      subject: 'Thank you for joining waitlist.',
+      subject: WAITING_LIST_EMAIL_SUBJECT,
     },
     sampleProps: {
-      firstName: 'John',
       email: SAMPLE_EMAIL,
+      onboardingUrl: 'https://cal.com/virtality',
       companyName: 'Virtality',
       companyUrl: 'https://www.virtality.app',
     },
     render: (p) =>
       WaitingListEmail({
-        firstName: p.firstName as string,
         email: p.email as string,
+        onboardingUrl: p.onboardingUrl as string,
         companyName: p.companyName as string,
         companyUrl: p.companyUrl as string,
       }),
