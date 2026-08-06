@@ -54,6 +54,9 @@ const BodyBlocks = ({ blocks, className }: BodyBlocksProps) => {
                   src={block.src}
                   alt={block.alt}
                   fill
+                  unoptimized={block.src.startsWith(
+                    'https://cdn.virtality.app/',
+                  )}
                   className='object-contain'
                   sizes='(max-width: 768px) 100vw, 720px'
                 />

@@ -26,10 +26,7 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
       <ul className='container mx-auto px-4 md:px-8'>
         {posts.map((post) => {
           const isFeatured = post.slug === featured?.slug
-          const coverFocusY = Math.min(
-            100,
-            Math.max(0, post.coverFocusY ?? 50),
-          )
+          const coverFocusY = Math.min(100, Math.max(0, post.coverFocusY ?? 50))
           return (
             <li
               key={post.slug}
@@ -62,6 +59,9 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
                     src={post.cover}
                     alt=''
                     fill
+                    unoptimized={post.cover.startsWith(
+                      'https://cdn.virtality.app/',
+                    )}
                     className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
                     sizes='(max-width: 767px) calc(100vw - 2rem), 240px'
                     style={{
