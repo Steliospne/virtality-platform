@@ -26,6 +26,7 @@ import { MouseEvent } from 'react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { Button } from '@virtality/ui/components/button'
 import { usePatient, useMap } from '@virtality/react-query'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 const MapSelector = () => {
   const { state, handler, store, patientLocalData, patientId } =
@@ -119,6 +120,7 @@ const MapCard = ({ map }: { map: Map }) => {
                   height={150}
                   loading='eager'
                   src={map.image ? map.image : placeholder}
+                  unoptimized={shouldBypassVercelImageOptimization(map.image)}
                   className='rounded-lg'
                 />
               </CardContent>

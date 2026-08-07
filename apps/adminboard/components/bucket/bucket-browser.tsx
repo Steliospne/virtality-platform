@@ -21,6 +21,7 @@ import {
   type BucketFolderRow,
   type BucketObjectRow,
   getBucketBreadcrumbs,
+  shouldBypassVercelImageOptimization,
 } from '@virtality/shared/utils'
 import { BucketFolderDeleteDialog } from './bucket-folder-delete-dialog'
 import { BucketFolderMoveDialog } from './bucket-folder-move-dialog'
@@ -100,6 +101,7 @@ function ObjectPreview({ object }: { object: BucketObjectRow }) {
         alt={object.name}
         width={48}
         height={48}
+        unoptimized={shouldBypassVercelImageOptimization(object.cdnUrl)}
         className='size-12 rounded-md border border-zinc-600 object-contain'
       />
     )

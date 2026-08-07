@@ -1,6 +1,7 @@
 'use client'
 import placeholder from '@/public/placeholder.svg'
 import Image from 'next/image'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { authClient } from '@/auth-client'
 import {
   DropdownMenu,
@@ -68,6 +69,7 @@ const Avatar = () => {
               src={user?.image ? user.image : placeholder}
               width={50}
               height={50}
+              unoptimized={shouldBypassVercelImageOptimization(user?.image)}
             />
           </div>
         </DropdownMenuTrigger>

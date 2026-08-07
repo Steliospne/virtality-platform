@@ -3,10 +3,12 @@ import { Card } from '@virtality/ui/components/card'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getWebsiteUrl } from '@virtality/shared/types'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 const baseURL = getWebsiteUrl()
 
 const cdnURL = process.env.NEXT_PUBLIC_CDN_URL
+const goodbyeLogoSrc = `${cdnURL}/small_logo_400x400.png`
 
 const GoodbyePage = () => {
   return (
@@ -18,7 +20,8 @@ const GoodbyePage = () => {
               alt='Company small logo'
               width={50}
               height={50}
-              src={`${cdnURL}/small_logo_400x400.png`}
+              src={goodbyeLogoSrc}
+              unoptimized={shouldBypassVercelImageOptimization(goodbyeLogoSrc)}
             />
           </div>
 

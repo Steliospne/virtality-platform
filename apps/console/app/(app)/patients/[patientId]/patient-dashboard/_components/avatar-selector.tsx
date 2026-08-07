@@ -26,6 +26,7 @@ import { MouseEvent } from 'react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { Button } from '@virtality/ui/components/button'
 import { usePatient, useAvatar } from '@virtality/react-query'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 const AvatarSelector = () => {
   const { state, handler, store, patientLocalData, patientId } =
@@ -120,6 +121,9 @@ const AvatarCard = ({ avatar }: { avatar: Avatar }) => {
                   height={150}
                   loading='eager'
                   src={avatar.image ? avatar.image : placeholder}
+                  unoptimized={shouldBypassVercelImageOptimization(
+                    avatar.image,
+                  )}
                   className='rounded-lg'
                 />
               </CardContent>

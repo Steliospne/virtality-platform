@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, MouseEvent } from 'react'
 import Image from 'next/image'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { Button } from '@virtality/ui/components/button'
 import {
   Card,
@@ -206,6 +207,7 @@ function CardFront({
               src={exercise.image ?? '/placeholder.svg'}
               alt={primaryLabel + ' image'}
               fill
+              unoptimized={shouldBypassVercelImageOptimization(exercise.image)}
               className='object-contain'
               sizes='(max-width: 640px) 90vw, (max-width: 1024px) 220px, 260px'
             />

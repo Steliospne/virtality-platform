@@ -18,6 +18,7 @@ import type { MosaicLiveEligibility } from '@virtality/shared/types'
 import {
   assessMosaicLiveEligibility,
   bucketCdnUrl,
+  shouldBypassVercelImageOptimization,
 } from '@virtality/shared/utils'
 import { Trash2 } from 'lucide-react'
 import Image from 'next/image'
@@ -77,6 +78,8 @@ function MosaicPlacedTile({
   isSelected,
   onSelect,
 }: MosaicPlacedTileProps) {
+  const src = bucketCdnUrl(tile.objectKey)
+
   return (
     <button
       type='button'
@@ -101,19 +104,15 @@ function MosaicPlacedTile({
     >
       {tile.mediaKind === 'image' ? (
         <Image
-          src={bucketCdnUrl(tile.objectKey)}
+          src={src}
           alt={tile.alt}
           fill
+          unoptimized={shouldBypassVercelImageOptimization(src)}
           className='object-cover'
           sizes='(min-width: 768px) 200px, 120px'
         />
       ) : (
-        <BucketVideoPreview
-          src={bucketCdnUrl(tile.objectKey)}
-          label={tile.alt}
-          fill
-          playOnHover
-        />
+        <BucketVideoPreview src={src} label={tile.alt} fill playOnHover />
       )}
     </button>
   )

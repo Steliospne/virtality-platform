@@ -13,7 +13,10 @@ import {
   createEmailBodyBlock,
 } from '@/lib/admin-email-blocks'
 import type { EmailBodyBlock } from '@virtality/shared/types'
-import { bucketCdnUrl } from '@virtality/shared/utils'
+import {
+  bucketCdnUrl,
+  shouldBypassVercelImageOptimization,
+} from '@virtality/shared/utils'
 import { ArrowDown, ArrowUp, ImageIcon, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -184,6 +187,9 @@ export const EmailBlockBuilder = ({
                     alt={block.alt || 'Selected image'}
                     width={64}
                     height={64}
+                    unoptimized={shouldBypassVercelImageOptimization(
+                      bucketCdnUrl(block.objectKey),
+                    )}
                     className='size-16 rounded object-cover'
                   />
                 ) : null}
@@ -355,6 +361,9 @@ export const EmailBlockBuilder = ({
                     alt={block.imageAlt || 'Card image'}
                     width={64}
                     height={64}
+                    unoptimized={shouldBypassVercelImageOptimization(
+                      bucketCdnUrl(block.imageObjectKey),
+                    )}
                     className='size-16 rounded object-cover'
                   />
                 ) : null}

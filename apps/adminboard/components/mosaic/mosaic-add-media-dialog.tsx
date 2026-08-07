@@ -23,6 +23,7 @@ import { getErrorMessage } from '@/lib/get-error-message'
 import type { MosaicTrayItem } from '@/lib/mosaic-editor'
 import {
   bucketCdnUrl,
+  shouldBypassVercelImageOptimization,
   validateBucketTargetPrefix,
 } from '@virtality/shared/utils'
 import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
@@ -56,12 +57,14 @@ function SelectedMediaPreview({
   alt: string
 }) {
   if (selection.mediaKind === 'image') {
+    const src = bucketCdnUrl(selection.objectKey)
     return (
       <Image
-        src={bucketCdnUrl(selection.objectKey)}
+        src={src}
         alt={alt || 'Selected media'}
         width={64}
         height={64}
+        unoptimized={shouldBypassVercelImageOptimization(src)}
         className='size-16 shrink-0 rounded object-cover'
       />
     )

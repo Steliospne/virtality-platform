@@ -18,7 +18,10 @@ import { filterBucketMp4PickerObjects } from '@/lib/promo-video'
 import { cn } from '@/lib/utils'
 import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { useBucket } from '@virtality/react-query'
-import { getBucketBreadcrumbs } from '@virtality/shared/utils'
+import {
+  getBucketBreadcrumbs,
+  shouldBypassVercelImageOptimization,
+} from '@virtality/shared/utils'
 import { Check, ChevronRight, Folder } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
@@ -264,6 +267,9 @@ export const BucketObjectPickerDialog = (
                         alt={object.name}
                         width={48}
                         height={48}
+                        unoptimized={shouldBypassVercelImageOptimization(
+                          object.cdnUrl,
+                        )}
                         className='size-12 rounded object-cover'
                       />
                     )}

@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import type { ResolvedPost } from '../types'
 import BodyBlocks from './body-blocks'
 import { formatPostDate } from '../lib/format'
@@ -32,6 +33,9 @@ const BlogPostView = ({ post }: BlogPostViewProps) => {
                 alt=''
                 width={40}
                 height={40}
+                unoptimized={shouldBypassVercelImageOptimization(
+                  post.author.image,
+                )}
                 className='size-10 rounded-full object-cover'
               />
             ) : null}

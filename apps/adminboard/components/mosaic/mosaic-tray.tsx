@@ -7,7 +7,10 @@ import {
   type MosaicTrayItem,
 } from '@/lib/mosaic-editor'
 import { cn } from '@/lib/utils'
-import { bucketCdnUrl } from '@virtality/shared/utils'
+import {
+  bucketCdnUrl,
+  shouldBypassVercelImageOptimization,
+} from '@virtality/shared/utils'
 import Image from 'next/image'
 import { useState } from 'react'
 
@@ -86,42 +89,46 @@ const MosaicTray = ({ items, onReturnTile }: MosaicTrayProps) => {
         </div>
       ) : (
         <ul className='flex flex-wrap gap-3'>
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type='button'
-                draggable
-                onDragStart={(event) => {
-                  event.dataTransfer.setData(MOSAIC_TRAY_DRAG_MIME, item.id)
-                  event.dataTransfer.effectAllowed = 'copy'
-                }}
-                className='hover:bg-accent flex w-36 flex-col gap-2 rounded-lg border p-2 text-left'
-                aria-label={`Drag ${item.alt} onto the board`}
-              >
-                <div className='relative aspect-square overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-900'>
-                  {item.mediaKind === 'image' ? (
-                    <Image
-                      src={bucketCdnUrl(item.objectKey)}
-                      alt=''
-                      fill
-                      className='object-cover'
-                      sizes='144px'
-                    />
-                  ) : (
-                    <BucketVideoPreview
-                      src={bucketCdnUrl(item.objectKey)}
-                      label={item.alt}
-                      fill
-                      playOnHover
-                    />
-                  )}
-                </div>
-                <span className='line-clamp-2 text-xs font-medium'>
-                  {item.alt}
-                </span>
-              </button>
-            </li>
-          ))}
+          {items.map((item) => {
+            const src = bucketCdnUrl(item.objectKey)
+            return (
+              <li key={item.id}>
+                <button
+                  type='button'
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData(MOSAIC_TRAY_DRAG_MIME, item.id)
+                    event.dataTransfer.effectAllowed = 'copy'
+                  }}
+                  className='hover:bg-accent flex w-36 flex-col gap-2 rounded-lg border p-2 text-left'
+                  aria-label={`Drag ${item.alt} onto the board`}
+                >
+                  <div className='relative aspect-square overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-900'>
+                    {item.mediaKind === 'image' ? (
+                      <Image
+                        src={src}
+                        alt=''
+                        fill
+                        unoptimized={shouldBypassVercelImageOptimization(src)}
+                        className='object-cover'
+                        sizes='144px'
+                      />
+                    ) : (
+                      <BucketVideoPreview
+                        src={src}
+                        label={item.alt}
+                        fill
+                        playOnHover
+                      />
+                    )}
+                  </div>
+                  <span className='line-clamp-2 text-xs font-medium'>
+                    {item.alt}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

@@ -8,6 +8,7 @@ import type {
   MosaicLiveEligibility,
   MosaicTileListItem,
 } from '@virtality/shared/types'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { Badge } from '@virtality/ui/components/badge'
 import Image from 'next/image'
 
@@ -42,6 +43,7 @@ function MosaicTilePreview({ tile }: { tile: MosaicTileListItem }) {
         src={tile.cdnUrl}
         alt={tile.alt}
         fill
+        unoptimized={shouldBypassVercelImageOptimization(tile.cdnUrl)}
         className='object-cover'
         sizes='(min-width: 768px) 200px, 120px'
       />

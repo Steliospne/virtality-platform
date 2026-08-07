@@ -7,6 +7,7 @@ import { Button } from '@virtality/ui/components/button'
 import { toast } from 'react-toastify'
 import { authClient } from '@/auth-client'
 import { FieldMeta, getConsoleUrl } from '@virtality/shared/types'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -570,6 +571,9 @@ const ImageField = ({ field, user }: ImageFieldProps) => {
                 ? user.image
                 : placeholder
           }
+          unoptimized={shouldBypassVercelImageOptimization(
+            avatarState.previewUrl || user?.image,
+          )}
           className='size-full object-cover'
         />
       ) : (

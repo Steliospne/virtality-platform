@@ -38,6 +38,7 @@ import { ChangeEvent, useState } from 'react'
 import { ControllerRenderProps, useForm } from 'react-hook-form'
 import { format, formatISO } from 'date-fns'
 import placeholder from '@/public/placeholder.svg'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { useClientT } from '@/i18n/use-client-t'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
@@ -123,6 +124,9 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                       ? patient.image
                       : placeholder
                 }
+                unoptimized={shouldBypassVercelImageOptimization(
+                  previewUrl || patient?.image,
+                )}
                 className='size-full object-cover'
               />
             ) : (

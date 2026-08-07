@@ -5,6 +5,7 @@ import { PlusSquare, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import placeholder from '@/public/placeholder.svg'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 import { ChangeEvent, useActionState, useEffect, useRef, useState } from 'react'
 import { Button } from '@virtality/ui/components/button'
@@ -72,6 +73,7 @@ const Organizations = ({ userOrganizations }: OrganizationProps) => {
                     src={org.logo ? org.logo : placeholder}
                     width={50}
                     height={50}
+                    unoptimized={shouldBypassVercelImageOptimization(org.logo)}
                     className='rounded-full border-2 border-zinc-600'
                   />
                   <div className=''>{org.name}</div>

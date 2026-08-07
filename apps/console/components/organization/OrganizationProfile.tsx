@@ -9,6 +9,7 @@ import { Session } from 'better-auth'
 import capitalize from 'lodash.capitalize'
 import Image from 'next/image'
 import Link from 'next/link'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { Input } from '@virtality/ui/components/input'
 import { Button } from '@virtality/ui/components/button'
 import { type OrganizationWithMembers } from '@/lib/definitions'
@@ -71,6 +72,9 @@ const OrganizationProfile = ({
                       height={100}
                       src={member.user.image}
                       alt='Member image'
+                      unoptimized={shouldBypassVercelImageOptimization(
+                        member.user.image,
+                      )}
                       className='row-span-2 flex h-8.75 w-8.75 items-center justify-center rounded-full border-2'
                     />
                   ) : null}

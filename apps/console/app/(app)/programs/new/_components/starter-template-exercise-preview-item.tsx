@@ -6,6 +6,7 @@ import { Pause, Play } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { Item, ItemContent, ItemTitle } from '@/components/ui/item'
 import type { StarterTemplatePreviewExercise } from '@/lib/starter-template-create'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 interface StarterTemplateExercisePreviewItemProps {
   exercise: StarterTemplatePreviewExercise
@@ -46,6 +47,7 @@ const StarterTemplateExercisePreviewItem = ({
             src={exercise.image ?? '/placeholder.svg'}
             alt={`${label} thumbnail`}
             fill
+            unoptimized={shouldBypassVercelImageOptimization(exercise.image)}
             className='object-contain'
             sizes='96px'
           />

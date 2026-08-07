@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import {
   TooltipProvider,
   Tooltip,
@@ -58,6 +59,9 @@ const ExerciseDescriptionCard = ({
                     alt={getDisplayName(exercise) + ' image'}
                     width={260}
                     height={260}
+                    unoptimized={shouldBypassVercelImageOptimization(
+                      exercise.image,
+                    )}
                     className='w-full object-contain'
                     sizes='(max-width: 640px) 90vw, (max-width: 1024px) 220px, 260px'
                   />

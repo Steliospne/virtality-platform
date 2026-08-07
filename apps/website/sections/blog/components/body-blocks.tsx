@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import type { BodyBlock } from '../types'
 import { youtubeEmbedUrl } from '../lib/format'
 
@@ -54,9 +55,7 @@ const BodyBlocks = ({ blocks, className }: BodyBlocksProps) => {
                   src={block.src}
                   alt={block.alt}
                   fill
-                  unoptimized={block.src.startsWith(
-                    'https://cdn.virtality.app/',
-                  )}
+                  unoptimized={shouldBypassVercelImageOptimization(block.src)}
                   className='object-contain'
                   sizes='(max-width: 768px) 100vw, 720px'
                 />

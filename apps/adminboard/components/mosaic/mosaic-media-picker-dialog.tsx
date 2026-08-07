@@ -18,7 +18,10 @@ import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { cn } from '@/lib/utils'
 import { useBucket } from '@virtality/react-query'
 import type { MosaicMediaKind } from '@virtality/shared/types'
-import { getBucketBreadcrumbs } from '@virtality/shared/utils'
+import {
+  getBucketBreadcrumbs,
+  shouldBypassVercelImageOptimization,
+} from '@virtality/shared/utils'
 import { Check, ChevronRight, Folder } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
@@ -233,6 +236,9 @@ export const MosaicMediaPickerDialog = (
                         alt={object.name}
                         width={48}
                         height={48}
+                        unoptimized={shouldBypassVercelImageOptimization(
+                          object.cdnUrl,
+                        )}
                         className='size-12 rounded object-cover'
                       />
                     ) : (

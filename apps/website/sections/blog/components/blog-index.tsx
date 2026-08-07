@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import type { ResolvedPost } from '../types'
 import { formatPostDate } from '../lib/format'
 
@@ -59,8 +60,8 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
                     src={post.cover}
                     alt=''
                     fill
-                    unoptimized={post.cover.startsWith(
-                      'https://cdn.virtality.app/',
+                    unoptimized={shouldBypassVercelImageOptimization(
+                      post.cover,
                     )}
                     className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
                     sizes='(max-width: 767px) calc(100vw - 2rem), 240px'

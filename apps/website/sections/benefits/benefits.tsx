@@ -1,6 +1,10 @@
 import { CheckCircle2, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { BENEFITS_LIST_ITEMS, BENEFITS_SECTION_CONTENT } from './content'
+
+const BENEFITS_IMAGE_SRC =
+  'https://cdn.virtality.app/2e78ac55ab9e56ef44091705aabeced201df5db4e6c6a92b2133ca556a93bbee'
 
 const Benefits = () => {
   return (
@@ -26,10 +30,13 @@ const Benefits = () => {
 
             <div className='relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-vital-blue-100/50'>
               <Image
-                src='https://cdn.virtality.app/2e78ac55ab9e56ef44091705aabeced201df5db4e6c6a92b2133ca556a93bbee'
+                src={BENEFITS_IMAGE_SRC}
                 alt='Patient using VR for rehabilitation'
                 width={600}
                 height={600}
+                unoptimized={shouldBypassVercelImageOptimization(
+                  BENEFITS_IMAGE_SRC,
+                )}
                 className='relative mx-auto w-full rounded-2xl'
               />
             </div>

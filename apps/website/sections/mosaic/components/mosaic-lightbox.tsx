@@ -4,6 +4,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import type { MosaicTileListItem } from '@virtality/shared/types'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS } from '../lib/mosaic-grid'
 import {
   getMosaicLightboxContent,
@@ -35,6 +36,7 @@ const MosaicLightboxImage = ({
       alt={content.alt}
       width={1600}
       height={1200}
+      unoptimized={shouldBypassVercelImageOptimization(content.src)}
       sizes='90vw'
       className={`h-auto ${MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS} w-auto max-w-full object-contain`}
     />

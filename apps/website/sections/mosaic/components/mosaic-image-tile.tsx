@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import type { MosaicTileListItem } from '@virtality/shared/types'
+import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import {
   MOSAIC_TILE_FRAME_CLASS,
   MOSAIC_TILE_OPEN_HOVER_CLASS,
@@ -40,6 +41,7 @@ const MosaicImageTile = ({ tile, onOpen }: MosaicImageTileProps) => {
         src={src}
         alt={alt}
         fill
+        unoptimized={shouldBypassVercelImageOptimization(src)}
         sizes='(max-width: 640px) 30vw, 240px'
         className='object-cover'
       />
