@@ -81,7 +81,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'While our clinical vision was being shared on stage, the rest of the Virtality team was running our very first exhibition booth. We gave live demonstrations to hundreds of physiotherapists, resulting in our very first market validation and securing our first cohort of pilot users who are now helping us improve Virtality in real-world clinical scenarios.',
+        text: 'While our clinical vision was being shared on stage, the rest of the Virtality team was running our very first exhibition booth. We gave live demonstrations to numerous physiotherapists, resulting in our very first market validation and securing our first cohort of pilot users who are now helping us improve Virtality in real-world clinical scenarios.',
       },
       {
         kind: 'image',
@@ -91,7 +91,11 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'A huge thank you to Dr. Despoina Ignatoglou and Mr. Charonitis Epameinondas for the prestigious invitation and flawless organization. We left Crete with immense market validation and a clear path forward.',
+        text: 'Initiatives like this play a vital role in unifying diverse scientific fields-advancing knowledge, fostering healthy modernization, and driving true interdisciplinary collaboration.',
+      },
+      {
+        kind: 'paragraph',
+        text: 'A huge thank you to Dr. Despoina Ignatoglou, President of the Scientific Committee, and Mr. Epameinondas Charonitis, President of the Organizing Committee and the Heraklion–Lasithi Regional Department, for the prestigious invitation, flawless organization, and excellent collaboration. We left Crete with immense market validation and a clear path forward.',
       },
     ],
   },
