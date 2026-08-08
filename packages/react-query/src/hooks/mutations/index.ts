@@ -38,7 +38,6 @@ export { useUpsertPatientSessionData } from './patient-session-data/use-upsert-p
 export { useCreatePatientSessionExercises } from './patient-session-exercise/use-create-patient-session-exercises.js'
 
 // Device mutations
-export { useSetDeviceId } from './device/use-set-device-id.js'
 export { useResetDeviceId } from './device/use-reset-device-id.js'
 
 // Waitlist mutations

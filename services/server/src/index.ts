@@ -13,6 +13,7 @@ import { authMiddleware } from './middleware/auth.ts'
 import { orpcMiddleware } from './middleware/orpc.ts'
 import { findDeviceByDeviceId } from './data/device.ts'
 import { ORPC_PREFIX } from '@virtality/shared/types'
+import { devicePairingRoutes } from './routes/device-pairing.ts'
 
 const ENV =
   process.env.ENV === 'production'
@@ -114,6 +115,8 @@ app.use('/api/v1/devices/:deviceId', async (c) => {
 
   return c.json({ device })
 })
+
+app.route('/api/v1/device-pairing', devicePairingRoutes)
 
 app.use(`${ORPC_PREFIX}/*`, authMiddleware, orpcMiddleware)
 

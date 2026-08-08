@@ -25,11 +25,13 @@ import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
 import { account } from './procedures/account/index.ts'
 import { pendingPasswordChange } from './procedures/pending-password-change/index.ts'
+import { devicePairing } from './procedures/device-pairing/index.ts'
 
 export const router = {
   me,
   user,
   pendingPasswordChange,
+  devicePairing,
   patient,
   patientSession,
   medicalHistory,

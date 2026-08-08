@@ -7,7 +7,6 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**"],
       "env": [
-        "REDIS_SECRET",
         "CONSOLE_DATABASE_URL",
         "SENTRY_AUTH_TOKEN",
         "OTEL_DEPLOYMENT_ENVIRONMENT",
@@ -63,7 +62,6 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**"],
       "env": [
-        "REDIS_SECRET",
         "ENV",
         "OTEL_DEPLOYMENT_ENVIRONMENT",
         "OTEL_EXPORTER_OTLP_ENDPOINT",

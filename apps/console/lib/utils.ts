@@ -2,7 +2,6 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import crypto from 'crypto'
 import { Exercise } from '@virtality/db'
-import { keyExists, setKey } from '@/redis'
 import { v4 as uuid } from 'uuid'
 import { deleteFile, uploadFile } from '@/S3'
 import { IMAGE_TYPE, ImageType } from '@/types/models'
@@ -10,38 +9,6 @@ import { ParsePayload } from 'zod/v4/core'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
-}
-
-export const generateCode = () =>
-  Math.floor(Math.random() * 1000_000)
-    .toString()
-    .padStart(6, '0')
-
-export const progressiveRetry = async (maxRetries = 3, baseDelay = 250) => {
-  let attempt = 0
-
-  while (attempt < maxRetries) {
-    try {
-      const code = generateCode()
-      await keyExists(code)
-      await setKey(code, crypto.randomBytes(16).toString('hex'))
-      return code
-    } catch (error) {
-      attempt++
-
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
-      console.log(`Attempt ${attempt} failed:`, errorMessage)
-
-      if (attempt >= maxRetries) {
-        throw new Error(`Failed after ${maxRetries} attempts`)
-      }
-
-      // Progressive backoff: wait longer each time
-      const delay = baseDelay * Math.pow(2, attempt - 1)
-      await new Promise((resolve) => setTimeout(resolve, delay))
-    }
-  }
 }
 
 /**

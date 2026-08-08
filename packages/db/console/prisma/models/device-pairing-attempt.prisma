@@ -1,0 +1,23 @@
+model DevicePairingAttempt {
+  id              String              @id @default(cuid())
+  deviceRecordId  String
+  userId          String
+  code            String
+  activeCode      String?             @unique
+  activeDeviceKey String?             @unique
+  status          DevicePairingStatus @default(PENDING)
+  headsetDeviceId String?
+  expiresAt       DateTime            @db.Timestamp(6)
+  createdAt       DateTime            @default(now()) @db.Timestamp(6)
+  completedAt     DateTime?           @db.Timestamp(6)
+  cancelledAt     DateTime?           @db.Timestamp(6)
+  supersededAt    DateTime?           @db.Timestamp(6)
+  expiredAt       DateTime?           @db.Timestamp(6)
+
+  device Device @relation(fields: [deviceRecordId], references: [id], onDelete: Cascade, map: "device_pairing_attempt_deviceRecordId_fkey")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "device_pairing_attempt_userId_fkey")
+
+  @@index([deviceRecordId, status], map: "device_pairing_attempt_deviceRecordId_status_idx")
+  @@index([userId, status], map: "device_pairing_attempt_userId_status_idx")
+  @@index([code, completedAt], map: "device_pairing_attempt_code_completedAt_idx")
+}

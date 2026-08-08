@@ -1,167 +1,261 @@
-import { useEffect, useReducer, useRef } from 'react'
-import { progressiveRetry } from '@/lib/utils'
-import { VRDevice } from '@/types/models'
-import { useRow, useStore } from 'tinybase/ui-react'
-import useSocketConnection from './use-socket-connection'
+'use client'
 
-type State = {
+import { useEffect, useReducer } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { getQueryClient, useORPC } from '@virtality/react-query'
+import { VRDevice } from '@/types/models'
+
+type PairingState = {
   status: 'paired' | 'pairing' | 'unpaired'
   isCodeFieldOpen: boolean
   verificationCode: string
+  attemptId: string
+  expiresAt: string
   error: string
 }
 
-const initialState: State = {
+const initialState: PairingState = {
   status: 'unpaired',
   isCodeFieldOpen: false,
   verificationCode: '',
+  attemptId: '',
+  expiresAt: '',
   error: '',
 }
 
 type Action =
-  | { type: 'setStatus'; payload: State['status'] }
-  | { type: 'setCodeFieldOpen'; payload: State['isCodeFieldOpen'] }
-  | { type: 'setVerificationCode'; payload: State['verificationCode'] }
-  | { type: 'setError'; payload: State['error'] }
-  | { type: 'resetState' }
-  | { type: 'restoreState'; payload: State }
-  | { type: 'updateDeviceCardState'; payload: Partial<State> }
+  | { type: 'restore'; payload: PairingState }
+  | { type: 'update'; payload: Partial<PairingState> }
+  | { type: 'reset' }
 
-const stateReducer = (state: State, action: Action): State => {
+const stateReducer = (state: PairingState, action: Action): PairingState => {
   switch (action.type) {
-    case 'setStatus':
-      return { ...state, status: action.payload }
-    case 'setCodeFieldOpen':
-      return { ...state, isCodeFieldOpen: action.payload }
-    case 'setVerificationCode':
-      return { ...state, verificationCode: action.payload }
-    case 'setError':
-      return { ...state, error: action.payload }
-    case 'resetState':
-      return { ...state, ...initialState }
-    case 'restoreState':
+    case 'restore':
+      return action.payload
+    case 'update':
       return { ...state, ...action.payload }
-    case 'updateDeviceCardState':
-      return { ...state, ...action.payload }
+    case 'reset':
+      return initialState
     default:
       return state
   }
 }
 
-interface useDeviceCardStateProps {
-  device: VRDevice
+const storageKey = (deviceRecordId: string) =>
+  `device-pairing:${deviceRecordId}`
+
+function readStoredPairing(deviceRecordId: string): PairingState | null {
+  try {
+    const raw = sessionStorage.getItem(storageKey(deviceRecordId))
+    if (!raw) return null
+
+    const stored = JSON.parse(raw) as Partial<PairingState>
+    if (
+      stored.status !== 'pairing' ||
+      typeof stored.attemptId !== 'string' ||
+      typeof stored.verificationCode !== 'string' ||
+      typeof stored.expiresAt !== 'string'
+    ) {
+      sessionStorage.removeItem(storageKey(deviceRecordId))
+      return null
+    }
+
+    return {
+      ...initialState,
+      ...stored,
+      isCodeFieldOpen: true,
+      error: '',
+    }
+  } catch {
+    sessionStorage.removeItem(storageKey(deviceRecordId))
+    return null
+  }
 }
 
-const useDeviceCardState = ({ device }: useDeviceCardStateProps) => {
-  const store = useStore()
+function writeStoredPairing(deviceRecordId: string, state: PairingState) {
+  sessionStorage.setItem(storageKey(deviceRecordId), JSON.stringify(state))
+}
+
+function clearStoredPairing(deviceRecordId: string) {
+  sessionStorage.removeItem(storageKey(deviceRecordId))
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+const useDeviceCardState = ({ device }: { device: VRDevice }) => {
   const [state, dispatch] = useReducer(stateReducer, initialState)
-  const socket = device.socket
-  const { connected, connect } = useSocketConnection({ device })
+  const orpc = useORPC()
+  const queryClient = getQueryClient()
 
-  const devicesLocalData = useRow('devices', device.data.id) as State & {
-    expirationTimestamp: number
-  }
+  const startMutation = useMutation(orpc.devicePairing.start.mutationOptions())
+  const cancelMutation = useMutation(
+    orpc.devicePairing.cancel.mutationOptions(),
+  )
 
-  const hasStartedPairing = useRef(false)
+  const statusOptions = orpc.devicePairing.status.queryOptions({
+    input: { attemptId: state.attemptId },
+  })
+  const statusQuery = useQuery({
+    ...statusOptions,
+    enabled: state.status === 'pairing' && Boolean(state.attemptId),
+    refetchInterval: (query) =>
+      !query.state.data || query.state.data.state === 'pending' ? 2000 : false,
+    refetchOnWindowFocus: true,
+  })
 
   useEffect(() => {
     if (device.data.deviceId) {
-      dispatch({ type: 'setStatus', payload: 'paired' })
+      clearStoredPairing(device.data.id)
+      dispatch({
+        type: 'update',
+        payload: {
+          status: 'paired',
+          isCodeFieldOpen: false,
+          error: '',
+        },
+      })
+      return
     }
-  }, [device])
 
-  const handleCodeGeneration = async () => {
-    try {
-      const code = await progressiveRetry()
-      if (!code) {
-        throw new Error('Failed to generate code.')
-      }
+    const stored = readStoredPairing(device.data.id)
+    if (stored) dispatch({ type: 'restore', payload: stored })
+  }, [device.data.deviceId, device.data.id])
 
-      dispatch({ type: 'setVerificationCode', payload: code })
-      device.mutations.setDeviceRoomCode(code)
-      return code
-    } catch (err) {
-      const error = err as Error
-      dispatch({ type: 'setError', payload: error.message })
-      throw error
+  useEffect(() => {
+    const pairingStatus = statusQuery.data?.state
+    if (
+      state.status !== 'pairing' ||
+      !pairingStatus ||
+      pairingStatus === 'pending'
+    )
+      return
+
+    clearStoredPairing(device.data.id)
+
+    if (pairingStatus === 'completed') {
+      dispatch({
+        type: 'update',
+        payload: {
+          status: 'paired',
+          isCodeFieldOpen: false,
+          error: '',
+        },
+      })
+      void queryClient.invalidateQueries({ queryKey: orpc.device.list.key() })
+      return
     }
-  }
 
-  const VRConnection = async () => {
-    if (!connected) {
-      if (device.data.deviceId) {
-        device.mutations.setDeviceRoomCode(device.data.deviceId)
-      }
+    const terminalMessage =
+      pairingStatus === 'expired'
+        ? 'Pairing code expired. Please generate a new code.'
+        : pairingStatus === 'superseded'
+          ? 'This pairing attempt was replaced or could not be completed.'
+          : 'Pairing was cancelled.'
 
-      try {
-        await connect({ timeoutMs: 10_000 })
-      } catch (error) {
-        dispatch({
-          type: 'setError',
-          payload:
-            error instanceof Error
-              ? error.message
-              : 'Unable to connect to socket server.',
-        })
-        throw error
-      }
-    }
-  }
+    dispatch({
+      type: 'update',
+      payload: {
+        status: 'unpaired',
+        isCodeFieldOpen: false,
+        verificationCode: '',
+        attemptId: '',
+        expiresAt: '',
+        error: terminalMessage,
+      },
+    })
+  }, [
+    device.data.id,
+    orpc.device.list,
+    queryClient,
+    state.status,
+    statusQuery.data?.state,
+  ])
+
+  useEffect(() => {
+    if (!statusQuery.error || state.status !== 'pairing') return
+    dispatch({
+      type: 'update',
+      payload: {
+        error: 'Unable to refresh pairing status. Retrying automatically.',
+      },
+    })
+  }, [state.status, statusQuery.error])
 
   const startPairing = async () => {
-    try {
-      dispatch({ type: 'setError', payload: '' })
-      dispatch({ type: 'setStatus', payload: 'pairing' })
-
-      const code = await handleCodeGeneration()
-      await VRConnection()
-
-      dispatch({ type: 'setCodeFieldOpen', payload: true })
-
-      store?.setRow('devices', device.data.id, {
-        ...devicesLocalData,
-        ...state,
+    dispatch({
+      type: 'update',
+      payload: {
         status: 'pairing',
-        verificationCode: code,
-        isCodeFieldOpen: true,
-        expirationTimestamp: Date.now(),
+        isCodeFieldOpen: false,
+        error: '',
+      },
+    })
+
+    try {
+      const result = await startMutation.mutateAsync({
+        deviceRecordId: device.data.id,
       })
-
-      hasStartedPairing.current = true
-    } catch (err) {
-      dispatch({ type: 'setStatus', payload: 'unpaired' })
-      dispatch({ type: 'setCodeFieldOpen', payload: false })
-
-      if (!(err instanceof Error) || !err.message) {
-        dispatch({
-          type: 'setError',
-          payload: 'Unable to start pairing. Please try again.',
-        })
+      const nextState: PairingState = {
+        status: 'pairing',
+        isCodeFieldOpen: true,
+        verificationCode: result.code,
+        attemptId: result.attemptId,
+        expiresAt: result.expiresAt.toISOString(),
+        error: '',
       }
+
+      writeStoredPairing(device.data.id, nextState)
+      dispatch({ type: 'restore', payload: nextState })
+    } catch (error) {
+      clearStoredPairing(device.data.id)
+      dispatch({
+        type: 'update',
+        payload: {
+          status: 'unpaired',
+          isCodeFieldOpen: false,
+          error: errorMessage(
+            error,
+            'Unable to start pairing. Please try again.',
+          ),
+        },
+      })
     }
   }
 
-  const cancelPairing = () => {
-    socket.disconnect()
-    dispatch({ type: 'resetState' })
-    hasStartedPairing.current = false
-    store?.delRow('devices', device.data.id)
+  const cancelPairing = async () => {
+    const attemptId = state.attemptId
+    clearStoredPairing(device.data.id)
+    dispatch({ type: 'reset' })
+
+    if (!attemptId) return
+
+    try {
+      await cancelMutation.mutateAsync({ attemptId })
+    } catch (error) {
+      dispatch({
+        type: 'update',
+        payload: {
+          error: errorMessage(
+            error,
+            'Unable to cancel pairing. The code will expire automatically.',
+          ),
+        },
+      })
+    }
   }
 
-  const resetState = () => dispatch({ type: 'resetState' })
-
-  const updateDeviceCardState = (payload: Partial<State>) => {
-    return dispatch({ type: 'updateDeviceCardState', payload })
+  const resetState = () => {
+    clearStoredPairing(device.data.id)
+    dispatch({ type: 'reset' })
   }
 
   return {
     state,
-    handler: {
-      startPairing,
-      cancelPairing,
-      resetState,
-      updateDeviceCardState,
-    },
+    isStarting: startMutation.isPending,
+    isCancelling: cancelMutation.isPending,
+    handler: { startPairing, cancelPairing, resetState },
   }
 }
 

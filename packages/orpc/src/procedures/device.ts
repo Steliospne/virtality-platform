@@ -1,4 +1,5 @@
 import { DeviceSchema } from '@virtality/db/definitions'
+import { ORPCError } from '@orpc/server'
 import { authed } from '../middleware/auth.ts'
 import { base } from '../context.ts'
 
@@ -16,10 +17,9 @@ const findDevice = authed
   .route({ path: '/device/find', method: 'GET' })
   .input(DeviceSchema.pick({ id: true }))
   .handler(async ({ context, input }) => {
-    const { prisma } = context
-    console.log(context.user)
-    const device = await prisma.device.findUnique({
-      where: { id: input.id, AND: [{ deletedAt: null }] },
+    const { prisma, user } = context
+    const device = await prisma.device.findFirst({
+      where: { id: input.id, userId: user.id, deletedAt: null },
     })
     return device
   })
@@ -50,37 +50,33 @@ const deleteDevice = authed
   .route({ path: '/device/delete', method: 'DELETE' })
   .input(DeviceSchema.pick({ id: true }))
   .handler(async ({ context, input }) => {
-    const { prisma } = context
-    const exists = await prisma.device.findUnique({
-      where: { id: input.id, AND: [{ deletedAt: null }] },
-    })
-    if (!exists) {
-      throw new Error('Device not found')
-    }
-
-    const device = await prisma.device.update({
-      data: { deletedAt: new Date() },
-      where: { id: input.id },
-    })
-
-    return device
-  })
-
-const setDeviceId = authed
-  .route({ path: '/device/set-device-id', method: 'POST' })
-  .input(DeviceSchema.pick({ id: true, deviceId: true }))
-  .handler(async ({ context, input }) => {
     const { prisma, user } = context
-    const exists = await prisma.device.findUnique({
-      where: { id: input.id, AND: [{ deletedAt: null }] },
+    const exists = await prisma.device.findFirst({
+      where: { id: input.id, userId: user.id, deletedAt: null },
+      select: { id: true },
     })
     if (!exists) {
-      throw new Error('Device not found')
+      throw new ORPCError('NOT_FOUND', { message: 'Device not found.' })
     }
-    const device = await prisma.device.update({
-      data: { deviceId: input.deviceId },
-      where: { id: input.id },
+
+    const now = new Date()
+    const device = await prisma.$transaction(async (tx) => {
+      await tx.devicePairingAttempt.updateMany({
+        where: { deviceRecordId: input.id, status: 'PENDING' },
+        data: {
+          status: 'CANCELLED',
+          activeCode: null,
+          activeDeviceKey: null,
+          cancelledAt: now,
+        },
+      })
+
+      return tx.device.update({
+        data: { deletedAt: now, deviceId: null },
+        where: { id: input.id },
+      })
     })
+
     return device
   })
 
@@ -88,16 +84,31 @@ const resetDeviceId = authed
   .route({ path: '/device/reset-device-id', method: 'POST' })
   .input(DeviceSchema.pick({ id: true }))
   .handler(async ({ context, input }) => {
-    const { prisma } = context
-    const exists = await prisma.device.findUnique({
-      where: { id: input.id, AND: [{ deletedAt: null }] },
+    const { prisma, user } = context
+    const exists = await prisma.device.findFirst({
+      where: { id: input.id, userId: user.id, deletedAt: null },
+      select: { id: true },
     })
     if (!exists) {
-      throw new Error('Device not found')
+      throw new ORPCError('NOT_FOUND', { message: 'Device not found.' })
     }
-    const device = await prisma.device.update({
-      data: { deviceId: null },
-      where: { id: input.id },
+
+    const now = new Date()
+    const device = await prisma.$transaction(async (tx) => {
+      await tx.devicePairingAttempt.updateMany({
+        where: { deviceRecordId: input.id, status: 'PENDING' },
+        data: {
+          status: 'CANCELLED',
+          activeCode: null,
+          activeDeviceKey: null,
+          cancelledAt: now,
+        },
+      })
+
+      return tx.device.update({
+        data: { deviceId: null },
+        where: { id: input.id },
+      })
     })
     return device
   })
@@ -106,7 +117,6 @@ export const device = {
   list: listDevice,
   find: findDevice,
   delete: deleteDevice,
-  setDeviceId: setDeviceId,
   resetDeviceId: resetDeviceId,
   create: createDevice,
   findByDeviceId: findDeviceByDeviceId,

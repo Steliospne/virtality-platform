@@ -17,41 +17,25 @@ import DeviceCardSkeleton from './device-card-skeleton'
 import { H3, P } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
 import useDevice from '@/hooks/use-device'
-import { getQueryClient, useORPC, useSetDeviceId } from '@virtality/react-query'
-import { subscribe } from '@/lib/device-event-controller'
-import { CONNECTION_EVENT, DEVICE_EVENT } from '@virtality/shared/types'
 
 interface DeviceProps {
   device: VRDevice
 }
 
 const DeviceCard = ({ device }: DeviceProps) => {
-  const queryClient = getQueryClient()
-  const orpc = useORPC()
-
   const { connected } = useSocketConnection({ device })
   const { removeDevice } = useDevice()
 
-  const { state, handler } = useDeviceCardState({
+  const { state, isStarting, isCancelling, handler } = useDeviceCardState({
     device,
   })
 
-  const { status, isCodeFieldOpen, error, verificationCode } = state
+  const { status, isCodeFieldOpen, error, verificationCode, expiresAt } = state
 
-  const { startPairing, cancelPairing, updateDeviceCardState, resetState } =
-    handler
+  const { startPairing, cancelPairing, resetState } = handler
 
-  const isPaired = Boolean(device.data.deviceId)
+  const isPaired = status === 'paired' || Boolean(device.data.deviceId)
   const [countdown, setCountdown] = useState(300)
-
-  const { mutate: setDeviceId } = useSetDeviceId({
-    onSuccess: () => {
-      device?.events.device.SendDeviceIdAck()
-      console.debug('setDeviceId success')
-      setTimeout(() => device?.socket.disconnect(), 1000)
-      return queryClient.invalidateQueries({ queryKey: orpc.device.list.key() })
-    },
-  })
 
   const handleRemoveDevice = () => {
     resetState()
@@ -60,67 +44,37 @@ const DeviceCard = ({ device }: DeviceProps) => {
   }
 
   const handlePairing = () => {
-    startPairing()
+    void startPairing()
   }
 
   useEffect(() => {
-    if (isCodeFieldOpen && !error) {
-      setCountdown(300)
+    if (!isCodeFieldOpen || !expiresAt) return
+    const updateCountdown = () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000),
+      )
+      setCountdown(seconds)
     }
-  }, [isCodeFieldOpen, error])
-
-  useEffect(() => {
-    if (!device) return
-
-    const handleSendDeviceId = async (payload: string) => {
-      console.debug('handleSendDeviceId', payload, status)
-      if (payload && status === 'pairing') {
-        setDeviceId({ id: device.data.id, deviceId: payload })
-
-        updateDeviceCardState({
-          status: 'paired',
-          isCodeFieldOpen: false,
-        })
-      }
-    }
-
-    const onDisconnect = () => {
-      if (status === 'paired') return
-      if (error) return
-      resetState()
-    }
-
-    return subscribe(
-      device.socket,
-      { ...DEVICE_EVENT, ...CONNECTION_EVENT },
-      {
-        SendDeviceId: handleSendDeviceId,
-        DISCONNECTION: onDisconnect,
-      },
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [device, status, error])
-
-  useEffect(() => {
-    if (countdown <= 0 || !isCodeFieldOpen || error) return
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => prev - 1)
-    }, 1000)
-
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 1000)
     return () => clearInterval(interval)
-  }, [countdown, isCodeFieldOpen, error])
+  }, [expiresAt, isCodeFieldOpen])
 
   const renderFooterActions = () => {
     if (error && !isCodeFieldOpen) {
       return (
         <div className='flex w-full gap-2'>
-          <Button onClick={cancelPairing} className='flex-1'>
+          <Button
+            onClick={() => void cancelPairing()}
+            disabled={isCancelling}
+            className='flex-1'
+          >
             Cancel
           </Button>
           <Button
             onClick={handlePairing}
-            disabled={status === 'pairing'}
+            disabled={isStarting}
             className='flex-1'
           >
             Retry
@@ -140,7 +94,9 @@ const DeviceCard = ({ device }: DeviceProps) => {
             className='w-full text-center'
             disabled
           />
-          <Button onClick={cancelPairing}>Cancel</Button>
+          <Button onClick={() => void cancelPairing()} disabled={isCancelling}>
+            Cancel
+          </Button>
         </div>
       )
     }
@@ -161,7 +117,7 @@ const DeviceCard = ({ device }: DeviceProps) => {
       <div className='flex w-full gap-2'>
         <Button
           variant='destructive'
-          disabled={status === 'pairing'}
+          disabled={status === 'pairing' || isStarting}
           onClick={handleRemoveDevice}
           className='flex-1'
         >
@@ -170,7 +126,7 @@ const DeviceCard = ({ device }: DeviceProps) => {
         <Button
           variant='default'
           onClick={handlePairing}
-          disabled={status === 'pairing'}
+          disabled={status === 'pairing' || isStarting}
           className='flex-1'
         >
           Pair
