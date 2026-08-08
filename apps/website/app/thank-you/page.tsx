@@ -3,13 +3,7 @@
 import Link from 'next/link'
 import { Card, CardContent } from '@virtality/ui/components/card'
 import { Button } from '@virtality/ui/components/button'
-import {
-  ArrowRight,
-  CalendarCheck,
-  Check,
-  Gift,
-  Sparkles,
-} from 'lucide-react'
+import { ArrowRight, CalendarCheck, Check, Gift, Sparkles } from 'lucide-react'
 import { animate } from 'motion/react'
 import { useEffect, useRef } from 'react'
 

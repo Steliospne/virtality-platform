@@ -2,7 +2,9 @@
 
 **Status:** Implemented; pending deployment and device smoke test  
 **Applies to:** Console, platform API, PostgreSQL, VR client, and socket service  
-**Decision:** PostgreSQL and the platform API are authoritative for pairing. Redis and temporary socket rooms are not required for pairing correctness.
+**Decision:** [ADR 0004](../adr/0004-device-pairing-out-of-band-bind.md). PostgreSQL and the platform API are authoritative for **Device Pairing**. Redis and temporary pair-code rooms are not required for pairing correctness.
+
+Domain terms: **Device Pairing**, **Headset Identity**, **Pairing Code**, **Pairing Claim**, **Unpair**, **Device Removal** (`apps/console/CONTEXT.md`).
 
 ## Final flow
 

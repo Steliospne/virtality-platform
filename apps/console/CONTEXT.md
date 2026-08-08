@@ -172,6 +172,30 @@ _Avoid_: Broad removal-semantics changes in the same iteration
 An email-approved profile flow where a signed-in user submits a new password, receives an approval email at their verified primary address, and explicitly confirms before the credential is set or changed. Distinct from **password reset**, which is unauthenticated account recovery.
 _Avoid_: Password reset, email verification, pending password setup as a separate concept
 
+**Device Pairing**:
+The exclusive bind of a durable **Headset Identity** onto one live console Device. Ownership of that identity belongs to the User who owns that Device. Success means the identity is persisted on that Device, not that a live Socket.IO peer is present. A Headset Identity has at most one live Device bind at a time; soft-deleted Devices do not count as live. The bind is completed out-of-band via a **Pairing Claim** and **Pairing Code**, not via a Socket.IO pair room.
+_Avoid_: Pair room, in-room pair, socket pairing, connected-as-paired, shared headset identity across Devices
+
+**Headset Identity**:
+The durable identifier of a physical headset (`deviceId`) that **Device Pairing** binds to a Device. Live treatment communication uses this identity after the bind; it is not itself a pair-room code or **Pairing Code**.
+_Avoid_: Pair code, room code, temporary pairing token, Pairing Code
+
+**Pairing Code**:
+The short-lived 6-digit secret shown by the console during **Device Pairing**. The VR presents it (with its **Headset Identity**) to complete the claim. Possession of a valid, unexpired, unconsumed code is the capability to claim; clinician cancel or TTL expiry invalidates it. After a successful claim, the same **Headset Identity** may briefly replay that completed claim so a lost response does not strand the VR; that replay does not create a second bind.
+_Avoid_: Room code, QR pairing secret, Headset Identity, reusable pair PIN
+
+**Pairing Claim**:
+The server-side outstanding claim for one Device during **Device Pairing**. The Device owner creates it; a successful VR claim consumes it and writes the **Headset Identity** onto that Device (subject to the one-owner rule). Cancel or expiry invalidates it without binding. A consumed claim cannot bind again; see **Pairing Code** for the short same-headset replay window.
+_Avoid_: Pair room, socket session, durable Device row
+
+**Unpair**:
+The clinician action that clears the **Headset Identity** from a Device without deleting the Device. It is performed by the Device owner in the console and succeeds without the headset present or acknowledging. It releases that identity from the Device so a later **Device Pairing** (on this Device or another) may bind it, subject to the one-owner rule on claim. Changing which headset a Device owns requires **Unpair** first, then a new **Device Pairing**; the bind is not overwritten in place. Unpair is an ownership action, not a live-peer disconnect.
+_Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating Unpair as a Socket.IO leave
+
+**Device Removal**:
+Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
+_Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
+
 ## Example Dialogue
 
 Dev: "Should we list every **Exercise Variant** directly in the picker?"  
