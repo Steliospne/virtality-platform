@@ -1,16 +1,16 @@
-name: Deploy Server Preview
+name: Deploy Server Production
 
 on:
   push:
     branches:
-      - dev
+      - main
     paths:
       - 'services/server/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'turbo.json'
       - '.dockerignore'
-      - '.github/workflows/deploy-server-preview.yml'
+      - '.github/workflows/deploy-server-production.yml'
 
 permissions:
   contents: read
@@ -45,7 +45,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:preview
+            ${{ env.IMAGE_NAME }}:production
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -55,7 +55,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy preview to VPS
+      - name: Deploy production to VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -63,6 +63,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -euo pipefail
-            docker pull ghcr.io/virtality-app/virtality-server:preview
+            docker pull ghcr.io/virtality-app/virtality-server:production
             cd ~/infra
-            ./scripts/infra.sh server-preview-up
+            ./scripts/infra.sh server-prod-up
