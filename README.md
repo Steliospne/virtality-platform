@@ -28,10 +28,8 @@
 
 ### Infra
 
-- `infra/github`
-- `infra/docker`
-- `infra/scripts`
-- `infra/docker/observability/observability.md`
-- `infra/docker/observability/logging-spec.md`
+Local/dev Docker helpers live under `infra/docker` (e.g. Postgres). Production VPS proxy and observability stacks are owned by the separate [`Virtality-app/infra`](https://github.com/Virtality-app/infra) repository.
+
+Log field contract: `docs/logging-spec.md`.
 
 ## Notes
