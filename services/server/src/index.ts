@@ -171,11 +171,12 @@ app.use('/api/casting/ice-servers', authMiddleware, async (c) => {
 
 let server: ReturnType<typeof serve> | undefined
 
-if (ENV === 'development') {
+if (ENV === 'development' || process.env.LISTEN === 'true') {
   logger.info('service.start', {
     host: '0.0.0.0',
     port: 8080,
     mode: 'node-server',
+    env: ENV,
   })
   server = serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
 }
