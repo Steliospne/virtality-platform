@@ -8,16 +8,18 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
+import { useSubscriptionCheckout } from '@/hooks/use-subscription-checkout'
 
 /**
  * Always-visible Remaining Time from the Entitlement Clock, plus Subscribe /
  * Renew Checkout CTA when not entitled and Billing Path Established.
  * Shows "Expired" when not entitled; remaining time never goes negative.
- * CTA click is a stub until Checkout session tickets wire Better Auth.
+ * CTA starts Better Auth Stripe Checkout (mode=subscription, canonical pro).
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()
   const { label, checkoutCtaLabel, isPending } = useLiveEntitlementStanding()
+  const { startCheckout, isStarting } = useSubscriptionCheckout()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
   const showCheckoutCta = !isPending && checkoutCtaLabel != null
@@ -29,9 +31,8 @@ export function RemainingTimeSidebar() {
           <SidebarMenuButton
             className='text-base'
             tooltip={checkoutCtaLabel}
-            onClick={() => {
-              // Checkout session creation is owned by issue #58.
-            }}
+            disabled={isStarting}
+            onClick={startCheckout}
           >
             <CreditCard />
             {!collapsed && <span>{checkoutCtaLabel}</span>}

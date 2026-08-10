@@ -139,6 +139,13 @@ export const auth = betterAuth({
       subscription: {
         enabled: true,
         plans: [{ name: 'pro', priceId: PRO_PLAN_PRICE_ID }],
+        // Paid Subscribe/Renew Checkout always collects a card. No-card trials
+        // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
+        getCheckoutSessionParams: async () => ({
+          params: {
+            payment_method_collection: 'always',
+          },
+        }),
       },
     }),
     phoneNumber({

@@ -192,7 +192,7 @@ export type EntitlementStanding = EntitlementClockStanding & {
   hadPaidBilling: boolean
   /**
    * Subscribe/Renew Checkout CTA. Null while entitled or without Billing Path.
-   * Click/session creation is owned by Checkout tickets.
+   * Console wires click to Better Auth Stripe Checkout (canonical pro plan).
    */
   checkoutCta: CheckoutCta | null
 }
