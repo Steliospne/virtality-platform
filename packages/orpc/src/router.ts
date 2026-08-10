@@ -20,6 +20,7 @@ import { promoVideo } from './procedures/promo-video.ts'
 import { mosaic } from './procedures/mosaic.ts'
 import { email } from './procedures/email.ts'
 import { testerCode } from './procedures/tester-code.ts'
+import { trialRedeemCode } from './procedures/trial-redeem-code.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
@@ -52,6 +53,7 @@ export const router = {
   mosaic,
   email,
   testerCode,
+  trialRedeemCode,
   bucket,
   favoriteExercise,
   dashboard,

@@ -40,3 +40,9 @@ enum DevicePairingStatus {
   SUPERSEDED
   EXPIRED
 }
+
+enum TrialRedeemCodeStatus {
+  unused
+  redeemed
+  already_entitled
+}

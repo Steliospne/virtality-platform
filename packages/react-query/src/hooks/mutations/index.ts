@@ -47,6 +47,10 @@ export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'
 export { useCreateTesterCode } from './tester-code/use-create-tester-code.js'
 export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'
 
+// Trial Redeem Code mutations
+export { useCreateTrialRedeemCode } from './trial-redeem-code/use-create-trial-redeem-code.js'
+export { useDeleteTrialRedeemCode } from './trial-redeem-code/use-delete-trial-redeem-code.js'
+
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'
 export { useSendEmailTemplate } from './email/use-send-email-template.js'

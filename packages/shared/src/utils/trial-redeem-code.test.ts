@@ -1,0 +1,235 @@
+import { describe, expect, it } from 'vitest'
+import {
+  DEFAULT_TRIAL_REDEEM_DAYS,
+  TRIAL_REDEEM_CODE_PREFIX,
+  TRIAL_REDEEM_CODE_TTL_MS,
+  createTrialRedeemCode,
+  deleteTrialRedeemCode,
+  generateTrialRedeemCode,
+  getTrialRedeemDisplayStatus,
+  listTrialRedeemCodes,
+  type TrialRedeemCodeRecord,
+  type TrialRedeemCodeStore,
+} from './trial-redeem-code.ts'
+
+const NOW = new Date('2026-08-10T12:00:00.000Z')
+
+function record(
+  overrides: Partial<TrialRedeemCodeRecord> = {},
+): TrialRedeemCodeRecord {
+  return {
+    id: 1,
+    code: 'PAY-ABCDEFGHIJ',
+    status: 'unused',
+    trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+    note: null,
+    createdAt: NOW,
+    usedAt: null,
+    usedBy: null,
+    ...overrides,
+  }
+}
+
+function createMemoryStore(
+  initial: TrialRedeemCodeRecord[] = [],
+): TrialRedeemCodeStore & { rows: TrialRedeemCodeRecord[] } {
+  const rows = [...initial]
+  let nextId = rows.reduce((max, row) => Math.max(max, row.id), 0) + 1
+
+  return {
+    rows,
+    findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
+    findById: async (id) => rows.find((row) => row.id === id) ?? null,
+    create: async (data) => {
+      const created = { id: nextId++, ...data }
+      rows.unshift(created)
+      return created
+    },
+    listAll: async () => [...rows].sort((a, b) => b.id - a.id),
+    deleteById: async (id) => {
+      const index = rows.findIndex((row) => row.id === id)
+      if (index === -1) throw new Error('NOT_FOUND')
+      rows.splice(index, 1)
+    },
+  }
+}
+
+describe('generateTrialRedeemCode', () => {
+  it('returns PAY- plus ten alphanumeric characters', () => {
+    const code = generateTrialRedeemCode(() => 'ABCDEFGHIJ')
+    expect(code).toBe(`${TRIAL_REDEEM_CODE_PREFIX}ABCDEFGHIJ`)
+    expect(code).toMatch(/^PAY-[A-Z0-9]{10}$/)
+  })
+})
+
+describe('getTrialRedeemDisplayStatus', () => {
+  it('reports unused while inside the one-week TTL', () => {
+    expect(
+      getTrialRedeemDisplayStatus(
+        record({
+          status: 'unused',
+          createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS + 1),
+        }),
+        NOW,
+      ),
+    ).toBe('unused')
+  })
+
+  it('derives expired for unused codes past the one-week TTL', () => {
+    expect(
+      getTrialRedeemDisplayStatus(
+        record({
+          status: 'unused',
+          createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
+        }),
+        NOW,
+      ),
+    ).toBe('expired')
+  })
+
+  it('keeps redeemed and already_entitled above TTL', () => {
+    const old = new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS * 2)
+    expect(
+      getTrialRedeemDisplayStatus(
+        record({ status: 'redeemed', createdAt: old }),
+        NOW,
+      ),
+    ).toBe('redeemed')
+    expect(
+      getTrialRedeemDisplayStatus(
+        record({ status: 'already_entitled', createdAt: old }),
+        NOW,
+      ),
+    ).toBe('already_entitled')
+  })
+})
+
+describe('createTrialRedeemCode', () => {
+  it('creates an unused PAY- code with default 14-day trial and optional note', async () => {
+    const store = createMemoryStore()
+    const created = await createTrialRedeemCode(
+      store,
+      { note: 'pilot clinic' },
+      {
+        now: () => NOW,
+        generateCode: () => 'PAY-TESTCODE01',
+      },
+    )
+
+    expect(created).toMatchObject({
+      code: 'PAY-TESTCODE01',
+      status: 'unused',
+      trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+      note: 'pilot clinic',
+      createdAt: NOW,
+      usedAt: null,
+      usedBy: null,
+    })
+    expect(created).not.toHaveProperty('trialStart')
+    expect(created).not.toHaveProperty('trialEnd')
+    expect(created).not.toHaveProperty('periodEnd')
+  })
+
+  it('stores an optional per-code trial day override', async () => {
+    const store = createMemoryStore()
+    const created = await createTrialRedeemCode(
+      store,
+      { trialDays: 30 },
+      {
+        now: () => NOW,
+        generateCode: () => 'PAY-OVERRIDE01',
+      },
+    )
+
+    expect(created.trialDays).toBe(30)
+  })
+})
+
+describe('listTrialRedeemCodes', () => {
+  it('lists codes with derived display status for Adminboard buckets', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 1,
+        code: 'PAY-UNUSED0001',
+        status: 'unused',
+        createdAt: NOW,
+      }),
+      record({
+        id: 2,
+        code: 'PAY-EXPIRED001',
+        status: 'unused',
+        createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
+      }),
+      record({
+        id: 3,
+        code: 'PAY-REDEEMED01',
+        status: 'redeemed',
+        createdAt: NOW,
+      }),
+      record({
+        id: 4,
+        code: 'PAY-ENTITLED01',
+        status: 'already_entitled',
+        createdAt: NOW,
+      }),
+    ])
+
+    const listed = await listTrialRedeemCodes(store, { now: () => NOW })
+
+    expect(listed.map((row) => [row.code, row.displayStatus])).toEqual([
+      ['PAY-ENTITLED01', 'already_entitled'],
+      ['PAY-REDEEMED01', 'redeemed'],
+      ['PAY-EXPIRED001', 'expired'],
+      ['PAY-UNUSED0001', 'unused'],
+    ])
+  })
+
+  it('filters by display status buckets', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 1,
+        code: 'PAY-UNUSED0001',
+        status: 'unused',
+        createdAt: NOW,
+      }),
+      record({
+        id: 2,
+        code: 'PAY-EXPIRED001',
+        status: 'unused',
+        createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
+      }),
+      record({
+        id: 3,
+        code: 'PAY-REDEEMED01',
+        status: 'redeemed',
+        createdAt: NOW,
+      }),
+    ])
+
+    const filtered = await listTrialRedeemCodes(store, {
+      now: () => NOW,
+      displayStatuses: ['expired', 'redeemed'],
+    })
+
+    expect(filtered.map((row) => row.code)).toEqual([
+      'PAY-REDEEMED01',
+      'PAY-EXPIRED001',
+    ])
+  })
+})
+
+describe('deleteTrialRedeemCode', () => {
+  it('deletes a code row by id', async () => {
+    const store = createMemoryStore([record({ id: 9, code: 'PAY-DELETEME01' })])
+
+    await deleteTrialRedeemCode(store, 9)
+    expect(store.rows).toEqual([])
+  })
+
+  it('rejects delete when the code row is missing', async () => {
+    const store = createMemoryStore()
+    await expect(deleteTrialRedeemCode(store, 404)).rejects.toMatchObject({
+      name: 'TrialRedeemCodeNotFoundError',
+    })
+  })
+})

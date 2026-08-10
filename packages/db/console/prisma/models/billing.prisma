@@ -22,3 +22,18 @@ model WaitingList {
   createdAt DateTime  @db.Timestamp(6)
   deletedAt DateTime? @db.Timestamp(6)
 }
+
+/// Issuance/consume store for Trial Redeem Codes. Entitlement clock lives on
+/// synced Stripe Subscription rows, not on this model.
+model TrialRedeemCode {
+  id        Int                    @id @default(autoincrement())
+  code      String                 @unique
+  status    TrialRedeemCodeStatus  @default(unused)
+  trialDays Int                    @default(14)
+  note      String?
+  createdAt DateTime               @db.Timestamp(6)
+  usedAt    DateTime?              @db.Timestamp(6)
+  usedBy    String?
+
+  usedByUser User? @relation(fields: [usedBy], references: [id], onDelete: SetNull)
+}

@@ -45,6 +45,10 @@ describe('adminboard table kit migration', () => {
     ['preset', 'components/resources/preset/preset-table.tsx'],
     ['exercises', 'components/resources/exercises/exercise-table.tsx'],
     ['tester-code', 'components/tester-code/tester-code-table.tsx'],
+    [
+      'trial-redeem-code',
+      'components/trial-redeem-code/trial-redeem-code-table.tsx',
+    ],
     ['user', 'components/resources/user/user-table.tsx'],
     ['patients', 'components/resources/patients/patient-table.tsx'],
     ['map', 'components/resources/map/map-table.tsx'],

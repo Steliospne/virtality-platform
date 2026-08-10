@@ -31,6 +31,8 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/href: ['"]\/benefits['"]/)
     expect(nav).toMatch(/href: ['"]\/features['"]/)
     expect(nav).toMatch(/href: ['"]\/email['"]/)
+    expect(nav).toMatch(/Billing/)
+    expect(nav).toMatch(/href: ['"]\/trial-redeem-codes['"]/)
     expect(nav).toMatch(/Admin/)
     expect(nav).toMatch(/href: ['"]\/tester-codes['"]/)
     expect(nav).toMatch(/href: ['"]\/admin\/create-user['"]/)
@@ -49,14 +51,14 @@ describe('adminboard sidebar chrome', () => {
     expect(shell).toMatch(/TopBar|top-bar/)
     expect(sidebar).toMatch(/collapsible=['"]icon['"]/)
     expect(sidebar).toMatch(/SidebarHeader/)
-    expect(sidebar).toMatch(/h-\[60px\]/)
+    expect(sidebar).toMatch(/h-15/)
     expect(sidebar).toMatch(/Collapsible/)
     expect(sidebar).toMatch(/sidebar-nav/)
     expect(topBar).toMatch(/SidebarTrigger/)
     expect(topBar).toMatch(/Adminboard/)
     expect(topBar).toMatch(/Avatar/)
     expect(topBar).not.toMatch(
-      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/tester-codes|\/bucket/,
+      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/tester-codes|\/trial-redeem-codes|\/bucket/,
     )
     expect(layout).toMatch(/AppShell|app-shell/)
     expect(layout).not.toMatch(/from ['"]@\/components\/layout\/navbar['"]/)

@@ -17,6 +17,7 @@ model User {
   banned              Boolean?
   role                String?       @default("user")
   testerCode          TesterCode?
+  trialRedeemCodes    TrialRedeemCode[]
 
   accounts         Account[]
   devices          Device[]

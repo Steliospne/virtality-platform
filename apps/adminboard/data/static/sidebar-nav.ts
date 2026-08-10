@@ -1,6 +1,7 @@
 import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import type { LucideIcon } from 'lucide-react'
 import {
+  CreditCard,
   Film,
   Grid3x3,
   Images,
@@ -49,6 +50,16 @@ export const sidebarNav: SidebarNavGroup[] = [
       { title: 'Benefits', href: '/benefits', icon: Sparkles },
       { title: 'Features', href: '/features', icon: Layers },
       { title: 'Email', href: '/email', icon: Mail },
+    ],
+  },
+  {
+    label: 'Billing',
+    items: [
+      {
+        title: 'Trial Redeem Codes',
+        href: '/trial-redeem-codes',
+        icon: CreditCard,
+      },
     ],
   },
   {
