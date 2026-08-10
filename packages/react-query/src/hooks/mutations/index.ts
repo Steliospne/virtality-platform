@@ -43,9 +43,9 @@ export { useResetDeviceId } from './device/use-reset-device-id.js'
 // Waitlist mutations
 export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'
 
-// Referral mutations
-export { useCreateReferralCode } from './referral/use-create-referral-code.js'
-export { useDeleteReferralCode } from './referral/use-delete-referral-code.js'
+// Tester Code mutations
+export { useCreateTesterCode } from './tester-code/use-create-tester-code.js'
+export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'
 
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'

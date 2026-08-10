@@ -44,7 +44,7 @@ describe('adminboard table kit migration', () => {
   it.each([
     ['preset', 'components/resources/preset/preset-table.tsx'],
     ['exercises', 'components/resources/exercises/exercise-table.tsx'],
-    ['referral', 'components/referral/referral-table.tsx'],
+    ['tester-code', 'components/tester-code/tester-code-table.tsx'],
     ['user', 'components/resources/user/user-table.tsx'],
     ['patients', 'components/resources/patients/patient-table.tsx'],
     ['map', 'components/resources/map/map-table.tsx'],

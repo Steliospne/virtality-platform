@@ -63,8 +63,8 @@ export { useMosaic } from './mosaic/use-mosaic.js'
 // Highlight card queries
 export { useHighlightCards } from './highlight-card/use-highlight-cards.js'
 
-// Referral queries
-export { useReferralCodes } from './referral/use-referral-codes.js'
+// Tester Code queries
+export { useTesterCodes } from './tester-code/use-tester-codes.js'
 
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'

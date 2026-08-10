@@ -16,7 +16,7 @@ model User {
   banReason           String?
   banned              Boolean?
   role                String?       @default("user")
-  testerCode          ReferralCode?
+  testerCode          TesterCode?
 
   accounts         Account[]
   devices          Device[]
@@ -78,7 +78,7 @@ model Verification {
   updatedAt  DateTime? @db.Timestamp(6)
 }
 
-model ReferralCode {
+model TesterCode {
   id     Int       @id @default(autoincrement())
   code   String    @unique
   usedAt DateTime? @db.Timestamp(6)

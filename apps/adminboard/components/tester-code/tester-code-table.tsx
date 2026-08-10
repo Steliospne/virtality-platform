@@ -8,35 +8,35 @@ import {
 import { PlusSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  useCreateReferralCode,
+  useCreateTesterCode,
   useORPC,
-  useReferralCodes,
+  useTesterCodes,
 } from '@virtality/react-query'
-import { columns } from '@/components/referral/columns'
+import { columns } from '@/components/tester-code/columns'
 import { Button } from '@/components/ui/button'
 import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 import { getQueryClient } from '@/react-query'
 
-const ReferralTable = () => {
+const TesterCodeTable = () => {
   const orpc = useORPC()
-  const { data, isPending } = useReferralCodes()
-  const { mutate: createReferralCode, isPending: isGenerating } =
-    useCreateReferralCode()
+  const { data, isPending } = useTesterCodes()
+  const { mutate: createTesterCode, isPending: isGenerating } =
+    useCreateTesterCode()
   const { table, globalFilter, setGlobalFilter } = useResourceTable({
     data: data ?? [],
     columns,
   })
 
   const handleGenerate = () => {
-    createReferralCode(undefined, {
+    createTesterCode(undefined, {
       onSuccess: () => {
-        toast.success('Referral code generated successfully')
+        toast.success('Tester code generated successfully')
         return getQueryClient().invalidateQueries({
-          queryKey: orpc.referral.list.key(),
+          queryKey: orpc.testerCode.list.key(),
         })
       },
       onError: (error) => {
-        toast.error('Failed to generate referral code')
+        toast.error('Failed to generate tester code')
         console.error(error)
       },
     })
@@ -65,4 +65,4 @@ const ReferralTable = () => {
   )
 }
 
-export default ReferralTable
+export default TesterCodeTable

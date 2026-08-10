@@ -1,31 +1,34 @@
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
 
+const TESTER_CODE_PREFIX = 'TE-'
+const TESTER_CODE_BODY_LENGTH = 10
+
 function generateCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  let body = ''
+  for (let i = 0; i < TESTER_CODE_BODY_LENGTH; i++) {
+    body += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  return code
+  return `${TESTER_CODE_PREFIX}${body}`
 }
 
-const listReferralCodes = authed
-  .route({ path: '/referral/list', method: 'GET' })
+const listTesterCodes = authed
+  .route({ path: '/tester-code/list', method: 'GET' })
   .handler(async ({ context }) => {
     const { prisma } = context
-    return prisma.referralCode.findMany({
+    return prisma.testerCode.findMany({
       orderBy: { id: 'desc' },
     })
   })
 
-const createReferralCode = authed
-  .route({ path: '/referral/create', method: 'POST' })
+const createTesterCode = authed
+  .route({ path: '/tester-code/create', method: 'POST' })
   .handler(async ({ context }) => {
     const { prisma } = context
 
     async function codeExists(code: string): Promise<boolean> {
-      const existing = await prisma.referralCode.findFirst({
+      const existing = await prisma.testerCode.findFirst({
         where: { code },
       })
       return !!existing
@@ -49,7 +52,7 @@ const createReferralCode = authed
     }
 
     const code = await generateUniqueCode()
-    return prisma.referralCode.create({
+    return prisma.testerCode.create({
       data: {
         code,
         usedAt: null,
@@ -58,18 +61,18 @@ const createReferralCode = authed
     })
   })
 
-const deleteReferralCode = authed
-  .route({ path: '/referral/delete', method: 'DELETE' })
+const deleteTesterCode = authed
+  .route({ path: '/tester-code/delete', method: 'DELETE' })
   .input(z.object({ id: z.number() }))
   .handler(async ({ context, input }) => {
     const { prisma } = context
-    await prisma.referralCode.delete({
+    await prisma.testerCode.delete({
       where: { id: input.id },
     })
   })
 
-export const referral = {
-  list: listReferralCodes,
-  create: createReferralCode,
-  delete: deleteReferralCode,
+export const testerCode = {
+  list: listTesterCodes,
+  create: createTesterCode,
+  delete: deleteTesterCode,
 }

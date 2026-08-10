@@ -54,7 +54,7 @@ export const sidebarNav: SidebarNavGroup[] = [
   {
     label: 'Admin',
     items: [
-      { title: 'Referral', href: '/referral', icon: LinkIcon },
+      { title: 'Tester Codes', href: '/tester-codes', icon: LinkIcon },
       { title: 'Create user', href: '/admin/create-user', icon: UserPlus },
     ],
   },

@@ -7,7 +7,7 @@ import {
   sendChangeEmailConfirmation,
 } from '@virtality/nodemailer'
 import { createAuthMiddleware, getOAuthState } from 'better-auth/api'
-import validateAndConsumeReferralCode from './lib/referral-code.ts'
+import validateAndConsumeTesterCode from './lib/tester-code.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -119,10 +119,10 @@ export const auth = betterAuth({
       create: {
         after: async (user, ctx) => {
           if (ctx?.path === '/sign-up/email') {
-            const referralCode = ctx.body?.referralCode
+            const testerCode = ctx.body?.testerCode
 
-            const isValid = await validateAndConsumeReferralCode(
-              referralCode,
+            const isValid = await validateAndConsumeTesterCode(
+              testerCode,
               user.id,
             )
 
@@ -134,8 +134,8 @@ export const auth = betterAuth({
           if (ctx?.path === '/callback/:id') {
             const additionalData = await getOAuthState()
 
-            const isValid = await validateAndConsumeReferralCode(
-              additionalData?.referralCode,
+            const isValid = await validateAndConsumeTesterCode(
+              additionalData?.testerCode,
               user.id,
             )
 
@@ -159,7 +159,7 @@ export const auth = betterAuth({
         const re = ctx.body?.re
 
         if (newSession?.user && re && typeof re === 'string') {
-          const isValid = await validateAndConsumeReferralCode(
+          const isValid = await validateAndConsumeTesterCode(
             re,
             newSession.user.id,
           )
@@ -173,9 +173,9 @@ export const auth = betterAuth({
       if (path.startsWith('/callback/:id')) {
         const additionalData = await getOAuthState()
 
-        if (newSession?.user?.id && additionalData?.referralCode) {
-          const isValid = await validateAndConsumeReferralCode(
-            additionalData?.referralCode,
+        if (newSession?.user?.id && additionalData?.testerCode) {
+          const isValid = await validateAndConsumeTesterCode(
+            additionalData?.testerCode,
             newSession?.user?.id,
           )
 

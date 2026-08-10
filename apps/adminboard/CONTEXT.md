@@ -83,11 +83,11 @@ _Avoid_: Blast send, publish
 ### Access and billing
 
 **Tester Code**:
-A one-time staff-issued code that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes which system matches. Adminboard issues and manages Tester Codes.
+A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric characters, that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Tester Codes under Admin (not Billing).
 _Avoid_: Referral Code, QA code, Testing Code, promo code
 
 **Trial Redeem Code**:
-A one-time code that starts a no-card **Trial Subscription** when redeemed at sign-up. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes which system matches. Adminboard issues and manages Trial Redeem Codes.
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Trial Redeem Codes under Billing.
 _Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
 
 **Trial Subscription**:

@@ -19,7 +19,7 @@ import { highlightCard } from './procedures/highlight-card.ts'
 import { promoVideo } from './procedures/promo-video.ts'
 import { mosaic } from './procedures/mosaic.ts'
 import { email } from './procedures/email.ts'
-import { referral } from './procedures/referral.ts'
+import { testerCode } from './procedures/tester-code.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
@@ -51,7 +51,7 @@ export const router = {
   promoVideo,
   mosaic,
   email,
-  referral,
+  testerCode,
   bucket,
   favoriteExercise,
   dashboard,

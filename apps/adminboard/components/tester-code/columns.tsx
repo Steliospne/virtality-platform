@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   getQueryClient,
-  useDeleteReferralCode,
+  useDeleteTesterCode,
   useORPC,
 } from '@virtality/react-query'
-import { ReferralCode } from '@virtality/db'
+import { TesterCode } from '@virtality/db'
 import { ColumnDef } from '@tanstack/react-table'
 import startCase from 'lodash.startcase'
 import { Copy, Ellipsis, Trash2 } from 'lucide-react'
 
-export const columns: ColumnDef<ReferralCode>[] = [
+export const columns: ColumnDef<TesterCode>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -82,23 +82,23 @@ export const columns: ColumnDef<ReferralCode>[] = [
     id: 'actions',
     cell: function ActionCell({ row }) {
       const orpc = useORPC()
-      const { mutate: deleteReferralCodeMutation } = useDeleteReferralCode({
+      const { mutate: deleteTesterCodeMutation } = useDeleteTesterCode({
         onSuccess: () => {
           getQueryClient().invalidateQueries({
-            queryKey: orpc.referral.list.key(),
+            queryKey: orpc.testerCode.list.key(),
           })
         },
       })
-      const referralCode = row.original
+      const testerCode = row.original
       const copyId = () => {
-        navigator.clipboard.writeText(String(referralCode.id))
+        navigator.clipboard.writeText(String(testerCode.id))
       }
       const copyCode = () => {
-        navigator.clipboard.writeText(referralCode.code)
+        navigator.clipboard.writeText(testerCode.code)
       }
 
       const handleDeleteAction = () =>
-        deleteReferralCodeMutation({ id: referralCode.id })
+        deleteTesterCodeMutation({ id: testerCode.id })
 
       return (
         <DropdownMenu>

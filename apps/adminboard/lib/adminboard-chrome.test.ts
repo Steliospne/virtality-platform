@@ -32,7 +32,7 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/href: ['"]\/features['"]/)
     expect(nav).toMatch(/href: ['"]\/email['"]/)
     expect(nav).toMatch(/Admin/)
-    expect(nav).toMatch(/href: ['"]\/referral['"]/)
+    expect(nav).toMatch(/href: ['"]\/tester-codes['"]/)
     expect(nav).toMatch(/href: ['"]\/admin\/create-user['"]/)
     expect(nav).not.toMatch(/\/resources\//)
     expect(nav).not.toMatch(/S3 bucket/)
@@ -56,7 +56,7 @@ describe('adminboard sidebar chrome', () => {
     expect(topBar).toMatch(/Adminboard/)
     expect(topBar).toMatch(/Avatar/)
     expect(topBar).not.toMatch(
-      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/referral|\/bucket/,
+      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/tester-codes|\/bucket/,
     )
     expect(layout).toMatch(/AppShell|app-shell/)
     expect(layout).not.toMatch(/from ['"]@\/components\/layout\/navbar['"]/)
