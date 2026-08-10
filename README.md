@@ -33,3 +33,9 @@ Local/dev Docker helpers live under `infra/docker` (e.g. Postgres). Production V
 Log field contract: `docs/logging-spec.md`.
 
 ## Notes
+
+### Git / releases
+
+- Open PRs against **`dev`** (deploys to staging / preview).
+- After staging verification, promote with a simple **`dev` → `main`** merge for production.
+- Do not open routine feature PRs into `main`. See `docs/agents/git-workflow.md`.

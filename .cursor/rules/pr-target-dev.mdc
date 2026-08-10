@@ -1,0 +1,18 @@
+---
+description: Open PRs against dev only; promote main after staging
+alwaysApply: true
+---
+
+# PR target: `dev`, not `main`
+
+Feature, fix, docs, and wayfinder implementation PRs must target **`dev`**.
+
+Flow:
+
+1. Open PR → **`dev`**
+2. Merge and test on **staging** (staging tracks `dev`)
+3. Promote to production with a simple **`dev` → `main`** merge
+
+Never open a routine work PR into `main`. When using `gh pr create`, pass `--base dev`.
+
+Details: `docs/agents/git-workflow.md`.
