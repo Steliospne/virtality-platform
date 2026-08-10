@@ -44,12 +44,27 @@ export type RenewPromptDeliveryStore = {
   create: (
     data: RenewPromptDeliveryCreateData,
   ) => Promise<RenewPromptDeliveryRecord>
-  /**
-   * Remove delivery records for this user whose epochKey is not the live
-   * clock epoch (drop backlog after Extension / Checkout re-arm).
-   * @returns number of rows dropped
-   */
+  /** Drop this user's delivery rows outside the live clock epoch. */
   deleteOutsideEpoch: (userId: string, epochKey: string) => Promise<number>
+}
+
+/** Live subscription fields needed to derive Entitlement Clock end. */
+export type RenewPromptSubscriptionClock = {
+  referenceId: string
+  status: string
+  trialEnd?: Date | null
+  periodEnd?: Date | null
+}
+
+export type RearmRenewPromptEpochResult = {
+  epochKey: string
+  dropped: number
+}
+
+export type RearmRenewPromptEpochAttempt = {
+  rearmed: boolean
+  epochKey: string | null
+  dropped: number
 }
 
 export type RenewPromptEmailPayload = {
@@ -98,22 +113,29 @@ export function renewPromptEpochKey(clockEnd: Date): string {
 }
 
 /**
- * Extension or successful Subscribe/Renew Checkout that changes the
- * Entitlement Clock end starts a new epoch: drop prior-epoch delivery
- * backlog so offsets can fire again toward the new clock end.
+ * Start a new renew epoch at `clockEnd`: drop prior-epoch delivery backlog so
+ * offsets can fire again toward the new Entitlement Clock end.
  */
 export async function rearmRenewPromptEpoch(
   deliveries: Pick<RenewPromptDeliveryStore, 'deleteOutsideEpoch'>,
   input: { userId: string; clockEnd: Date },
-): Promise<{ epochKey: string; dropped: number }> {
+): Promise<RearmRenewPromptEpochResult> {
   const epochKey = renewPromptEpochKey(input.clockEnd)
   const dropped = await deliveries.deleteOutsideEpoch(input.userId, epochKey)
   return { epochKey, dropped }
 }
 
+function sameRenewPromptEpoch(
+  left: Date | null | undefined,
+  right: Date,
+): boolean {
+  return (
+    left != null && renewPromptEpochKey(left) === renewPromptEpochKey(right)
+  )
+}
+
 /**
- * Re-arm only when the live clock end actually changes (Extension) or when
- * a successful Checkout establishes a new live clock end.
+ * Extension path: re-arm only when the live Entitlement Clock end changes.
  */
 export async function rearmRenewPromptEpochIfClockChanged(
   deliveries: Pick<RenewPromptDeliveryStore, 'deleteOutsideEpoch'>,
@@ -122,16 +144,13 @@ export async function rearmRenewPromptEpochIfClockChanged(
     previousClockEnd: Date | null
     nextClockEnd: Date | null
   },
-): Promise<{ rearmed: boolean; epochKey: string | null; dropped: number }> {
+): Promise<RearmRenewPromptEpochAttempt> {
   if (input.nextClockEnd == null) {
     return { rearmed: false, epochKey: null, dropped: 0 }
   }
 
   const epochKey = renewPromptEpochKey(input.nextClockEnd)
-  if (
-    input.previousClockEnd != null &&
-    renewPromptEpochKey(input.previousClockEnd) === epochKey
-  ) {
+  if (sameRenewPromptEpoch(input.previousClockEnd, input.nextClockEnd)) {
     return { rearmed: false, epochKey, dropped: 0 }
   }
 
@@ -143,18 +162,13 @@ export async function rearmRenewPromptEpochIfClockChanged(
 }
 
 /**
- * Successful Subscribe/Renew Checkout (or live webhook sync): start a new
- * epoch from the subscription's live clock end and drop prior backlog.
+ * Subscribe/Renew Checkout or live webhook sync: re-arm from the
+ * subscription's live clock end and drop prior-epoch backlog.
  */
 export async function rearmRenewPromptEpochForSubscription(
   deliveries: Pick<RenewPromptDeliveryStore, 'deleteOutsideEpoch'>,
-  subscription: {
-    referenceId: string
-    status: string
-    trialEnd?: Date | null
-    periodEnd?: Date | null
-  },
-): Promise<{ rearmed: boolean; epochKey: string | null; dropped: number }> {
+  subscription: RenewPromptSubscriptionClock,
+): Promise<RearmRenewPromptEpochAttempt> {
   const clockEnd = clockEndForSubscriptionStatus(
     subscription.status,
     subscription.trialEnd,

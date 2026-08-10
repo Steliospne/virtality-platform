@@ -4,6 +4,7 @@ import {
   rearmRenewPromptEpochForSubscription,
   rearmRenewPromptEpochIfClockChanged,
   type RenewPromptDeliveryStore,
+  type RenewPromptSubscriptionClock,
 } from '@virtality/shared/utils'
 
 export function createPrismaRenewPromptDeliveryStore(
@@ -27,20 +28,19 @@ export function createPrismaRenewPromptDeliveryStore(
   }
 }
 
+function deliveryStore(client: PrismaClient) {
+  return createPrismaRenewPromptDeliveryStore(client)
+}
+
 /** Drop prior-epoch renew backlog for a known new live clock end. */
 export async function rearmRenewPromptsForNewClockEnd(
   client: PrismaClient,
   input: { userId: string; clockEnd: Date },
 ) {
-  return rearmRenewPromptEpoch(
-    createPrismaRenewPromptDeliveryStore(client),
-    input,
-  )
+  return rearmRenewPromptEpoch(deliveryStore(client), input)
 }
 
-/**
- * Extension path: re-arm only when the Entitlement Clock end changed.
- */
+/** Extension path: re-arm only when the Entitlement Clock end changed. */
 export async function rearmRenewPromptsAfterExtension(
   client: PrismaClient,
   input: {
@@ -49,14 +49,7 @@ export async function rearmRenewPromptsAfterExtension(
     nextClockEnd: Date
   },
 ) {
-  return rearmRenewPromptEpochIfClockChanged(
-    createPrismaRenewPromptDeliveryStore(client),
-    {
-      userId: input.userId,
-      previousClockEnd: input.previousClockEnd,
-      nextClockEnd: input.nextClockEnd,
-    },
-  )
+  return rearmRenewPromptEpochIfClockChanged(deliveryStore(client), input)
 }
 
 /**
@@ -65,15 +58,10 @@ export async function rearmRenewPromptsAfterExtension(
  */
 export async function rearmRenewPromptsAfterCheckoutSubscription(
   client: PrismaClient,
-  subscription: {
-    referenceId: string
-    status: string
-    trialEnd?: Date | null
-    periodEnd?: Date | null
-  },
+  subscription: RenewPromptSubscriptionClock,
 ) {
   return rearmRenewPromptEpochForSubscription(
-    createPrismaRenewPromptDeliveryStore(client),
+    deliveryStore(client),
     subscription,
   )
 }

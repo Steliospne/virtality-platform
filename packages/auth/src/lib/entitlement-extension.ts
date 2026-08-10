@@ -123,7 +123,6 @@ export async function extendEntitlementClockForAdminboard(
     { now: deps.now },
   )
 
-  // Extension that changes clock end starts a new renew epoch and drops backlog.
   await rearmRenewPromptsAfterExtension(client, {
     userId: input.userId,
     previousClockEnd,

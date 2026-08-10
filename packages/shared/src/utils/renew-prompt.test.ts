@@ -375,7 +375,7 @@ describe('rearmRenewPromptEpoch', () => {
     ])
   })
 
-  it('re-arms only when Extension or Checkout changes the clock end', async () => {
+  it('does not re-arm when Extension leaves the clock end unchanged', async () => {
     const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
     const store = createDeliveryStore([
       {
@@ -400,6 +400,20 @@ describe('rearmRenewPromptEpoch', () => {
       dropped: 0,
     })
     expect(store.records).toHaveLength(1)
+  })
+
+  it('re-arms when Extension changes the clock end', async () => {
+    const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
+    const store = createDeliveryStore([
+      {
+        id: 'prior',
+        userId: 'user-1',
+        channel: 'email',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
 
     await expect(
       rearmRenewPromptEpochIfClockChanged(store, {
@@ -413,6 +427,10 @@ describe('rearmRenewPromptEpoch', () => {
       dropped: 1,
     })
     expect(store.records).toEqual([])
+  })
+
+  it('does not re-arm when Extension yields no next clock end', async () => {
+    const store = createDeliveryStore()
 
     await expect(
       rearmRenewPromptEpochIfClockChanged(store, {
@@ -423,7 +441,7 @@ describe('rearmRenewPromptEpoch', () => {
     ).resolves.toEqual({ rearmed: false, epochKey: null, dropped: 0 })
   })
 
-  it('starts a new epoch from a successful Subscribe/Renew subscription clock', async () => {
+  it('starts a new epoch from a live Subscribe/Renew subscription clock', async () => {
     const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
     const paidEnd = new Date('2026-09-10T12:00:00.000Z')
     const store = createDeliveryStore([
@@ -450,6 +468,20 @@ describe('rearmRenewPromptEpoch', () => {
       dropped: 1,
     })
     expect(store.records).toEqual([])
+  })
+
+  it('skips re-arm when the subscription has no live clock end', async () => {
+    const paidEnd = new Date('2026-09-10T12:00:00.000Z')
+    const store = createDeliveryStore([
+      {
+        id: 'stale-in-app',
+        userId: 'user-1',
+        channel: 'in_app',
+        daysBefore: 7,
+        epochKey: renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z')),
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
 
     await expect(
       rearmRenewPromptEpochForSubscription(store, {
@@ -459,6 +491,7 @@ describe('rearmRenewPromptEpoch', () => {
         periodEnd: paidEnd,
       }),
     ).resolves.toEqual({ rearmed: false, epochKey: null, dropped: 0 })
+    expect(store.records).toHaveLength(1)
   })
 })
 

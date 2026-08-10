@@ -1,38 +1,17 @@
+import { createPrismaRenewPromptDeliveryStore } from '@virtality/auth'
 import type { PrismaClient } from '@virtality/db'
 import { sendRenewPromptEmail } from '@virtality/nodemailer'
 import { getConsoleUrl } from '@virtality/shared/types'
-import { generateUUID } from '@virtality/shared/utils'
 import {
   evaluateAndDeliverRenewPrompts,
+  generateUUID,
   listInAppRenewPromptsForSeat,
   renewPromptEpochKey,
   type EntitlementClockStanding,
-  type RenewPromptDeliveryStore,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { loadEntitlementStandingForSession } from './entitlement-clock.ts'
 import { createPrismaRenewTriggerStore } from './renew-trigger.ts'
-
-export function createPrismaRenewPromptDeliveryStore(
-  prisma: PrismaClient,
-): RenewPromptDeliveryStore {
-  return {
-    listForUserAndEpoch: (userId, epochKey) =>
-      prisma.renewPromptDelivery.findMany({
-        where: { userId, epochKey },
-      }),
-    create: (data) => prisma.renewPromptDelivery.create({ data }),
-    deleteOutsideEpoch: async (userId, epochKey) => {
-      const result = await prisma.renewPromptDelivery.deleteMany({
-        where: {
-          userId,
-          epochKey: { not: epochKey },
-        },
-      })
-      return result.count
-    },
-  }
-}
 
 function standingEpochKey(
   standing: Pick<EntitlementClockStanding, 'clockEnd'>,
