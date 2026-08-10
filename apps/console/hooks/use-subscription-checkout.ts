@@ -12,27 +12,25 @@ import { startProSubscriptionCheckout } from '@/lib/subscription-checkout'
 export function useSubscriptionCheckout() {
   const [isStarting, setIsStarting] = useState(false)
 
-  const startCheckout = () => {
+  const startCheckout = async () => {
     if (isStarting) return
 
     setIsStarting(true)
-    void (async () => {
-      try {
-        const returnUrl =
-          `${window.location.pathname}${window.location.search}` || '/'
+    try {
+      const returnUrl =
+        `${window.location.pathname}${window.location.search}` || '/'
 
-        const result = await startProSubscriptionCheckout({
-          upgrade: (input) => authClient.subscription.upgrade(input),
-          returnUrl,
-        })
+      const result = await startProSubscriptionCheckout({
+        upgrade: (input) => authClient.subscription.upgrade(input),
+        returnUrl,
+      })
 
-        if (!result.ok) {
-          toast.error(result.message)
-        }
-      } finally {
-        setIsStarting(false)
+      if (!result.ok) {
+        toast.error(result.message)
       }
-    })()
+    } finally {
+      setIsStarting(false)
+    }
   }
 
   return {

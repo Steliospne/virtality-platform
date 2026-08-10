@@ -4,26 +4,20 @@ import {
   PRO_SUBSCRIPTION_PLAN,
   startProSubscriptionCheckout,
 } from './subscription-checkout.js'
-import { formatCheckoutCtaLabel } from '@virtality/shared/utils'
 
 describe('buildProCheckoutUpgradeInput', () => {
-  it('targets the canonical pro plan for Better Auth Checkout', () => {
-    const input = buildProCheckoutUpgradeInput({
+  it('targets the canonical pro plan and returns to the same URL on success or cancel', () => {
+    const input = buildProCheckoutUpgradeInput('/app')
+
+    expect(input).toEqual({
+      plan: PRO_SUBSCRIPTION_PLAN,
       successUrl: '/app',
       cancelUrl: '/app',
     })
-
-    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
-    expect(input.plan).toBe('pro')
-    expect(input.successUrl).toBe('/app')
-    expect(input.cancelUrl).toBe('/app')
   })
 
   it('does not request a trial period on the paid Checkout path', () => {
-    const input = buildProCheckoutUpgradeInput({
-      successUrl: '/',
-      cancelUrl: '/',
-    })
+    const input = buildProCheckoutUpgradeInput('/')
 
     expect(input).not.toHaveProperty('trialDays')
     expect(input).not.toHaveProperty('freeTrial')
@@ -32,34 +26,20 @@ describe('buildProCheckoutUpgradeInput', () => {
 })
 
 describe('startProSubscriptionCheckout', () => {
-  it('starts the same subscription upgrade for Subscribe and Renew labels', async () => {
+  it('starts Better Auth upgrade for the canonical pro plan at returnUrl', async () => {
     const calls: unknown[] = []
     const upgrade = async (input: unknown) => {
       calls.push(input)
       return { data: { url: 'https://checkout.stripe.test/cs_test' } }
     }
 
-    for (const cta of ['subscribe', 'renew'] as const) {
-      expect(formatCheckoutCtaLabel(cta)).toBe(
-        cta === 'subscribe' ? 'Subscribe' : 'Renew',
-      )
+    const result = await startProSubscriptionCheckout({
+      upgrade,
+      returnUrl: '/patients',
+    })
 
-      const result = await startProSubscriptionCheckout({
-        upgrade,
-        returnUrl: '/patients',
-      })
-
-      expect(result).toEqual({ ok: true })
-    }
-
-    expect(calls).toHaveLength(2)
-    expect(calls[0]).toEqual(
-      buildProCheckoutUpgradeInput({
-        successUrl: '/patients',
-        cancelUrl: '/patients',
-      }),
-    )
-    expect(calls[1]).toEqual(calls[0])
+    expect(result).toEqual({ ok: true })
+    expect(calls).toEqual([buildProCheckoutUpgradeInput('/patients')])
   })
 
   it('surfaces Better Auth upgrade failures without claiming success', async () => {
@@ -73,6 +53,20 @@ describe('startProSubscriptionCheckout', () => {
     expect(result).toEqual({
       ok: false,
       message: 'Already subscribed to this plan',
+    })
+  })
+
+  it('falls back when Better Auth omits an error message', async () => {
+    const result = await startProSubscriptionCheckout({
+      upgrade: async () => ({
+        error: { message: '   ' },
+      }),
+      returnUrl: '/',
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to start Checkout',
     })
   })
 })
