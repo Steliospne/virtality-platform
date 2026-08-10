@@ -3,10 +3,12 @@
  * CTA visibility. Uses synced Better Auth Subscription fields only.
  *
  * Clock end: trialing → trialEnd; active → periodEnd; anything else → no live
- * clock. Entitled for VR: status ∈ {active, trialing} AND now < clockEnd.
+ * clock (including Checkout `incomplete` before webhook/success sync). Entitled
+ * for VR: status ∈ {active, trialing} AND now < clockEnd.
  *
  * Checkout CTA: none while entitled; Subscribe vs Renew when not entitled and
  * Billing Path Established (Renew if subscription history shows a paid period).
+ * Abandon leaves soft-expired + CTA; only synced live Subscriptions restore.
  */
 
 import { hasBillingPathEstablished } from './console-session-gate.ts'
