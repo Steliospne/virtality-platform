@@ -18,3 +18,8 @@ export const RENEW_TRIGGER_CHANNEL_DESCRIPTIONS: Record<
 
 export const RENEW_TRIGGERS_PAGE_DESCRIPTION =
   'Configure independent email and in-app renew offsets. Lists may diverge. Email and in-app copy stay code-owned ([COPY]); they are not edited here.'
+
+export function formatRenewTriggerOffsetLabel(daysBefore: number): string {
+  const unit = daysBefore === 1 ? 'day' : 'days'
+  return `${daysBefore} ${unit} before`
+}

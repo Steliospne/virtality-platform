@@ -13,9 +13,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { getErrorMessage } from '@/lib/get-error-message'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
-import type {
-  RenewTriggerChannel,
-  RenewTriggerListItem,
+import {
+  DEFAULT_RENEW_TRIGGER_DAYS_BEFORE,
+  type RenewTriggerChannel,
+  type RenewTriggerListItem,
 } from '@virtality/shared/types'
 import {
   useCreateRenewTrigger,
@@ -25,6 +26,8 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export type RenewTriggerDialogMode = 'create' | 'edit' | null
+
+const DEFAULT_DAYS_BEFORE = String(DEFAULT_RENEW_TRIGGER_DAYS_BEFORE[0])
 
 type RenewTriggerFormDialogProps = {
   channel: RenewTriggerChannel
@@ -39,7 +42,7 @@ export function RenewTriggerFormDialog({
   mode,
   onClose,
 }: RenewTriggerFormDialogProps) {
-  const [daysBefore, setDaysBefore] = useState('7')
+  const [daysBefore, setDaysBefore] = useState(DEFAULT_DAYS_BEFORE)
   const [active, setActive] = useState(true)
   const { mutate: createRenewTrigger, isPending: isCreating } =
     useCreateRenewTrigger()
@@ -48,21 +51,22 @@ export function RenewTriggerFormDialog({
 
   const isPending = isCreating || isUpdating
   const open = mode !== null
+  const isEdit = mode === 'edit'
 
   useEffect(() => {
     if (!open) {
       return
     }
 
-    if (mode === 'edit' && trigger) {
+    if (isEdit && trigger) {
       setDaysBefore(String(trigger.daysBefore))
       setActive(trigger.active)
       return
     }
 
-    setDaysBefore('7')
+    setDaysBefore(DEFAULT_DAYS_BEFORE)
     setActive(true)
-  }, [mode, open, trigger])
+  }, [isEdit, open, trigger])
 
   const parseDaysBefore = () => {
     const parsed = Number.parseInt(daysBefore, 10)
@@ -122,11 +126,18 @@ export function RenewTriggerFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onClose()
+        }
+      }}
+    >
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>
-            {mode === 'edit' ? 'Edit renew trigger' : 'Add renew trigger'}
+            {isEdit ? 'Edit renew trigger' : 'Add renew trigger'}
           </DialogTitle>
           <DialogDescription>
             Set how many days before Entitlement Clock end this channel fires.
@@ -169,7 +180,7 @@ export function RenewTriggerFormDialog({
             onClick={handleSubmit}
             disabled={isPending}
           >
-            {mode === 'edit' ? 'Save' : 'Add'}
+            {isEdit ? 'Save' : 'Add'}
           </Button>
         </DialogFooter>
       </DialogContent>

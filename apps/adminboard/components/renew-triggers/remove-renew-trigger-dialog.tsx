@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Spinner } from '@virtality/ui/components/spinner'
 import { getErrorMessage } from '@/lib/get-error-message'
+import { formatRenewTriggerOffsetLabel } from '@/lib/renew-triggers'
 import type {
   RenewTriggerChannel,
   RenewTriggerListItem,
@@ -78,8 +79,7 @@ export function RemoveRenewTriggerDialog({
         {trigger ? (
           <div className='flex flex-col gap-2'>
             <p className='text-sm font-medium'>
-              {trigger.daysBefore} day{trigger.daysBefore === 1 ? '' : 's'}{' '}
-              before
+              {formatRenewTriggerOffsetLabel(trigger.daysBefore)}
               {trigger.active ? '' : ' (inactive)'}
             </p>
             {validationError ? (

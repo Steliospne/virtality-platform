@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RemoveRenewTriggerDialog } from '@/components/renew-triggers/remove-renew-trigger-dialog'
 import { getErrorMessage } from '@/lib/get-error-message'
+import { formatRenewTriggerOffsetLabel } from '@/lib/renew-triggers'
 import type {
   RenewTriggerChannel,
   RenewTriggerListItem,
@@ -50,8 +51,7 @@ export function RenewTriggerList({
           >
             <div className='min-w-0 flex-1'>
               <p className='font-medium'>
-                {trigger.daysBefore} day{trigger.daysBefore === 1 ? '' : 's'}{' '}
-                before
+                {formatRenewTriggerOffsetLabel(trigger.daysBefore)}
               </p>
               <label className='text-muted-foreground mt-1 flex items-center gap-2 text-sm'>
                 <Checkbox
@@ -89,8 +89,8 @@ export function RenewTriggerList({
       <RemoveRenewTriggerDialog
         channel={channel}
         open={triggerToRemove !== null}
-        onOpenChange={(open) => {
-          if (!open) {
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
             setTriggerToRemove(null)
           }
         }}

@@ -89,6 +89,18 @@ function assertValidDaysBefore(daysBefore: number): void {
   }
 }
 
+async function assertUniqueDaysBefore(
+  store: RenewTriggerStore,
+  channel: RenewTriggerChannel,
+  daysBefore: number,
+  exceptId?: string,
+): Promise<void> {
+  const duplicate = await store.findByChannelAndDaysBefore(channel, daysBefore)
+  if (duplicate && duplicate.id !== exceptId) {
+    throw new RenewTriggerDuplicateDaysBeforeError(channel, daysBefore)
+  }
+}
+
 export function activeDaysBeforeForChannel(
   triggers: readonly Pick<RenewTriggerListItem, 'daysBefore' | 'active'>[],
 ): number[] {
@@ -101,10 +113,7 @@ export function activeDaysBeforeForChannel(
 export function isRenewChannelSilenced(
   triggers: readonly Pick<RenewTriggerListItem, 'active'>[],
 ): boolean {
-  return (
-    triggers.length === 0 ||
-    triggers.every((trigger) => trigger.active === false)
-  )
+  return triggers.length === 0 || triggers.every((trigger) => !trigger.active)
 }
 
 export async function listRenewTriggers(
@@ -137,17 +146,7 @@ export async function createRenewTrigger(
   input: CreateRenewTriggerInput,
 ): Promise<RenewTriggerListItem> {
   assertValidDaysBefore(input.daysBefore)
-
-  const duplicate = await store.findByChannelAndDaysBefore(
-    input.channel,
-    input.daysBefore,
-  )
-  if (duplicate) {
-    throw new RenewTriggerDuplicateDaysBeforeError(
-      input.channel,
-      input.daysBefore,
-    )
-  }
+  await assertUniqueDaysBefore(store, input.channel, input.daysBefore)
 
   const created = await store.create({
     id: deps.generateId(),
@@ -178,23 +177,23 @@ export async function updateRenewTrigger(
   assertValidDaysBefore(nextDaysBefore)
 
   if (nextDaysBefore !== existing.daysBefore) {
-    const duplicate = await store.findByChannelAndDaysBefore(
+    await assertUniqueDaysBefore(
+      store,
       existing.channel,
       nextDaysBefore,
+      existing.id,
     )
-    if (duplicate && duplicate.id !== existing.id) {
-      throw new RenewTriggerDuplicateDaysBeforeError(
-        existing.channel,
-        nextDaysBefore,
-      )
-    }
   }
 
-  const updated = await store.update(input.id, {
-    ...(input.daysBefore !== undefined ? { daysBefore: input.daysBefore } : {}),
-    ...(input.active !== undefined ? { active: input.active } : {}),
-  })
+  const patch: RenewTriggerUpdateData = {}
+  if (input.daysBefore !== undefined) {
+    patch.daysBefore = input.daysBefore
+  }
+  if (input.active !== undefined) {
+    patch.active = input.active
+  }
 
+  const updated = await store.update(input.id, patch)
   return mapRenewTriggerToListItem(updated)
 }
 
