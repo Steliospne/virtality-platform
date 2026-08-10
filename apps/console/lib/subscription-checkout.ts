@@ -59,21 +59,18 @@ export function stripCheckoutReturnIntent(pathWithSearch: string): string {
 }
 
 /**
- * Poll Entitlement Clock only after Checkout success while still soft-expired.
- * Cancel/abandon never polls for restore (CTA stays). Stops once entitled or
+ * Whether to keep polling Entitlement Clock after Checkout success while still
+ * soft-expired. Cancel/abandon never polls (CTA stays). Stops once entitled or
  * after the max wait so we never invent entitlement client-side.
  */
-export function checkoutEntitlementRestoreRefetchInterval(input: {
+export function shouldPollCheckoutEntitlementRestore(input: {
   intent: CheckoutReturnIntent | null
   entitled: boolean
   startedAtMs: number
   nowMs: number
-}): number | false {
+}): boolean {
   if (input.intent !== 'success' || input.entitled) return false
-  if (input.nowMs - input.startedAtMs >= CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS) {
-    return false
-  }
-  return CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS
+  return input.nowMs - input.startedAtMs < CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS
 }
 
 export type ProCheckoutUpgradeInput = {

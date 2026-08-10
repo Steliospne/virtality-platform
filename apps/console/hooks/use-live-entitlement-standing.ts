@@ -13,8 +13,8 @@ import { authClient } from '@/auth-client'
 import {
   CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS,
   CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS,
-  checkoutEntitlementRestoreRefetchInterval,
   readCheckoutReturnIntent,
+  shouldPollCheckoutEntitlementRestore,
   stripCheckoutReturnIntent,
   type CheckoutReturnIntent,
 } from '@/lib/subscription-checkout'
@@ -26,7 +26,7 @@ function readIntentFromWindow(): CheckoutReturnIntent | null {
   return readCheckoutReturnIntent(window.location.search)
 }
 
-function replaceConsoleUrlWithoutCheckoutReturn() {
+function stripCheckoutReturnFromUrl() {
   if (typeof window === 'undefined') return
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
   const next = stripCheckoutReturnIntent(current)
@@ -78,9 +78,13 @@ export function useLiveEntitlementStanding() {
   })
 
   useEffect(() => {
-    if (checkoutReturnIntent === 'cancel') {
-      replaceConsoleUrlWithoutCheckoutReturn()
+    const dismissCheckoutReturn = () => {
+      stripCheckoutReturnFromUrl()
       setCheckoutReturnIntent(null)
+    }
+
+    if (checkoutReturnIntent === 'cancel') {
+      dismissCheckoutReturn()
       return
     }
 
@@ -88,8 +92,7 @@ export function useLiveEntitlementStanding() {
     if (query.isPending) return
 
     if (entitled) {
-      replaceConsoleUrlWithoutCheckoutReturn()
-      setCheckoutReturnIntent(null)
+      dismissCheckoutReturn()
       return
     }
 
@@ -97,29 +100,30 @@ export function useLiveEntitlementStanding() {
     restoreStartedAtMs.current = startedAtMs
 
     const tick = () => {
-      const interval = checkoutEntitlementRestoreRefetchInterval({
+      const keepPolling = shouldPollCheckoutEntitlementRestore({
         intent: 'success',
         entitled: false,
         startedAtMs,
         nowMs: Date.now(),
       })
-      if (interval === false) {
-        replaceConsoleUrlWithoutCheckoutReturn()
-        setCheckoutReturnIntent(null)
+      if (!keepPolling) {
+        dismissCheckoutReturn()
         return
       }
       void query.refetch()
     }
 
-    const id = window.setInterval(tick, CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS)
+    const pollId = window.setInterval(
+      tick,
+      CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS,
+    )
     const stopId = window.setTimeout(() => {
-      window.clearInterval(id)
-      replaceConsoleUrlWithoutCheckoutReturn()
-      setCheckoutReturnIntent(null)
+      window.clearInterval(pollId)
+      dismissCheckoutReturn()
     }, CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS)
 
     return () => {
-      window.clearInterval(id)
+      window.clearInterval(pollId)
       window.clearTimeout(stopId)
     }
   }, [checkoutReturnIntent, entitled, query.isPending, query.refetch])

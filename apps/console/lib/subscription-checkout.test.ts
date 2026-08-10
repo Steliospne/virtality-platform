@@ -1,40 +1,40 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildProCheckoutUpgradeInput,
-  checkoutEntitlementRestoreRefetchInterval,
+  CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS,
+  CHECKOUT_RETURN_PARAM,
   PRO_SUBSCRIPTION_PLAN,
   readCheckoutReturnIntent,
+  shouldPollCheckoutEntitlementRestore,
   startProSubscriptionCheckout,
   stripCheckoutReturnIntent,
-  withCheckoutReturnIntent,
 } from './subscription-checkout.js'
 
 describe('buildProCheckoutUpgradeInput', () => {
   it('targets the canonical pro plan and marks success vs cancel return on the console URL', () => {
     const input = buildProCheckoutUpgradeInput('/app')
 
-    expect(input).toEqual({
-      plan: PRO_SUBSCRIPTION_PLAN,
-      successUrl: withCheckoutReturnIntent('/app', 'success'),
-      cancelUrl: withCheckoutReturnIntent('/app', 'cancel'),
-    })
+    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
     expect(
       readCheckoutReturnIntent(new URL(input.successUrl, 'http://x').search),
     ).toBe('success')
     expect(
       readCheckoutReturnIntent(new URL(input.cancelUrl, 'http://x').search),
     ).toBe('cancel')
+    expect(new URL(input.successUrl, 'http://x').pathname).toBe('/app')
+    expect(new URL(input.cancelUrl, 'http://x').pathname).toBe('/app')
   })
 
   it('preserves existing query params on the return URL', () => {
     const input = buildProCheckoutUpgradeInput('/patients?tab=devices')
+    const success = new URL(input.successUrl, 'http://x')
+    const cancel = new URL(input.cancelUrl, 'http://x')
 
-    expect(input.successUrl).toBe(
-      withCheckoutReturnIntent('/patients?tab=devices', 'success'),
-    )
-    expect(input.cancelUrl).toBe(
-      withCheckoutReturnIntent('/patients?tab=devices', 'cancel'),
-    )
+    expect(success.pathname).toBe('/patients')
+    expect(success.searchParams.get('tab')).toBe('devices')
+    expect(success.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('success')
+    expect(cancel.searchParams.get('tab')).toBe('devices')
+    expect(cancel.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('cancel')
   })
 
   it('does not request a trial period on the paid Checkout path', () => {
@@ -63,16 +63,16 @@ describe('checkout return intent', () => {
 
   it('polls for entitlement restore only after success return while still soft-expired', () => {
     expect(
-      checkoutEntitlementRestoreRefetchInterval({
+      shouldPollCheckoutEntitlementRestore({
         intent: 'success',
         entitled: false,
         startedAtMs: 0,
         nowMs: 1_000,
       }),
-    ).toBe(2_000)
+    ).toBe(true)
 
     expect(
-      checkoutEntitlementRestoreRefetchInterval({
+      shouldPollCheckoutEntitlementRestore({
         intent: 'cancel',
         entitled: false,
         startedAtMs: 0,
@@ -81,7 +81,7 @@ describe('checkout return intent', () => {
     ).toBe(false)
 
     expect(
-      checkoutEntitlementRestoreRefetchInterval({
+      shouldPollCheckoutEntitlementRestore({
         intent: 'success',
         entitled: true,
         startedAtMs: 0,
@@ -90,11 +90,11 @@ describe('checkout return intent', () => {
     ).toBe(false)
 
     expect(
-      checkoutEntitlementRestoreRefetchInterval({
+      shouldPollCheckoutEntitlementRestore({
         intent: 'success',
         entitled: false,
         startedAtMs: 0,
-        nowMs: 60_000,
+        nowMs: CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS,
       }),
     ).toBe(false)
   })
