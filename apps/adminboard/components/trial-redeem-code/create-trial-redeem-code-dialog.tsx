@@ -41,31 +41,32 @@ export function CreateTrialRedeemCodeDialog({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
 
+    const payload: { trialDays?: number; note?: string } = {}
+
     const trimmedDays = trialDays.trim()
-    let parsedDays: number | undefined
     if (trimmedDays !== '') {
-      parsedDays = Number(trimmedDays)
+      const parsedDays = Number(trimmedDays)
       if (!Number.isInteger(parsedDays) || parsedDays < 1) {
         toast.error('Trial days must be a positive whole number')
         return
       }
+      payload.trialDays = parsedDays
     }
 
-    createTrialRedeemCode(
-      {
-        ...(parsedDays != null ? { trialDays: parsedDays } : {}),
-        ...(note.trim() !== '' ? { note: note.trim() } : {}),
+    const trimmedNote = note.trim()
+    if (trimmedNote !== '') {
+      payload.note = trimmedNote
+    }
+
+    createTrialRedeemCode(payload, {
+      onSuccess: (created) => {
+        toast.success(`Created ${created.code}`)
+        onOpenChange(false)
       },
-      {
-        onSuccess: (created) => {
-          toast.success(`Created ${created.code}`)
-          onOpenChange(false)
-        },
-        onError: () => {
-          toast.error('Failed to create Trial Redeem Code')
-        },
+      onError: () => {
+        toast.error('Failed to create Trial Redeem Code')
       },
-    )
+    })
   }
 
   return (

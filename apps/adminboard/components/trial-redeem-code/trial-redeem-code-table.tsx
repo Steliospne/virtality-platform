@@ -6,7 +6,7 @@ import {
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
 import { PlusSquare } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTrialRedeemCodes } from '@virtality/react-query'
 import {
   TRIAL_REDEEM_DISPLAY_STATUS_LABELS,
@@ -33,26 +33,15 @@ const TrialRedeemCodeTable = () => {
       enableColumnFilters: true,
     })
 
-  const statusFilters = useMemo(
-    () =>
-      TRIAL_REDEEM_DISPLAY_STATUSES.map((status) => ({
-        status,
-        label: TRIAL_REDEEM_DISPLAY_STATUS_LABELS[status],
-        checked: selectedStatuses.includes(status),
-      })),
-    [selectedStatuses],
-  )
-
   const toggleStatus = (status: TrialRedeemDisplayStatus) => {
-    setSelectedStatuses((current) => {
-      const next = current.includes(status)
-        ? current.filter((value) => value !== status)
-        : [...current, status]
-      setColumnFilters(
-        next.length > 0 ? [{ id: 'displayStatus', value: next }] : [],
-      )
-      return next
-    })
+    const next = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((value) => value !== status)
+      : [...selectedStatuses, status]
+
+    setSelectedStatuses(next)
+    setColumnFilters(
+      next.length > 0 ? [{ id: 'displayStatus', value: next }] : [],
+    )
   }
 
   return (
@@ -63,11 +52,11 @@ const TrialRedeemCodeTable = () => {
         setGlobalFilter={setGlobalFilter}
         filters={
           <div className='flex flex-wrap items-center gap-2'>
-            {statusFilters.map(({ status, label, checked }) => (
+            {TRIAL_REDEEM_DISPLAY_STATUSES.map((status) => (
               <FilterBadge
                 key={status}
-                name={label}
-                checked={checked}
+                name={TRIAL_REDEEM_DISPLAY_STATUS_LABELS[status]}
+                checked={selectedStatuses.includes(status)}
                 onClick={() => toggleStatus(status)}
               />
             ))}

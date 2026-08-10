@@ -6,18 +6,13 @@ import {
   listTrialRedeemCodes,
   TrialRedeemCodeNotFoundError,
   TrialRedeemCodeValidationError,
+  TRIAL_REDEEM_DISPLAY_STATUSES,
   type TrialRedeemCodeStore,
-  type TrialRedeemDisplayStatus,
 } from '@virtality/shared/utils'
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
 
-const trialRedeemDisplayStatusSchema = z.enum([
-  'unused',
-  'expired',
-  'redeemed',
-  'already_entitled',
-])
+const trialRedeemDisplayStatusSchema = z.enum(TRIAL_REDEEM_DISPLAY_STATUSES)
 
 const createInputSchema = z.object({
   trialDays: z.number().int().positive().optional(),
@@ -69,53 +64,47 @@ function throwTrialRedeemOrpcError(error: unknown): never {
   throw error
 }
 
+async function runTrialRedeemHandler<T>(
+  prisma: PrismaClient,
+  run: (store: TrialRedeemCodeStore) => Promise<T>,
+): Promise<T> {
+  try {
+    return await run(createPrismaTrialRedeemCodeStore(prisma))
+  } catch (error) {
+    throwTrialRedeemOrpcError(error)
+  }
+}
+
 const list = authed
   .route({ path: '/trial-redeem-code/list', method: 'GET' })
   .input(listInputSchema)
-  .handler(async ({ context, input }) => {
-    try {
-      return await listTrialRedeemCodes(
-        createPrismaTrialRedeemCodeStore(context.prisma),
-        {
-          displayStatuses: input?.displayStatuses as
-            | TrialRedeemDisplayStatus[]
-            | undefined,
-        },
-      )
-    } catch (error) {
-      throwTrialRedeemOrpcError(error)
-    }
-  })
+  .handler(async ({ context, input }) =>
+    runTrialRedeemHandler(context.prisma, (store) =>
+      listTrialRedeemCodes(store, {
+        displayStatuses: input?.displayStatuses,
+      }),
+    ),
+  )
 
 const create = authed
   .route({ path: '/trial-redeem-code/create', method: 'POST' })
   .input(createInputSchema)
-  .handler(async ({ context, input }) => {
-    try {
-      return await createTrialRedeemCode(
-        createPrismaTrialRedeemCodeStore(context.prisma),
-        {
-          trialDays: input.trialDays,
-          note: input.note,
-        },
-      )
-    } catch (error) {
-      throwTrialRedeemOrpcError(error)
-    }
-  })
+  .handler(async ({ context, input }) =>
+    runTrialRedeemHandler(context.prisma, (store) =>
+      createTrialRedeemCode(store, {
+        trialDays: input.trialDays,
+        note: input.note,
+      }),
+    ),
+  )
 
 const deleteProcedure = authed
   .route({ path: '/trial-redeem-code/delete', method: 'DELETE' })
   .input(deleteInputSchema)
   .handler(async ({ context, input }) => {
-    try {
-      await deleteTrialRedeemCode(
-        createPrismaTrialRedeemCodeStore(context.prisma),
-        input.id,
-      )
-    } catch (error) {
-      throwTrialRedeemOrpcError(error)
-    }
+    await runTrialRedeemHandler(context.prisma, (store) =>
+      deleteTrialRedeemCode(store, input.id),
+    )
   })
 
 export const trialRedeemCode = {

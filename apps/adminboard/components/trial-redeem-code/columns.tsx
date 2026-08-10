@@ -68,9 +68,8 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
       return <div>{TRIAL_REDEEM_DISPLAY_STATUS_LABELS[status]}</div>
     },
     filterFn: (row, _columnId, filterValue) => {
-      const selected = filterValue as string[] | undefined
-      if (!selected || selected.length === 0) return true
-      return selected.includes(row.original.displayStatus)
+      if (!Array.isArray(filterValue) || filterValue.length === 0) return true
+      return filterValue.includes(row.original.displayStatus)
     },
   },
   {

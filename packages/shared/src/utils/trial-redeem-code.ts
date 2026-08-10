@@ -6,15 +6,22 @@ export const DEFAULT_TRIAL_REDEEM_DAYS = 14
 /** Unused codes expire one week after creation (derived; not a stored status). */
 export const TRIAL_REDEEM_CODE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-export const TRIAL_REDEEM_CODE_PATTERN = /^PAY-[A-Z0-9]{10}$/i
+export const TRIAL_REDEEM_CODE_PATTERN = new RegExp(
+  `^${TRIAL_REDEEM_CODE_PREFIX}[A-Z0-9]{${TRIAL_REDEEM_CODE_BODY_LENGTH}}$`,
+  'i',
+)
 
 export type TrialRedeemStoredStatus = 'unused' | 'redeemed' | 'already_entitled'
 
+export const TRIAL_REDEEM_DISPLAY_STATUSES = [
+  'unused',
+  'expired',
+  'redeemed',
+  'already_entitled',
+] as const
+
 export type TrialRedeemDisplayStatus =
-  | 'unused'
-  | 'expired'
-  | 'redeemed'
-  | 'already_entitled'
+  (typeof TRIAL_REDEEM_DISPLAY_STATUSES)[number]
 
 export const TRIAL_REDEEM_DISPLAY_STATUS_LABELS: Record<
   TrialRedeemDisplayStatus,
@@ -25,13 +32,6 @@ export const TRIAL_REDEEM_DISPLAY_STATUS_LABELS: Record<
   redeemed: 'Redeemed',
   already_entitled: 'Already entitled',
 }
-
-export const TRIAL_REDEEM_DISPLAY_STATUSES: TrialRedeemDisplayStatus[] = [
-  'unused',
-  'expired',
-  'redeemed',
-  'already_entitled',
-]
 
 export type TrialRedeemCodeRecord = {
   id: number
@@ -101,17 +101,34 @@ export function getTrialRedeemDisplayStatus(
   record: Pick<TrialRedeemCodeRecord, 'status' | 'createdAt'>,
   now: Date = new Date(),
 ): TrialRedeemDisplayStatus {
-  if (record.status === 'redeemed') return 'redeemed'
-  if (record.status === 'already_entitled') return 'already_entitled'
-
-  const expiresAt = record.createdAt.getTime() + TRIAL_REDEEM_CODE_TTL_MS
-  if (now.getTime() >= expiresAt) return 'expired'
-  return 'unused'
+  switch (record.status) {
+    case 'redeemed':
+    case 'already_entitled':
+      return record.status
+    case 'unused': {
+      const expiresAt = record.createdAt.getTime() + TRIAL_REDEEM_CODE_TTL_MS
+      if (now.getTime() >= expiresAt) return 'expired'
+      return 'unused'
+    }
+  }
 }
 
 export type CreateTrialRedeemCodeInput = {
   trialDays?: number
   note?: string | null
+}
+
+async function generateUniqueTrialRedeemCode(
+  store: TrialRedeemCodeStore,
+  generateCode: () => string,
+): Promise<string> {
+  const maxAttempts = 100
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const code = generateCode()
+    const existing = await store.findByCode(code)
+    if (!existing) return code
+  }
+  throw new Error('Failed to generate unique Trial Redeem Code')
 }
 
 export async function createTrialRedeemCode(
@@ -127,22 +144,14 @@ export async function createTrialRedeemCode(
     )
   }
 
-  const note =
-    input.note == null || input.note.trim() === '' ? null : input.note.trim()
+  const trimmedNote = input.note?.trim()
+  const note = trimmedNote ? trimmedNote : null
 
-  async function generateUniqueCode(): Promise<string> {
-    let attempts = 0
-    const maxAttempts = 100
-    while (attempts < maxAttempts) {
-      const code = (runtime.generateCode ?? generateTrialRedeemCode)()
-      const existing = await store.findByCode(code)
-      if (!existing) return code
-      attempts++
-    }
-    throw new Error('Failed to generate unique Trial Redeem Code')
-  }
+  const code = await generateUniqueTrialRedeemCode(
+    store,
+    runtime.generateCode ?? generateTrialRedeemCode,
+  )
 
-  const code = await generateUniqueCode()
   return store.create({
     code,
     status: 'unused',
