@@ -230,7 +230,7 @@ export function DataTableBody<TData, TValue>({
   return (
     <div className={cn('overflow-hidden rounded-md border', className)}>
       <Table className='h-full'>
-        <TableHeader className='sticky top-15 z-10 bg-white dark:bg-zinc-950'>
+        <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
