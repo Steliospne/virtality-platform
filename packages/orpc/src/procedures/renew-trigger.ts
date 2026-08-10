@@ -20,7 +20,7 @@ import {
 import { authed } from '../middleware/auth.ts'
 import { base } from '../context.ts'
 
-function createPrismaRenewTriggerStore(
+export function createPrismaRenewTriggerStore(
   prisma: PrismaClient,
 ): RenewTriggerStore {
   return {

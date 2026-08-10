@@ -113,3 +113,7 @@ _Avoid_: Stripe Billing reminder, renew master switch
 **Renew In-app Trigger**:
 An Adminboard-configured row `{ daysBefore, active }` that schedules an in-app renew prompt offset before **Entitlement Clock** end. Independent from the email list. Empty or all-inactive rows silence in-app (no separate master switch). Chrome copy stays code-owned / `[COPY]`.
 _Avoid_: toast blast, global notification toggle
+
+**Renew Prompt Delivery**:
+A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry.
+_Avoid_: Stripe Billing reminder, renew master switch

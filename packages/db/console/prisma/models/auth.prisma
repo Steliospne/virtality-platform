@@ -35,6 +35,7 @@ model User {
   adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
   pendingPasswordChanges       PendingPasswordChange[]
   devicePairingAttempts        DevicePairingAttempt[]
+  renewPromptDeliveries        RenewPromptDelivery[]
 }
 
 model Account {

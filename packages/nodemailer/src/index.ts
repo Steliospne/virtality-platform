@@ -7,6 +7,7 @@ export { sendEmail } from './lib/send-email.js'
 export { sendChangeEmailConfirmation } from './lib/send-change-email-confirmation.js'
 export { sendPendingPasswordChange } from './lib/send-pending-password-change.js'
 export { sendTrialRedeemCodeEmail } from './lib/send-trial-redeem-code.js'
+export { sendRenewPromptEmail } from './lib/send-renew-prompt.js'
 
 export type {
   EmailData,
@@ -16,3 +17,4 @@ export type {
 export type { SendEmailOptions } from './lib/send-email.js'
 export type { SendWaitlistNotificationInput } from './lib/send-waitlist-notification.js'
 export type { SendTrialRedeemCodeEmailData } from './lib/send-trial-redeem-code.js'
+export type { SendRenewPromptEmailData } from './lib/send-renew-prompt.js'

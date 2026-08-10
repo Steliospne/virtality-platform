@@ -1,0 +1,17 @@
+// Renew prompt delivery records (epoch-keyed System Email + in-app)
+
+model RenewPromptDelivery {
+  id          String              @id
+  userId      String
+  channel     RenewTriggerChannel
+  daysBefore  Int
+  /// Entitlement Clock end ISO instant for this epoch (Stripe SoT).
+  epochKey    String
+  deliveredAt DateTime            @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, daysBefore, epochKey])
+  @@index([userId, epochKey])
+  @@index([userId, channel, epochKey])
+}

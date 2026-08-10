@@ -3,8 +3,10 @@ import {
   buildEntitlementStanding,
   canLaunchVrPrograms,
   formatRemainingTimeLabel,
+  hadPaidBillingHistory,
   pickEntitlementSubscription,
   remainingMsFromClockEnd,
+  resolveCheckoutCta,
   resolveEntitlementClock,
 } from './entitlement-clock.ts'
 
@@ -207,5 +209,139 @@ describe('buildEntitlementStanding', () => {
     })
     expect(standing.entitled).toBe(true)
     expect(standing.canLaunchVr).toBe(true)
+  })
+
+  it('hides Subscribe/Renew CTA while entitled', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(true)
+    expect(standing.checkoutCta).toBeNull()
+    expect(standing.billingPathEstablished).toBe(true)
+    expect(standing.hadPaidBilling).toBe(true)
+  })
+
+  it('shows Subscribe after trial-style history with no paid path', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(false)
+    expect(standing.checkoutCta).toBe('subscribe')
+  })
+
+  it('shows Renew after a previously paid billing Subscription', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(false)
+    expect(standing.checkoutCta).toBe('renew')
+  })
+
+  it('hides Checkout CTA when Billing Path is not established', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [],
+    })
+    expect(standing.entitled).toBe(false)
+    expect(standing.billingPathEstablished).toBe(false)
+    expect(standing.checkoutCta).toBeNull()
+  })
+})
+
+describe('hadPaidBillingHistory', () => {
+  it('is false for canceled trial-only seats where period ended with trial', () => {
+    expect(
+      hadPaidBillingHistory([
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ]),
+    ).toBe(false)
+  })
+
+  it('is true when a paid period continued past trial end', () => {
+    expect(
+      hadPaidBillingHistory([
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ]),
+    ).toBe(true)
+  })
+
+  it('is true for delinquency statuses that imply a paid relationship', () => {
+    expect(hadPaidBillingHistory([{ status: 'past_due' }])).toBe(true)
+    expect(hadPaidBillingHistory([{ status: 'unpaid' }])).toBe(true)
+    expect(hadPaidBillingHistory([{ status: 'paused' }])).toBe(true)
+  })
+})
+
+describe('resolveCheckoutCta', () => {
+  it('returns null while entitled even with paid history', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: true,
+        billingPathEstablished: true,
+        hadPaidBilling: true,
+      }),
+    ).toBeNull()
+  })
+
+  it('returns null when Billing Path is not established', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: false,
+        billingPathEstablished: false,
+        hadPaidBilling: false,
+      }),
+    ).toBeNull()
+  })
+
+  it('returns subscribe when not entitled without paid history', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: false,
+        billingPathEstablished: true,
+        hadPaidBilling: false,
+      }),
+    ).toBe('subscribe')
+  })
+
+  it('returns renew when not entitled with paid history', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: false,
+        billingPathEstablished: true,
+        hadPaidBilling: true,
+      }),
+    ).toBe('renew')
   })
 })

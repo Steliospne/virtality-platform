@@ -1,11 +1,15 @@
 /**
- * Entitlement Clock read model for Remaining Time, VR soft gate, and (later)
- * Checkout CTA visibility. Uses synced Better Auth Subscription fields only.
+ * Entitlement Clock read model for Remaining Time, VR soft gate, and Checkout
+ * CTA visibility. Uses synced Better Auth Subscription fields only.
  *
  * Clock end: trialing → trialEnd; active → periodEnd; anything else → no live
  * clock. Entitled for VR: status ∈ {active, trialing} AND now < clockEnd.
+ *
+ * Checkout CTA: none while entitled; Subscribe vs Renew when not entitled and
+ * Billing Path Established (Renew if subscription history shows a paid period).
  */
 
+import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
 export type EntitlementClockSubscription = {
@@ -119,13 +123,83 @@ export function canLaunchVrPrograms(input: {
   return input.entitled
 }
 
-export type EntitlementStanding = EntitlementClockStanding & {
-  /** VR soft gate including admin/tester bypass. */
-  canLaunchVr: boolean
+/** Subscribe vs Renew Checkout CTA; null when CTA is hidden. */
+export type CheckoutCta = 'subscribe' | 'renew'
+
+const PAID_BILLING_STATUSES = new Set([
+  'active',
+  'past_due',
+  'unpaid',
+  'paused',
+])
+
+/**
+ * True when one synced Subscription indicates a completed paid billing period
+ * (not only trial-style entitlement that never converted).
+ */
+function subscriptionImpliesPaidBilling(
+  sub: EntitlementClockSubscription,
+): boolean {
+  if (PAID_BILLING_STATUSES.has(sub.status)) return true
+  if (sub.periodEnd == null) return false
+  if (sub.trialEnd == null) return true
+  return sub.periodEnd.getTime() > sub.trialEnd.getTime()
 }
 
 /**
- * One read model for Remaining Time + VR soft gate from synced Subscriptions.
+ * True when synced Subscription history indicates a completed paid billing
+ * period (not only trial-style entitlement that never converted).
+ */
+export function hadPaidBillingHistory(
+  subscriptions: readonly EntitlementClockSubscription[],
+): boolean {
+  return subscriptions.some(subscriptionImpliesPaidBilling)
+}
+
+/**
+ * Checkout CTA visibility: entitled users never see Subscribe/Renew; soft-
+ * expired clinicians with Billing Path Established see Subscribe or Renew.
+ */
+export function resolveCheckoutCta(input: {
+  entitled: boolean
+  billingPathEstablished: boolean
+  hadPaidBilling: boolean
+}): CheckoutCta | null {
+  if (input.entitled || !input.billingPathEstablished) return null
+  return input.hadPaidBilling ? 'renew' : 'subscribe'
+}
+
+/** Clinician-facing CTA label; null when the CTA is hidden. */
+export function formatCheckoutCtaLabel(
+  cta: CheckoutCta | null | undefined,
+): string | null {
+  switch (cta) {
+    case 'subscribe':
+      return 'Subscribe'
+    case 'renew':
+      return 'Renew'
+    default:
+      return null
+  }
+}
+
+export type EntitlementStanding = EntitlementClockStanding & {
+  /** VR soft gate including admin/tester bypass. */
+  canLaunchVr: boolean
+  /** Billing Path Established: ≥1 synced Subscription (any status). */
+  billingPathEstablished: boolean
+  /** Prior paid billing period in synced Subscription history. */
+  hadPaidBilling: boolean
+  /**
+   * Subscribe/Renew Checkout CTA. Null while entitled or without Billing Path.
+   * Click/session creation is owned by Checkout tickets.
+   */
+  checkoutCta: CheckoutCta | null
+}
+
+/**
+ * One read model for Remaining Time, VR soft gate, and Checkout CTA visibility
+ * from synced Subscriptions.
  */
 export function buildEntitlementStanding(input: {
   now: Date
@@ -136,11 +210,20 @@ export function buildEntitlementStanding(input: {
     now: input.now,
     subscription: pickEntitlementSubscription(input.subscriptions),
   })
+  const billingPathEstablished = hasBillingPathEstablished(input.subscriptions)
+  const hadPaidBilling = hadPaidBillingHistory(input.subscriptions)
   return {
     ...clock,
     canLaunchVr: canLaunchVrPrograms({
       entitled: clock.entitled,
       role: input.role,
+    }),
+    billingPathEstablished,
+    hadPaidBilling,
+    checkoutCta: resolveCheckoutCta({
+      entitled: clock.entitled,
+      billingPathEstablished,
+      hadPaidBilling,
     }),
   }
 }

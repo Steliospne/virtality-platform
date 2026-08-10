@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock } from 'lucide-react'
+import { Clock, CreditCard } from 'lucide-react'
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -10,17 +10,34 @@ import {
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 
 /**
- * Always-visible Remaining Time from the Entitlement Clock.
+ * Always-visible Remaining Time from the Entitlement Clock, plus Subscribe /
+ * Renew Checkout CTA when not entitled and Billing Path Established.
  * Shows "Expired" when not entitled; remaining time never goes negative.
+ * CTA click is a stub until Checkout session tickets wire Better Auth.
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()
-  const { label, isPending } = useLiveEntitlementStanding()
+  const { label, checkoutCtaLabel, isPending } = useLiveEntitlementStanding()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
+  const showCheckoutCta = !isPending && checkoutCtaLabel != null
 
   return (
     <SidebarMenu>
+      {showCheckoutCta ? (
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className='text-base'
+            tooltip={checkoutCtaLabel}
+            onClick={() => {
+              // Checkout session creation is owned by issue #58.
+            }}
+          >
+            <CreditCard />
+            {!collapsed && <span>{checkoutCtaLabel}</span>}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ) : null}
       <SidebarMenuItem>
         <SidebarMenuButton
           className='pointer-events-none text-base'

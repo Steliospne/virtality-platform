@@ -78,6 +78,9 @@ export { useEntitlementStanding } from './entitlement-clock/use-entitlement-stan
 // Renew trigger queries
 export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
 
+// Renew prompt queries
+export { useInAppRenewPrompts } from './renew-prompt/use-in-app-renew-prompts.js'
+
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'
 export { useBucketObjectReferences } from './bucket/use-bucket-object-references.js'

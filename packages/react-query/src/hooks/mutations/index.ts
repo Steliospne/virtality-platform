@@ -60,6 +60,9 @@ export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.
 export { useUpdateRenewTrigger } from './renew-trigger/use-update-renew-trigger.js'
 export { useRemoveRenewTrigger } from './renew-trigger/use-remove-renew-trigger.js'
 
+// Renew prompt mutations
+export { useEvaluateRenewPrompts } from './renew-prompt/use-evaluate-renew-prompts.js'
+
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'
 export { useSendEmailTemplate } from './email/use-send-email-template.js'
