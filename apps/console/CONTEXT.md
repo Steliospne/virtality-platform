@@ -223,7 +223,7 @@ The clinician-visible duration left on the **Entitlement Clock**, always shown i
 _Avoid_: days remaining (as the term), time left, access remaining
 
 **Renew Prompt**:
-A seat-holder renew nudge delivered by Virtality System Email and/or in-app chrome at Adminboard-configured day offsets before **Entitlement Clock** end. Each channel×offset fires once per clock epoch (keyed by clock end); missed offsets catch up once on next evaluation; none after expiry.
+A seat-holder renew nudge delivered by Virtality System Email and/or in-app chrome at Adminboard-configured day offsets before **Entitlement Clock** end. Each channel×offset fires once per clock epoch (keyed by clock end); missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
 _Avoid_: Stripe Billing reminder email, toast blast
 
 ## Example Dialogue

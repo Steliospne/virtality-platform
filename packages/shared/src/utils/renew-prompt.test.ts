@@ -3,6 +3,9 @@ import {
   evaluateAndDeliverRenewPrompts,
   isRenewOffsetDue,
   listInAppRenewPromptsForSeat,
+  rearmRenewPromptEpoch,
+  rearmRenewPromptEpochForSubscription,
+  rearmRenewPromptEpochIfClockChanged,
   renewPromptEpochKey,
   selectDueRenewPrompts,
   RENEW_PROMPT_MS_PER_DAY,
@@ -192,8 +195,272 @@ function createDeliveryStore(
       records.push(record)
       return record
     }),
+    deleteOutsideEpoch: vi.fn(async (userId, epochKey) => {
+      let dropped = 0
+      for (let i = records.length - 1; i >= 0; i -= 1) {
+        const row = records[i]!
+        if (row.userId === userId && row.epochKey !== epochKey) {
+          records.splice(i, 1)
+          dropped += 1
+        }
+      }
+      return dropped
+    }),
   }
 }
+
+describe('rearmRenewPromptEpoch', () => {
+  it('starts a new epoch and drops prior-epoch renew backlog', async () => {
+    const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
+    const nextClockEnd = CLOCK_END
+    const nextEpoch = renewPromptEpochKey(nextClockEnd)
+    const store = createDeliveryStore([
+      {
+        id: 'old-email',
+        userId: 'user-1',
+        channel: 'email',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+      {
+        id: 'old-in-app',
+        userId: 'user-1',
+        channel: 'in_app',
+        daysBefore: 3,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-28T12:00:00.000Z'),
+      },
+      {
+        id: 'other-user',
+        userId: 'user-2',
+        channel: 'email',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
+
+    const result = await rearmRenewPromptEpoch(store, {
+      userId: 'user-1',
+      clockEnd: nextClockEnd,
+    })
+
+    expect(result).toEqual({ epochKey: nextEpoch, dropped: 2 })
+    expect(store.records).toEqual([
+      expect.objectContaining({ id: 'other-user', userId: 'user-2' }),
+    ])
+    await expect(
+      listInAppRenewPromptsForSeat(store, {
+        userId: 'user-1',
+        standing: {
+          entitled: true,
+          clockEnd: nextClockEnd,
+          remainingMs: 7 * MS_PER_DAY,
+          status: 'trialing',
+        },
+      }),
+    ).resolves.toEqual([])
+  })
+
+  it('lets offsets fire again toward the new clock end after Extension or Checkout', async () => {
+    const priorClockEnd = new Date('2026-07-01T12:00:00.000Z')
+    const priorEpoch = renewPromptEpochKey(priorClockEnd)
+    const nextClockEnd = CLOCK_END
+    const nextEpoch = renewPromptEpochKey(nextClockEnd)
+    const now = new Date(nextClockEnd.getTime() - 7 * MS_PER_DAY)
+    const emails: RenewPromptEmailPayload[] = []
+    const deliveryStore = createDeliveryStore([
+      {
+        id: 'prior-email',
+        userId: 'user-1',
+        channel: 'email',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+      {
+        id: 'prior-in-app',
+        userId: 'user-1',
+        channel: 'in_app',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
+    const stores = {
+      triggers: createTriggerStore([
+        { channel: 'email', daysBefore: 7, active: true },
+        { channel: 'in_app', daysBefore: 7, active: true },
+      ]),
+      deliveries: deliveryStore,
+    }
+    const seat = {
+      userId: 'user-1',
+      recipientEmail: 'seat@clinic.example',
+      standing: {
+        entitled: true,
+        clockEnd: nextClockEnd,
+        remainingMs: 7 * MS_PER_DAY,
+        status: 'trialing' as const,
+      },
+    }
+    const deps = {
+      generateId: () => `delivery-${deliveryStore.records.length + 1}`,
+      now: () => now,
+      deliverEmail: async (payload: RenewPromptEmailPayload) => {
+        emails.push(payload)
+      },
+    }
+
+    await rearmRenewPromptEpoch(deliveryStore, {
+      userId: 'user-1',
+      clockEnd: nextClockEnd,
+    })
+    const result = await evaluateAndDeliverRenewPrompts(stores, deps, seat)
+
+    expect(result.delivered).toEqual([
+      { channel: 'email', daysBefore: 7, epochKey: nextEpoch },
+      { channel: 'in_app', daysBefore: 7, epochKey: nextEpoch },
+    ])
+    expect(emails).toHaveLength(1)
+    expect(emails[0]?.epochKey).toBe(nextEpoch)
+  })
+
+  it('still evaluates once per offset per epoch after re-arm', async () => {
+    const nextClockEnd = CLOCK_END
+    const nextEpoch = renewPromptEpochKey(nextClockEnd)
+    const now = new Date(nextClockEnd.getTime() - 1 * MS_PER_DAY)
+    const emails: RenewPromptEmailPayload[] = []
+    const deliveryStore = createDeliveryStore()
+    const stores = {
+      triggers: createTriggerStore([
+        { channel: 'email', daysBefore: 1, active: true },
+      ]),
+      deliveries: deliveryStore,
+    }
+    const seat = {
+      userId: 'user-1',
+      recipientEmail: 'seat@clinic.example',
+      standing: {
+        entitled: true,
+        clockEnd: nextClockEnd,
+        remainingMs: MS_PER_DAY,
+        status: 'active' as const,
+      },
+    }
+    const deps = {
+      generateId: () =>
+        `id-${emails.length + deliveryStore.records.length + 1}`,
+      now: () => now,
+      deliverEmail: async (payload: RenewPromptEmailPayload) => {
+        emails.push(payload)
+      },
+    }
+
+    await rearmRenewPromptEpoch(deliveryStore, {
+      userId: 'user-1',
+      clockEnd: nextClockEnd,
+    })
+    await evaluateAndDeliverRenewPrompts(stores, deps, seat)
+    await evaluateAndDeliverRenewPrompts(stores, deps, seat)
+
+    expect(emails).toHaveLength(1)
+    expect(deliveryStore.records).toEqual([
+      expect.objectContaining({
+        channel: 'email',
+        daysBefore: 1,
+        epochKey: nextEpoch,
+      }),
+    ])
+  })
+
+  it('re-arms only when Extension or Checkout changes the clock end', async () => {
+    const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
+    const store = createDeliveryStore([
+      {
+        id: 'prior',
+        userId: 'user-1',
+        channel: 'email',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
+
+    await expect(
+      rearmRenewPromptEpochIfClockChanged(store, {
+        userId: 'user-1',
+        previousClockEnd: CLOCK_END,
+        nextClockEnd: CLOCK_END,
+      }),
+    ).resolves.toEqual({
+      rearmed: false,
+      epochKey: renewPromptEpochKey(CLOCK_END),
+      dropped: 0,
+    })
+    expect(store.records).toHaveLength(1)
+
+    await expect(
+      rearmRenewPromptEpochIfClockChanged(store, {
+        userId: 'user-1',
+        previousClockEnd: new Date('2026-07-01T12:00:00.000Z'),
+        nextClockEnd: CLOCK_END,
+      }),
+    ).resolves.toEqual({
+      rearmed: true,
+      epochKey: renewPromptEpochKey(CLOCK_END),
+      dropped: 1,
+    })
+    expect(store.records).toEqual([])
+
+    await expect(
+      rearmRenewPromptEpochIfClockChanged(store, {
+        userId: 'user-1',
+        previousClockEnd: CLOCK_END,
+        nextClockEnd: null,
+      }),
+    ).resolves.toEqual({ rearmed: false, epochKey: null, dropped: 0 })
+  })
+
+  it('starts a new epoch from a successful Subscribe/Renew subscription clock', async () => {
+    const priorEpoch = renewPromptEpochKey(new Date('2026-07-01T12:00:00.000Z'))
+    const paidEnd = new Date('2026-09-10T12:00:00.000Z')
+    const store = createDeliveryStore([
+      {
+        id: 'stale-in-app',
+        userId: 'user-1',
+        channel: 'in_app',
+        daysBefore: 7,
+        epochKey: priorEpoch,
+        deliveredAt: new Date('2026-06-24T12:00:00.000Z'),
+      },
+    ])
+
+    await expect(
+      rearmRenewPromptEpochForSubscription(store, {
+        referenceId: 'user-1',
+        status: 'active',
+        trialEnd: null,
+        periodEnd: paidEnd,
+      }),
+    ).resolves.toEqual({
+      rearmed: true,
+      epochKey: renewPromptEpochKey(paidEnd),
+      dropped: 1,
+    })
+    expect(store.records).toEqual([])
+
+    await expect(
+      rearmRenewPromptEpochForSubscription(store, {
+        referenceId: 'user-1',
+        status: 'canceled',
+        trialEnd: null,
+        periodEnd: paidEnd,
+      }),
+    ).resolves.toEqual({ rearmed: false, epochKey: null, dropped: 0 })
+  })
+})
 
 describe('evaluateAndDeliverRenewPrompts', () => {
   it('sends System Email and records in-app once per channel offset per epoch', async () => {

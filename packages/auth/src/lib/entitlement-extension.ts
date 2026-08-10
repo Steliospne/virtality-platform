@@ -1,6 +1,7 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
+  clockEndForSubscriptionStatus,
   extendEntitlementClock,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
@@ -10,6 +11,7 @@ import {
   type ExtendEntitlementClockResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
+import { rearmRenewPromptsAfterExtension } from './renew-prompt-epoch.ts'
 
 export function createPrismaEntitlementExtensionStore(
   client: PrismaClient = prisma,
@@ -107,10 +109,26 @@ export async function extendEntitlementClockForAdminboard(
     now?: () => Date
   },
 ): Promise<ExtendEntitlementClockResult> {
-  return extendEntitlementClock(
-    createPrismaEntitlementExtensionStore(deps.prisma),
+  const client = deps.prisma ?? prisma
+  const store = createPrismaEntitlementExtensionStore(client)
+  const live = await store.findLiveSubscriptionByUserId(input.userId)
+  const previousClockEnd = live
+    ? clockEndForSubscriptionStatus(live.status, live.trialEnd, live.periodEnd)
+    : null
+
+  const result = await extendEntitlementClock(
+    store,
     createStripeEntitlementExtensionGateway(deps.stripeClient),
     input,
     { now: deps.now },
   )
+
+  // Extension that changes clock end starts a new renew epoch and drops backlog.
+  await rearmRenewPromptsAfterExtension(client, {
+    userId: input.userId,
+    previousClockEnd,
+    nextClockEnd: result.trialEnd,
+  })
+
+  return result
 }

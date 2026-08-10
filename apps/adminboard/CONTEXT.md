@@ -115,5 +115,5 @@ An Adminboard-configured row `{ daysBefore, active }` that schedules an in-app r
 _Avoid_: toast blast, global notification toggle
 
 **Renew Prompt Delivery**:
-A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry.
+A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
 _Avoid_: Stripe Billing reminder, renew master switch

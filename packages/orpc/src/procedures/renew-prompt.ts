@@ -22,6 +22,15 @@ export function createPrismaRenewPromptDeliveryStore(
         where: { userId, epochKey },
       }),
     create: (data) => prisma.renewPromptDelivery.create({ data }),
+    deleteOutsideEpoch: async (userId, epochKey) => {
+      const result = await prisma.renewPromptDelivery.deleteMany({
+        where: {
+          userId,
+          epochKey: { not: epochKey },
+        },
+      })
+      return result.count
+    },
   }
 }
 

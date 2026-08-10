@@ -14,6 +14,7 @@ import {
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
+import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -146,6 +147,14 @@ export const auth = betterAuth({
             payment_method_collection: 'always',
           },
         }),
+        // Successful Subscribe/Renew Checkout starts a new renew epoch.
+        onSubscriptionComplete: async ({ subscription }) => {
+          await rearmRenewPromptsAfterCheckoutSubscription(prisma, subscription)
+        },
+        // Extension (and other live clock-end changes) sync via webhook update.
+        onSubscriptionUpdate: async ({ subscription }) => {
+          await rearmRenewPromptsAfterCheckoutSubscription(prisma, subscription)
+        },
       },
     }),
     phoneNumber({
@@ -245,6 +254,12 @@ export {
   createStripeEntitlementExtensionGateway,
   extendEntitlementClockForAdminboard,
 } from './lib/entitlement-extension.ts'
+export {
+  createPrismaRenewPromptDeliveryStore,
+  rearmRenewPromptsAfterCheckoutSubscription,
+  rearmRenewPromptsAfterExtension,
+  rearmRenewPromptsForNewClockEnd,
+} from './lib/renew-prompt-epoch.ts'
 
 /**
  * Adminboard Extension: update live trialing|active, else create a no-card
