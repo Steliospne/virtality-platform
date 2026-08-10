@@ -13,6 +13,7 @@ import {
   readSignUpCodeFromUnknown,
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
+import { extendLiveEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -21,7 +22,10 @@ import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
-import { routeSignUpCode } from '@virtality/shared/utils'
+import {
+  routeSignUpCode,
+  type ExtendLiveEntitlementClockInput,
+} from '@virtality/shared/utils'
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -229,3 +233,19 @@ export const auth = betterAuth({
 })
 
 export type { AuthContext } from './lib/auth-context.ts'
+export {
+  createPrismaEntitlementExtensionStore,
+  createStripeEntitlementExtensionGateway,
+  extendLiveEntitlementClockForAdminboard,
+} from './lib/entitlement-extension.ts'
+
+/** Adminboard Extension for live trialing|active seats (closes over platform Stripe). */
+export function extendLiveEntitlementClockAction(
+  client: typeof prisma,
+  input: ExtendLiveEntitlementClockInput,
+) {
+  return extendLiveEntitlementClockForAdminboard(input, {
+    prisma: client,
+    stripeClient,
+  })
+}

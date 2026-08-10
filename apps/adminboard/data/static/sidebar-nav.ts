@@ -2,6 +2,7 @@ import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
+  Clock3,
   CreditCard,
   Film,
   Grid3x3,
@@ -61,6 +62,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         href: '/trial-redeem-codes',
         icon: CreditCard,
       },
+      { title: 'Extension', href: '/extension', icon: Clock3 },
       { title: 'Renew triggers', href: '/renew-triggers', icon: Bell },
     ],
   },

@@ -214,6 +214,10 @@ _Avoid_: free sub, trialing subscription (as the term), trial offer
 The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable.
 _Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
 
+**Billing Path Established**:
+At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
+_Avoid_: has Stripe customer, ever paid, currently entitled
+
 **Remaining Time**:
 The clinician-visible duration left on the **Entitlement Clock**, always shown in the console sidebar.
 _Avoid_: days remaining (as the term), time left, access remaining

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import acceptLanguage from 'accept-language'
 import { settings } from '@/i18n/settings'
 import { auth } from '@virtality/auth'
+import { prisma } from '@virtality/db'
+import { decideConsoleSessionGate } from '@virtality/shared/utils'
 import { getWebsiteUrl } from '@virtality/shared/types'
 
 acceptLanguage.languages(settings.languages)
@@ -9,13 +11,13 @@ acceptLanguage.languages(settings.languages)
 const websiteURL = getWebsiteUrl()
 
 export async function proxy(request: NextRequest) {
-  let response
+  const sessionResponse = await sessionHandler(request)
+  // Preserve sign-in / waitlist redirects; language headers only on passthrough.
+  if (sessionResponse.headers.get('location')) {
+    return sessionResponse
+  }
 
-  response = await sessionHandler(request)
-
-  response = await languageHandler(request)
-
-  return response
+  return languageHandler(request)
 }
 
 export const config = {
@@ -46,30 +48,26 @@ const sessionHandler = async (request: NextRequest) => {
       user: { stripeCustomerId, role },
     } = data
 
-    if (role === 'admin' || role === 'tester') return NextResponse.next()
-
-    if (!stripeCustomerId) {
-      return NextResponse.redirect(waitlistURL)
-    } else {
-      try {
-        const activeSubscriptions = await auth.api.listActiveSubscriptions({
-          headers: request.headers,
+    // Existence only: Billing Path Established is any synced row, any status.
+    const subscription = stripeCustomerId
+      ? await prisma.subscription.findFirst({
+          where: { stripeCustomerId },
+          select: { status: true },
         })
+      : null
 
-        const hasSubscription = activeSubscriptions.find(
-          (as) =>
-            as.stripeCustomerId === stripeCustomerId && as.status === 'active',
-        )
+    const decision = decideConsoleSessionGate({
+      role,
+      subscriptions: subscription ? [subscription] : [],
+    })
 
-        if (!hasSubscription) {
-          await auth.api.signOut({
-            headers: request.headers,
-          })
-          return NextResponse.redirect(waitlistURL)
-        }
-      } catch (error) {
-        console.error('Error checking subscription:', error)
-      }
+    if (decision === 'waitlist') {
+      // Never-established billing path only. Expiry with a synced Subscription
+      // stays in console (no sign-out solely for clock end).
+      await auth.api.signOut({
+        headers: request.headers,
+      })
+      return NextResponse.redirect(waitlistURL)
     }
   } catch (error) {
     console.error('Error checking session:', error)

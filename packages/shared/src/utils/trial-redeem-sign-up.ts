@@ -89,9 +89,26 @@ export type TrialRedeemConsumeStore = Pick<
     usedBy: string,
     usedAt: Date,
   ) => Promise<boolean>
+  /**
+   * Atomically unused → already_entitled with consume audit fields.
+   * Returns false when the row is missing or no longer unused.
+   */
+  consumeAsAlreadyEntitled: (
+    id: number,
+    usedBy: string,
+    usedAt: Date,
+  ) => Promise<boolean>
 }
 
+/** Stripe Subscription statuses treated as already entitled (PRD #41). */
+export const TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES = [
+  'trialing',
+  'active',
+] as const
+
 export type TrialRedeemStripeGateway = {
+  /** True when the Customer already has a trialing or active Subscription. */
+  customerHasEntitledSubscription: (customerId: string) => Promise<boolean>
   createNoCardTrialSubscription: (input: {
     customerId: string
     priceId: string
@@ -110,11 +127,13 @@ export type RedeemTrialCodeInput = {
 export type RedeemTrialCodeResult =
   | { status: 'ignored' }
   | { status: 'redeemed'; stripeSubscriptionId: string; codeId: number }
+  | { status: 'already_entitled'; codeId: number }
   | { status: 'failed' }
 
 /**
- * Stripe-first happy path: create no-card Trial Subscription, then consume as
- * redeemed. Does not write a local Subscription row (webhook-only sync).
+ * Stripe-first redeem: entitled Customers consume as already_entitled without a
+ * second Subscription; otherwise create a no-card Trial Subscription then
+ * consume as redeemed. Does not write a local Subscription row (webhook-only).
  * Does not set the tester role. On Stripe failure the code stays unused.
  */
 export async function redeemTrialCodeAfterSignUp(
@@ -127,29 +146,39 @@ export async function redeemTrialCodeAfterSignUp(
   const gate = await evaluateTrialRedeemAtSignUp(store, input.code, now)
   if (gate.action !== 'proceed') return { status: 'ignored' }
 
+  const { id: codeId, trialDays } = gate.record
+  const alreadyEntitled = await stripe.customerHasEntitledSubscription(
+    input.stripeCustomerId,
+  )
+  if (alreadyEntitled) {
+    const consumed = await store.consumeAsAlreadyEntitled(
+      codeId,
+      input.userId,
+      now,
+    )
+    if (!consumed) return { status: 'failed' }
+    return { status: 'already_entitled', codeId }
+  }
+
   let stripeSubscriptionId: string
   try {
     const created = await stripe.createNoCardTrialSubscription({
       customerId: input.stripeCustomerId,
       priceId: input.priceId,
-      trialPeriodDays: gate.record.trialDays,
-      metadata: { trialRedeemCodeId: String(gate.record.id) },
+      trialPeriodDays: trialDays,
+      metadata: { trialRedeemCodeId: String(codeId) },
     })
     stripeSubscriptionId = created.stripeSubscriptionId
   } catch {
     return { status: 'failed' }
   }
 
-  const consumed = await store.consumeAsRedeemed(
-    gate.record.id,
-    input.userId,
-    now,
-  )
+  const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
   if (!consumed) return { status: 'failed' }
 
   return {
     status: 'redeemed',
     stripeSubscriptionId,
-    codeId: gate.record.id,
+    codeId,
   }
 }

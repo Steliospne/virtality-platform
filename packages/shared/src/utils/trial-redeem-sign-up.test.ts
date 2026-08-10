@@ -38,18 +38,34 @@ function createMemoryStore(
   rows: TrialRedeemCodeRecord[]
 } {
   const rows = [...initial]
+  const consumeUnusedAs =
+    (status: 'redeemed' | 'already_entitled') =>
+    async (id: number, usedBy: string, usedAt: Date) => {
+      const row = rows.find((r) => r.id === id)
+      if (!row || row.status !== 'unused') return false
+      row.status = status
+      row.usedAt = usedAt
+      row.usedBy = usedBy
+      return true
+    }
 
   return {
     rows,
     findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
-    consumeAsRedeemed: async (id, usedBy, usedAt) => {
-      const row = rows.find((r) => r.id === id)
-      if (!row || row.status !== 'unused') return false
-      row.status = 'redeemed'
-      row.usedAt = usedAt
-      row.usedBy = usedBy
-      return true
-    },
+    consumeAsRedeemed: consumeUnusedAs('redeemed'),
+    consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
+  }
+}
+
+function stripeGateway(
+  overrides: Partial<TrialRedeemStripeGateway> = {},
+): TrialRedeemStripeGateway {
+  return {
+    customerHasEntitledSubscription: async () => false,
+    createNoCardTrialSubscription: async () => ({
+      stripeSubscriptionId: 'sub_default',
+    }),
+    ...overrides,
   }
 }
 
@@ -132,6 +148,24 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     })
   })
 
+  it('keeps terminals above TTL with Already used messaging', async () => {
+    const pastTtl = new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS)
+    const store = createMemoryStore([
+      record({
+        status: 'already_entitled',
+        createdAt: pastTtl,
+        code: 'PAY-OLDENTITLE',
+      }),
+    ])
+
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, 'PAY-OLDENTITLE', NOW),
+    ).resolves.toEqual({
+      action: 'block',
+      message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
+    })
+  })
+
   it('allows unused in-TTL codes to proceed', async () => {
     const unused = record({ status: 'unused', createdAt: NOW })
     const store = createMemoryStore([unused])
@@ -148,12 +182,12 @@ describe('redeemTrialCodeAfterSignUp', () => {
       record({ id: 42, trialDays: 14, status: 'unused' }),
     ])
     const stripeCalls: unknown[] = []
-    const stripe: TrialRedeemStripeGateway = {
+    const stripe = stripeGateway({
       createNoCardTrialSubscription: async (input) => {
         stripeCalls.push(input)
         return { stripeSubscriptionId: 'sub_trial_1' }
       },
-    }
+    })
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
@@ -191,12 +225,12 @@ describe('redeemTrialCodeAfterSignUp', () => {
     const store = createMemoryStore([
       record({ id: 7, trialDays: 30, status: 'unused' }),
     ])
-    const stripe: TrialRedeemStripeGateway = {
+    const stripe = stripeGateway({
       createNoCardTrialSubscription: async (input) => {
         expect(input.trialPeriodDays).toBe(30)
         return { stripeSubscriptionId: 'sub_override' }
       },
-    }
+    })
 
     const result = await redeemTrialCodeAfterSignUp(store, stripe, {
       code: 'PAY-ABCDEFGHIJ',
@@ -208,13 +242,78 @@ describe('redeemTrialCodeAfterSignUp', () => {
     expect(result).toMatchObject({ status: 'redeemed' })
   })
 
+  it('consumes as already_entitled without creating a second Subscription', async () => {
+    const store = createMemoryStore([
+      record({ id: 55, status: 'unused', code: 'PAY-ENTITLED01' }),
+    ])
+    const createNoCardTrialSubscription = vi.fn()
+    const stripe = stripeGateway({
+      customerHasEntitledSubscription: async (customerId) => {
+        expect(customerId).toBe('cus_entitled')
+        return true
+      },
+      createNoCardTrialSubscription,
+    })
+
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'PAY-ENTITLED01',
+        userId: 'user_entitled',
+        stripeCustomerId: 'cus_entitled',
+        priceId: 'price_canonical',
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({
+      status: 'already_entitled',
+      codeId: 55,
+    })
+    expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
+    expect(store.rows[0]).toMatchObject({
+      status: 'already_entitled',
+      usedAt: NOW,
+      usedBy: 'user_entitled',
+    })
+  })
+
+  it('blocks reuse of a bearer after already-entitled consume', async () => {
+    const store = createMemoryStore([
+      record({ id: 55, status: 'unused', code: 'PAY-ENTITLED01' }),
+    ])
+    const stripe = stripeGateway({
+      customerHasEntitledSubscription: async () => true,
+    })
+
+    await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'PAY-ENTITLED01',
+        userId: 'user_entitled',
+        stripeCustomerId: 'cus_entitled',
+        priceId: 'price_canonical',
+      },
+      { now: () => NOW },
+    )
+
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, 'PAY-ENTITLED01', NOW),
+    ).resolves.toEqual({
+      action: 'block',
+      message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
+    })
+  })
+
   it('leaves the code unused when Stripe create fails', async () => {
     const store = createMemoryStore([record({ status: 'unused' })])
-    const stripe: TrialRedeemStripeGateway = {
+    const stripe = stripeGateway({
       createNoCardTrialSubscription: async () => {
         throw new Error('stripe down')
       },
-    }
+    })
 
     const result = await redeemTrialCodeAfterSignUp(store, stripe, {
       code: 'PAY-ABCDEFGHIJ',
@@ -231,10 +330,37 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
   })
 
+  it('keeps the bearer reusable after Stripe failure', async () => {
+    const store = createMemoryStore([record({ status: 'unused' })])
+    const stripe = stripeGateway({
+      createNoCardTrialSubscription: async () => {
+        throw new Error('stripe down')
+      },
+    })
+
+    await redeemTrialCodeAfterSignUp(store, stripe, {
+      code: 'PAY-ABCDEFGHIJ',
+      userId: 'user_3',
+      stripeCustomerId: 'cus_3',
+      priceId: 'price_canonical',
+    })
+
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, 'PAY-ABCDEFGHIJ', NOW),
+    ).resolves.toEqual({
+      action: 'proceed',
+      record: store.rows[0],
+    })
+  })
+
   it('ignores non-proceed codes without calling Stripe', async () => {
     const store = createMemoryStore([record({ status: 'redeemed' })])
     const createNoCardTrialSubscription = vi.fn()
-    const stripe: TrialRedeemStripeGateway = { createNoCardTrialSubscription }
+    const customerHasEntitledSubscription = vi.fn()
+    const stripe = stripeGateway({
+      createNoCardTrialSubscription,
+      customerHasEntitledSubscription,
+    })
 
     const result = await redeemTrialCodeAfterSignUp(store, stripe, {
       code: 'PAY-ABCDEFGHIJ',
@@ -245,5 +371,6 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
     expect(result).toEqual({ status: 'ignored' })
     expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
+    expect(customerHasEntitledSubscription).not.toHaveBeenCalled()
   })
 })

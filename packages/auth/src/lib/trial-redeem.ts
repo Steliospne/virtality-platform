@@ -6,6 +6,7 @@ import {
   evaluateTrialRedeemAtSignUp,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
+  TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   type TrialRedeemConsumeStore,
   type TrialRedeemStripeGateway,
 } from '@virtality/shared/utils'
@@ -13,22 +14,27 @@ import {
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,
 ): TrialRedeemConsumeStore {
-  return {
-    findByCode: (code) =>
-      client.trialRedeemCode.findUnique({
-        where: { code },
-      }),
-    consumeAsRedeemed: async (id, usedBy, usedAt) => {
+  const consumeUnusedAs =
+    (status: 'redeemed' | 'already_entitled') =>
+    async (id: number, usedBy: string, usedAt: Date) => {
       const { count } = await client.trialRedeemCode.updateMany({
         where: { id, status: 'unused' },
         data: {
-          status: 'redeemed',
+          status,
           usedAt,
           usedBy,
         },
       })
       return count > 0
-    },
+    }
+
+  return {
+    findByCode: (code) =>
+      client.trialRedeemCode.findUnique({
+        where: { code },
+      }),
+    consumeAsRedeemed: consumeUnusedAs('redeemed'),
+    consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
   }
 }
 
@@ -36,6 +42,18 @@ export function createStripeTrialRedeemGateway(
   stripeClient: Stripe,
 ): TrialRedeemStripeGateway {
   return {
+    customerHasEntitledSubscription: async (customerId) => {
+      const results = await Promise.all(
+        TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES.map((status) =>
+          stripeClient.subscriptions.list({
+            customer: customerId,
+            status,
+            limit: 1,
+          }),
+        ),
+      )
+      return results.some((page) => page.data.length > 0)
+    },
     createNoCardTrialSubscription: async ({
       customerId,
       priceId,

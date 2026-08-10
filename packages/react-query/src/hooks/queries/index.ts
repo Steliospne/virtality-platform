@@ -69,6 +69,9 @@ export { useTesterCodes } from './tester-code/use-tester-codes.js'
 // Trial Redeem Code queries
 export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.js'
 
+// Entitlement Extension queries
+export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
+
 // Renew trigger queries
 export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
 

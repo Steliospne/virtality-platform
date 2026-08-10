@@ -52,6 +52,9 @@ export { useCreateTrialRedeemCode } from './trial-redeem-code/use-create-trial-r
 export { useDeleteTrialRedeemCode } from './trial-redeem-code/use-delete-trial-redeem-code.js'
 export { useSendTrialRedeemCodeEmail } from './trial-redeem-code/use-send-trial-redeem-code-email.js'
 
+// Entitlement Extension mutations
+export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
+
 // Renew trigger mutations
 export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'
 export { useUpdateRenewTrigger } from './renew-trigger/use-update-renew-trigger.js'
