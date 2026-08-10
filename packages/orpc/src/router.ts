@@ -21,6 +21,7 @@ import { mosaic } from './procedures/mosaic.ts'
 import { email } from './procedures/email.ts'
 import { testerCode } from './procedures/tester-code.ts'
 import { trialRedeemCode } from './procedures/trial-redeem-code.ts'
+import { renewTrigger } from './procedures/renew-trigger.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
@@ -54,6 +55,7 @@ export const router = {
   email,
   testerCode,
   trialRedeemCode,
+  renewTrigger,
   bucket,
   favoriteExercise,
   dashboard,

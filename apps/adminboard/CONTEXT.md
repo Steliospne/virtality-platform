@@ -101,3 +101,11 @@ _Avoid_: trial_end (as product speak), access window, license timer, Seat, org s
 **Extension**:
 A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months.
 _Avoid_: renewal, top-up, trial extension (as a separate entity name)
+
+**Renew Email Trigger**:
+An Adminboard-configured row `{ daysBefore, active }` that schedules a renew **System Email** offset before **Entitlement Clock** end. Independent from the in-app list. Empty or all-inactive rows silence email (no separate master switch). Copy stays code-owned.
+_Avoid_: Stripe Billing reminder, renew master switch
+
+**Renew In-app Trigger**:
+An Adminboard-configured row `{ daysBefore, active }` that schedules an in-app renew prompt offset before **Entitlement Clock** end. Independent from the email list. Empty or all-inactive rows silence in-app (no separate master switch). Chrome copy stays code-owned / `[COPY]`.
+_Avoid_: toast blast, global notification toggle

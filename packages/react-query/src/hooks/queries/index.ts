@@ -69,6 +69,9 @@ export { useTesterCodes } from './tester-code/use-tester-codes.js'
 // Trial Redeem Code queries
 export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.js'
 
+// Renew trigger queries
+export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
+
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'
 export { useBucketObjectReferences } from './bucket/use-bucket-object-references.js'

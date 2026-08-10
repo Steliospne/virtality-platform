@@ -18,7 +18,7 @@ describe('blog post read helpers', () => {
     const post = getPostBySlug('panhellenic-physiotherapy-conference')
 
     expect(post?.slug).toBe('panhellenic-physiotherapy-conference')
-    expect(post?.author.name).toBe('Katerina Tsiraki')
+    expect(post?.author.name).toBe('Virtality')
     expect(post?.body.some((block) => block.kind === 'heading')).toBe(true)
     expect(post?.body.some((block) => block.kind === 'paragraph')).toBe(true)
   })
