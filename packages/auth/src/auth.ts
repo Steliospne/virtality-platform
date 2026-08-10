@@ -8,6 +8,11 @@ import {
 } from '@virtality/nodemailer'
 import { createAuthMiddleware, getOAuthState } from 'better-auth/api'
 import validateAndConsumeTesterCode from './lib/tester-code.ts'
+import {
+  assertTrialRedeemAllowedAtSignUp,
+  readSignUpCodeFromUnknown,
+  redeemTrialCodeForCustomer,
+} from './lib/trial-redeem.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -16,6 +21,7 @@ import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
+import { routeSignUpCode } from '@virtality/shared/utils'
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -30,6 +36,37 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export const PRO_PLAN_PRICE_ID = 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
 
 const baseURL = getServerUrl()
+
+async function consumeTesterCodeIfPresent(
+  rawCode: string | null | undefined,
+  userId: string,
+): Promise<void> {
+  const routed = routeSignUpCode(rawCode)
+  if (routed.kind !== 'tester') return
+
+  const isValid = await validateAndConsumeTesterCode(routed.code, userId)
+  if (isValid) {
+    await updateUserRole(userId, 'tester')
+  }
+}
+
+async function readSignUpCodeFromOAuthState(): Promise<string | undefined> {
+  return readSignUpCodeFromUnknown(await getOAuthState().catch(() => null))
+}
+
+async function resolveSignUpCodeForCustomerCreate(
+  body: unknown,
+  path: unknown,
+): Promise<string | undefined> {
+  const fromBody = readSignUpCodeFromUnknown(body)
+  if (fromBody !== undefined) return fromBody
+
+  if (typeof path === 'string' && path.startsWith('/callback')) {
+    return readSignUpCodeFromOAuthState()
+  }
+
+  return undefined
+}
 
 export const auth = betterAuth({
   appName: 'virtality',
@@ -86,6 +123,15 @@ export const auth = betterAuth({
       stripeClient,
       stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
       createCustomerOnSignUp: true,
+      onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
+        await redeemTrialCodeForCustomer({
+          rawCode: await resolveSignUpCodeForCustomerCreate(ctx.body, ctx.path),
+          userId: user.id,
+          stripeCustomerId: stripeCustomer.id,
+          priceId: PRO_PLAN_PRICE_ID,
+          stripeClient,
+        })
+      },
       subscription: {
         enabled: true,
         plans: [{ name: 'pro', priceId: PRO_PLAN_PRICE_ID }],
@@ -127,35 +173,35 @@ export const auth = betterAuth({
       create: {
         after: async (user, ctx) => {
           if (ctx?.path === '/sign-up/email') {
-            const testerCode = ctx.body?.testerCode
-
-            const isValid = await validateAndConsumeTesterCode(
-              testerCode,
-              user.id,
-            )
-
-            if (isValid) {
-              await updateUserRole(user.id, 'tester')
-            }
+            await consumeTesterCodeIfPresent(ctx.body?.testerCode, user.id)
           }
 
           if (ctx?.path === '/callback/:id') {
-            const additionalData = await getOAuthState()
-
-            const isValid = await validateAndConsumeTesterCode(
-              additionalData?.testerCode,
+            await consumeTesterCodeIfPresent(
+              readSignUpCodeFromUnknown(await getOAuthState()),
               user.id,
             )
-
-            if (isValid) {
-              await updateUserRole(user.id, 'tester')
-            }
           }
         },
       },
     },
   },
   hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      const { path } = ctx
+
+      if (path.startsWith('/sign-up')) {
+        await assertTrialRedeemAllowedAtSignUp(
+          readSignUpCodeFromUnknown(ctx.body),
+        )
+      }
+
+      if (path.startsWith('/callback/:id')) {
+        await assertTrialRedeemAllowedAtSignUp(
+          await readSignUpCodeFromOAuthState(),
+        )
+      }
+    }),
     after: createAuthMiddleware(async (ctx) => {
       const {
         path,
@@ -163,33 +209,19 @@ export const auth = betterAuth({
       } = ctx
 
       if (path.startsWith('/sign-up')) {
-        const newSession = ctx.context.newSession
         const re = ctx.body?.re
-
         if (newSession?.user && re && typeof re === 'string') {
-          const isValid = await validateAndConsumeTesterCode(
-            re,
-            newSession.user.id,
-          )
-
-          if (isValid) {
-            await updateUserRole(newSession.user.id, 'tester')
-          }
+          await consumeTesterCodeIfPresent(re, newSession.user.id)
         }
       }
 
       if (path.startsWith('/callback/:id')) {
         const additionalData = await getOAuthState()
-
-        if (newSession?.user?.id && additionalData?.testerCode) {
-          const isValid = await validateAndConsumeTesterCode(
-            additionalData?.testerCode,
-            newSession?.user?.id,
+        if (newSession?.user?.id) {
+          await consumeTesterCodeIfPresent(
+            readSignUpCodeFromUnknown(additionalData),
+            newSession.user.id,
           )
-
-          if (isValid) {
-            await updateUserRole(newSession.user.id, 'tester')
-          }
         }
       }
     }),

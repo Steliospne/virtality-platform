@@ -1,8 +1,8 @@
 import { prisma } from '@virtality/db'
 import type { Prisma } from '@virtality/db'
+import { TESTER_CODE_PATTERN } from '@virtality/shared/utils'
 
-/** `TE-` plus ten alphanumeric characters (locked in #31 / #36). */
-export const TESTER_CODE_PATTERN = /^TE-[A-Z0-9]{10}$/i
+export { TESTER_CODE_PATTERN }
 
 /**
  * Validates and consumes a one-time Tester Code.
