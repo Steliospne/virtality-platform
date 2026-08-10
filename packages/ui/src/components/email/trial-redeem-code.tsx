@@ -48,6 +48,7 @@ export const TrialRedeemCodeEmail = ({
 
       <Section style={content}>
         <Heading
+          className='heading-main'
           style={{
             fontSize: '28px',
             fontWeight: '700',

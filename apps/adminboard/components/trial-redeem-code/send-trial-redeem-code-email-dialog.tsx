@@ -9,17 +9,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@virtality/ui/components/input'
-import { Label } from '@virtality/ui/components/label'
+import { getErrorMessage } from '@/lib/get-error-message'
 import { useSendTrialRedeemCodeEmail } from '@virtality/react-query'
 import type { TrialRedeemCodeListItem } from '@virtality/shared/utils'
+import { Input } from '@virtality/ui/components/input'
+import { Label } from '@virtality/ui/components/label'
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
 type SendTrialRedeemCodeEmailDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  trialRedeemCode: TrialRedeemCodeListItem | null
+  trialRedeemCode: TrialRedeemCodeListItem
 }
 
 export function SendTrialRedeemCodeEmailDialog({
@@ -38,7 +39,6 @@ export function SendTrialRedeemCodeEmailDialog({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (!trialRedeemCode) return
 
     const trimmed = recipientEmail.trim()
     if (!trimmed.includes('@')) {
@@ -58,9 +58,7 @@ export function SendTrialRedeemCodeEmailDialog({
         },
         onError: (error: unknown) => {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Failed to send Trial Redeem Code email',
+            getErrorMessage(error, 'Failed to send Trial Redeem Code email'),
           )
         },
       },
@@ -75,7 +73,7 @@ export function SendTrialRedeemCodeEmailDialog({
             <DialogTitle>Send Trial Redeem Email</DialogTitle>
             <DialogDescription>
               Delivery-only System Email for{' '}
-              <span className='font-mono'>{trialRedeemCode?.code}</span>. The
+              <span className='font-mono'>{trialRedeemCode.code}</span>. The
               recipient is not bound to the code; re-send while unused and
               inside the one-week TTL.
             </DialogDescription>

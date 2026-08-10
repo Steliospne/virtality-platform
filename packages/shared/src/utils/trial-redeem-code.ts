@@ -107,13 +107,6 @@ export type SendTrialRedeemCodeEmailRuntime = TrialRedeemRuntime & {
   deliver: (payload: TrialRedeemEmailDelivery) => Promise<void>
 }
 
-export function canSendTrialRedeemEmail(
-  record: Pick<TrialRedeemCodeRecord, 'status' | 'createdAt'>,
-  now: Date = new Date(),
-): boolean {
-  return getTrialRedeemDisplayStatus(record, now) === 'unused'
-}
-
 export async function sendTrialRedeemCodeEmail(
   store: TrialRedeemCodeStore,
   input: SendTrialRedeemCodeEmailInput,

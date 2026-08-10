@@ -64,10 +64,10 @@ export function createPrismaTrialRedeemCodeStore(
 }
 
 function throwTrialRedeemOrpcError(error: unknown): never {
-  if (error instanceof TrialRedeemCodeValidationError) {
-    throw new ORPCError('BAD_REQUEST', { message: error.message })
-  }
-  if (error instanceof TrialRedeemCodeNotSendableError) {
+  if (
+    error instanceof TrialRedeemCodeValidationError ||
+    error instanceof TrialRedeemCodeNotSendableError
+  ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
   if (error instanceof TrialRedeemCodeNotFoundError) {
@@ -124,21 +124,14 @@ const sendEmail = authed
   .input(sendEmailInputSchema)
   .handler(async ({ context, input }) =>
     runTrialRedeemHandler(context.prisma, (store) =>
-      sendTrialRedeemCodeEmail(
-        store,
-        {
-          id: input.id,
-          recipientEmail: input.recipientEmail,
+      sendTrialRedeemCodeEmail(store, input, {
+        deliver: async (payload) => {
+          await deliverTrialRedeemCodeEmail({
+            ...payload,
+            signUpUrl: `${getConsoleUrl()}/sign-up`,
+          })
         },
-        {
-          deliver: async (payload) => {
-            await deliverTrialRedeemCodeEmail({
-              ...payload,
-              signUpUrl: `${getConsoleUrl()}/sign-up`,
-            })
-          },
-        },
-      ),
+      }),
     ),
   )
 

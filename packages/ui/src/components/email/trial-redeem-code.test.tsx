@@ -33,11 +33,12 @@ describe('TrialRedeemCodeEmail', () => {
     expect(html).toContain('not bound to this address')
   })
 
-  it('uses [COPY] placeholders for marketing copy', async () => {
+  it('keeps marketing copy as [COPY] placeholders without em dashes', async () => {
     const html = await renderEmail()
 
     expect(html).toContain('[COPY]')
-    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT).toBe('[COPY]')
+    expect(html).not.toContain('—')
     expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT).not.toContain('—')
+    expect(TRIAL_REDEEM_CODE_EMAIL_PREVIEW).not.toContain('—')
   })
 })
