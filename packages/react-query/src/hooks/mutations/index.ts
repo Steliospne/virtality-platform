@@ -50,6 +50,7 @@ export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'
 // Trial Redeem Code mutations
 export { useCreateTrialRedeemCode } from './trial-redeem-code/use-create-trial-redeem-code.js'
 export { useDeleteTrialRedeemCode } from './trial-redeem-code/use-delete-trial-redeem-code.js'
+export { useSendTrialRedeemCodeEmail } from './trial-redeem-code/use-send-trial-redeem-code-email.js'
 
 // Renew trigger mutations
 export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'

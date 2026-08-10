@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_TRIAL_REDEEM_DAYS,
   TRIAL_REDEEM_CODE_PREFIX,
@@ -8,6 +8,7 @@ import {
   generateTrialRedeemCode,
   getTrialRedeemDisplayStatus,
   listTrialRedeemCodes,
+  sendTrialRedeemCodeEmail,
   type TrialRedeemCodeRecord,
   type TrialRedeemCodeStore,
 } from './trial-redeem-code.ts'
@@ -231,5 +232,145 @@ describe('deleteTrialRedeemCode', () => {
     await expect(deleteTrialRedeemCode(store, 404)).rejects.toMatchObject({
       name: 'TrialRedeemCodeNotFoundError',
     })
+  })
+})
+
+describe('sendTrialRedeemCodeEmail', () => {
+  it('delivers to a recipient entered at send time without binding email to the code', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 3,
+        code: 'PAY-SENDABLE01',
+        status: 'unused',
+        createdAt: NOW,
+      }),
+    ])
+    const deliver = vi.fn().mockResolvedValue(undefined)
+
+    const result = await sendTrialRedeemCodeEmail(
+      store,
+      { id: 3, recipientEmail: 'clinician@clinic.example' },
+      { now: () => NOW, deliver },
+    )
+
+    expect(result).toEqual({
+      code: 'PAY-SENDABLE01',
+      recipientEmail: 'clinician@clinic.example',
+      trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+    })
+    expect(deliver).toHaveBeenCalledWith({
+      recipientEmail: 'clinician@clinic.example',
+      code: 'PAY-SENDABLE01',
+      trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+    })
+    expect(store.rows[0]).toMatchObject({
+      id: 3,
+      code: 'PAY-SENDABLE01',
+      status: 'unused',
+      usedAt: null,
+      usedBy: null,
+    })
+    expect(store.rows[0]).not.toHaveProperty('recipientEmail')
+    expect(store.rows[0]).not.toHaveProperty('email')
+  })
+
+  it('allows re-send while the code stays unused and inside TTL', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 4,
+        code: 'PAY-RESEND0001',
+        status: 'unused',
+        createdAt: NOW,
+      }),
+    ])
+    const deliver = vi.fn().mockResolvedValue(undefined)
+
+    await sendTrialRedeemCodeEmail(
+      store,
+      { id: 4, recipientEmail: 'first@clinic.example' },
+      { now: () => NOW, deliver },
+    )
+    await sendTrialRedeemCodeEmail(
+      store,
+      { id: 4, recipientEmail: 'other@clinic.example' },
+      { now: () => NOW, deliver },
+    )
+
+    expect(deliver).toHaveBeenCalledTimes(2)
+    expect(deliver).toHaveBeenNthCalledWith(2, {
+      recipientEmail: 'other@clinic.example',
+      code: 'PAY-RESEND0001',
+      trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+    })
+    expect(store.rows[0]?.status).toBe('unused')
+  })
+
+  it('rejects send when the unused code is past the one-week TTL', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 5,
+        code: 'PAY-EXPIRED001',
+        status: 'unused',
+        createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
+      }),
+    ])
+    const deliver = vi.fn()
+
+    await expect(
+      sendTrialRedeemCodeEmail(
+        store,
+        { id: 5, recipientEmail: 'clinician@clinic.example' },
+        { now: () => NOW, deliver },
+      ),
+    ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
+    expect(deliver).not.toHaveBeenCalled()
+  })
+
+  it('rejects send for redeemed and already_entitled codes', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 6,
+        code: 'PAY-REDEEMED01',
+        status: 'redeemed',
+        createdAt: NOW,
+      }),
+      record({
+        id: 7,
+        code: 'PAY-ENTITLED01',
+        status: 'already_entitled',
+        createdAt: NOW,
+      }),
+    ])
+    const deliver = vi.fn()
+
+    await expect(
+      sendTrialRedeemCodeEmail(
+        store,
+        { id: 6, recipientEmail: 'clinician@clinic.example' },
+        { now: () => NOW, deliver },
+      ),
+    ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
+    await expect(
+      sendTrialRedeemCodeEmail(
+        store,
+        { id: 7, recipientEmail: 'clinician@clinic.example' },
+        { now: () => NOW, deliver },
+      ),
+    ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
+    expect(deliver).not.toHaveBeenCalled()
+  })
+
+  it('rejects send when the code row is missing', async () => {
+    const store = createMemoryStore()
+    const deliver = vi.fn()
+
+    await expect(
+      sendTrialRedeemCodeEmail(
+        store,
+        { id: 404, recipientEmail: 'clinician@clinic.example' },
+        { now: () => NOW, deliver },
+      ),
+    ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotFoundError' })
+    expect(deliver).not.toHaveBeenCalled()
   })
 })

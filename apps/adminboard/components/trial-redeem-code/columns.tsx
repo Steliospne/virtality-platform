@@ -2,6 +2,7 @@
 
 import DateCell from '@/components/tables/date-cell'
 import { ColumnHeader } from '@/components/tables/header-cell'
+import { SendTrialRedeemCodeEmailDialog } from '@/components/trial-redeem-code/send-trial-redeem-code-email-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -10,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useDropdownMenu } from '@/hooks/use-dropdown-menu-action'
 import { useDeleteTrialRedeemCode } from '@virtality/react-query'
 import {
   TRIAL_REDEEM_DISPLAY_STATUS_LABELS,
@@ -17,7 +19,8 @@ import {
 } from '@virtality/shared/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import startCase from 'lodash.startcase'
-import { Copy, Ellipsis, Trash2 } from 'lucide-react'
+import { Copy, Ellipsis, Mail, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
@@ -105,7 +108,10 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
     cell: function ActionCell({ row }) {
       const { mutate: deleteTrialRedeemCodeMutation } =
         useDeleteTrialRedeemCode()
+      const { open, setOpen, runAfterClose } = useDropdownMenu()
+      const [sendOpen, setSendOpen] = useState(false)
       const trialRedeemCode = row.original
+      const canSend = trialRedeemCode.displayStatus === 'unused'
 
       const copyCode = () => {
         void navigator.clipboard.writeText(trialRedeemCode.code)
@@ -122,23 +128,38 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
         )
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size='icon' variant='ghost' className='size-6'>
-              <Ellipsis />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent id='actions'>
-            <DropdownMenuItem onClick={copyCode}>
-              <Copy />
-              Copy Code
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDeleteAction}>
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button size='icon' variant='ghost' className='size-6'>
+                <Ellipsis />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent id='actions'>
+              <DropdownMenuItem onSelect={copyCode}>
+                <Copy />
+                Copy Code
+              </DropdownMenuItem>
+              {canSend ? (
+                <DropdownMenuItem
+                  onSelect={() => runAfterClose(() => setSendOpen(true))}
+                >
+                  <Mail />
+                  Send Email
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem onSelect={handleDeleteAction}>
+                <Trash2 />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <SendTrialRedeemCodeEmailDialog
+            open={sendOpen}
+            onOpenChange={setSendOpen}
+            trialRedeemCode={trialRedeemCode}
+          />
+        </>
       )
     },
   },

@@ -1,10 +1,14 @@
 import { ORPCError } from '@orpc/server'
 import type { PrismaClient } from '@virtality/db'
+import { sendTrialRedeemCodeEmail as deliverTrialRedeemCodeEmail } from '@virtality/nodemailer'
+import { getConsoleUrl } from '@virtality/shared/types'
 import {
   createTrialRedeemCode,
   deleteTrialRedeemCode,
   listTrialRedeemCodes,
+  sendTrialRedeemCodeEmail,
   TrialRedeemCodeNotFoundError,
+  TrialRedeemCodeNotSendableError,
   TrialRedeemCodeValidationError,
   TRIAL_REDEEM_DISPLAY_STATUSES,
   type TrialRedeemCodeStore,
@@ -27,6 +31,11 @@ const listInputSchema = z
 
 const deleteInputSchema = z.object({
   id: z.number().int().positive(),
+})
+
+const sendEmailInputSchema = z.object({
+  id: z.number().int().positive(),
+  recipientEmail: z.string().trim().email(),
 })
 
 export function createPrismaTrialRedeemCodeStore(
@@ -56,6 +65,9 @@ export function createPrismaTrialRedeemCodeStore(
 
 function throwTrialRedeemOrpcError(error: unknown): never {
   if (error instanceof TrialRedeemCodeValidationError) {
+    throw new ORPCError('BAD_REQUEST', { message: error.message })
+  }
+  if (error instanceof TrialRedeemCodeNotSendableError) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
   if (error instanceof TrialRedeemCodeNotFoundError) {
@@ -107,8 +119,32 @@ const deleteProcedure = authed
     )
   })
 
+const sendEmail = authed
+  .route({ path: '/trial-redeem-code/send-email', method: 'POST' })
+  .input(sendEmailInputSchema)
+  .handler(async ({ context, input }) =>
+    runTrialRedeemHandler(context.prisma, (store) =>
+      sendTrialRedeemCodeEmail(
+        store,
+        {
+          id: input.id,
+          recipientEmail: input.recipientEmail,
+        },
+        {
+          deliver: async (payload) => {
+            await deliverTrialRedeemCodeEmail({
+              ...payload,
+              signUpUrl: `${getConsoleUrl()}/sign-up`,
+            })
+          },
+        },
+      ),
+    ),
+  )
+
 export const trialRedeemCode = {
   list,
   create,
   delete: deleteProcedure,
+  sendEmail,
 }

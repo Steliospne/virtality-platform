@@ -78,9 +78,71 @@ export class TrialRedeemCodeNotFoundError extends Error {
   }
 }
 
+export class TrialRedeemCodeNotSendableError extends Error {
+  constructor(id: number, displayStatus: TrialRedeemDisplayStatus) {
+    super(
+      `Trial Redeem Code ${id} cannot be emailed while status is ${displayStatus}.`,
+    )
+    this.name = 'TrialRedeemCodeNotSendableError'
+  }
+}
+
 type TrialRedeemRuntime = {
   now?: () => Date
   generateCode?: () => string
+}
+
+export type TrialRedeemEmailDelivery = {
+  recipientEmail: string
+  code: string
+  trialDays: number
+}
+
+export type SendTrialRedeemCodeEmailInput = {
+  id: number
+  recipientEmail: string
+}
+
+export type SendTrialRedeemCodeEmailRuntime = TrialRedeemRuntime & {
+  deliver: (payload: TrialRedeemEmailDelivery) => Promise<void>
+}
+
+export function canSendTrialRedeemEmail(
+  record: Pick<TrialRedeemCodeRecord, 'status' | 'createdAt'>,
+  now: Date = new Date(),
+): boolean {
+  return getTrialRedeemDisplayStatus(record, now) === 'unused'
+}
+
+export async function sendTrialRedeemCodeEmail(
+  store: TrialRedeemCodeStore,
+  input: SendTrialRedeemCodeEmailInput,
+  runtime: SendTrialRedeemCodeEmailRuntime,
+): Promise<TrialRedeemEmailDelivery> {
+  const now = runtime.now?.() ?? new Date()
+  const existing = await store.findById(input.id)
+  if (!existing) {
+    throw new TrialRedeemCodeNotFoundError(input.id)
+  }
+
+  const displayStatus = getTrialRedeemDisplayStatus(existing, now)
+  if (displayStatus !== 'unused') {
+    throw new TrialRedeemCodeNotSendableError(input.id, displayStatus)
+  }
+
+  const recipientEmail = input.recipientEmail.trim()
+  if (!recipientEmail) {
+    throw new TrialRedeemCodeValidationError('recipientEmail is required')
+  }
+
+  const payload: TrialRedeemEmailDelivery = {
+    recipientEmail,
+    code: existing.code,
+    trialDays: existing.trialDays,
+  }
+
+  await runtime.deliver(payload)
+  return payload
 }
 
 const randomBody = createRandomStringGenerator('A-Z', '0-9')
