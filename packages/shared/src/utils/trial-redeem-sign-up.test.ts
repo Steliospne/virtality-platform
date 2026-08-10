@@ -38,23 +38,10 @@ function createMemoryStore(
   rows: TrialRedeemCodeRecord[]
 } {
   const rows = [...initial]
-  let nextId = rows.reduce((max, row) => Math.max(max, row.id), 0) + 1
 
   return {
     rows,
     findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
-    findById: async (id) => rows.find((row) => row.id === id) ?? null,
-    create: async (data) => {
-      const created = { id: nextId++, ...data }
-      rows.unshift(created)
-      return created
-    },
-    listAll: async () => [...rows].sort((a, b) => b.id - a.id),
-    deleteById: async (id) => {
-      const index = rows.findIndex((row) => row.id === id)
-      if (index === -1) throw new Error('NOT_FOUND')
-      rows.splice(index, 1)
-    },
     consumeAsRedeemed: async (id, usedBy, usedAt) => {
       const row = rows.find((r) => r.id === id)
       if (!row || row.status !== 'unused') return false
@@ -109,7 +96,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     })
   })
 
-  it('blocks derived expired codes with Expired [COPY]', async () => {
+  it('blocks derived expired codes', async () => {
     const store = createMemoryStore([
       record({
         status: 'unused',
@@ -125,7 +112,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     })
   })
 
-  it('blocks redeemed and already_entitled with shared Already used [COPY]', async () => {
+  it('blocks redeemed and already_entitled codes', async () => {
     const redeemedStore = createMemoryStore([record({ status: 'redeemed' })])
     const entitledStore = createMemoryStore([
       record({ status: 'already_entitled' }),

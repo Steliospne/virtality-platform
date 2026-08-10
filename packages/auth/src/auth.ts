@@ -50,6 +50,24 @@ async function consumeTesterCodeIfPresent(
   }
 }
 
+async function readSignUpCodeFromOAuthState(): Promise<string | undefined> {
+  return readSignUpCodeFromUnknown(await getOAuthState().catch(() => null))
+}
+
+async function resolveSignUpCodeForCustomerCreate(
+  body: unknown,
+  path: unknown,
+): Promise<string | undefined> {
+  const fromBody = readSignUpCodeFromUnknown(body)
+  if (fromBody !== undefined) return fromBody
+
+  if (typeof path === 'string' && path.startsWith('/callback')) {
+    return readSignUpCodeFromOAuthState()
+  }
+
+  return undefined
+}
+
 export const auth = betterAuth({
   appName: 'virtality',
   baseURL,
@@ -106,19 +124,8 @@ export const auth = betterAuth({
       stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
       createCustomerOnSignUp: true,
       onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
-        let rawCode = readSignUpCodeFromUnknown(ctx.body)
-        if (
-          rawCode === undefined &&
-          typeof ctx.path === 'string' &&
-          ctx.path.startsWith('/callback')
-        ) {
-          rawCode = readSignUpCodeFromUnknown(
-            await getOAuthState().catch(() => null),
-          )
-        }
-
         await redeemTrialCodeForCustomer({
-          rawCode,
+          rawCode: await resolveSignUpCodeForCustomerCreate(ctx.body, ctx.path),
           userId: user.id,
           stripeCustomerId: stripeCustomer.id,
           priceId: PRO_PLAN_PRICE_ID,
@@ -170,9 +177,8 @@ export const auth = betterAuth({
           }
 
           if (ctx?.path === '/callback/:id') {
-            const additionalData = await getOAuthState()
             await consumeTesterCodeIfPresent(
-              readSignUpCodeFromUnknown(additionalData),
+              readSignUpCodeFromUnknown(await getOAuthState()),
               user.id,
             )
           }
@@ -191,9 +197,8 @@ export const auth = betterAuth({
       }
 
       if (path.startsWith('/callback/:id')) {
-        const additionalData = await getOAuthState().catch(() => null)
         await assertTrialRedeemAllowedAtSignUp(
-          readSignUpCodeFromUnknown(additionalData),
+          await readSignUpCodeFromOAuthState(),
         )
       }
     }),
@@ -204,9 +209,7 @@ export const auth = betterAuth({
       } = ctx
 
       if (path.startsWith('/sign-up')) {
-        const newSession = ctx.context.newSession
         const re = ctx.body?.re
-
         if (newSession?.user && re && typeof re === 'string') {
           await consumeTesterCodeIfPresent(re, newSession.user.id)
         }
@@ -214,7 +217,6 @@ export const auth = betterAuth({
 
       if (path.startsWith('/callback/:id')) {
         const additionalData = await getOAuthState()
-
         if (newSession?.user?.id) {
           await consumeTesterCodeIfPresent(
             readSignUpCodeFromUnknown(additionalData),

@@ -76,7 +76,10 @@ export async function evaluateTrialRedeemAtSignUp(
   }
 }
 
-export type TrialRedeemConsumeStore = TrialRedeemCodeStore & {
+export type TrialRedeemConsumeStore = Pick<
+  TrialRedeemCodeStore,
+  'findByCode'
+> & {
   /**
    * Atomically unused → redeemed with consume audit fields.
    * Returns false when the row is missing or no longer unused.
@@ -120,11 +123,8 @@ export async function redeemTrialCodeAfterSignUp(
   input: RedeemTrialCodeInput,
   runtime: { now?: () => Date } = {},
 ): Promise<RedeemTrialCodeResult> {
-  const gate = await evaluateTrialRedeemAtSignUp(
-    store,
-    input.code,
-    runtime.now?.() ?? new Date(),
-  )
+  const now = runtime.now?.() ?? new Date()
+  const gate = await evaluateTrialRedeemAtSignUp(store, input.code, now)
   if (gate.action !== 'proceed') return { status: 'ignored' }
 
   let stripeSubscriptionId: string
@@ -140,11 +140,10 @@ export async function redeemTrialCodeAfterSignUp(
     return { status: 'failed' }
   }
 
-  const usedAt = runtime.now?.() ?? new Date()
   const consumed = await store.consumeAsRedeemed(
     gate.record.id,
     input.userId,
-    usedAt,
+    now,
   )
   if (!consumed) return { status: 'failed' }
 

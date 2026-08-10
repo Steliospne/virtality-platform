@@ -18,20 +18,6 @@ export function createPrismaTrialRedeemConsumeStore(
       client.trialRedeemCode.findUnique({
         where: { code },
       }),
-    findById: (id) =>
-      client.trialRedeemCode.findUnique({
-        where: { id },
-      }),
-    create: (data) => client.trialRedeemCode.create({ data }),
-    listAll: () =>
-      client.trialRedeemCode.findMany({
-        orderBy: { id: 'desc' },
-      }),
-    deleteById: async (id) => {
-      await client.trialRedeemCode.delete({
-        where: { id },
-      })
-    },
     consumeAsRedeemed: async (id, usedBy, usedAt) => {
       const { count } = await client.trialRedeemCode.updateMany({
         where: { id, status: 'unused' },
@@ -82,13 +68,12 @@ export function readSignUpCodeFromUnknown(source: unknown): string | undefined {
   return typeof code === 'string' ? code : undefined
 }
 
+const trialRedeemStore = createPrismaTrialRedeemConsumeStore()
+
 export async function assertTrialRedeemAllowedAtSignUp(
   rawCode: string | null | undefined,
 ): Promise<void> {
-  const gate = await evaluateTrialRedeemAtSignUp(
-    createPrismaTrialRedeemConsumeStore(),
-    rawCode,
-  )
+  const gate = await evaluateTrialRedeemAtSignUp(trialRedeemStore, rawCode)
   if (gate.action === 'block') {
     throw new APIError('BAD_REQUEST', { message: gate.message })
   }
@@ -105,7 +90,7 @@ export async function redeemTrialCodeForCustomer(input: {
   if (routed.kind !== 'trial_redeem') return
 
   await redeemTrialCodeAfterSignUp(
-    createPrismaTrialRedeemConsumeStore(),
+    trialRedeemStore,
     createStripeTrialRedeemGateway(input.stripeClient),
     {
       code: routed.code,
