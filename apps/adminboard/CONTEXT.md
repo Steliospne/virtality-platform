@@ -79,3 +79,25 @@ _Avoid_: Preview send
 **Final Send**:
 The immediate, irreversible send that creates a Sent Email Record.
 _Avoid_: Blast send, publish
+
+### Access and billing
+
+**Tester Code**:
+A one-time staff-issued code that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes which system matches. Adminboard issues and manages Tester Codes.
+_Avoid_: Referral Code, QA code, Testing Code, promo code
+
+**Trial Redeem Code**:
+A one-time code that starts a no-card **Trial Subscription** when redeemed at sign-up. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes which system matches. Adminboard issues and manages Trial Redeem Codes.
+_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+
+**Trial Subscription**:
+A Subscription currently in its trial phase, started without requiring a card when configured that way.
+_Avoid_: free sub, trialing subscription (as the term), trial offer
+
+**Entitlement Clock**:
+The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable. Stripe remains the source of truth for the underlying end time.
+_Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
+
+**Extension**:
+A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months.
+_Avoid_: renewal, top-up, trial extension (as a separate entity name)

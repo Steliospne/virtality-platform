@@ -196,6 +196,28 @@ _Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating U
 Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
+### Access and billing
+
+**Tester Code**:
+A one-time staff-issued code that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes which system matches.
+_Avoid_: Referral Code, QA code, Testing Code, promo code
+
+**Trial Redeem Code**:
+A one-time code that starts a no-card **Trial Subscription** when redeemed at sign-up. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes which system matches.
+_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+
+**Trial Subscription**:
+A Subscription currently in its trial phase, started without requiring a card when configured that way.
+_Avoid_: free sub, trialing subscription (as the term), trial offer
+
+**Entitlement Clock**:
+The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable.
+_Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
+
+**Remaining Time**:
+The clinician-visible duration left on the **Entitlement Clock**, always shown in the console sidebar.
+_Avoid_: days remaining (as the term), time left, access remaining
+
 ## Example Dialogue
 
 Dev: "Should we list every **Exercise Variant** directly in the picker?"  
