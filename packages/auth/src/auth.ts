@@ -21,6 +21,14 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 })
 
+/**
+ * Canonical sandbox `pro` monthly Price (`prod_SaYNooLgBNvYvA` default;
+ * lookup_key `pro_monthly`). Same ID for no-card Trial Subscription create
+ * and Checkout subscribe/renew. Retired inactive auth price:
+ * `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
+ */
+export const PRO_PLAN_PRICE_ID = 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
+
 const baseURL = getServerUrl()
 
 export const auth = betterAuth({
@@ -80,7 +88,7 @@ export const auth = betterAuth({
       createCustomerOnSignUp: true,
       subscription: {
         enabled: true,
-        plans: [{ name: 'pro', priceId: 'price_1RfNGh4Fc2DAAhEfvoXDrDMw' }],
+        plans: [{ name: 'pro', priceId: PRO_PLAN_PRICE_ID }],
       },
     }),
     phoneNumber({
