@@ -270,6 +270,90 @@ describe('buildEntitlementStanding', () => {
     expect(standing.billingPathEstablished).toBe(false)
     expect(standing.checkoutCta).toBeNull()
   })
+
+  it('keeps soft-expired Subscribe CTA after abandoned Checkout incomplete row', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+        { status: 'incomplete' },
+      ],
+    })
+
+    expect(standing.entitled).toBe(false)
+    expect(standing.remainingMs).toBe(0)
+    expect(standing.canLaunchVr).toBe(false)
+    expect(standing.checkoutCta).toBe('subscribe')
+    expect(formatRemainingTimeLabel(standing.remainingMs)).toBe('Expired')
+  })
+
+  it('keeps soft-expired Renew CTA after abandoned Checkout with paid history', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+        { status: 'incomplete' },
+      ],
+    })
+
+    expect(standing.entitled).toBe(false)
+    expect(standing.canLaunchVr).toBe(false)
+    expect(standing.checkoutCta).toBe('renew')
+  })
+
+  it('restores live clock, clears CTAs, and allows VR after Checkout webhook sync', () => {
+    const periodEnd = new Date('2026-09-10T12:00:00.000Z')
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+        {
+          status: 'active',
+          periodEnd,
+        },
+      ],
+    })
+
+    expect(standing.entitled).toBe(true)
+    expect(standing.clockEnd).toEqual(periodEnd)
+    expect(standing.remainingMs).toBe(periodEnd.getTime() - NOW.getTime())
+    expect(standing.checkoutCta).toBeNull()
+    expect(standing.canLaunchVr).toBe(true)
+    expect(formatRemainingTimeLabel(standing.remainingMs)).not.toBe('Expired')
+  })
+
+  it('never treats Checkout incomplete as an entitled clock before sync', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'incomplete',
+          periodEnd: new Date('2026-12-01T12:00:00.000Z'),
+        },
+      ],
+    })
+
+    expect(standing.entitled).toBe(false)
+    expect(standing.remainingMs).toBe(0)
+    expect(standing.clockEnd).toBeNull()
+    expect(standing.canLaunchVr).toBe(false)
+  })
 })
 
 describe('hadPaidBillingHistory', () => {
