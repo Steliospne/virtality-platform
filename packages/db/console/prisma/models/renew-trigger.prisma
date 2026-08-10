@@ -1,0 +1,18 @@
+// Renew notification trigger configuration (Adminboard)
+
+enum RenewTriggerChannel {
+  email
+  in_app
+}
+
+model RenewTrigger {
+  id         String              @id
+  channel    RenewTriggerChannel
+  daysBefore Int
+  active     Boolean             @default(true)
+  createdAt  DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime            @updatedAt @db.Timestamp(6)
+
+  @@unique([channel, daysBefore])
+  @@index([channel])
+}

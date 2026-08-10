@@ -1,6 +1,7 @@
 import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import type { LucideIcon } from 'lucide-react'
 import {
+  Bell,
   Film,
   Grid3x3,
   Images,
@@ -57,5 +58,9 @@ export const sidebarNav: SidebarNavGroup[] = [
       { title: 'Tester Codes', href: '/tester-codes', icon: LinkIcon },
       { title: 'Create user', href: '/admin/create-user', icon: UserPlus },
     ],
+  },
+  {
+    label: 'Billing',
+    items: [{ title: 'Renew triggers', href: '/renew-triggers', icon: Bell }],
   },
 ]

@@ -66,6 +66,9 @@ export { useHighlightCards } from './highlight-card/use-highlight-cards.js'
 // Tester Code queries
 export { useTesterCodes } from './tester-code/use-tester-codes.js'
 
+// Renew trigger queries
+export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
+
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'
 export { useBucketObjectReferences } from './bucket/use-bucket-object-references.js'

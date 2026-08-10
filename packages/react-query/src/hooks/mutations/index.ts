@@ -47,6 +47,11 @@ export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'
 export { useCreateTesterCode } from './tester-code/use-create-tester-code.js'
 export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'
 
+// Renew trigger mutations
+export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'
+export { useUpdateRenewTrigger } from './renew-trigger/use-update-renew-trigger.js'
+export { useRemoveRenewTrigger } from './renew-trigger/use-remove-renew-trigger.js'
+
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'
 export { useSendEmailTemplate } from './email/use-send-email-template.js'
