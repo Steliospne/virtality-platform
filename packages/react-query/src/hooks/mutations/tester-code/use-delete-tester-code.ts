@@ -1,18 +1,17 @@
-import { useMutation } from '@tanstack/react-query'
-import type { ORPCUtils } from '../../../orpc.js'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useORPC } from '../../../orpc-context.js'
 
-type DeleteTesterCodeOnSuccess = ReturnType<
-  ORPCUtils['testerCode']['delete']['mutationOptions']
->['onSuccess']
-
-interface UseDeleteTesterCodeProps {
-  onSuccess?: DeleteTesterCodeOnSuccess
-}
-
-export function useDeleteTesterCode({
-  onSuccess,
-}: UseDeleteTesterCodeProps = {}) {
+export function useDeleteTesterCode() {
   const orpc = useORPC()
-  return useMutation(orpc.testerCode.delete.mutationOptions({ onSuccess }))
+  const queryClient = useQueryClient()
+
+  return useMutation(
+    orpc.testerCode.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: orpc.testerCode.list.key(),
+        })
+      },
+    }),
+  )
 }

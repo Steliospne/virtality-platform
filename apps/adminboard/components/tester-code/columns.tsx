@@ -10,11 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  getQueryClient,
-  useDeleteTesterCode,
-  useORPC,
-} from '@virtality/react-query'
+import { useDeleteTesterCode } from '@virtality/react-query'
 import { TesterCode } from '@virtality/db'
 import { ColumnDef } from '@tanstack/react-table'
 import startCase from 'lodash.startcase'
@@ -81,14 +77,7 @@ export const columns: ColumnDef<TesterCode>[] = [
   {
     id: 'actions',
     cell: function ActionCell({ row }) {
-      const orpc = useORPC()
-      const { mutate: deleteTesterCodeMutation } = useDeleteTesterCode({
-        onSuccess: () => {
-          getQueryClient().invalidateQueries({
-            queryKey: orpc.testerCode.list.key(),
-          })
-        },
-      })
+      const { mutate: deleteTesterCodeMutation } = useDeleteTesterCode()
       const testerCode = row.original
       const copyId = () => {
         navigator.clipboard.writeText(String(testerCode.id))
