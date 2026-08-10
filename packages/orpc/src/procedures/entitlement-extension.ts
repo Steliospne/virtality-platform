@@ -1,80 +1,113 @@
 import { ORPCError } from '@orpc/server'
-import { extendLiveEntitlementClockAction } from '@virtality/auth'
+import { extendEntitlementClockAction } from '@virtality/auth'
 import type { PrismaClient } from '@virtality/db'
 import {
   extendEntitlementClockInputSchema,
   type ExtendableSeatListItem,
+  type ExtendableSeatSubscriptionStatus,
 } from '@virtality/shared/types'
 import {
+  EntitlementExtensionAlreadyEntitledError,
+  EntitlementExtensionMissingCustomerError,
   EntitlementExtensionNotLiveError,
   EntitlementExtensionValidationError,
-  LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   isLiveEntitlementSubscriptionStatus,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 
-function clockEndForLiveStatus(
-  status: 'trialing' | 'active',
+function clockEndForStatus(
+  status: string,
   trialEnd: Date | null,
   periodEnd: Date | null,
 ): Date | null {
-  return status === 'trialing' ? trialEnd : periodEnd
+  if (status === 'trialing') return trialEnd
+  if (status === 'active') return periodEnd
+  return trialEnd ?? periodEnd
+}
+
+function classifySeatStatus(
+  liveStatus: string | undefined,
+  latestNonLiveStatus: string | undefined,
+): ExtendableSeatSubscriptionStatus {
+  if (liveStatus && isLiveEntitlementSubscriptionStatus(liveStatus)) {
+    return liveStatus
+  }
+  if (latestNonLiveStatus === 'canceled') return 'canceled'
+  if (latestNonLiveStatus) return 'expired'
+  return 'never_entitled'
 }
 
 async function listExtendableSeats(
   prisma: PrismaClient,
 ): Promise<ExtendableSeatListItem[]> {
-  const subscriptions = await prisma.subscription.findMany({
+  const users = await prisma.user.findMany({
     where: {
-      status: { in: [...LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES] },
-      stripeSubscriptionId: { not: null },
+      deletedAt: null,
+      stripeCustomerId: { not: null },
     },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: { email: 'asc' },
+  })
+  if (users.length === 0) return []
+
+  const userIds = users.map((user) => user.id)
+  const subscriptions = await prisma.subscription.findMany({
+    where: { referenceId: { in: userIds } },
     orderBy: { id: 'desc' },
   })
 
-  const byUser = new Map<string, (typeof subscriptions)[number]>()
+  const liveByUser = new Map<string, (typeof subscriptions)[number]>()
+  const latestByUser = new Map<string, (typeof subscriptions)[number]>()
   for (const subscription of subscriptions) {
-    if (!byUser.has(subscription.referenceId)) {
-      byUser.set(subscription.referenceId, subscription)
+    if (!latestByUser.has(subscription.referenceId)) {
+      latestByUser.set(subscription.referenceId, subscription)
+    }
+    if (
+      isLiveEntitlementSubscriptionStatus(subscription.status) &&
+      subscription.stripeSubscriptionId &&
+      !liveByUser.has(subscription.referenceId)
+    ) {
+      liveByUser.set(subscription.referenceId, subscription)
     }
   }
 
-  const userIds = [...byUser.keys()]
-  if (userIds.length === 0) return []
-
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds }, deletedAt: null },
-    select: { id: true, name: true, email: true },
-  })
-  const usersById = new Map(users.map((user) => [user.id, user]))
-
   const seats: ExtendableSeatListItem[] = []
-  for (const [userId, subscription] of byUser) {
-    const user = usersById.get(userId)
-    if (!user || !subscription.stripeSubscriptionId) continue
-    if (!isLiveEntitlementSubscriptionStatus(subscription.status)) continue
+  for (const user of users) {
+    const live = liveByUser.get(user.id)
+    const latest = latestByUser.get(user.id)
+    const subscriptionStatus = classifySeatStatus(
+      live?.status,
+      live ? undefined : latest?.status,
+    )
+    const source = live ?? latest
 
     seats.push({
       userId: user.id,
       name: user.name,
       email: user.email,
-      subscriptionStatus: subscription.status,
-      stripeSubscriptionId: subscription.stripeSubscriptionId,
-      clockEnd: clockEndForLiveStatus(
-        subscription.status,
-        subscription.trialEnd,
-        subscription.periodEnd,
-      ),
+      subscriptionStatus,
+      stripeSubscriptionId: source?.stripeSubscriptionId ?? null,
+      clockEnd: source
+        ? clockEndForStatus(source.status, source.trialEnd, source.periodEnd)
+        : null,
+      // liveByUser only includes trialing|active seats with a Stripe sub id
+      extensionMode: live ? 'update' : 'create',
     })
   }
 
-  return seats.sort((left, right) => left.email.localeCompare(right.email))
+  return seats
 }
 
 function throwEntitlementExtensionOrpcError(error: unknown): never {
   if (
     error instanceof EntitlementExtensionValidationError ||
-    error instanceof EntitlementExtensionNotLiveError
+    error instanceof EntitlementExtensionNotLiveError ||
+    error instanceof EntitlementExtensionMissingCustomerError ||
+    error instanceof EntitlementExtensionAlreadyEntitledError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -95,7 +128,7 @@ const extend = authed
   .input(extendEntitlementClockInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await extendLiveEntitlementClockAction(context.prisma, {
+      return await extendEntitlementClockAction(context.prisma, {
         userId: input.userId,
         amount: input.amount,
         unit: input.unit,

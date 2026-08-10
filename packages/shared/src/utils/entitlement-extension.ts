@@ -27,11 +27,13 @@ export type LiveSubscriptionRecord = {
 export type EntitlementExtensionStore = {
   /**
    * Returns the Customer's live entitled Subscription (`trialing`|`active`)
-   * when one exists. Does not invent create-path seats (see Extension #54).
+   * when one exists.
    */
   findLiveSubscriptionByUserId: (
     userId: string,
   ) => Promise<LiveSubscriptionRecord | null>
+  /** Stripe Customer id for the user, when Billing Path / Customer exists. */
+  findStripeCustomerIdByUserId: (userId: string) => Promise<string | null>
 }
 
 export type EntitlementExtensionStripeMetadata = {
@@ -50,6 +52,19 @@ export type EntitlementExtensionStripeGateway = {
     trialEndUnix: number
     metadata: EntitlementExtensionStripeMetadata
   }) => Promise<{ trialEndUnix: number }>
+  /** True when the Customer already has a trialing or active Subscription. */
+  customerHasEntitledSubscription: (customerId: string) => Promise<boolean>
+  /**
+   * Same create shape as Trial Redeem (canonical Price, no card,
+   * `missing_payment_method=cancel`), with Extension metadata and absolute
+   * `trial_end`. Never resurrects a canceled `sub_` id.
+   */
+  createNoCardTrialSubscription: (input: {
+    customerId: string
+    priceId: string
+    trialEndUnix: number
+    metadata: EntitlementExtensionStripeMetadata
+  }) => Promise<{ stripeSubscriptionId: string }>
 }
 
 export type ExtendLiveEntitlementClockInput = {
@@ -59,11 +74,20 @@ export type ExtendLiveEntitlementClockInput = {
   actorUserId: string
 }
 
-export type ExtendLiveEntitlementClockResult = {
+export type ExtendEntitlementClockInput = ExtendLiveEntitlementClockInput & {
+  /** Canonical pro Price; staff never pick Prices. */
+  priceId: string
+}
+
+export type ExtendEntitlementClockResult = {
+  mode: 'updated' | 'created'
   stripeSubscriptionId: string
-  previousStatus: LiveEntitlementSubscriptionStatus
+  previousStatus: LiveEntitlementSubscriptionStatus | 'none'
   trialEnd: Date
 }
+
+/** @deprecated Prefer ExtendEntitlementClockResult; kept for live-only callers. */
+export type ExtendLiveEntitlementClockResult = ExtendEntitlementClockResult
 
 export class EntitlementExtensionValidationError extends Error {
   constructor(message: string) {
@@ -78,6 +102,24 @@ export class EntitlementExtensionNotLiveError extends Error {
       `No live trialing or active Entitlement Clock found for user "${userId}".`,
     )
     this.name = 'EntitlementExtensionNotLiveError'
+  }
+}
+
+export class EntitlementExtensionMissingCustomerError extends Error {
+  constructor(userId: string) {
+    super(
+      `No Stripe Customer found for user "${userId}". Extension cannot create a Trial Subscription.`,
+    )
+    this.name = 'EntitlementExtensionMissingCustomerError'
+  }
+}
+
+export class EntitlementExtensionAlreadyEntitledError extends Error {
+  constructor(userId: string) {
+    super(
+      `Customer for user "${userId}" already has a trialing or active Subscription. Extension will not create a second live Subscription.`,
+    )
+    this.name = 'EntitlementExtensionAlreadyEntitledError'
   }
 }
 
@@ -132,22 +174,102 @@ export function computeExtensionTrialEnd(
   return end
 }
 
+function extensionMetadata(
+  input: Pick<
+    ExtendLiveEntitlementClockInput,
+    'actorUserId' | 'amount' | 'unit'
+  >,
+): EntitlementExtensionStripeMetadata {
+  return {
+    extensionActorUserId: input.actorUserId,
+    extensionDurationAmount: String(input.amount),
+    extensionDurationUnit: input.unit,
+  }
+}
+
+function assertExtensionActors(input: ExtendLiveEntitlementClockInput): void {
+  if (!input.userId.trim()) {
+    throw new EntitlementExtensionValidationError('userId is required.')
+  }
+  if (!input.actorUserId.trim()) {
+    throw new EntitlementExtensionValidationError('actorUserId is required.')
+  }
+}
+
+type UsableLiveSubscription = LiveSubscriptionRecord & {
+  status: LiveEntitlementSubscriptionStatus
+  stripeSubscriptionId: string
+}
+
+function isUsableLiveSubscription(
+  subscription: LiveSubscriptionRecord | null,
+): subscription is UsableLiveSubscription {
+  return (
+    subscription !== null &&
+    isLiveEntitlementSubscriptionStatus(subscription.status) &&
+    Boolean(subscription.stripeSubscriptionId)
+  )
+}
+
+async function updateLiveSubscriptionTrialEnd(
+  subscription: UsableLiveSubscription,
+  stripe: EntitlementExtensionStripeGateway,
+  input: ExtendLiveEntitlementClockInput,
+  runtime: { now?: () => Date },
+): Promise<ExtendEntitlementClockResult> {
+  const trialEnd = computeExtensionTrialEnd(
+    runtime.now?.() ?? new Date(),
+    input.amount,
+    input.unit,
+  )
+  const trialEndUnix = Math.floor(trialEnd.getTime() / 1000)
+  await stripe.updateTrialEnd({
+    stripeSubscriptionId: subscription.stripeSubscriptionId,
+    trialEndUnix,
+    metadata: extensionMetadata(input),
+  })
+  return {
+    mode: 'updated',
+    stripeSubscriptionId: subscription.stripeSubscriptionId,
+    previousStatus: subscription.status,
+    trialEnd,
+  }
+}
+
 /**
  * Extends a live `trialing`|`active` seat via Stripe `trial_end` update.
  * Does not write a local Subscription row (webhook-only sync).
- * Non-live seats are out of scope here (create path is Extension #54).
  */
 export async function extendLiveEntitlementClock(
   store: EntitlementExtensionStore,
   stripe: EntitlementExtensionStripeGateway,
   input: ExtendLiveEntitlementClockInput,
   runtime: { now?: () => Date } = {},
-): Promise<ExtendLiveEntitlementClockResult> {
-  if (!input.userId.trim()) {
-    throw new EntitlementExtensionValidationError('userId is required.')
+): Promise<ExtendEntitlementClockResult> {
+  assertExtensionActors(input)
+
+  const subscription = await store.findLiveSubscriptionByUserId(input.userId)
+  if (!isUsableLiveSubscription(subscription)) {
+    throw new EntitlementExtensionNotLiveError(input.userId)
   }
-  if (!input.actorUserId.trim()) {
-    throw new EntitlementExtensionValidationError('actorUserId is required.')
+
+  return updateLiveSubscriptionTrialEnd(subscription, stripe, input, runtime)
+}
+
+/**
+ * Creates a new no-card Trial Subscription for expired/canceled/never-entitled
+ * seats. Does not resurrect canceled Stripe subscription ids. Duplicate
+ * entitled Customers are blocked before create. Local sync stays webhook-only.
+ */
+export async function createTrialSubscriptionForExtension(
+  store: EntitlementExtensionStore,
+  stripe: EntitlementExtensionStripeGateway,
+  input: ExtendEntitlementClockInput,
+  runtime: { now?: () => Date } = {},
+): Promise<ExtendEntitlementClockResult> {
+  assertExtensionActors(input)
+  if (!input.priceId.trim()) {
+    throw new EntitlementExtensionValidationError('priceId is required.')
   }
 
   const trialEnd = computeExtensionTrialEnd(
@@ -156,29 +278,51 @@ export async function extendLiveEntitlementClock(
     input.unit,
   )
 
-  const subscription = await store.findLiveSubscriptionByUserId(input.userId)
-  if (
-    !subscription ||
-    !isLiveEntitlementSubscriptionStatus(subscription.status) ||
-    !subscription.stripeSubscriptionId
-  ) {
-    throw new EntitlementExtensionNotLiveError(input.userId)
+  const stripeCustomerId = await store.findStripeCustomerIdByUserId(
+    input.userId,
+  )
+  if (!stripeCustomerId) {
+    throw new EntitlementExtensionMissingCustomerError(input.userId)
+  }
+
+  const alreadyEntitled =
+    await stripe.customerHasEntitledSubscription(stripeCustomerId)
+  if (alreadyEntitled) {
+    throw new EntitlementExtensionAlreadyEntitledError(input.userId)
   }
 
   const trialEndUnix = Math.floor(trialEnd.getTime() / 1000)
-  await stripe.updateTrialEnd({
-    stripeSubscriptionId: subscription.stripeSubscriptionId,
+  const created = await stripe.createNoCardTrialSubscription({
+    customerId: stripeCustomerId,
+    priceId: input.priceId,
     trialEndUnix,
-    metadata: {
-      extensionActorUserId: input.actorUserId,
-      extensionDurationAmount: String(input.amount),
-      extensionDurationUnit: input.unit,
-    },
+    metadata: extensionMetadata(input),
   })
 
   return {
-    stripeSubscriptionId: subscription.stripeSubscriptionId,
-    previousStatus: subscription.status,
+    mode: 'created',
+    stripeSubscriptionId: created.stripeSubscriptionId,
+    previousStatus: 'none',
     trialEnd,
   }
+}
+
+/**
+ * Adminboard Extension entry: update live `trialing`|`active`, else create a
+ * new no-card Trial Subscription for non-live seats.
+ */
+export async function extendEntitlementClock(
+  store: EntitlementExtensionStore,
+  stripe: EntitlementExtensionStripeGateway,
+  input: ExtendEntitlementClockInput,
+  runtime: { now?: () => Date } = {},
+): Promise<ExtendEntitlementClockResult> {
+  assertExtensionActors(input)
+
+  const subscription = await store.findLiveSubscriptionByUserId(input.userId)
+  if (isUsableLiveSubscription(subscription)) {
+    return updateLiveSubscriptionTrialEnd(subscription, stripe, input, runtime)
+  }
+
+  return createTrialSubscriptionForExtension(store, stripe, input, runtime)
 }

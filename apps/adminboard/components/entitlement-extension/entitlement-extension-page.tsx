@@ -24,8 +24,10 @@ import {
   EXTENSION_DURATION_UNIT_LABELS,
   EXTENSION_DURATION_UNITS,
   EXTENSION_PAGE_DESCRIPTION,
+  EXTENSION_SEAT_STATUS_LABELS,
   extensionSeatSelectPlaceholder,
-  formatExtensionClockEnd,
+  formatExtensionSeatHint,
+  formatExtensionSuccessMessage,
 } from '@/lib/entitlement-extension'
 
 export function EntitlementExtensionPage() {
@@ -42,7 +44,7 @@ export function EntitlementExtensionPage() {
     event.preventDefault()
 
     if (!userId) {
-      toast.error('Select a live seat to extend')
+      toast.error('Select a seat to extend')
       return
     }
 
@@ -61,7 +63,11 @@ export function EntitlementExtensionPage() {
       {
         onSuccess: (result) => {
           toast.success(
-            `Extended ${result.previousStatus} seat through ${formatExtensionClockEnd(result.trialEnd)}. Remaining Time updates after Stripe webhook sync.`,
+            formatExtensionSuccessMessage({
+              mode: result.mode,
+              previousStatus: result.previousStatus,
+              trialEnd: result.trialEnd,
+            }),
           )
           setUserId('')
         },
@@ -104,15 +110,15 @@ export function EntitlementExtensionPage() {
             <SelectContent>
               {(seats ?? []).map((seat) => (
                 <SelectItem key={seat.userId} value={seat.userId}>
-                  {seat.email} ({seat.subscriptionStatus})
+                  {seat.email} (
+                  {EXTENSION_SEAT_STATUS_LABELS[seat.subscriptionStatus]})
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {selectedSeat ? (
             <p className='text-muted-foreground text-sm'>
-              {selectedSeat.name}: current clock ends{' '}
-              {formatExtensionClockEnd(selectedSeat.clockEnd)}
+              {selectedSeat.name}: {formatExtensionSeatHint(selectedSeat)}
             </p>
           ) : null}
         </div>

@@ -72,6 +72,9 @@ export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 
+// Entitlement Clock queries
+export { useEntitlementStanding } from './entitlement-clock/use-entitlement-standing.js'
+
 // Renew trigger queries
 export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
 

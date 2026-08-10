@@ -20,6 +20,7 @@ import {
   AnalyticsEventProps,
   trackAnalyticsEvent,
 } from '@/lib/analytics-contract'
+import { RemainingTimeSidebar } from './remaining-time-sidebar'
 
 const RootSidebar = () => {
   const { isMobile } = useSidebar()
@@ -80,7 +81,9 @@ const RootSidebar = () => {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className='mt-auto'></SidebarFooter>
+      <SidebarFooter className='mt-auto border-t border-zinc-200'>
+        <RemainingTimeSidebar />
+      </SidebarFooter>
     </Sidebar>
   )
 }

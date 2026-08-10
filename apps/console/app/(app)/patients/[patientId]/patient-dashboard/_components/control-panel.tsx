@@ -63,6 +63,7 @@ import {
   getTreatmentLaunchError,
 } from '@/lib/patient-dashboard-treatment-launch'
 import { useVrHeadsetPresence } from '@/hooks/use-vr-headset-presence'
+import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import {
   resolveCurrentExerciseIndex,
   type SkipDirection,
@@ -119,9 +120,11 @@ const ControlPanel = ({
 
   const { connected } = useSocketConnection({ device: selectedDevice })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
+  const { canLaunchVr } = useLiveEntitlementStanding()
   const treatmentLaunchReady = canLaunchTreatment({
     consoleConnected: connected,
     headsetPresent,
+    entitlementAllowsLaunch: canLaunchVr,
   })
 
   const missingSettings = !selectedAvatar || !selectedMap
@@ -150,6 +153,7 @@ const ControlPanel = ({
     const launchError = getTreatmentLaunchError({
       consoleConnected: connected,
       headsetPresent,
+      entitlementAllowsLaunch: canLaunchVr,
     })
     if (launchError) return ErrorToasty(launchError)
 
@@ -214,6 +218,7 @@ const ControlPanel = ({
     const launchError = getTreatmentLaunchError({
       consoleConnected: connected,
       headsetPresent,
+      entitlementAllowsLaunch: canLaunchVr,
     })
     if (launchError) return ErrorToasty(launchError)
 

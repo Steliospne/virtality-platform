@@ -23,6 +23,7 @@ import { testerCode } from './procedures/tester-code.ts'
 import { trialRedeemCode } from './procedures/trial-redeem-code.ts'
 import { renewTrigger } from './procedures/renew-trigger.ts'
 import { entitlementExtension } from './procedures/entitlement-extension.ts'
+import { entitlementClock } from './procedures/entitlement-clock.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
@@ -58,6 +59,7 @@ export const router = {
   trialRedeemCode,
   renewTrigger,
   entitlementExtension,
+  entitlementClock,
   bucket,
   favoriteExercise,
   dashboard,

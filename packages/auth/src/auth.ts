@@ -13,7 +13,7 @@ import {
   readSignUpCodeFromUnknown,
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
-import { extendLiveEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
+import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -236,16 +236,25 @@ export type { AuthContext } from './lib/auth-context.ts'
 export {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,
-  extendLiveEntitlementClockForAdminboard,
+  extendEntitlementClockForAdminboard,
 } from './lib/entitlement-extension.ts'
 
-/** Adminboard Extension for live trialing|active seats (closes over platform Stripe). */
-export function extendLiveEntitlementClockAction(
+/**
+ * Adminboard Extension: update live trialing|active, else create a no-card
+ * Trial Subscription (closes over platform Stripe + canonical pro Price).
+ */
+export function extendEntitlementClockAction(
   client: typeof prisma,
   input: ExtendLiveEntitlementClockInput,
 ) {
-  return extendLiveEntitlementClockForAdminboard(input, {
-    prisma: client,
-    stripeClient,
-  })
+  return extendEntitlementClockForAdminboard(
+    { ...input, priceId: PRO_PLAN_PRICE_ID },
+    {
+      prisma: client,
+      stripeClient,
+    },
+  )
 }
+
+/** @deprecated Prefer extendEntitlementClockAction. */
+export const extendLiveEntitlementClockAction = extendEntitlementClockAction
