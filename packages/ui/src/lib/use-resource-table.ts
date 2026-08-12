@@ -15,6 +15,8 @@ type UseResourceTableOptions<TData> = {
   data: TData[]
   columns: ColumnDef<TData, unknown>[]
   enableColumnFilters?: boolean
+  /** Stable row ids so selection survives deletes/inserts (defaults to row index). */
+  getRowId?: TableOptions<TData>['getRowId']
   meta?: TableOptions<TData>['meta']
 }
 
@@ -22,6 +24,7 @@ export function useResourceTable<TData>({
   data,
   columns,
   enableColumnFilters = false,
+  getRowId,
   meta,
 }: UseResourceTableOptions<TData>) {
   'use no memo'
@@ -48,6 +51,7 @@ export function useResourceTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     ...(enableColumnFilters ? { onColumnFiltersChange: setColumnFilters } : {}),
+    ...(getRowId ? { getRowId } : {}),
     ...(meta ? { meta } : {}),
   })
 

@@ -63,8 +63,23 @@ export { useMosaic } from './mosaic/use-mosaic.js'
 // Highlight card queries
 export { useHighlightCards } from './highlight-card/use-highlight-cards.js'
 
-// Referral queries
-export { useReferralCodes } from './referral/use-referral-codes.js'
+// Tester Code queries
+export { useTesterCodes } from './tester-code/use-tester-codes.js'
+
+// Trial Redeem Code queries
+export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.js'
+
+// Entitlement Extension queries
+export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
+
+// Entitlement Clock queries
+export { useEntitlementStanding } from './entitlement-clock/use-entitlement-standing.js'
+
+// Renew trigger queries
+export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
+
+// Renew prompt queries
+export { useInAppRenewPrompts } from './renew-prompt/use-in-app-renew-prompts.js'
 
 // Bucket queries
 export { useBucket } from './bucket/use-bucket.js'

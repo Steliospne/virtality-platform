@@ -43,9 +43,25 @@ export { useResetDeviceId } from './device/use-reset-device-id.js'
 // Waitlist mutations
 export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'
 
-// Referral mutations
-export { useCreateReferralCode } from './referral/use-create-referral-code.js'
-export { useDeleteReferralCode } from './referral/use-delete-referral-code.js'
+// Tester Code mutations
+export { useCreateTesterCode } from './tester-code/use-create-tester-code.js'
+export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'
+
+// Trial Redeem Code mutations
+export { useCreateTrialRedeemCode } from './trial-redeem-code/use-create-trial-redeem-code.js'
+export { useDeleteTrialRedeemCode } from './trial-redeem-code/use-delete-trial-redeem-code.js'
+export { useSendTrialRedeemCodeEmail } from './trial-redeem-code/use-send-trial-redeem-code-email.js'
+
+// Entitlement Extension mutations
+export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
+
+// Renew trigger mutations
+export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'
+export { useUpdateRenewTrigger } from './renew-trigger/use-update-renew-trigger.js'
+export { useRemoveRenewTrigger } from './renew-trigger/use-remove-renew-trigger.js'
+
+// Renew prompt mutations
+export { useEvaluateRenewPrompts } from './renew-prompt/use-evaluate-renew-prompts.js'
 
 // Email mutations
 export { useSendThankYouEmail } from './email/use-send-thank-you-email.js'

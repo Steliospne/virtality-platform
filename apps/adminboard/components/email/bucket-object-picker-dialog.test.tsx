@@ -18,6 +18,7 @@ vi.mock('@virtality/shared/utils', () => ({
           },
         ]
       : [{ label: 'Bucket', prefix: '' }],
+  shouldBypassVercelImageOptimization: () => false,
 }))
 
 vi.mock('next/image', () => ({

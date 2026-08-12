@@ -10,36 +10,36 @@ import SocialSignInButton from '@/components/auth/social-sign-in-btn'
 import { authClient } from '@/auth-client'
 import { useRouter } from 'next/navigation'
 
-const REFERRAL_CODE_STORAGE_KEY = 'virtality_referral_code'
+const TESTER_CODE_STORAGE_KEY = 'virtality_tester_code'
 
-export const getReferralCodeFromUrl = () => {
+export const getTesterCodeFromUrl = () => {
   if (typeof window === 'undefined') return null
   const params = new URLSearchParams(window.location.search)
-  return params.get('referralCode')
+  return params.get('testerCode')
 }
 
-export const storeReferralCodeForSignUp = (code: string) => {
+export const storeTesterCodeForSignUp = (code: string) => {
   if (typeof window === 'undefined') return
-  sessionStorage.setItem(REFERRAL_CODE_STORAGE_KEY, code)
+  sessionStorage.setItem(TESTER_CODE_STORAGE_KEY, code)
 }
 
-export const getStoredReferralCode = () => {
+export const getStoredTesterCode = () => {
   if (typeof window === 'undefined') return null
-  return sessionStorage.getItem(REFERRAL_CODE_STORAGE_KEY)
+  return sessionStorage.getItem(TESTER_CODE_STORAGE_KEY)
 }
 
-export const clearStoredReferralCode = () => {
+export const clearStoredTesterCode = () => {
   if (typeof window === 'undefined') return
-  sessionStorage.removeItem(REFERRAL_CODE_STORAGE_KEY)
+  sessionStorage.removeItem(TESTER_CODE_STORAGE_KEY)
 }
 
 const SignInCardBody = () => {
   const router = useRouter()
   const { data } = authClient.useSession()
-  const [referralCode, setReferralCode] = useState('')
+  const [testerCode, setTesterCode] = useState('')
 
-  const signUpHref = referralCode.trim()
-    ? `/sign-up?referralCode=${encodeURIComponent(referralCode.trim())}`
+  const signUpHref = testerCode.trim()
+    ? `/sign-up?testerCode=${encodeURIComponent(testerCode.trim())}`
     : '/sign-up'
 
   useEffect(() => {
@@ -53,21 +53,21 @@ const SignInCardBody = () => {
       <div className='space-y-4'>
         <div className='space-y-2'>
           <Label
-            htmlFor='referral-code'
+            htmlFor='tester-code'
             className='text-muted-foreground text-xs'
           >
-            Referral code (optional)
+            Tester code (optional)
           </Label>
           <Input
-            id='referral-code'
+            id='tester-code'
             type='text'
-            placeholder='Enter code to sign up as referral'
-            value={referralCode}
-            onChange={(e) => setReferralCode(e.target.value)}
+            placeholder='Enter code to sign up as tester'
+            value={testerCode}
+            onChange={(e) => setTesterCode(e.target.value)}
             className='text-sm'
           />
         </div>
-        <SocialSignInButton referralCode={referralCode?.trim() || undefined} />
+        <SocialSignInButton testerCode={testerCode?.trim() || undefined} />
       </div>
       <Separator className='my-2' />
       <EmailSignIn />

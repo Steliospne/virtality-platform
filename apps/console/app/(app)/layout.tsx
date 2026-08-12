@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { SidebarProvider, SIDEBAR_COOKIE_NAME } from '@/components/ui/sidebar'
 import RootSidebar from '@/components/layout/sidebar'
 import Navbar from '@/components/layout/navbar'
+import { RenewPromptBanner } from '@/components/layout/renew-prompt-banner'
 
 export default async function AppLayout({
   children,
@@ -16,6 +17,7 @@ export default async function AppLayout({
       <RootSidebar />
       <main className='w-full'>
         <Navbar />
+        <RenewPromptBanner />
         {children}
       </main>
     </SidebarProvider>

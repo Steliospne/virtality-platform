@@ -4,6 +4,10 @@
 
 Before staging or committing code changes, run `pnpm format` from the repo root (`prettier --write .`). Include any files Prettier modifies in the same commit as the related work. Do not skip formatting because a diff looks small or formatting-only.
 
+### Git / PRs
+
+PRs target **`dev`** (staging). Promote to production with `dev` → **`main`** after staging verification. Never open routine work PRs into `main`. See `docs/agents/git-workflow.md`.
+
 ### Issue tracker
 
 Issues live in GitHub Issues for this repo. Use the `gh` CLI. See `docs/agents/issue-tracker.md`.

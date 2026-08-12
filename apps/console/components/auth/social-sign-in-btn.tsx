@@ -10,12 +10,12 @@ import { markPendingSocketWarmUp } from '@/hooks/use-warm-up-socket-on-sign-in'
 import { warmUpSocketServer } from '@/lib/warm-up-socket-server'
 
 interface SocialSignInButtonProps {
-  referralCode?: string
+  testerCode?: string
 }
 
 const callbackURL = getConsoleUrl()
 
-const SocialSignInButton = ({ referralCode }: SocialSignInButtonProps) => {
+const SocialSignInButton = ({ testerCode }: SocialSignInButtonProps) => {
   const [isRunning, setIsRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,8 +32,8 @@ const SocialSignInButton = ({ referralCode }: SocialSignInButtonProps) => {
     authClient.signIn.social({
       provider: 'google',
       callbackURL,
-      ...(referralCode && {
-        additionalData: { referralCode },
+      ...(testerCode && {
+        additionalData: { testerCode },
       }),
       fetchOptions: {
         onSuccess: () => {

@@ -11,6 +11,7 @@ describe('patient dashboard treatment launch gating', () => {
       canLaunchTreatment({
         consoleConnected: true,
         headsetPresent: false,
+        entitlementAllowsLaunch: true,
       }),
     ).toBe(false)
   })
@@ -20,6 +21,7 @@ describe('patient dashboard treatment launch gating', () => {
       canLaunchTreatment({
         consoleConnected: true,
         headsetPresent: true,
+        entitlementAllowsLaunch: true,
       }),
     ).toBe(true)
   })
@@ -29,23 +31,46 @@ describe('patient dashboard treatment launch gating', () => {
       canLaunchTreatment({
         consoleConnected: false,
         headsetPresent: true,
+        entitlementAllowsLaunch: true,
       }),
     ).toBe(false)
     expect(
       canLaunchTreatment({
         consoleConnected: false,
         headsetPresent: false,
+        entitlementAllowsLaunch: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('blocks launch when Remaining Time entitlement is expired', () => {
+    expect(
+      canLaunchTreatment({
+        consoleConnected: true,
+        headsetPresent: true,
+        entitlementAllowsLaunch: false,
       }),
     ).toBe(false)
   })
 })
 
 describe('getTreatmentLaunchError', () => {
+  it('reports entitlement expiry before connection errors', () => {
+    expect(
+      getTreatmentLaunchError({
+        consoleConnected: false,
+        headsetPresent: false,
+        entitlementAllowsLaunch: false,
+      }),
+    ).toBe(TREATMENT_LAUNCH_ERROR.entitlementExpired)
+  })
+
   it('reports console disconnection before headset absence', () => {
     expect(
       getTreatmentLaunchError({
         consoleConnected: false,
         headsetPresent: false,
+        entitlementAllowsLaunch: true,
       }),
     ).toBe(TREATMENT_LAUNCH_ERROR.consoleDisconnected)
   })
@@ -55,6 +80,7 @@ describe('getTreatmentLaunchError', () => {
       getTreatmentLaunchError({
         consoleConnected: true,
         headsetPresent: false,
+        entitlementAllowsLaunch: true,
       }),
     ).toBe(TREATMENT_LAUNCH_ERROR.headsetAbsent)
   })
@@ -64,6 +90,7 @@ describe('getTreatmentLaunchError', () => {
       getTreatmentLaunchError({
         consoleConnected: true,
         headsetPresent: true,
+        entitlementAllowsLaunch: true,
       }),
     ).toBeNull()
   })

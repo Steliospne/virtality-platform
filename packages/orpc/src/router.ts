@@ -19,7 +19,12 @@ import { highlightCard } from './procedures/highlight-card.ts'
 import { promoVideo } from './procedures/promo-video.ts'
 import { mosaic } from './procedures/mosaic.ts'
 import { email } from './procedures/email.ts'
-import { referral } from './procedures/referral.ts'
+import { testerCode } from './procedures/tester-code.ts'
+import { trialRedeemCode } from './procedures/trial-redeem-code.ts'
+import { renewTrigger } from './procedures/renew-trigger.ts'
+import { renewPrompt } from './procedures/renew-prompt.ts'
+import { entitlementExtension } from './procedures/entitlement-extension.ts'
+import { entitlementClock } from './procedures/entitlement-clock.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
@@ -51,7 +56,12 @@ export const router = {
   promoVideo,
   mosaic,
   email,
-  referral,
+  testerCode,
+  trialRedeemCode,
+  renewTrigger,
+  renewPrompt,
+  entitlementExtension,
+  entitlementClock,
   bucket,
   favoriteExercise,
   dashboard,

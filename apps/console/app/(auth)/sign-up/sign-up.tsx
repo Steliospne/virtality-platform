@@ -28,8 +28,8 @@ const baseURL = getConsoleUrl()
 const SignUp = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const _referralCode = searchParams.get('referralCode')
-  const [referralCode, setReferralCode] = useState(_referralCode || '')
+  const _testerCode = searchParams.get('testerCode')
+  const [testerCode, setTesterCode] = useState(_testerCode || '')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const { i18n } = useClientT()
 
@@ -48,7 +48,7 @@ const SignUp = () => {
     if (submitError) setSubmitError(null)
     const { error } = await authClient.signUp.email({
       ...values,
-      ...(referralCode?.trim() && { referralCode: referralCode.trim() }),
+      ...(testerCode?.trim() && { testerCode: testerCode.trim() }),
       callbackURL: baseURL,
       fetchOptions: {
         onSuccess: () => router.push(`/verify-email?email=${values.email}`),
@@ -73,17 +73,17 @@ const SignUp = () => {
           <Separator className='my-2' />
           <div className='mb-4 space-y-2'>
             <Label
-              htmlFor='referral-code'
+              htmlFor='tester-code'
               className='text-muted-foreground text-xs'
             >
-              Referral code (optional)
+              Tester code (optional)
             </Label>
             <Input
-              id='referral-code'
+              id='tester-code'
               type='text'
-              placeholder='Enter code to sign up as referral'
-              value={referralCode || ''}
-              onChange={(e) => setReferralCode(e.target.value)}
+              placeholder='Enter code to sign up as tester'
+              value={testerCode || ''}
+              onChange={(e) => setTesterCode(e.target.value)}
               className='text-sm'
             />
           </div>

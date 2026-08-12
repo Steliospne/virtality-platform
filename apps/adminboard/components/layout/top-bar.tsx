@@ -14,7 +14,7 @@ const TopBar = () => {
   if (isPending) return <Skeleton className='h-15 w-full' />
 
   return (
-    <header className='bg-background sticky top-0 z-10 flex h-15 items-center gap-2 border-b px-2'>
+    <header className='bg-background sticky top-0 z-20 flex h-15 items-center gap-2 border-b px-2'>
       <SidebarTrigger />
       <Link href='/' className='text-lg font-semibold tracking-tight'>
         Adminboard

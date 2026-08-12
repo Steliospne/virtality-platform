@@ -196,6 +196,36 @@ _Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating U
 Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
+### Access and billing
+
+**Tester Code**:
+A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric characters, that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes by prefix.
+_Avoid_: Referral Code, QA code, Testing Code, promo code
+
+**Trial Redeem Code**:
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Default trial length is fourteen days with an optional per-code day override. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix.
+_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+
+**Trial Subscription**:
+A Subscription currently in its trial phase, started without requiring a card when configured that way.
+_Avoid_: free sub, trialing subscription (as the term), trial offer
+
+**Entitlement Clock**:
+The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable.
+_Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
+
+**Billing Path Established**:
+At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
+_Avoid_: has Stripe customer, ever paid, currently entitled
+
+**Remaining Time**:
+The clinician-visible duration left on the **Entitlement Clock**, always shown in the console sidebar.
+_Avoid_: days remaining (as the term), time left, access remaining
+
+**Renew Prompt**:
+A seat-holder renew nudge delivered by Virtality System Email and/or in-app chrome at Adminboard-configured day offsets before **Entitlement Clock** end. Each channel×offset fires once per clock epoch (keyed by clock end); missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
+_Avoid_: Stripe Billing reminder email, toast blast
+
 ## Example Dialogue
 
 Dev: "Should we list every **Exercise Variant** directly in the picker?"  

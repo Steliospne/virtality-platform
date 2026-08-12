@@ -79,3 +79,41 @@ _Avoid_: Preview send
 **Final Send**:
 The immediate, irreversible send that creates a Sent Email Record.
 _Avoid_: Blast send, publish
+
+### Access and billing
+
+**Tester Code**:
+A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric characters, that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Tester Codes under Admin (not Billing).
+_Avoid_: Referral Code, QA code, Testing Code, promo code
+
+**Trial Redeem Code**:
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Trial Redeem Codes under Billing.
+_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+
+**Trial Subscription**:
+A Subscription currently in its trial phase, started without requiring a card when configured that way.
+_Avoid_: free sub, trialing subscription (as the term), trial offer
+
+**Entitlement Clock**:
+The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable. Stripe remains the source of truth for the underlying end time.
+_Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
+
+**Billing Path Established**:
+At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
+_Avoid_: has Stripe customer, ever paid, currently entitled
+
+**Extension**:
+A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months.
+_Avoid_: renewal, top-up, trial extension (as a separate entity name)
+
+**Renew Email Trigger**:
+An Adminboard-configured row `{ daysBefore, active }` that schedules a renew **System Email** offset before **Entitlement Clock** end. Independent from the in-app list. Empty or all-inactive rows silence email (no separate master switch). Copy stays code-owned.
+_Avoid_: Stripe Billing reminder, renew master switch
+
+**Renew In-app Trigger**:
+An Adminboard-configured row `{ daysBefore, active }` that schedules an in-app renew prompt offset before **Entitlement Clock** end. Independent from the email list. Empty or all-inactive rows silence in-app (no separate master switch). Chrome copy stays code-owned / `[COPY]`.
+_Avoid_: toast blast, global notification toggle
+
+**Renew Prompt Delivery**:
+A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
+_Avoid_: Stripe Billing reminder, renew master switch
