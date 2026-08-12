@@ -40,6 +40,14 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
  */
 export const PRO_PLAN_PRICE_ID = 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
 
+/**
+ * Canonical sandbox `pro` yearly Price on the same Product
+ * (`lookup_key: pro_yearly`). Provisional amount (€1500/year = 10× monthly
+ * €150) until live amounts are locked. Trial Redeem / Extension keep monthly.
+ */
+export const PRO_PLAN_ANNUAL_PRICE_ID =
+  'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
+
 const baseURL = getServerUrl()
 
 async function consumeTesterCodeIfPresent(
@@ -139,7 +147,13 @@ export const auth = betterAuth({
       },
       subscription: {
         enabled: true,
-        plans: [{ name: 'pro', priceId: PRO_PLAN_PRICE_ID }],
+        plans: [
+          {
+            name: 'pro',
+            priceId: PRO_PLAN_PRICE_ID,
+            annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+          },
+        ],
         // Paid Subscribe/Renew Checkout always collects a card. No-card trials
         // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
         getCheckoutSessionParams: async () => ({

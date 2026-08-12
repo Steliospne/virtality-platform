@@ -7,6 +7,7 @@ import {
   pickEntitlementSubscription,
   remainingMsFromClockEnd,
   resolveCheckoutCta,
+  resolveProfileBillingCheckoutCta,
   resolveEntitlementClock,
 } from './entitlement-clock.ts'
 
@@ -424,6 +425,48 @@ describe('resolveCheckoutCta', () => {
       resolveCheckoutCta({
         entitled: false,
         billingPathEstablished: true,
+        hadPaidBilling: true,
+      }),
+    ).toBe('renew')
+  })
+})
+
+describe('resolveProfileBillingCheckoutCta', () => {
+  it('returns null while entitled even with a Stripe Customer', () => {
+    expect(
+      resolveProfileBillingCheckoutCta({
+        entitled: true,
+        hasStripeCustomer: true,
+        hadPaidBilling: false,
+      }),
+    ).toBeNull()
+  })
+
+  it('returns null without a Stripe Customer', () => {
+    expect(
+      resolveProfileBillingCheckoutCta({
+        entitled: false,
+        hasStripeCustomer: false,
+        hadPaidBilling: false,
+      }),
+    ).toBeNull()
+  })
+
+  it('allows Subscribe when a Customer exists without Billing Path', () => {
+    expect(
+      resolveProfileBillingCheckoutCta({
+        entitled: false,
+        hasStripeCustomer: true,
+        hadPaidBilling: false,
+      }),
+    ).toBe('subscribe')
+  })
+
+  it('returns Renew when a Customer has paid history', () => {
+    expect(
+      resolveProfileBillingCheckoutCta({
+        entitled: false,
+        hasStripeCustomer: true,
         hadPaidBilling: true,
       }),
     ).toBe('renew')

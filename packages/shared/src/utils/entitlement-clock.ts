@@ -8,7 +8,9 @@
  *
  * Checkout CTA: none while entitled; Subscribe vs Renew when not entitled and
  * Billing Path Established (Renew if subscription history shows a paid period).
- * Abandon leaves soft-expired + CTA; only synced live Subscriptions restore.
+ * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
+ * alone is enough). Abandon leaves soft-expired + CTA; only synced live
+ * Subscriptions restore.
  */
 
 import { hasBillingPathEstablished } from './console-session-gate.ts'
@@ -161,6 +163,7 @@ export function hadPaidBillingHistory(
 /**
  * Checkout CTA visibility: entitled users never see Subscribe/Renew; soft-
  * expired clinicians with Billing Path Established see Subscribe or Renew.
+ * Sidebar Subscribe/Renew uses this (Billing Path required).
  */
 export function resolveCheckoutCta(input: {
   entitled: boolean
@@ -168,6 +171,20 @@ export function resolveCheckoutCta(input: {
   hadPaidBilling: boolean
 }): CheckoutCta | null {
   if (input.entitled || !input.billingPathEstablished) return null
+  return input.hadPaidBilling ? 'renew' : 'subscribe'
+}
+
+/**
+ * Profile → Billing Checkout CTA. Unlike sidebar Subscribe/Renew, a Stripe
+ * Customer alone is enough to start Checkout even when Billing Path is not
+ * established yet (typical tester seat: Customer id, no synced Subscription).
+ */
+export function resolveProfileBillingCheckoutCta(input: {
+  entitled: boolean
+  hasStripeCustomer: boolean
+  hadPaidBilling: boolean
+}): CheckoutCta | null {
+  if (input.entitled || !input.hasStripeCustomer) return null
   return input.hadPaidBilling ? 'renew' : 'subscribe'
 }
 

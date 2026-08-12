@@ -32,7 +32,9 @@ export function RemainingTimeSidebar() {
             className='text-base'
             tooltip={checkoutCtaLabel}
             disabled={isStarting}
-            onClick={startCheckout}
+            onClick={() => {
+              void startCheckout()
+            }}
           >
             <CreditCard />
             {!collapsed && <span>{checkoutCtaLabel}</span>}

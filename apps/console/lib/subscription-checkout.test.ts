@@ -42,7 +42,19 @@ describe('buildProCheckoutUpgradeInput', () => {
 
     expect(input).not.toHaveProperty('trialDays')
     expect(input).not.toHaveProperty('freeTrial')
-    expect(input).not.toHaveProperty('annual')
+  })
+
+  it('defaults to monthly Checkout (annual: false)', () => {
+    const input = buildProCheckoutUpgradeInput('/app')
+
+    expect(input.annual).toBe(false)
+  })
+
+  it('requests yearly Checkout when annual is true', () => {
+    const input = buildProCheckoutUpgradeInput('/app', { annual: true })
+
+    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(input.annual).toBe(true)
   })
 })
 
@@ -115,6 +127,25 @@ describe('startProSubscriptionCheckout', () => {
 
     expect(result).toEqual({ ok: true })
     expect(calls).toEqual([buildProCheckoutUpgradeInput('/patients')])
+  })
+
+  it('passes annual through to Better Auth upgrade', async () => {
+    const calls: unknown[] = []
+    const upgrade = async (input: unknown) => {
+      calls.push(input)
+      return { data: { url: 'https://checkout.stripe.test/cs_test' } }
+    }
+
+    const result = await startProSubscriptionCheckout({
+      upgrade,
+      returnUrl: '/profile',
+      annual: true,
+    })
+
+    expect(result).toEqual({ ok: true })
+    expect(calls).toEqual([
+      buildProCheckoutUpgradeInput('/profile', { annual: true }),
+    ])
   })
 
   it('surfaces Better Auth upgrade failures without claiming success', async () => {

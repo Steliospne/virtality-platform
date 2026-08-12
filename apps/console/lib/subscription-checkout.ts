@@ -75,6 +75,8 @@ export function shouldPollCheckoutEntitlementRestore(input: {
 
 export type ProCheckoutUpgradeInput = {
   plan: typeof PRO_SUBSCRIPTION_PLAN
+  /** When true, Better Auth uses the plan's annualDiscountPriceId (yearly). */
+  annual: boolean
   successUrl: string
   cancelUrl: string
 }
@@ -84,12 +86,16 @@ export type ProCheckoutUpgradeInput = {
  * share this shape; only the CTA label differs upstream. Success and cancel
  * return to the same console path with distinct intent markers so abandon stays
  * soft-expired and success can await webhook sync (no optimistic entitlement).
+ *
+ * `annual` selects monthly vs yearly Price on the same `pro` plan.
  */
 export function buildProCheckoutUpgradeInput(
   returnUrl: string,
+  options?: { annual?: boolean },
 ): ProCheckoutUpgradeInput {
   return {
     plan: PRO_SUBSCRIPTION_PLAN,
+    annual: options?.annual ?? false,
     successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
     cancelUrl: withCheckoutReturnIntent(returnUrl, 'cancel'),
   }
@@ -107,15 +113,16 @@ export type StartProSubscriptionCheckoutResult =
   | { ok: false; message: string }
 
 /**
- * Starts Better Auth Stripe Checkout for the canonical pro Price.
- * Does not write local entitlement; restore is webhook/success sync only.
+ * Starts Better Auth Stripe Checkout for the canonical pro Price (monthly or
+ * yearly). Does not write local entitlement; restore is webhook/success sync only.
  */
 export async function startProSubscriptionCheckout(input: {
   upgrade: ProSubscriptionUpgradeFn
   returnUrl: string
+  annual?: boolean
 }): Promise<StartProSubscriptionCheckoutResult> {
   const { error } = await input.upgrade(
-    buildProCheckoutUpgradeInput(input.returnUrl),
+    buildProCheckoutUpgradeInput(input.returnUrl, { annual: input.annual }),
   )
 
   if (error) {
