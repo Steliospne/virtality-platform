@@ -1,4 +1,5 @@
 // Subscription and Billing Domain
+// Fields align with Better Auth Stripe subscription schema (success/webhook sync).
 
 model Subscription {
   id                   String    @id
@@ -10,9 +11,14 @@ model Subscription {
   periodStart          DateTime?
   periodEnd            DateTime?
   cancelAtPeriodEnd    Boolean?
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
   seats                Int?
   trialStart           DateTime?
   trialEnd             DateTime?
+  billingInterval      String?
+  stripeScheduleId     String?
 }
 
 model WaitingList {
