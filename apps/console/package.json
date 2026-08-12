@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3001",
-    "prototype:billing": "node -e \"console.log('\\nPROTOTYPE Profile Billing\\n1. Sign in to console\\n2. Open /user/<your-id>/profile?variant=A\\n3. Use Billing tab + amber bar (← →)\\n')\" && next dev --turbopack -p 3001",
     "dev-mobile": "NEXT_PUBLIC_MOBILE_DEV='true' next dev --turbopack -p 3001",
     "legacy:console": "next build",
     "build": "next build",
