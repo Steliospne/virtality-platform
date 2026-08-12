@@ -218,7 +218,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'Reflecting on our journey from initial applicants to becoming one of the final Top 10 winning teams, the experience underscored a fundamental truth in entrepreneurship: the growth of a startup begins with the growth of the people behind it. During the panel, we discussed how navigating the accelerator forced us to learn, adapt, and expand our thinking, ultimately making us better at making critical decisions, overcoming complex market challenges, and moving forward with absolute clinical and business clarity.',
+        text: 'Reflecting on our journey from initial applicants to becoming one of the final Top 10 winning teams, the experience underscored a fundamental truth in entrepreneurship: the growth of a startup begins with the growth of the people behind it. During the panel, we discussed how navigating the accelerator forced us to learn, adapt, and expand our thinking, ultimately making us better at making critical decisions, overcoming complex challenges, and moving forward with absolute clinical and business clarity.',
       },
       {
         kind: 'image',
@@ -233,7 +233,7 @@ export const posts: Post[] = [
       },
       {
         kind: 'paragraph',
-        text: 'An accelerator is only as good as the people running it. This event gave us the perfect opportunity to publicly recognize the mentors who created an environment that pushed our limits and helped us see further than we could on our own. We extend our sincere thanks to Nasos Koskinas, the team at POS4work, and the mentors at Piraeus Bank for the invitation and their continued multi-dimensional support. This is exactly the kind of ecosystem backing young entrepreneurs in Greece need to build internationally competitive companies.',
+        text: 'That is also why the people behind the program matter so much. They create the kind of environment that helps founders evolve, push their limits, and see further than they could on their own. This event gave us the perfect opportunity to publicly recognize the mentors who made that growth possible. We extend our sincere thanks to Nasos Koskinas, the team at POS4work, and the mentors at Piraeus Bank for the invitation and their continued multi-dimensional support. This is exactly the kind of ecosystem backing young entrepreneurs in Greece need, support not only to build internationally competitive companies, but also to grow into people who can create, collaborate, lead, and make a lasting impact.',
       },
       {
         kind: 'paragraph',
