@@ -15,7 +15,7 @@ import PendingPasswordChangeEmail, {
 import TrialRedeemCodeEmail, {
   TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
 } from './trial-redeem-code.js'
-import RenewPromptEmail, { RENEW_PROMPT_EMAIL_SUBJECT } from './renew-prompt.js'
+import RenewPromptEmail, { renewPromptEmailSubject } from './renew-prompt.js'
 
 export type EmailTemplateMeta = {
   id: string
@@ -200,20 +200,23 @@ export const EMAIL_TEMPLATES: {
       id: 'renew-prompt',
       title: 'Renew Prompt',
       category: 'billing',
-      subject: RENEW_PROMPT_EMAIL_SUBJECT,
+      subject: renewPromptEmailSubject(3),
     },
     sampleProps: {
       daysBefore: 3,
-      clockEndIso: '2026-08-17T12:00:00.000Z',
-      consoleUrl: 'https://console.virtality.app',
+      remainingTimeLabel: '2d 18h',
+      clockEndLabel: '17 Aug 2026, 12:00 UTC',
+      actionUrl:
+        'https://console.virtality.app/user/sample/profile?tab=billing',
       recipientEmail: SAMPLE_EMAIL,
       companyName: 'Virtality',
     },
     render: (p) =>
       RenewPromptEmail({
         daysBefore: p.daysBefore as number,
-        clockEndIso: p.clockEndIso as string,
-        consoleUrl: p.consoleUrl as string,
+        remainingTimeLabel: p.remainingTimeLabel as string,
+        clockEndLabel: p.clockEndLabel as string,
+        actionUrl: p.actionUrl as string,
         recipientEmail: p.recipientEmail as string | undefined,
         companyName: p.companyName as string,
       }),

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "nodemailer": "8.0.1",
+    "@virtality/shared": "workspace:*",
     "@virtality/ui": "workspace:*",
     "@virtality/db": "workspace:*"
   },

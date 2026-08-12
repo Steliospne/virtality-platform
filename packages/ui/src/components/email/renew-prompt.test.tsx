@@ -1,43 +1,57 @@
 import { describe, expect, it } from 'vitest'
 import { reactToHTML } from '../../lib/react-to-html.js'
 import {
-  RENEW_PROMPT_EMAIL_PREVIEW,
-  RENEW_PROMPT_EMAIL_SUBJECT,
+  renewPromptEmailPreview,
+  renewPromptEmailSubject,
   RenewPromptEmail,
 } from './renew-prompt.js'
 
-const CONSOLE_URL = 'https://console.virtality.app'
-const CLOCK_END = '2026-08-17T12:00:00.000Z'
+const ACTION_URL = 'https://console.virtality.app/user/abc/profile?tab=billing'
+const CLOCK_END_LABEL = '17 Aug 2026, 12:00 UTC'
+const REMAINING = '2d 18h'
 
 async function renderEmail(recipientEmail?: string) {
   return reactToHTML(
     RenewPromptEmail({
       daysBefore: 3,
-      clockEndIso: CLOCK_END,
-      consoleUrl: CONSOLE_URL,
+      remainingTimeLabel: REMAINING,
+      clockEndLabel: CLOCK_END_LABEL,
+      actionUrl: ACTION_URL,
       recipientEmail,
     }),
   )
 }
 
-describe('RenewPromptEmail', () => {
-  it('includes days-before, clock end, and console link for the seat holder', async () => {
-    const html = await renderEmail('seat@clinic.example')
-
-    expect(html).toContain(RENEW_PROMPT_EMAIL_PREVIEW)
-    expect(html).toContain('Days before Entitlement Clock end:')
-    expect(html).toContain('3')
-    expect(html).toContain(CLOCK_END)
-    expect(html).toContain(CONSOLE_URL)
-    expect(html).toContain('seat@clinic.example')
+describe('renewPromptEmailSubject', () => {
+  it('uses tomorrow wording for the 1-day offset', () => {
+    expect(renewPromptEmailSubject(1)).toBe(
+      'Your Virtality access renews tomorrow',
+    )
   })
 
-  it('keeps marketing copy as [COPY] placeholders without em dashes', async () => {
-    const html = await renderEmail()
+  it('includes the day count for other offsets', () => {
+    expect(renewPromptEmailSubject(7)).toBe(
+      'Your Virtality access renews in 7 days',
+    )
+  })
+})
 
-    expect(html).toContain('[COPY]')
+describe('RenewPromptEmail', () => {
+  it('renders Remaining Time, clock end, and billing CTA for the seat holder', async () => {
+    const html = await renderEmail('seat@clinic.example')
+    const preview = renewPromptEmailPreview(3)
+
+    expect(html).toContain(preview)
+    expect(html).toContain('Your access renews in 3 days')
+    expect(html).toContain('Remaining Time:')
+    expect(html).toContain(REMAINING)
+    expect(html).toContain(`Ends: ${CLOCK_END_LABEL}`)
+    expect(html).toContain('Manage billing')
+    expect(html).toContain(ACTION_URL)
+    expect(html).toContain('seat@clinic.example')
+    expect(html).not.toContain('[COPY]')
     expect(html).not.toContain('—')
-    expect(RENEW_PROMPT_EMAIL_SUBJECT).not.toContain('—')
-    expect(RENEW_PROMPT_EMAIL_PREVIEW).not.toContain('—')
+    expect(renewPromptEmailSubject(3)).not.toContain('—')
+    expect(preview).not.toContain('—')
   })
 })

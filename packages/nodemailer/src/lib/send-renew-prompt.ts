@@ -1,28 +1,40 @@
 import RenewPromptEmail, {
-  RENEW_PROMPT_EMAIL_SUBJECT,
+  renewPromptEmailSubject,
 } from '@virtality/ui/components/email/renew-prompt'
 import {
   reactToHTML,
   toPlainText,
 } from '@virtality/ui/components/email/react-to-html'
+import {
+  formatEntitlementClockEndLabel,
+  formatRemainingTimeLabel,
+} from '@virtality/shared/utils'
 import { nodemailer } from '../init.js'
 
 export type SendRenewPromptEmailData = {
   recipientEmail: string
   daysBefore: number
   clockEnd: Date
-  consoleUrl: string
+  /** Deep link to console Billing (or console home). */
+  actionUrl: string
+  /** Optional override for tests; defaults to Date.now(). */
+  now?: Date
 }
 
 export async function sendRenewPromptEmail(data: SendRenewPromptEmailData) {
-  const { recipientEmail, daysBefore, clockEnd, consoleUrl } = data
-  const clockEndIso = clockEnd.toISOString()
+  const { recipientEmail, daysBefore, clockEnd, actionUrl } = data
+  const now = data.now ?? new Date()
+  const remainingTimeLabel = formatRemainingTimeLabel(
+    clockEnd.getTime() - now.getTime(),
+  )
+  const clockEndLabel = formatEntitlementClockEndLabel(clockEnd)
 
   const html = await reactToHTML(
     RenewPromptEmail({
       daysBefore,
-      clockEndIso,
-      consoleUrl,
+      remainingTimeLabel,
+      clockEndLabel,
+      actionUrl,
       recipientEmail,
     }),
   )
@@ -31,7 +43,7 @@ export async function sendRenewPromptEmail(data: SendRenewPromptEmailData) {
   await nodemailer.sendMail({
     from: 'Virtality <hey@mail.virtality.app>',
     to: recipientEmail,
-    subject: RENEW_PROMPT_EMAIL_SUBJECT,
+    subject: renewPromptEmailSubject(daysBefore),
     html,
     text,
   })

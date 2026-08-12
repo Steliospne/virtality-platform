@@ -40,7 +40,8 @@ const evaluate = authed
   .handler(async ({ context }) => {
     const standing = await loadStandingForUser(context.prisma, context.user)
     const deliveries = createPrismaRenewPromptDeliveryStore(context.prisma)
-    const consoleUrl = getConsoleUrl()
+    const consoleBase = getConsoleUrl().replace(/\/$/, '')
+    const billingUrl = `${consoleBase}/user/${context.user.id}/profile?tab=billing`
 
     const { delivered } = await evaluateAndDeliverRenewPrompts(
       {
@@ -54,7 +55,7 @@ const evaluate = authed
             recipientEmail,
             daysBefore,
             clockEnd,
-            consoleUrl,
+            actionUrl: billingUrl,
           })
         },
       },

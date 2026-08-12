@@ -1,6 +1,7 @@
 {
   "extends": "@virtality/typescript-config/react-library.json",
   "compilerOptions": {
+    "rewriteRelativeImportExtensions": true,
     "outDir": "./dist",
     "rootDir": "./src"
   },
