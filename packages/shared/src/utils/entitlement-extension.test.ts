@@ -7,6 +7,7 @@ import {
   computeExtensionTrialEnd,
   extendEntitlementClock,
   extendLiveEntitlementClock,
+  extensionBaseFromLiveClock,
   type EntitlementExtensionStore,
   type EntitlementExtensionStripeGateway,
   type LiveSubscriptionRecord,
@@ -57,7 +58,7 @@ function createGateway(
 }
 
 describe('computeExtensionTrialEnd', () => {
-  it('adds days, weeks, and calendar months from now', () => {
+  it('adds days, weeks, and calendar months from the base instant', () => {
     expect(computeExtensionTrialEnd(NOW, 3, 'days')).toEqual(
       new Date('2026-08-13T12:00:00.000Z'),
     )
@@ -82,8 +83,44 @@ describe('computeExtensionTrialEnd', () => {
   })
 })
 
+describe('extensionBaseFromLiveClock', () => {
+  it('uses the future clock end so Extension lengthens Remaining Time', () => {
+    expect(
+      extensionBaseFromLiveClock(NOW, {
+        status: 'trialing',
+        trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+        periodEnd: null,
+      }),
+    ).toEqual(new Date('2026-08-20T12:00:00.000Z'))
+    expect(
+      extensionBaseFromLiveClock(NOW, {
+        status: 'active',
+        trialEnd: null,
+        periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+      }),
+    ).toEqual(new Date('2026-09-10T12:00:00.000Z'))
+  })
+
+  it('falls back to now when the clock end is missing or already past', () => {
+    expect(
+      extensionBaseFromLiveClock(NOW, {
+        status: 'trialing',
+        trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+        periodEnd: null,
+      }),
+    ).toEqual(NOW)
+    expect(
+      extensionBaseFromLiveClock(NOW, {
+        status: 'active',
+        trialEnd: null,
+        periodEnd: null,
+      }),
+    ).toEqual(NOW)
+  })
+})
+
 describe('extendLiveEntitlementClock', () => {
-  it('pushes trial_end forward for a trialing seat without local writes', async () => {
+  it('adds duration onto the current clock end for a trialing seat', async () => {
     const store = createStore({
       live: liveSub({ status: 'trialing' }),
       customers: { user_1: 'cus_1' },
@@ -109,7 +146,8 @@ describe('extendLiveEntitlementClock', () => {
       { now: () => NOW },
     )
 
-    const expectedEnd = new Date('2026-08-17T12:00:00.000Z')
+    // Clock was Aug 20; +7 days → Aug 27 (not now+7 = Aug 17).
+    const expectedEnd = new Date('2026-08-27T12:00:00.000Z')
     expect(result).toEqual({
       mode: 'updated',
       stripeSubscriptionId: 'sub_stripe_1',
@@ -127,7 +165,7 @@ describe('extendLiveEntitlementClock', () => {
     })
   })
 
-  it('re-enters trialing for an active seat with the same trial_end update', async () => {
+  it('re-enters trialing for an active seat from periodEnd plus duration', async () => {
     const store = createStore({
       live: liveSub({
         status: 'active',
@@ -158,7 +196,8 @@ describe('extendLiveEntitlementClock', () => {
 
     expect(result.previousStatus).toBe('active')
     expect(result.mode).toBe('updated')
-    expect(result.trialEnd).toEqual(new Date('2026-08-24T12:00:00.000Z'))
+    // periodEnd Sep 10 + 2 weeks → Sep 24 (not now+2w = Aug 24).
+    expect(result.trialEnd).toEqual(new Date('2026-09-24T12:00:00.000Z'))
     expect(updateTrialEnd).toHaveBeenCalledOnce()
   })
 
@@ -416,6 +455,7 @@ describe('extendEntitlementClock create path', () => {
     )
 
     expect(result.mode).toBe('updated')
+    expect(result.trialEnd).toEqual(new Date('2026-08-21T12:00:00.000Z'))
     expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
     expect(updateTrialEnd).toHaveBeenCalledOnce()
   })

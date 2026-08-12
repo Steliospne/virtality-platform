@@ -140,11 +140,12 @@ export function isLiveEntitlementSubscriptionStatus(
 }
 
 /**
- * Staff duration → absolute trial end. Always measured from `now` (not from
- * the previous clock end), matching Stripe `trial_end = now+N`.
+ * Staff duration → absolute trial end, measured from `from`.
+ * Live updates pass the current clock end (or now if that end is missing /
+ * already past). Create paths pass now.
  */
 export function computeExtensionTrialEnd(
-  now: Date,
+  from: Date,
   amount: number,
   unit: EntitlementExtensionDurationUnit,
 ): Date {
@@ -159,7 +160,7 @@ export function computeExtensionTrialEnd(
     )
   }
 
-  const end = new Date(now.getTime())
+  const end = new Date(from.getTime())
   switch (unit) {
     case 'days':
       end.setUTCDate(end.getUTCDate() + amount)
@@ -172,6 +173,29 @@ export function computeExtensionTrialEnd(
       break
   }
   return end
+}
+
+/**
+ * Base instant for a live Extension update: current Entitlement Clock end when
+ * it is still in the future; otherwise now (never shorten by measuring from a
+ * past end, and never overwrite Remaining Time by measuring from now alone).
+ */
+export function extensionBaseFromLiveClock(
+  now: Date,
+  subscription: {
+    status: LiveEntitlementSubscriptionStatus
+    trialEnd: Date | null
+    periodEnd: Date | null
+  },
+): Date {
+  const clockEnd =
+    subscription.status === 'trialing'
+      ? subscription.trialEnd
+      : subscription.periodEnd
+  if (clockEnd != null && clockEnd.getTime() > now.getTime()) {
+    return clockEnd
+  }
+  return now
 }
 
 function extensionMetadata(
@@ -217,8 +241,9 @@ async function updateLiveSubscriptionTrialEnd(
   input: ExtendLiveEntitlementClockInput,
   runtime: { now?: () => Date },
 ): Promise<ExtendEntitlementClockResult> {
+  const now = runtime.now?.() ?? new Date()
   const trialEnd = computeExtensionTrialEnd(
-    runtime.now?.() ?? new Date(),
+    extensionBaseFromLiveClock(now, subscription),
     input.amount,
     input.unit,
   )

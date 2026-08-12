@@ -5,7 +5,7 @@ import {
 import type { ExtendableSeatSubscriptionStatus } from '@virtality/shared/types'
 
 export const EXTENSION_PAGE_DESCRIPTION =
-  'Lengthen a clinician Entitlement Clock. Staff choose the seat and duration only; Stripe verbs and Prices stay server-owned. Live seats update trial end; expired, canceled, or never-entitled seats get a new no-card Trial Subscription.'
+  'Lengthen a clinician Entitlement Clock. Staff choose the seat and duration only; Stripe verbs and Prices stay server-owned. Live seats add the duration onto the current clock end; expired, canceled, or never-entitled seats get a new no-card Trial Subscription.'
 
 export const EXTENSION_DURATION_UNIT_LABELS: Record<
   EntitlementExtensionDurationUnit,

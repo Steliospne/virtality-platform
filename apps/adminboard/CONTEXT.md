@@ -103,8 +103,8 @@ At least one synced local Subscription row for the clinician's Stripe Customer, 
 _Avoid_: has Stripe customer, ever paid, currently entitled
 
 **Extension**:
-A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months.
-_Avoid_: renewal, top-up, trial extension (as a separate entity name)
+A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months. For a live seat, the chosen duration is added onto the current clock end (not measured from "now", which would overwrite Remaining Time). Expired, canceled, or never-entitled seats get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration.
+_Avoid_: renewal, top-up, trial extension (as a separate entity name), replace clock with now+N
 
 **Renew Email Trigger**:
 An Adminboard-configured row `{ daysBefore, active }` that schedules a renew **System Email** offset before **Entitlement Clock** end. Independent from the in-app list. Empty or all-inactive rows silence email (no separate master switch). Copy stays code-owned.
