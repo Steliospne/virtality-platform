@@ -6,7 +6,13 @@
  * Return URLs mark success vs cancel so the console can await webhook/success
  * sync without dual-writing entitlement. Abandon stays soft-expired; restore
  * only happens when synced Subscriptions yield a live clock.
+ *
+ * Better Auth Stripe resolves relative success/cancel URLs against the auth
+ * server baseURL. Always pass absolute console URLs so Stripe cancel and the
+ * /subscription/success callback redirect land on the console, not :8080.
  */
+
+import { getConsoleUrl } from '@virtality/shared/types'
 
 export const PRO_SUBSCRIPTION_PLAN = 'pro' as const
 
@@ -18,19 +24,31 @@ export type CheckoutReturnIntent = 'success' | 'cancel'
 export const CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS = 2_000
 export const CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS = 60_000
 
-const LOCAL_URL_BASE = 'http://local.invalid'
+const ABSOLUTE_URL_RE = /^[a-zA-Z][a-zA-Z0-9+\-.]*:/
 
-function toUrl(pathWithSearch: string): URL {
-  return new URL(pathWithSearch, LOCAL_URL_BASE)
-}
-
-function fromUrl(url: URL): string {
-  return `${url.pathname}${url.search}${url.hash}`
+function isAbsoluteUrl(url: string): boolean {
+  return ABSOLUTE_URL_RE.test(url)
 }
 
 /**
- * Attach success/cancel intent to the current console return path so abandon
- * and payment completion stay distinguishable without leaving the console URL.
+ * Absolute console return URL for Better Auth / Stripe. Relative paths are
+ * resolved against getConsoleUrl(); already-absolute URLs are kept.
+ */
+export function toAbsoluteConsoleReturnUrl(returnUrl: string): string {
+  if (isAbsoluteUrl(returnUrl)) return returnUrl
+  const base = getConsoleUrl().replace(/\/$/, '')
+  const path = returnUrl.startsWith('/') ? returnUrl : `/${returnUrl}`
+  return `${base}${path}`
+}
+
+function toUrl(returnUrl: string): URL {
+  return new URL(toAbsoluteConsoleReturnUrl(returnUrl))
+}
+
+/**
+ * Attach success/cancel intent to the console return path so abandon and
+ * payment completion stay distinguishable. Always returns an absolute console
+ * URL (Better Auth must not resolve these against the auth host).
  */
 export function withCheckoutReturnIntent(
   returnUrl: string,
@@ -38,7 +56,7 @@ export function withCheckoutReturnIntent(
 ): string {
   const url = toUrl(returnUrl)
   url.searchParams.set(CHECKOUT_RETURN_PARAM, intent)
-  return fromUrl(url)
+  return url.href
 }
 
 export function readCheckoutReturnIntent(
@@ -51,11 +69,19 @@ export function readCheckoutReturnIntent(
   return null
 }
 
-/** Drop the Checkout return marker; keep the rest of the console URL. */
+/**
+ * Drop the Checkout return marker; keep the rest of the URL.
+ * Absolute inputs stay absolute; relative inputs stay path+search+hash.
+ */
 export function stripCheckoutReturnIntent(pathWithSearch: string): string {
-  const url = toUrl(pathWithSearch)
+  if (isAbsoluteUrl(pathWithSearch)) {
+    const url = new URL(pathWithSearch)
+    url.searchParams.delete(CHECKOUT_RETURN_PARAM)
+    return url.href
+  }
+  const url = new URL(pathWithSearch, 'http://local.invalid')
   url.searchParams.delete(CHECKOUT_RETURN_PARAM)
-  return fromUrl(url)
+  return `${url.pathname}${url.search}${url.hash}`
 }
 
 /**
@@ -88,6 +114,7 @@ export type ProCheckoutUpgradeInput = {
  * soft-expired and success can await webhook sync (no optimistic entitlement).
  *
  * `annual` selects monthly vs yearly Price on the same `pro` plan.
+ * `successUrl` / `cancelUrl` are absolute console URLs.
  */
 export function buildProCheckoutUpgradeInput(
   returnUrl: string,

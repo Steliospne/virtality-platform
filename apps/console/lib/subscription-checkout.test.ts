@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { getConsoleUrl } from '@virtality/shared/types'
 import {
   buildProCheckoutUpgradeInput,
   CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS,
@@ -10,31 +11,49 @@ import {
   stripCheckoutReturnIntent,
 } from './subscription-checkout.js'
 
+const consoleOrigin = getConsoleUrl()
+
 describe('buildProCheckoutUpgradeInput', () => {
   it('targets the canonical pro plan and marks success vs cancel return on the console URL', () => {
     const input = buildProCheckoutUpgradeInput('/app')
 
     expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
-    expect(
-      readCheckoutReturnIntent(new URL(input.successUrl, 'http://x').search),
-    ).toBe('success')
-    expect(
-      readCheckoutReturnIntent(new URL(input.cancelUrl, 'http://x').search),
-    ).toBe('cancel')
-    expect(new URL(input.successUrl, 'http://x').pathname).toBe('/app')
-    expect(new URL(input.cancelUrl, 'http://x').pathname).toBe('/app')
+    expect(readCheckoutReturnIntent(new URL(input.successUrl).search)).toBe(
+      'success',
+    )
+    expect(readCheckoutReturnIntent(new URL(input.cancelUrl).search)).toBe(
+      'cancel',
+    )
+    expect(new URL(input.successUrl).origin).toBe(new URL(consoleOrigin).origin)
+    expect(new URL(input.cancelUrl).origin).toBe(new URL(consoleOrigin).origin)
+    expect(new URL(input.successUrl).pathname).toBe('/app')
+    expect(new URL(input.cancelUrl).pathname).toBe('/app')
   })
 
   it('preserves existing query params on the return URL', () => {
     const input = buildProCheckoutUpgradeInput('/patients?tab=devices')
-    const success = new URL(input.successUrl, 'http://x')
-    const cancel = new URL(input.cancelUrl, 'http://x')
+    const success = new URL(input.successUrl)
+    const cancel = new URL(input.cancelUrl)
 
+    expect(success.origin).toBe(new URL(consoleOrigin).origin)
     expect(success.pathname).toBe('/patients')
     expect(success.searchParams.get('tab')).toBe('devices')
     expect(success.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('success')
     expect(cancel.searchParams.get('tab')).toBe('devices')
     expect(cancel.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('cancel')
+  })
+
+  it('keeps absolute console return URLs absolute (not auth-host relative)', () => {
+    const input = buildProCheckoutUpgradeInput(
+      `${consoleOrigin}/user/abc/profile?tab=billing`,
+    )
+
+    expect(input.successUrl).toBe(
+      `${consoleOrigin}/user/abc/profile?tab=billing&${CHECKOUT_RETURN_PARAM}=success`,
+    )
+    expect(input.cancelUrl).toBe(
+      `${consoleOrigin}/user/abc/profile?tab=billing&${CHECKOUT_RETURN_PARAM}=cancel`,
+    )
   })
 
   it('does not request a trial period on the paid Checkout path', () => {

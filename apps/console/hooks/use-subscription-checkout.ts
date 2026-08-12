@@ -19,8 +19,7 @@ export function useSubscriptionCheckout() {
 
     setIsStarting(true)
     try {
-      const returnUrl =
-        `${window.location.pathname}${window.location.search}` || '/'
+      const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`
 
       const result = await startProSubscriptionCheckout({
         upgrade: (input) => authClient.subscription.upgrade(input),
