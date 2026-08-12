@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react'
 import { Button } from '@virtality/ui/components/button'
 import posthog from 'posthog-js'
 import { usePathname } from 'next/navigation'
+import { getWebsiteUrl } from '@virtality/shared/types'
+
+const NOTICE_ACK_KEY = 'analytics:notice-acknowledged'
+const websiteURL = getWebsiteUrl()
 
 const hiddenRoutes = [
   '/sign-in',
@@ -17,33 +21,31 @@ const hiddenRoutes = [
 
 export default function CookieBanner() {
   const pathname = usePathname()
-  const [consentGiven, setConsentGiven] = useState<
-    'granted' | 'denied' | 'pending'
-  >('denied')
+  // Start acknowledged to avoid a flash before localStorage is read.
+  const [acknowledged, setAcknowledged] = useState(true)
 
   useEffect(() => {
-    const hasGivenConsent = posthog.get_explicit_consent_status()
+    // Keep default analytics opt-in; this notice is acknowledgment only.
+    posthog.opt_in_capturing()
+    if (localStorage.getItem('analytics:consent') !== 'granted') {
+      localStorage.setItem('analytics:consent', 'granted')
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConsentGiven(hasGivenConsent)
+    setAcknowledged(localStorage.getItem(NOTICE_ACK_KEY) === '1')
   }, [])
 
-  const handleAcceptConsent = () => {
-    posthog.opt_in_capturing()
+  const handleUnderstand = () => {
+    localStorage.setItem(NOTICE_ACK_KEY, '1')
     localStorage.setItem('analytics:consent', 'granted')
-    setConsentGiven('granted')
-  }
-
-  const handleDeclineConsent = () => {
-    posthog.opt_out_capturing()
-    localStorage.setItem('analytics:consent', 'denied')
-    setConsentGiven('denied')
+    posthog.opt_in_capturing()
+    setAcknowledged(true)
   }
 
   const isHiddenRoute = hiddenRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   )
 
-  if (isHiddenRoute || consentGiven !== 'pending' || !posthog.__loaded) {
+  if (isHiddenRoute || acknowledged || !posthog.__loaded) {
     return null
   }
 
@@ -53,31 +55,39 @@ export default function CookieBanner() {
         <div className='flex flex-col gap-3'>
           <div className='space-y-1'>
             <p className='text-vital-blue-700 dark:text-vital-blue-300 text-[11px] font-semibold tracking-[0.2em] uppercase'>
-              Cookie note
+              Notice
             </p>
             <p className='text-sm leading-relaxed text-zinc-700 dark:text-zinc-200'>
-              We only use first-party cookies to remember your preferences and
-              make your experience smoother.
+              By choosing to use Virtality, you agree to our{' '}
+              <a
+                href={`${websiteURL}/terms`}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='hover:text-vital-blue-700 underline'
+              >
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a
+                href={`${websiteURL}/privacy`}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='hover:text-vital-blue-700 underline'
+              >
+                Privacy Policy
+              </a>
+              .
             </p>
           </div>
-          <div className='flex gap-2 self-end'>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={handleDeclineConsent}
-              className='w-full shrink-0 sm:w-auto'
-            >
-              Decline cookies
-            </Button>
+          <div className='flex self-end'>
             <Button
               type='button'
               variant='primary'
               size='sm'
-              onClick={handleAcceptConsent}
+              onClick={handleUnderstand}
               className='w-full shrink-0 sm:w-auto'
             >
-              Accept cookies
+              Understand
             </Button>
           </div>
         </div>

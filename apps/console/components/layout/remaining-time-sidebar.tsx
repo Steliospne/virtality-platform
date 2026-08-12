@@ -9,22 +9,26 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { authClient } from '@/auth-client'
+import { useBillingFeatureEnabled } from '@/hooks/use-billing-feature'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
- * Always-visible Remaining Time from the Entitlement Clock, plus Subscribe /
- * Renew CTA when not entitled and Billing Path Established.
- * CTA opens Profile → Billing (interval choice + Checkout / portal).
+ * Remaining Time from the Entitlement Clock, plus Subscribe / Renew CTA when
+ * not entitled and Billing Path Established. Gated by PostHog `billing_feature`
+ * (virtality.app only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()
   const { data: session } = authClient.useSession()
+  const billingEnabled = useBillingFeatureEnabled()
   const { label, checkoutCtaLabel, isPending } = useLiveEntitlementStanding()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
   const userId = session?.user?.id
   const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
+
+  if (!billingEnabled) return null
 
   return (
     <SidebarMenu>

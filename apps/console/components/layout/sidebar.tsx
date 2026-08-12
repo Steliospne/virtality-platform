@@ -37,7 +37,7 @@ const RootSidebar = () => {
                 </SidebarTrigger>
               ) : (
                 <Link href='/'>
-                  <SmallLogo className='size-4' />
+                  <SmallLogo className='size-6' />
                   <span>Virtality</span>
                 </Link>
               )}

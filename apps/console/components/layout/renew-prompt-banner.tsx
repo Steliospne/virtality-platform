@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Clock, CreditCard, X } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { authClient } from '@/auth-client'
+import { useBillingFeatureEnabled } from '@/hooks/use-billing-feature'
 import { useRenewPromptSession } from '@/hooks/use-renew-prompt-session'
 import {
   dismissRenewPrompt,
@@ -16,9 +17,11 @@ import {
 /**
  * In-app renew offset chrome for the seat holder. Hidden after Entitlement
  * Clock expiry, and dismissible per clock epoch until the next re-arm.
+ * Gated by PostHog `billing_feature` (virtality.app only) with the Billing tab.
  */
 export function RenewPromptBanner() {
   const { data: session } = authClient.useSession()
+  const billingEnabled = useBillingFeatureEnabled()
   const { prompts } = useRenewPromptSession()
   const userId = session?.user?.id ?? null
 
@@ -43,6 +46,7 @@ export function RenewPromptBanner() {
   }, [userId, epochKey])
 
   const visible =
+    billingEnabled &&
     hydrated &&
     userId != null &&
     epochKey != null &&

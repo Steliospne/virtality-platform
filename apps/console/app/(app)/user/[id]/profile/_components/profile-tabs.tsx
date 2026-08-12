@@ -4,6 +4,7 @@ import { useCallback, type ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Building, CreditCard, Key, UserIcon } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useBillingFeatureEnabled } from '@/hooks/use-billing-feature'
 
 type ProfileTab = 'info' | 'billing' | 'organizations' | 'sessions'
 
@@ -15,15 +16,17 @@ type ProfileTabsProps = {
 
 /**
  * Profile tabs with `?tab=` deep links (Billing CTA from sidebar / renew banner).
+ * Billing is gated by PostHog `billing_feature` (virtality.app only).
  */
 export function ProfileTabs({ info, billing, sessions }: ProfileTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const billingEnabled = useBillingFeatureEnabled()
 
   const requested = searchParams.get('tab')
   let activeTab: ProfileTab = 'info'
-  if (requested === 'billing') {
+  if (requested === 'billing' && billingEnabled) {
     activeTab = 'billing'
   } else if (
     requested === 'organizations' ||
@@ -56,10 +59,12 @@ export function ProfileTabs({ info, billing, sessions }: ProfileTabsProps) {
           <UserIcon />
           Info
         </TabsTrigger>
-        <TabsTrigger value='billing'>
-          <CreditCard />
-          Billing
-        </TabsTrigger>
+        {billingEnabled ? (
+          <TabsTrigger value='billing'>
+            <CreditCard />
+            Billing
+          </TabsTrigger>
+        ) : null}
         <TabsTrigger value='organizations'>
           <Building />
         </TabsTrigger>
@@ -69,7 +74,9 @@ export function ProfileTabs({ info, billing, sessions }: ProfileTabsProps) {
         </TabsTrigger>
       </TabsList>
       <TabsContent value='info'>{info}</TabsContent>
-      <TabsContent value='billing'>{billing}</TabsContent>
+      {billingEnabled ? (
+        <TabsContent value='billing'>{billing}</TabsContent>
+      ) : null}
       <TabsContent value='organizations'>Organizations</TabsContent>
       <TabsContent value='sessions'>{sessions}</TabsContent>
     </Tabs>

@@ -16,12 +16,21 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
   autocapture: { url_ignorelist: ['http:localhost:3001'] },
   loaded: async (posthogClient) => {
     try {
+      // Console defaults to opted-in so feature flags (e.g. billing_feature)
+      // and identify run without waiting on the cookie banner. Explicit
+      // declines in localStorage are still respected.
+      const consent = localStorage.getItem('analytics:consent')
+      if (consent === 'denied') {
+        posthogClient.opt_out_capturing()
+      } else {
+        posthogClient.opt_in_capturing()
+        if (consent !== 'granted') {
+          localStorage.setItem('analytics:consent', 'granted')
+        }
+      }
+
       const { data } = await authClient.getSession()
       if (!data) return
-
-      const consent = localStorage.getItem('analytics:consent')
-
-      if (consent === 'granted') posthogClient.opt_in_capturing()
 
       posthogClient.identify(data.user.id, {
         email: data.user.email,
