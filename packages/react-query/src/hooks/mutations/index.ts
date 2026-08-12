@@ -100,6 +100,18 @@ export { useUpdateHighlightCard } from './highlight-card/use-update-highlight-ca
 export { useReorderHighlightCard } from './highlight-card/use-reorder-highlight-card.js'
 export { useRemoveHighlightCard } from './highlight-card/use-remove-highlight-card.js'
 
+// Blog mutations
+export {
+  useArchiveBlogPost,
+  useAutosaveBlogPost,
+  useCreateBlogDraft,
+  useDiscardBlogPostChanges,
+  usePublishBlogPost,
+  useRestoreBlogPost,
+  useSetBlogPostFeatured,
+  useUnpublishBlogPost,
+} from './blog/use-blog-mutations.js'
+
 // Bucket mutations
 export { useUploadBucketObjects } from './bucket/use-upload-bucket-objects.js'
 export { useMoveBucketObject } from './bucket/use-move-bucket-object.js'

@@ -1,6 +1,3 @@
--- Align Subscription with Better Auth Stripe fields used by /subscription/success.
-ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "cancelAt" TIMESTAMP(3);
-ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "canceledAt" TIMESTAMP(3);
-ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "endedAt" TIMESTAMP(3);
-ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "billingInterval" TEXT;
-ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "stripeScheduleId" TEXT;
+-- Subscription columns required by Better Auth Stripe (billingInterval, cancelAt,
+-- canceledAt, endedAt, stripeScheduleId) already exist on this database.
+-- This migration records the Prisma schema alignment; no DDL to apply.

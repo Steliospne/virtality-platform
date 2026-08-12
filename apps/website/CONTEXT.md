@@ -29,7 +29,7 @@ The required primary image for a Post (CDN URL), used on the index. Distinct fro
 _Avoid_: Thumbnail, hero image, featured image, banner
 
 **Featured**:
-A Post flag marking it for the index spotlight. Soft uniqueness — content should keep at most one Featured Post; the schema does not enforce it.
+A Post flag marking it for the index spotlight. At most one published Post may be Featured; clearing Featured is allowed and the index falls back to the latest Post.
 _Avoid_: Pinned, highlighted, promoted
 
 **Body Block**:
@@ -95,7 +95,7 @@ sections/<section>/
 | ------- | ---------------- |
 | Blog    | `sections/blog/` |
 
-Posts and Authors follow the same section layout: a single `content.ts` holds the in-repo catalog (short-lived until Adminboard authoring). `index.ts` is the public API — UI plus read helpers (`getPosts`, `getPostBySlug`, Featured as needed). Helpers return resolved Posts (Author joined in-section). Raw arrays stay private; blog routes import only from `@/sections/blog`.
+Posts and Authors are Adminboard-managed. Website helpers (`getPosts`, `getPostBySlug`, `getFeaturedPost`) read published snapshots via the marketing blog API. `index.ts` is the public API — UI plus those read helpers. Blog routes import only from `@/sections/blog`.
 
 Look-and-feel is the meta-rail layout (date/author rail + copy + cover): index and post under `components/`.
 

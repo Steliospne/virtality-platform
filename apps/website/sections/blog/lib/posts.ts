@@ -1,34 +1,23 @@
-import { authors, posts } from '../content'
-import type { Author, Post, ResolvedPost } from '../types'
+import {
+  getCachedBlogPostBySlug,
+  getCachedBlogPosts,
+} from '@/lib/marketing-prefetch'
+import type { ResolvedPost } from '../types'
 
-function getAuthor(authorId: string): Author {
-  const author = authors.find((entry) => entry.id === authorId)
-  if (!author) {
-    throw new Error(`Unknown blog author: ${authorId}`)
-  }
-  return author
+/** Resolved Posts newest-first (published snapshot only). */
+export async function getPosts(): Promise<ResolvedPost[]> {
+  return getCachedBlogPosts()
 }
 
-function resolvePost(post: Post): ResolvedPost {
-  return {
-    ...post,
-    author: getAuthor(post.authorId),
-  }
-}
-
-/** Resolved Posts newest-first. */
-export function getPosts(): ResolvedPost[] {
-  return posts
-    .map(resolvePost)
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
-}
-
-export function getPostBySlug(slug: string): ResolvedPost | undefined {
-  const post = posts.find((entry) => entry.slug === slug)
-  return post ? resolvePost(post) : undefined
+export async function getPostBySlug(
+  slug: string,
+): Promise<ResolvedPost | undefined> {
+  const post = await getCachedBlogPostBySlug(slug)
+  return post ?? undefined
 }
 
 /** Soft uniqueness: returns the first Featured Post when several are flagged. */
-export function getFeaturedPost(): ResolvedPost | undefined {
-  return getPosts().find((post) => post.featured)
+export async function getFeaturedPost(): Promise<ResolvedPost | undefined> {
+  const posts = await getPosts()
+  return posts.find((post) => post.featured)
 }

@@ -65,6 +65,18 @@ export async function getCachedHighlightCards(
   )
 }
 
+export async function getCachedBlogPosts() {
+  return cachedMarketingRead('blog', ['marketing', 'blog', 'list'], () =>
+    createMarketingClient().blog.listPublished(),
+  )
+}
+
+export async function getCachedBlogPostBySlug(slug: string) {
+  return cachedMarketingRead('blog', ['marketing', 'blog', 'slug', slug], () =>
+    createMarketingClient().blog.getPublishedBySlug({ slug }),
+  )
+}
+
 export async function prefetchMarketingHomeQueries() {
   const queryClient = getQueryClient()
   const orpc = createServerOrpc()

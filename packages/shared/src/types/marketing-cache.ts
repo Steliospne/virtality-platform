@@ -6,6 +6,7 @@ export const MARKETING_CACHE_TAGS = [
   'promo-video',
   'highlight-cards-benefits',
   'highlight-cards-features',
+  'blog',
 ] as const
 
 export type MarketingCacheTag = (typeof MARKETING_CACHE_TAGS)[number]

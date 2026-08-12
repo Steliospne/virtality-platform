@@ -63,6 +63,14 @@ export { useMosaic } from './mosaic/use-mosaic.js'
 // Highlight card queries
 export { useHighlightCards } from './highlight-card/use-highlight-cards.js'
 
+// Blog queries
+export {
+  useBlogAuthors,
+  useBlogPost,
+  useBlogPosts,
+  usePublishedBlogPosts,
+} from './blog/use-blog-queries.js'
+
 // Tester Code queries
 export { useTesterCodes } from './tester-code/use-tester-codes.js'
 

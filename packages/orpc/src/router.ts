@@ -16,6 +16,7 @@ import { user } from './procedures/user/index.ts'
 import { waitlist } from './procedures/waitlist.ts'
 import { partnerLogo } from './procedures/partner-logo.ts'
 import { highlightCard } from './procedures/highlight-card.ts'
+import { blog } from './procedures/blog.ts'
 import { promoVideo } from './procedures/promo-video.ts'
 import { mosaic } from './procedures/mosaic.ts'
 import { email } from './procedures/email.ts'
@@ -53,6 +54,7 @@ export const router = {
   waitlist,
   partnerLogo,
   highlightCard,
+  blog,
   promoVideo,
   mosaic,
   email,

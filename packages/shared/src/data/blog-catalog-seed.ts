@@ -1,14 +1,11 @@
 /**
- * In-repo blog catalog (Authors + Posts). Short-lived until Adminboard authoring.
- * Posts without final media stay commented out until CDN assets are ready.
+ * Initial blog catalog seed (Authors + Posts) for Adminboard cutover.
+ * Applied once when the marketing blog tables are empty.
  */
 
-import type { Author, Post } from './types'
+import type { BlogAuthor, BlogPostContent } from '../types/blog.ts'
 
-/** Stand-in until real cover / body media is uploaded. */
-const MEDIA_PLACEHOLDER = '/placeholder.svg'
-
-export const authors: Author[] = [
+export const blogCatalogSeedAuthors: BlogAuthor[] = [
   {
     id: 'katerina-tsiraki',
     name: 'Katerina Tsiraki',
@@ -22,11 +19,9 @@ export const authors: Author[] = [
   },
 ]
 
-const katerina = authors[0]!
+const virtalityTeam = blogCatalogSeedAuthors[1]!
 
-const virtalityTeam = authors[1]!
-
-export const posts: Post[] = [
+export const blogCatalogSeedPosts: BlogPostContent[] = [
   {
     slug: 'panhellenic-physiotherapy-conference',
     title:
