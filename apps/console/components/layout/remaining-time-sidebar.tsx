@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Clock, CreditCard } from 'lucide-react'
 import {
   SidebarMenu,
@@ -7,22 +8,23 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { authClient } from '@/auth-client'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
-import { useSubscriptionCheckout } from '@/hooks/use-subscription-checkout'
+import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
  * Always-visible Remaining Time from the Entitlement Clock, plus Subscribe /
- * Renew Checkout CTA when not entitled and Billing Path Established.
- * Shows "Expired" when not entitled; remaining time never goes negative.
- * CTA starts Better Auth Stripe Checkout (mode=subscription, canonical pro).
+ * Renew CTA when not entitled and Billing Path Established.
+ * CTA opens Profile → Billing (interval choice + Checkout / portal).
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()
+  const { data: session } = authClient.useSession()
   const { label, checkoutCtaLabel, isPending } = useLiveEntitlementStanding()
-  const { startCheckout, isStarting } = useSubscriptionCheckout()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
-  const showCheckoutCta = !isPending && checkoutCtaLabel != null
+  const userId = session?.user?.id
+  const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
 
   return (
     <SidebarMenu>
@@ -31,13 +33,12 @@ export function RemainingTimeSidebar() {
           <SidebarMenuButton
             className='text-base'
             tooltip={checkoutCtaLabel}
-            disabled={isStarting}
-            onClick={() => {
-              void startCheckout()
-            }}
+            asChild
           >
-            <CreditCard />
-            {!collapsed && <span>{checkoutCtaLabel}</span>}
+            <Link href={profileBillingHref(userId)}>
+              <CreditCard />
+              {!collapsed && <span>{checkoutCtaLabel}</span>}
+            </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
       ) : null}
