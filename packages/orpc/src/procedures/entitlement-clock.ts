@@ -25,6 +25,7 @@ export async function loadEntitlementStandingForSession(input: {
       status: true,
       trialEnd: true,
       periodEnd: true,
+      billingInterval: true,
     },
   })
 

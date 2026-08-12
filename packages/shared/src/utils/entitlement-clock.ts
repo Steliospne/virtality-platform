@@ -16,10 +16,14 @@
 import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
+export type EntitlementBillingInterval = 'month' | 'year'
+
 export type EntitlementClockSubscription = {
   status: string
   trialEnd?: Date | null
   periodEnd?: Date | null
+  /** Synced Stripe/Better Auth interval when known (`month` / `year`). */
+  billingInterval?: string | null
 }
 
 export type EntitlementClockStanding = {
@@ -214,6 +218,16 @@ export type EntitlementStanding = EntitlementClockStanding & {
    * Console wires click to Better Auth Stripe Checkout (canonical pro plan).
    */
   checkoutCta: CheckoutCta | null
+  /** Interval on the picked Subscription when known. */
+  billingInterval: EntitlementBillingInterval | null
+}
+
+/** Normalize synced interval strings to month/year when recognizable. */
+export function normalizeBillingInterval(
+  value: string | null | undefined,
+): EntitlementBillingInterval | null {
+  if (value === 'month' || value === 'year') return value
+  return null
 }
 
 /**
@@ -225,9 +239,10 @@ export function buildEntitlementStanding(input: {
   role?: string | null
   subscriptions: readonly EntitlementClockSubscription[]
 }): EntitlementStanding {
+  const subscription = pickEntitlementSubscription(input.subscriptions)
   const clock = resolveEntitlementClock({
     now: input.now,
-    subscription: pickEntitlementSubscription(input.subscriptions),
+    subscription,
   })
   const billingPathEstablished = hasBillingPathEstablished(input.subscriptions)
   const hadPaidBilling = hadPaidBillingHistory(input.subscriptions)
@@ -244,6 +259,7 @@ export function buildEntitlementStanding(input: {
       billingPathEstablished,
       hadPaidBilling,
     }),
+    billingInterval: normalizeBillingInterval(subscription?.billingInterval),
   }
 }
 
@@ -272,4 +288,21 @@ export function formatRemainingTimeLabel(remainingMs: number): string {
     return `${hours}h`
   }
   return `${Math.max(1, minutes)}m`
+}
+
+/**
+ * Human-readable Entitlement Clock end for renew email / chrome.
+ * Always UTC so the label matches Stripe period boundaries.
+ */
+export function formatEntitlementClockEndLabel(clockEnd: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  }).format(clockEnd)
 }

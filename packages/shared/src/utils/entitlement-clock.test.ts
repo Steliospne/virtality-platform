@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEntitlementStanding,
   canLaunchVrPrograms,
+  formatEntitlementClockEndLabel,
   formatRemainingTimeLabel,
   hadPaidBillingHistory,
   pickEntitlementSubscription,
@@ -162,6 +163,14 @@ describe('formatRemainingTimeLabel', () => {
   })
 })
 
+describe('formatEntitlementClockEndLabel', () => {
+  it('formats the Entitlement Clock end in en-GB UTC', () => {
+    expect(
+      formatEntitlementClockEndLabel(new Date('2026-08-17T12:00:00.000Z')),
+    ).toBe('17 Aug 2026, 12:00 UTC')
+  })
+})
+
 describe('remainingMsFromClockEnd', () => {
   it('never returns a negative Remaining Time', () => {
     expect(remainingMsFromClockEnd(null, NOW)).toBe(0)
@@ -270,6 +279,22 @@ describe('buildEntitlementStanding', () => {
     expect(standing.entitled).toBe(false)
     expect(standing.billingPathEstablished).toBe(false)
     expect(standing.checkoutCta).toBeNull()
+    expect(standing.billingInterval).toBeNull()
+  })
+
+  it('surfaces billingInterval from the picked live Subscription', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          billingInterval: 'year',
+        },
+      ],
+    })
+    expect(standing.billingInterval).toBe('year')
   })
 
   it('keeps soft-expired Subscribe CTA after abandoned Checkout incomplete row', () => {
