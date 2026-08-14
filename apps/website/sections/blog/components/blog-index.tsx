@@ -35,7 +35,7 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
             >
               <Link
                 href={`/blog/${post.slug}`}
-                className='group grid gap-6 py-12 md:grid-cols-[180px_minmax(0,1fr)_240px] md:items-center md:gap-8'
+                className='group grid gap-6 py-12 md:grid-cols-[180px_minmax(0,1fr)_240px] md:items-center md:gap-8 lg:grid-cols-[180px_minmax(0,1fr)_320px]'
               >
                 <div className='space-y-2 font-mono text-xs tracking-wide text-slate-500 uppercase'>
                   <p>{formatPostDate(post.publishedAt)}</p>
@@ -64,7 +64,7 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
                       post.cover,
                     )}
                     className='object-cover transition-transform duration-500 group-hover:scale-[1.03]'
-                    sizes='(max-width: 767px) calc(100vw - 2rem), 240px'
+                    sizes='(max-width: 767px) calc(100vw - 2rem), (max-width: 1023px) 240px, 320px'
                     style={{
                       objectPosition: `center ${coverFocusY}%`,
                     }}
