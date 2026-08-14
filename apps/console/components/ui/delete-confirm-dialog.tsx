@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@virtality/ui/components/button'
 import { ReactNode, useState } from 'react'
+import { resolveDialogOpen } from '@/lib/resolve-dialog-open'
 
 interface DeleteConfirmDialogProps {
   open?: boolean
@@ -32,6 +33,8 @@ const DeleteConfirmDialog = ({
   description,
 }: DeleteConfirmDialogProps) => {
   const [_open, _setOpen] = useState(false)
+  const isControlled = open !== undefined
+  const resolvedOpen = resolveDialogOpen(open, _open)
 
   const handleConfirm = () => {
     onConfirm()
@@ -46,10 +49,12 @@ const DeleteConfirmDialog = ({
 
   return (
     <Dialog
-      open={open ? open : _open}
-      onOpenChange={onOpenChange ? onOpenChange : _setOpen}
+      open={resolvedOpen}
+      onOpenChange={isControlled ? onOpenChange : _setOpen}
     >
-      <DialogTrigger asChild={asChild}>{children}</DialogTrigger>
+      {children != null ? (
+        <DialogTrigger asChild={asChild}>{children}</DialogTrigger>
+      ) : null}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
