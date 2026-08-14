@@ -2,7 +2,8 @@
 import { SiGoogle, SiGoogleHex } from '@icons-pack/react-simple-icons'
 import { authClient } from '@/auth-client'
 import { Button } from '@virtality/ui/components/button'
-import { getConsoleUrl } from '@virtality/shared/types'
+import { getConsoleUrl, getWebsiteUrl } from '@virtality/shared/types'
+import { isTrialRedeemWaitlistRedirect } from '@virtality/shared/utils'
 import { useCallback, useState } from 'react'
 import useTimeout from '@/hooks/use-timeout'
 import { Spinner } from '@virtality/ui/components/spinner'
@@ -14,6 +15,7 @@ interface SocialSignInButtonProps {
 }
 
 const callbackURL = getConsoleUrl()
+const websiteURL = getWebsiteUrl()
 
 const SocialSignInButton = ({ testerCode }: SocialSignInButtonProps) => {
   const [isRunning, setIsRunning] = useState(false)
@@ -41,7 +43,12 @@ const SocialSignInButton = ({ testerCode }: SocialSignInButtonProps) => {
           setIsRunning(false)
         },
         onError(context) {
+          if (isTrialRedeemWaitlistRedirect(context.error.message)) {
+            window.location.assign(`${websiteURL}/waitlist`)
+            return
+          }
           setError(context.error.message)
+          setIsRunning(false)
         },
       },
     })

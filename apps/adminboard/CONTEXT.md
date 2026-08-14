@@ -87,7 +87,7 @@ A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric chara
 _Avoid_: Referral Code, QA code, Testing Code, promo code
 
 **Trial Redeem Code**:
-A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Trial Redeem Codes under Billing.
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Trial Redeem Codes under Billing.
 _Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
 
 **Trial Subscription**:

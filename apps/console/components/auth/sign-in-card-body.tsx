@@ -56,12 +56,11 @@ const SignInCardBody = () => {
             htmlFor='tester-code'
             className='text-muted-foreground text-xs'
           >
-            Tester code (optional)
+            Redeem code
           </Label>
           <Input
             id='tester-code'
             type='text'
-            placeholder='Enter code to sign up as tester'
             value={testerCode}
             onChange={(e) => setTesterCode(e.target.value)}
             className='text-sm'

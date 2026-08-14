@@ -7,6 +7,7 @@ import {
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
+  TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
   type TrialRedeemConsumeStore,
   type TrialRedeemStripeGateway,
 } from '@virtality/shared/utils'
@@ -94,6 +95,11 @@ export async function assertTrialRedeemAllowedAtSignUp(
   const gate = await evaluateTrialRedeemAtSignUp(trialRedeemStore, rawCode)
   if (gate.action === 'block') {
     throw new APIError('BAD_REQUEST', { message: gate.message })
+  }
+  if (gate.action === 'waitlist') {
+    throw new APIError('BAD_REQUEST', {
+      message: TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
+    })
   }
 }
 

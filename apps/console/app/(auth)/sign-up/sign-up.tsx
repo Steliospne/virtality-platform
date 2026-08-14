@@ -21,9 +21,11 @@ import { Loader2 } from 'lucide-react'
 import SignupForm from '@/components/auth/sign-up-form'
 import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
-import { getConsoleUrl } from '@virtality/shared/types'
+import { getConsoleUrl, getWebsiteUrl } from '@virtality/shared/types'
+import { isTrialRedeemWaitlistRedirect } from '@virtality/shared/utils'
 
 const baseURL = getConsoleUrl()
+const websiteURL = getWebsiteUrl()
 
 const SignUp = () => {
   const router = useRouter()
@@ -54,6 +56,10 @@ const SignUp = () => {
         onSuccess: () => router.push(`/verify-email?email=${values.email}`),
       },
     })
+    if (isTrialRedeemWaitlistRedirect(error?.message)) {
+      window.location.assign(`${websiteURL}/waitlist`)
+      return
+    }
     if (error?.message) setSubmitError(error.message)
   }
 
@@ -76,12 +82,11 @@ const SignUp = () => {
               htmlFor='tester-code'
               className='text-muted-foreground text-xs'
             >
-              Tester code (optional)
+              Redeem code
             </Label>
             <Input
               id='tester-code'
               type='text'
-              placeholder='Enter code to sign up as tester'
               value={testerCode || ''}
               onChange={(e) => setTesterCode(e.target.value)}
               className='text-sm'

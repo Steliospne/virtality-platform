@@ -12,6 +12,12 @@ export const TESTER_CODE_PATTERN = /^TE-[A-Z0-9]{10}$/i
 export const TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE = 'Expired [COPY]' as const
 export const TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE =
   'Already used [COPY]' as const
+/**
+ * Machine signal for well-formatted PAY- codes that are not in the store.
+ * Clients redirect to the website waitlist; do not show as form copy.
+ */
+export const TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE =
+  'TRIAL_REDEEM_WAITLIST_REDIRECT' as const
 
 export type SignUpCodeRoute =
   | { kind: 'none' }
@@ -20,7 +26,7 @@ export type SignUpCodeRoute =
 
 /**
  * Routes the shared sign-up code field by prefix/format.
- * Empty or invalid/non-matching codes keep the existing sign-up flow.
+ * Empty and invalid/non-matching codes are not PAY-/TE- routes.
  */
 export function routeSignUpCode(
   raw: string | null | undefined,
@@ -39,12 +45,21 @@ export function routeSignUpCode(
 
 export type TrialRedeemSignUpGate =
   | { action: 'ignore' }
+  | { action: 'waitlist' }
   | { action: 'block'; message: string }
   | { action: 'proceed'; record: TrialRedeemCodeRecord }
 
+export function isTrialRedeemWaitlistRedirect(
+  message: string | null | undefined,
+): boolean {
+  return message === TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE
+}
+
 /**
  * Sign-up redeem check order:
- * prefix/lookup miss → ignore (existing empty/invalid flow);
+ * empty → waitlist (no account);
+ * invalid format / TE- → ignore (TE- consume stays elsewhere; invalid stays open);
+ * well-formatted PAY- lookup miss → waitlist (no account);
  * terminal → Already used; derived Expired → Expired; else proceed to Stripe.
  */
 export async function evaluateTrialRedeemAtSignUp(
@@ -52,11 +67,14 @@ export async function evaluateTrialRedeemAtSignUp(
   rawCode: string | null | undefined,
   now: Date = new Date(),
 ): Promise<TrialRedeemSignUpGate> {
-  const routed = routeSignUpCode(rawCode)
+  const trimmed = rawCode?.trim()
+  if (!trimmed) return { action: 'waitlist' }
+
+  const routed = routeSignUpCode(trimmed)
   if (routed.kind !== 'trial_redeem') return { action: 'ignore' }
 
   const record = await store.findByCode(routed.code)
-  if (!record) return { action: 'ignore' }
+  if (!record) return { action: 'waitlist' }
 
   const displayStatus = getTrialRedeemDisplayStatus(record, now)
   switch (displayStatus) {

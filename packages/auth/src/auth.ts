@@ -231,9 +231,12 @@ export const auth = betterAuth({
       }
 
       if (path.startsWith('/callback/:id')) {
-        await assertTrialRedeemAllowedAtSignUp(
-          await readSignUpCodeFromOAuthState(),
-        )
+        // Skip empty: returning Google sign-in has no code. Empty email
+        // sign-up waitlists via /sign-up above; PAY-/expired still gated here.
+        const oauthCode = await readSignUpCodeFromOAuthState()
+        if (oauthCode?.trim()) {
+          await assertTrialRedeemAllowedAtSignUp(oauthCode)
+        }
       }
     }),
     after: createAuthMiddleware(async (ctx) => {

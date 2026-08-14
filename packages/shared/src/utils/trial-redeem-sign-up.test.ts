@@ -7,7 +7,9 @@ import {
 import {
   TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
   TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
+  TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
   evaluateTrialRedeemAtSignUp,
+  isTrialRedeemWaitlistRedirect,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
   type TrialRedeemConsumeStore,
@@ -99,17 +101,39 @@ describe('routeSignUpCode', () => {
 })
 
 describe('evaluateTrialRedeemAtSignUp', () => {
-  it('ignores missing or non-matching PAY- lookups', async () => {
+  it('waitlists empty codes and well-formatted PAY- misses', async () => {
     const store = createMemoryStore()
     await expect(
       evaluateTrialRedeemAtSignUp(store, 'PAY-NOSUCHCODE', NOW),
-    ).resolves.toEqual({ action: 'ignore' })
+    ).resolves.toEqual({ action: 'waitlist' })
+    await expect(evaluateTrialRedeemAtSignUp(store, '', NOW)).resolves.toEqual({
+      action: 'waitlist',
+    })
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, '   ', NOW),
+    ).resolves.toEqual({ action: 'waitlist' })
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, undefined, NOW),
+    ).resolves.toEqual({ action: 'waitlist' })
+  })
+
+  it('ignores non-matching formats and tester codes', async () => {
+    const store = createMemoryStore()
     await expect(
       evaluateTrialRedeemAtSignUp(store, 'PAY-SHORT', NOW),
     ).resolves.toEqual({ action: 'ignore' })
-    await expect(evaluateTrialRedeemAtSignUp(store, '', NOW)).resolves.toEqual({
-      action: 'ignore',
-    })
+    await expect(
+      evaluateTrialRedeemAtSignUp(store, 'TE-ABCDEFGHIJ', NOW),
+    ).resolves.toEqual({ action: 'ignore' })
+  })
+
+  it('detects the waitlist redirect signal', () => {
+    expect(
+      isTrialRedeemWaitlistRedirect(TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE),
+    ).toBe(true)
+    expect(
+      isTrialRedeemWaitlistRedirect(TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE),
+    ).toBe(false)
   })
 
   it('blocks derived expired codes', async () => {
