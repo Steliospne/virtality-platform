@@ -10,7 +10,7 @@ import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import ExerciseGrid from '@/components/ui/exercise-grid'
 import ExerciseLibraryList from '@/components/ui/exercise-library-list'
 import { Button } from '@virtality/ui/components/button'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Save, Zap } from 'lucide-react'
 import { useExerciseLibrary } from '@/context/exercise-library-context'
 import { useForm } from 'react-hook-form'
@@ -79,39 +79,54 @@ const QuickStartDialog = () => {
     selectedExerciseCountLabel,
   } = useCatalogFirstAuthoringFlow()
 
-  const { mutateAsync: createReusableProgram } = useCreateReusableProgram({
-    onSuccess: (data) => {
-      setSelectedProgram(data)
-    },
-  })
+  const [savePromptOpen, setSavePromptOpen] = useState(false)
+  const savePromptCloseReasonRef = useRef<'continue' | 'save' | null>(null)
 
-  const { mutate: createReusableProgramExercises } =
-    useCreateReusableProgramExercises({
-      onSuccess: (_, variables) => {
-        const formattedExercises = variables.exercises.map((ex) => ({
-          id: ex.id,
-          exerciseId: ex.exerciseId,
-          sets: ex.sets ?? 3,
-          reps: ex.reps ?? 10,
-          restTime: ex.restTime ?? 5,
-          holdTime: ex.holdTime ?? 1,
-          speed: ex.speed ?? 1,
-        }))
-
-        queryClient.invalidateQueries({
-          queryKey: orpc.reusableProgram.list.queryKey(),
-        })
-
-        updateExercises([])
-        resetFlow()
-        updatePatientDashboardState({
-          exercises: withRom(formattedExercises),
-          inQuickStart: false,
-        })
+  const { mutateAsync: createReusableProgram, isPending: isCreatingProgram } =
+    useCreateReusableProgram({
+      onSuccess: (data) => {
+        setSelectedProgram(data)
       },
     })
 
+  const {
+    mutateAsync: createReusableProgramExercises,
+    isPending: isCreatingExercises,
+  } = useCreateReusableProgramExercises({
+    onSuccess: (_, variables) => {
+      const formattedExercises = variables.exercises.map((ex) => ({
+        id: ex.id,
+        exerciseId: ex.exerciseId,
+        sets: ex.sets ?? 3,
+        reps: ex.reps ?? 10,
+        restTime: ex.restTime ?? 5,
+        holdTime: ex.holdTime ?? 1,
+        speed: ex.speed ?? 1,
+      }))
+
+      queryClient.invalidateQueries({
+        queryKey: orpc.reusableProgram.list.queryKey(),
+      })
+
+      updateExercises([])
+      resetFlow()
+      savePromptCloseReasonRef.current = 'save'
+      setSavePromptOpen(false)
+      updatePatientDashboardState({
+        exercises: withRom(formattedExercises),
+        inQuickStart: false,
+      })
+    },
+  })
+
+  const isSaving = isCreatingProgram || isCreatingExercises
+
   const form = useForm<ReusableProgramForm>({
+    resolver: zodResolver(ReusableProgramFormSchema),
+    defaultValues: { name: '' },
+  })
+
+  const promptForm = useForm<ReusableProgramForm>({
     resolver: zodResolver(ReusableProgramFormSchema),
     defaultValues: { name: '' },
   })
@@ -126,10 +141,24 @@ const QuickStartDialog = () => {
 
     resetFlow()
     form.reset({ name: '' })
-  }, [inQuickStart, resetFlow, form])
+    promptForm.reset({ name: '' })
+    setSavePromptOpen(false)
+  }, [inQuickStart, resetFlow, form, promptForm])
 
   const handleOpenChange = (open: boolean) => {
+    if (!open && savePromptOpen) return
     setInQuickStart(open)
+  }
+
+  const handleSavePromptOpenChange = (open: boolean) => {
+    if (isSaving) return
+    if (!open) {
+      if (savePromptCloseReasonRef.current === null) {
+        posthog.capture('quickstart_continue_save_prompt_dismissed')
+      }
+      savePromptCloseReasonRef.current = null
+    }
+    setSavePromptOpen(open)
   }
 
   const canFinalize = canQuickStartFinalAction(
@@ -137,7 +166,7 @@ const QuickStartDialog = () => {
     deferredRemovalIds,
   )
 
-  const continueHandler = () => {
+  const continueWithoutSaving = () => {
     if (!exerciseInfo) return
 
     if (!canFinalize) {
@@ -146,6 +175,8 @@ const QuickStartDialog = () => {
 
     posthog.capture('quickstart_continue')
 
+    savePromptCloseReasonRef.current = 'continue'
+    setSavePromptOpen(false)
     resetFlow()
     updateExercises([])
 
@@ -155,13 +186,20 @@ const QuickStartDialog = () => {
     })
   }
 
-  const saveAsHandler = async (values: ReusableProgramForm) => {
+  const openSavePrompt = () => {
+    if (!exerciseInfo) return
+
     if (!canFinalize) {
       return ErrorToasty(ZERO_ENABLED_VARIANTS_MESSAGE)
     }
 
-    posthog.capture('quickstart_program_created')
+    promptForm.reset({ name: form.getValues('name') })
+    savePromptCloseReasonRef.current = null
+    setSavePromptOpen(true)
+    posthog.capture('quickstart_continue_save_prompt_shown')
+  }
 
+  const persistProgram = async (values: ReusableProgramForm) => {
     const { name } = values
 
     const program = await createReusableProgram({ name })
@@ -173,93 +211,161 @@ const QuickStartDialog = () => {
       generateUUID,
     )
 
-    createReusableProgramExercises({
+    await createReusableProgramExercises({
       reusableProgramId: program.id,
       exercises,
     })
   }
 
+  const saveAsHandler = async (values: ReusableProgramForm) => {
+    if (!canFinalize) {
+      return ErrorToasty(ZERO_ENABLED_VARIANTS_MESSAGE)
+    }
+
+    posthog.capture('quickstart_program_created')
+
+    await persistProgram(values)
+  }
+
+  const saveFromPrompt = promptForm.handleSubmit(async (values) => {
+    if (!canFinalize) {
+      return ErrorToasty(ZERO_ENABLED_VARIANTS_MESSAGE)
+    }
+
+    posthog.capture('quickstart_continue_save_prompt_saved')
+    posthog.capture('quickstart_program_created')
+
+    try {
+      await persistProgram(values)
+    } catch {
+      // Keep the prompt open; mutation error handling surfaces the failure.
+    }
+  })
+
   return (
-    <Dialog open={inQuickStart} onOpenChange={handleOpenChange}>
-      <DialogContent className='flex h-full max-h-4/5 w-4/5 max-w-4/5! flex-col overflow-hidden'>
-        <DialogHeader>
-          <DialogTitle>Quick Start</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          {isCatalogStep
-            ? 'Pick some exercise and have the patient working in no time.'
-            : 'Tune your selected exercises, then continue or save as a reusable program.'}
-        </DialogDescription>
+    <>
+      <Dialog open={inQuickStart} onOpenChange={handleOpenChange}>
+        <DialogContent className='flex h-full max-h-4/5 w-4/5 max-w-4/5! flex-col overflow-hidden'>
+          <DialogHeader>
+            <DialogTitle>Quick Start</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            {isCatalogStep
+              ? 'Pick some exercise and have the patient working in no time.'
+              : 'Tune your selected exercises, then continue or save as a reusable program.'}
+          </DialogDescription>
 
-        <div className='flex min-h-0 flex-1 flex-col space-y-4 overflow-hidden'>
-          {isCatalogStep ? (
-            <div className={scrollableStepContentClass}>
-              <ExerciseGrid />
-            </div>
-          ) : (
-            <>
-              <form
-                id='programForm'
-                onSubmit={form.handleSubmit(saveAsHandler)}
-              >
-                <FormInput
-                  name='name'
-                  control={form.control}
-                  label='Program Name'
-                />
-              </form>
+          <div className='flex min-h-0 flex-1 flex-col space-y-4 overflow-hidden'>
+            {isCatalogStep ? (
               <div className={scrollableStepContentClass}>
-                <ExerciseLibraryList showExerciseLibraryAccess={false} />
+                <ExerciseGrid />
               </div>
-            </>
-          )}
-        </div>
-
-        <DialogFooter className='items-center gap-2 sm:justify-between'>
-          {isCatalogStep && (
-            <>
-              <span className='text-muted-foreground text-sm'>
-                {selectedExerciseCountLabel(selectedExercises.length)}
-              </span>
-              <Button
-                type='button'
-                variant='primary'
-                onClick={goToSelectedList}
-              >
-                Next
-                <ArrowRight />
-              </Button>
-            </>
-          )}
-          {isSelectedListStep && (
-            <>
-              <Button type='button' variant='secondary' onClick={goToCatalog}>
-                <ArrowLeft />
-                Back
-              </Button>
-              <div className='flex gap-2'>
-                <Button
-                  type='submit'
-                  form='programForm'
-                  disabled={!canFinalize}
+            ) : (
+              <>
+                <form
+                  id='programForm'
+                  onSubmit={form.handleSubmit(saveAsHandler)}
                 >
-                  Save Program <Save />
-                </Button>
+                  <FormInput
+                    name='name'
+                    control={form.control}
+                    label='Program Name'
+                  />
+                </form>
+                <div className={scrollableStepContentClass}>
+                  <ExerciseLibraryList showExerciseLibraryAccess={false} />
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className='items-center gap-2 sm:justify-between'>
+            {isCatalogStep && (
+              <>
+                <span className='text-muted-foreground text-sm'>
+                  {selectedExerciseCountLabel(selectedExercises.length)}
+                </span>
                 <Button
                   type='button'
                   variant='primary'
-                  onClick={continueHandler}
-                  disabled={!canFinalize}
+                  onClick={goToSelectedList}
                 >
-                  Continue
-                  <Zap />
+                  Next
+                  <ArrowRight />
                 </Button>
-              </div>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              </>
+            )}
+            {isSelectedListStep && (
+              <>
+                <Button type='button' variant='secondary' onClick={goToCatalog}>
+                  <ArrowLeft />
+                  Back
+                </Button>
+                <div className='flex gap-2'>
+                  <Button
+                    type='submit'
+                    form='programForm'
+                    disabled={!canFinalize || isSaving}
+                  >
+                    Save Program <Save />
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='primary'
+                    onClick={openSavePrompt}
+                    disabled={!canFinalize || isSaving}
+                  >
+                    Continue
+                    <Zap />
+                  </Button>
+                </div>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={savePromptOpen} onOpenChange={handleSavePromptOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save this as a program?</DialogTitle>
+            <DialogDescription>
+              You can save these exercises to your Program Library, or continue
+              with a one-off session.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form id='quickstartSavePromptForm' onSubmit={saveFromPrompt}>
+            <fieldset disabled={isSaving}>
+              <FormInput
+                name='name'
+                control={promptForm.control}
+                label='Program Name'
+              />
+            </fieldset>
+          </form>
+
+          <DialogFooter>
+            <Button
+              type='submit'
+              form='quickstartSavePromptForm'
+              variant='secondary'
+              disabled={isSaving}
+            >
+              Save program
+            </Button>
+            <Button
+              type='button'
+              variant='primary'
+              onClick={continueWithoutSaving}
+              disabled={isSaving}
+            >
+              Continue without saving
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

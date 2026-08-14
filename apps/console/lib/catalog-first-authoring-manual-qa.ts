@@ -21,6 +21,8 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
         'Selected exercise count appears near Next; Next works with zero selections',
         'Second step shows selected-list settings with Continue and Save Program',
         'Continue and Save Program are disabled when no enabled variants remain',
+        'Continue opens a save reminder dialog before loading the session',
+        'Save reminder offers Save program (with name) or Continue without saving; Esc returns to selected-list',
         'Back returns to the catalog without clearing selections',
         'No nested Exercise Library button or dialog appears in either step',
       ],

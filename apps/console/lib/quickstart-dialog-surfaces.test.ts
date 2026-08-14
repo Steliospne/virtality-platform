@@ -45,6 +45,16 @@ describe('quick start dialog surfaces', () => {
     expect(source).not.toMatch(/Quickstart Program Overview/)
   })
 
+  it('opens a save reminder dialog before Continue finalizes', () => {
+    expect(source).toMatch(/openSavePrompt/)
+    expect(source).toMatch(/Save this as a program\?/)
+    expect(source).toMatch(/Continue without saving/)
+    expect(source).toMatch(/quickstart_continue_save_prompt_shown/)
+    expect(source).toMatch(/quickstart_continue_save_prompt_saved/)
+    expect(source).toMatch(/quickstart_continue_save_prompt_dismissed/)
+    expect(source).toMatch(/promptForm/)
+  })
+
   it('renders catalog before selected-list in the single-dialog step order', () => {
     expect(source).toMatch(/isCatalogStep\s*\?[\s\S]*?<ExerciseGrid/)
     expect(source).toMatch(/:\s*\([\s\S]*?<ExerciseLibraryList/)
