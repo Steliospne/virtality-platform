@@ -154,8 +154,8 @@ const ReusableProgramEditForm = ({
   const showProgramNameField = isSelectedListStep
 
   let secondaryNav: { onClick: () => void; label: string }
-  if (isSelectedListStep) {
-    secondaryNav = { onClick: goToCatalog, label: t('btn.back') }
+  if (isCatalogStep) {
+    secondaryNav = { onClick: goToSelectedList, label: t('btn.back') }
   } else {
     secondaryNav = { onClick: handleCancel, label: t('btn.cancel') }
   }
@@ -172,9 +172,7 @@ const ReusableProgramEditForm = ({
     return null
   }
 
-  if (isCatalogStep) {
-    const selectedCount = selectedExercises.length
-
+  if (isSelectedListStep) {
     return (
       <div className={PAGE_SHELL_CLASSNAME}>
         <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
@@ -182,69 +180,78 @@ const ReusableProgramEditForm = ({
             <div>
               <H2>Edit program</H2>
               <P className='text-muted-foreground'>
-                Review exercises in the catalog, then continue to settings
-                before saving.
+                Review settings, then add more exercises if you need them before
+                saving.
               </P>
             </div>
 
-            <div className='flex shrink-0 items-center gap-3'>
-              <span className='text-muted-foreground text-sm'>
-                {selectedExerciseCountLabel(selectedCount)}
-              </span>
+            <div className='flex shrink-0 gap-2'>
               <Button onClick={secondaryNav.onClick}>
                 {secondaryNav.label}
               </Button>
-              <Button variant='primary' onClick={goToSelectedList}>
-                Next
+              <Button onClick={goToCatalog}>Add exercises</Button>
+              <Button variant='primary' form='reusableProgramEditForm'>
+                {t('btn.submit')}
               </Button>
             </div>
           </div>
-
-          <div className='min-h-0 flex-1 overflow-auto'>
-            <ExerciseGrid />
+          <Form {...form}>
+            <form
+              id='reusableProgramEditForm'
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
+              {showProgramNameField && (
+                <FormField
+                  name='name'
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{capitalize(field.name)}</FormLabel>
+                      <FormControl>
+                        <Input {...field} className='max-w-62.5' />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </form>
+          </Form>
+          <div className='overflow-auto'>
+            <ExerciseLibraryList showExerciseLibraryAccess={false} />
           </div>
         </div>
       </div>
     )
   }
 
+  const selectedCount = selectedExercises.length
+
   return (
     <div className={PAGE_SHELL_CLASSNAME}>
       <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
-        <div className='flex justify-between'>
-          <H2>Edit program</H2>
+        <div className='flex items-start justify-between gap-4'>
+          <div>
+            <H2>Add exercises</H2>
+            <P className='text-muted-foreground'>
+              Add or remove exercise variants, then return to settings before
+              saving.
+            </P>
+          </div>
 
-          <div className='flex gap-2'>
+          <div className='flex shrink-0 items-center gap-3'>
+            <span className='text-muted-foreground text-sm'>
+              {selectedExerciseCountLabel(selectedCount)}
+            </span>
             <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
-            <Button variant='primary' form='reusableProgramEditForm'>
-              {t('btn.submit')}
+            <Button variant='primary' onClick={goToSelectedList}>
+              Done
             </Button>
           </div>
         </div>
-        <Form {...form}>
-          <form
-            id='reusableProgramEditForm'
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
-            {showProgramNameField && (
-              <FormField
-                name='name'
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{capitalize(field.name)}</FormLabel>
-                    <FormControl>
-                      <Input {...field} className='max-w-62.5' />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </form>
-        </Form>
-        <div className='overflow-auto'>
-          <ExerciseLibraryList showExerciseLibraryAccess={false} />
+
+        <div className='min-h-0 flex-1 overflow-auto'>
+          <ExerciseGrid />
         </div>
       </div>
     </div>

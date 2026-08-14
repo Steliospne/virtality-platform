@@ -41,7 +41,7 @@ export type StarterTemplateEditorExercise = {
 } & typeof STANDARD_PROGRAM_EXERCISE_SETTINGS
 
 export type StarterTemplateCatalogSelection = {
-  /** Program Exercise rows seeded for catalog-first authoring. */
+  /** Program Exercise rows seeded for settings-first authoring. */
   selectedExercises: StarterTemplateEditorExercise[]
   /** Catalog variant selection keyed by Exercise Variant id (`exerciseId`). */
   isSelected: Record<string, boolean>

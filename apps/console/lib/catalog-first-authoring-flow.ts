@@ -1,12 +1,13 @@
 /**
- * Shared catalog-first program authoring flow (PRD #98).
- * Step one is the exercise catalog; step two is the selected Program Exercise list/settings.
+ * Shared settings-first program authoring flow (evolved from PRD #98 catalog-first).
+ * Step one is the selected Program Exercise list/settings; step two is the exercise
+ * catalog for adding or removing variants.
  * Exercise selection and settings live outside this reducer — callers must not reset them on back navigation.
  */
 
 export const CATALOG_FIRST_AUTHORING_STEPS = [
-  'catalog',
   'selected-list',
+  'catalog',
 ] as const
 
 export type CatalogFirstAuthoringStep =
@@ -15,8 +16,9 @@ export type CatalogFirstAuthoringStep =
 export const INITIAL_CATALOG_FIRST_AUTHORING_STEP =
   CATALOG_FIRST_AUTHORING_STEPS[0]
 
-export const SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP =
-  CATALOG_FIRST_AUTHORING_STEPS[1]
+export const SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP = 'selected-list'
+
+export const CATALOG_CATALOG_FIRST_AUTHORING_STEP = 'catalog'
 
 export type CatalogFirstAuthoringFlowState = {
   step: CatalogFirstAuthoringStep
@@ -39,7 +41,7 @@ export function catalogFirstAuthoringFlowReducer(
     case 'advanceToSelectedList':
       return { step: SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP }
     case 'returnToCatalog':
-      return { step: INITIAL_CATALOG_FIRST_AUTHORING_STEP }
+      return { step: CATALOG_CATALOG_FIRST_AUTHORING_STEP }
     case 'reset':
       return createCatalogFirstAuthoringFlowState()
     default:
@@ -47,20 +49,25 @@ export function catalogFirstAuthoringFlowReducer(
   }
 }
 
-/** Catalog -> selected-list is always allowed, including with zero exercises. */
+/** Selected-list -> catalog is always allowed, including with zero exercises. */
+export function canAdvanceFromSelectedListToCatalog(): boolean {
+  return true
+}
+
+/** @deprecated Prefer canAdvanceFromSelectedListToCatalog; kept for call-site compatibility. */
 export function canAdvanceFromCatalogToSelectedList(): boolean {
   return true
 }
 
 export function isCatalogStep(step: CatalogFirstAuthoringStep): boolean {
-  return step === INITIAL_CATALOG_FIRST_AUTHORING_STEP
+  return step === CATALOG_CATALOG_FIRST_AUTHORING_STEP
 }
 
 export function isSelectedListStep(step: CatalogFirstAuthoringStep): boolean {
   return step === SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP
 }
 
-/** Label shown near the Next action on the catalog step. */
+/** Label shown near the Done action on the catalog step. */
 export function catalogFirstSelectedExerciseCountLabel(count: number): string {
   if (count === 0) return 'No exercises selected'
   if (count === 1) return '1 exercise selected'

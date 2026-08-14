@@ -1,5 +1,5 @@
 /**
- * Manual QA checklist for catalog-first program authoring (PRD #98).
+ * Manual QA checklist for settings-first program authoring.
  * Covers browser verification for each target flow after rollout.
  */
 
@@ -17,13 +17,13 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       label: 'Quick Start',
       entry: 'Patient dashboard → Quick Start',
       checks: [
-        'Single dialog opens with the exercise catalog as the first step',
-        'Selected exercise count appears near Next; Next works with zero selections',
-        'Second step shows selected-list settings with Continue and Save Program',
+        'Single dialog opens with settings (selected-list) as the first step',
+        'Add exercises opens the catalog; Done returns to settings',
+        'Selected exercise count appears on the catalog step',
         'Continue and Save Program are disabled when no enabled variants remain',
         'Continue opens a save reminder dialog before loading the session',
         'Save reminder offers Save program (with name) or Continue without saving; Esc returns to selected-list',
-        'Back returns to the catalog without clearing selections',
+        'Navigating to catalog and back does not clear selections',
         'No nested Exercise Library button or dialog appears in either step',
       ],
     },
@@ -32,9 +32,9 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       label: 'Scratch Reusable Program create',
       entry: 'Program Library → Create program → Create your own program',
       checks: [
-        'Editor opens on the exercise catalog step',
-        'Program name field is hidden on the catalog step',
-        'Next proceeds to selected-list/settings; Back returns to catalog',
+        'Editor opens on the settings (selected-list) step',
+        'Program name field is visible on the settings step',
+        'Add exercises opens the catalog; Done/Back returns to settings',
         'Submit is blocked when no enabled variants remain',
         'No Exercise Library button on the selected-list step',
       ],
@@ -45,9 +45,9 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       entry: 'Program Library → Create program → Use a starter template',
       checks: [
         'Template picker appears before the editor',
-        'Editor opens on the catalog with template exercises pre-selected',
-        'Suggested template name appears only on the selected-list step',
-        'Back from selected-list returns to catalog with selections preserved',
+        'Editor opens on settings with template exercises pre-selected',
+        'Suggested template name appears on the selected-list step',
+        'Add exercises opens the catalog; Done/Back returns with selections preserved',
         'Submit is blocked when no enabled variants remain',
       ],
     },
@@ -56,9 +56,9 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       label: 'Reusable Program edit',
       entry: 'Program Library → Edit on an existing reusable program',
       checks: [
-        'Editor opens on the catalog with existing exercises pre-selected',
-        'Program name appears only on the selected-list step',
-        'Back from selected-list returns to catalog with selections preserved',
+        'Editor opens on settings with existing exercises pre-selected',
+        'Program name appears on the selected-list step',
+        'Add exercises opens the catalog; Done/Back returns with selections preserved',
         'Update is blocked when no enabled variants remain',
         'No Exercise Library button on the selected-list step',
       ],

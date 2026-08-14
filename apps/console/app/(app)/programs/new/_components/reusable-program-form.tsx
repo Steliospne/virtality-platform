@@ -157,8 +157,8 @@ const ReusableProgramFormView = ({
   const showProgramNameField = isSelectedListStep
 
   let secondaryNav: { onClick: () => void; label: string }
-  if (isCatalogFirstSelectedListStep) {
-    secondaryNav = { onClick: goToCatalog, label: t('btn.back') }
+  if (isCatalogFirstCatalogStep) {
+    secondaryNav = { onClick: goToSelectedList, label: t('btn.back') }
   } else if (onBack) {
     secondaryNav = { onClick: onBack, label: t('btn.back') }
   } else {
@@ -173,90 +173,98 @@ const ReusableProgramFormView = ({
     )
   }
 
-  if (isCatalogFirstCatalogStep) {
-    const selectedCount = selectedExercises.length
-    const catalogCopy = isTemplate
-      ? {
-          heading: 'Build from starter template',
-          description:
-            'Review the template exercises in the catalog, add or remove variants, then continue to settings.',
-        }
-      : {
-          heading: 'Create program',
-          description:
-            'Choose exercises from the catalog, then review settings before saving.',
-        }
+  if (isCatalogFirstSelectedListStep) {
+    const heading = isTemplate
+      ? 'Finalize program from template'
+      : 'Create program'
+    const settingsDescription = isTemplate
+      ? 'Review settings, then add more exercises if you need them before saving.'
+      : 'Name your program and review settings, then add exercises if you need them before saving.'
 
     return (
       <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-8'>
         <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
           <div className='flex items-start justify-between gap-4'>
             <div>
-              <H2>{catalogCopy.heading}</H2>
-              <P className='text-muted-foreground'>{catalogCopy.description}</P>
+              <H2>{heading}</H2>
+              <P className='text-muted-foreground'>{settingsDescription}</P>
             </div>
 
-            <div className='flex shrink-0 items-center gap-3'>
-              <span className='text-muted-foreground text-sm'>
-                {selectedExerciseCountLabel(selectedCount)}
-              </span>
+            <div className='flex shrink-0 gap-2'>
               <Button onClick={secondaryNav.onClick}>
                 {secondaryNav.label}
               </Button>
-              <Button variant='primary' onClick={goToSelectedList}>
-                Next
+              <Button onClick={goToCatalog}>Add exercises</Button>
+              <Button variant='primary' form='reusableProgramForm'>
+                {t('btn.submit')}
               </Button>
             </div>
           </div>
-
-          <div className='min-h-0 flex-1 overflow-auto'>
-            <ExerciseGrid />
+          <Form {...form}>
+            <form
+              id='reusableProgramForm'
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
+              {showProgramNameField && (
+                <FormField
+                  name='name'
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{capitalize(field.name)}</FormLabel>
+                      <FormControl>
+                        <Input {...field} className='max-w-62.5' />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </form>
+          </Form>
+          <div className='overflow-auto'>
+            <ExerciseLibraryList showExerciseLibraryAccess={false} />
           </div>
         </div>
       </div>
     )
   }
 
-  const heading = isTemplate
-    ? 'Finalize program from template'
-    : 'Create program'
+  const selectedCount = selectedExercises.length
+  const catalogCopy = isTemplate
+    ? {
+        heading: 'Add exercises from starter template',
+        description:
+          'Add or remove exercise variants, then return to settings to finish.',
+      }
+    : {
+        heading: 'Add exercises',
+        description:
+          'Choose exercises from the catalog, then return to settings to finish.',
+      }
 
   return (
     <div className='h-screen-with-nav container mx-auto flex flex-col gap-6 p-8'>
       <div className='flex h-full max-h-full flex-col space-y-2 overflow-hidden'>
-        <div className='flex justify-between'>
-          <H2>{heading}</H2>
+        <div className='flex items-start justify-between gap-4'>
+          <div>
+            <H2>{catalogCopy.heading}</H2>
+            <P className='text-muted-foreground'>{catalogCopy.description}</P>
+          </div>
 
-          <div className='flex gap-2'>
+          <div className='flex shrink-0 items-center gap-3'>
+            <span className='text-muted-foreground text-sm'>
+              {selectedExerciseCountLabel(selectedCount)}
+            </span>
             <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
-            <Button variant='primary' form='reusableProgramForm'>
-              {t('btn.submit')}
+            <Button variant='primary' onClick={goToSelectedList}>
+              Done
             </Button>
           </div>
         </div>
-        <Form {...form}>
-          <form id='reusableProgramForm' onSubmit={form.handleSubmit(onSubmit)}>
-            {showProgramNameField && (
-              <FormField
-                name='name'
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{capitalize(field.name)}</FormLabel>
-                    <FormControl>
-                      <Input {...field} className='max-w-62.5' />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </form>
-        </Form>
-        <div className='overflow-auto'>
-          <ExerciseLibraryList
-            showExerciseLibraryAccess={!isCatalogFirstSelectedListStep}
-          />
+
+        <div className='min-h-0 flex-1 overflow-auto'>
+          <ExerciseGrid />
         </div>
       </div>
     </div>

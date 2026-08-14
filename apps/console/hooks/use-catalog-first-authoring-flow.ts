@@ -1,6 +1,6 @@
 import { useCallback, useReducer } from 'react'
 import {
-  canAdvanceFromCatalogToSelectedList,
+  canAdvanceFromSelectedListToCatalog,
   catalogFirstAuthoringFlowReducer,
   catalogFirstSelectedExerciseCountLabel,
   createCatalogFirstAuthoringFlowState,
@@ -35,7 +35,9 @@ export function useCatalogFirstAuthoringFlow() {
     goToCatalog,
     resetFlow,
     selectedExerciseCountLabel: catalogFirstSelectedExerciseCountLabel,
-    canGoToSelectedList: canAdvanceFromCatalogToSelectedList,
+    canGoToCatalog: canAdvanceFromSelectedListToCatalog,
+    /** @deprecated Prefer canGoToCatalog; catalog is the optional second step. */
+    canGoToSelectedList: canAdvanceFromSelectedListToCatalog,
   }
 }
 

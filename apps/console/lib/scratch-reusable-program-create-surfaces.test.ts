@@ -5,43 +5,47 @@ import {
   readConsoleFile,
 } from './catalog-first-authoring-surface-seams.js'
 
-describe('scratch reusable program catalog-first create flow', () => {
+describe('scratch reusable program settings-first create flow', () => {
   const formSource = readConsoleFile(REUSABLE_PROGRAM_CREATE_FORM_PATH)
 
-  it('wires scratch creation through the catalog-first authoring hook', () => {
+  it('wires scratch creation through the settings-first authoring hook', () => {
     expect(formSource).toMatch(/useCatalogFirstAuthoringFlow/)
     expect(formSource).toMatch(/editorSource\.kind === 'scratch'/)
   })
 
-  it('opens scratch creation on the exercise catalog step', () => {
-    expect(formSource).toMatch(/isCatalogStep/)
-    expect(formSource).toMatch(/<ExerciseGrid/)
+  it('opens scratch creation on the settings selected-list step', () => {
+    expect(formSource).toMatch(/isSelectedListStep/)
+    expect(formSource).toMatch(/<ExerciseLibraryList/)
+    expect(formSource).toMatch(/Add exercises/)
   })
 
-  it('shows selected exercise count near the catalog Next action', () => {
+  it('shows selected exercise count near the catalog Done action', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
+    expect(formSource).toMatch(/>\s*Done\s*</)
   })
 
   it('renders the program name field only on the selected-list step', () => {
-    const catalogStepBlock =
+    const settingsStepBlock =
       formSource.match(
-        /if \(isCatalogFirstCatalogStep\) \{[\s\S]*?\n  \}/,
+        /if \(isCatalogFirstSelectedListStep\) \{[\s\S]*?\n  \}/,
       )?.[0] ?? ''
+    const catalogHeadingBlock =
+      formSource.match(/const catalogCopy =[\s\S]*?return \(/)?.[0] ?? ''
 
     expect(formSource).toMatch(/showProgramNameField/)
-    expect(formSource).toMatch(
+    expect(settingsStepBlock).toMatch(
       /showProgramNameField[\s\S]*<FormField[\s\S]*name=['"]name['"]/,
     )
-    expect(catalogStepBlock).not.toMatch(/<FormField/)
-    expect(catalogStepBlock).not.toMatch(/name=['"]name['"]/)
+    expect(catalogHeadingBlock).not.toMatch(/<FormField/)
+    expect(catalogHeadingBlock).not.toMatch(/name=['"]name['"]/)
   })
 
   it('uses selected-list settings without the legacy exercise library access', () => {
     expect(formSource).toMatch(/isCatalogFirstCreate/)
     expect(formSource).toMatch(/isCatalogFirstSelectedListStep/)
     expect(formSource).toMatch(
-      /showExerciseLibraryAccess=\{!isCatalogFirstSelectedListStep\}/,
+      /<ExerciseLibraryList[\s\S]*?showExerciseLibraryAccess=\{false\}/,
     )
     expect(formSource).toMatch(/goToCatalog/)
   })

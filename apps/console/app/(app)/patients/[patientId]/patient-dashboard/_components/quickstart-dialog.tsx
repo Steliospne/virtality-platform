@@ -251,16 +251,12 @@ const QuickStartDialog = () => {
           </DialogHeader>
           <DialogDescription>
             {isCatalogStep
-              ? 'Pick some exercise and have the patient working in no time.'
-              : 'Tune your selected exercises, then continue or save as a reusable program.'}
+              ? 'Add or remove exercises, then return to settings.'
+              : 'Tune settings, add exercises if you need them, then continue or save as a reusable program.'}
           </DialogDescription>
 
           <div className='flex min-h-0 flex-1 flex-col space-y-4 overflow-hidden'>
-            {isCatalogStep ? (
-              <div className={scrollableStepContentClass}>
-                <ExerciseGrid />
-              </div>
-            ) : (
+            {isSelectedListStep ? (
               <>
                 <form
                   id='programForm'
@@ -276,30 +272,19 @@ const QuickStartDialog = () => {
                   <ExerciseLibraryList showExerciseLibraryAccess={false} />
                 </div>
               </>
+            ) : (
+              <div className={scrollableStepContentClass}>
+                <ExerciseGrid />
+              </div>
             )}
           </div>
 
           <DialogFooter className='items-center gap-2 sm:justify-between'>
-            {isCatalogStep && (
-              <>
-                <span className='text-muted-foreground text-sm'>
-                  {selectedExerciseCountLabel(selectedExercises.length)}
-                </span>
-                <Button
-                  type='button'
-                  variant='primary'
-                  onClick={goToSelectedList}
-                >
-                  Next
-                  <ArrowRight />
-                </Button>
-              </>
-            )}
             {isSelectedListStep && (
               <>
                 <Button type='button' variant='secondary' onClick={goToCatalog}>
-                  <ArrowLeft />
-                  Back
+                  Add exercises
+                  <ArrowRight />
                 </Button>
                 <div className='flex gap-2'>
                   <Button
@@ -319,6 +304,21 @@ const QuickStartDialog = () => {
                     <Zap />
                   </Button>
                 </div>
+              </>
+            )}
+            {isCatalogStep && (
+              <>
+                <span className='text-muted-foreground text-sm'>
+                  {selectedExerciseCountLabel(selectedExercises.length)}
+                </span>
+                <Button
+                  type='button'
+                  variant='primary'
+                  onClick={goToSelectedList}
+                >
+                  <ArrowLeft />
+                  Done
+                </Button>
               </>
             )}
           </DialogFooter>

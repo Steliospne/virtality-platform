@@ -71,10 +71,11 @@ function expectCatalogFirstAuthoringHook(source: string) {
   expect(source).toMatch(/selectedExerciseCountLabel/)
 }
 
-function expectCatalogBeforeSelectedList(source: string) {
+function expectSelectedListBeforeCatalog(source: string) {
+  expect(source).toMatch(/<ExerciseLibraryList/)
   expect(source).toMatch(/<ExerciseGrid/)
-  expect(source.indexOf('<ExerciseGrid')).toBeLessThan(
-    source.indexOf('<ExerciseLibraryList'),
+  expect(source.indexOf('<ExerciseLibraryList')).toBeLessThan(
+    source.indexOf('<ExerciseGrid'),
   )
 }
 
@@ -83,26 +84,26 @@ function expectNoLegacyExerciseLibraryPath(source: string) {
   expect(source).not.toMatch(/showExerciseLibraryAccess=\{true\}/)
 }
 
-describe('catalog-first authoring rollout seam', () => {
-  it('defines the shared catalog then selected-list step order', () => {
-    expect(CATALOG_FIRST_AUTHORING_STEPS).toEqual(['catalog', 'selected-list'])
+describe('settings-first authoring rollout seam', () => {
+  it('defines the shared selected-list then catalog step order', () => {
+    expect(CATALOG_FIRST_AUTHORING_STEPS).toEqual(['selected-list', 'catalog'])
   })
 
   for (const flow of CATALOG_FIRST_FLOW_SURFACES) {
     describe(flow.id, () => {
       const source = readConsoleFile(flow.path)
 
-      it('wires the shared catalog-first authoring hook', () => {
+      it('wires the shared settings-first authoring hook', () => {
         expectCatalogFirstAuthoringHook(source)
         if (flow.flowMarker) {
           expect(source).toMatch(flow.flowMarker)
         }
       })
 
-      it('opens on the catalog step with ExerciseGrid before selected-list', () => {
+      it('opens on settings with ExerciseLibraryList before catalog', () => {
         expect(source).toMatch(flow.catalogStepPattern)
         expect(source).toMatch(flow.selectedListPattern)
-        expectCatalogBeforeSelectedList(source)
+        expectSelectedListBeforeCatalog(source)
       })
 
       it('hides the legacy exercise library access on selected-list', () => {
@@ -123,7 +124,7 @@ describe('catalog-first authoring rollout seam', () => {
       const companionPath = flow.companionPath
       if (companionPath) {
         const companionPatterns = flow.companionPatterns ?? []
-        it('routes through prerequisite steps before the catalog editor', () => {
+        it('routes through prerequisite steps before the settings editor', () => {
           const companionSource = readConsoleFile(companionPath)
           for (const pattern of companionPatterns) {
             expect(companionSource).toMatch(pattern)
@@ -145,7 +146,7 @@ describe('catalog-first authoring rollout seam', () => {
   })
 })
 
-describe('catalog-first authoring manual QA coverage', () => {
+describe('settings-first authoring manual QA coverage', () => {
   it('documents manual QA for all target flows', () => {
     const qaFlowIds = CATALOG_FIRST_AUTHORING_MANUAL_QA.map((flow) => flow.id)
     const targetFlowIds = CATALOG_FIRST_FLOW_SURFACES.map((flow) => flow.id)

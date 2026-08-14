@@ -39,7 +39,7 @@ describe('exercise library list surfaces', () => {
     )
   })
 
-  it('hides legacy exercise library access on all catalog-first selected-list surfaces', () => {
+  it('hides legacy exercise library access on all settings-first selected-list surfaces', () => {
     for (const consumer of CATALOG_FIRST_EXERCISE_LIBRARY_LIST_CONSUMERS) {
       const source = readConsoleFile(consumer.path)
       expect(source).toMatch(/<ExerciseLibraryList/)

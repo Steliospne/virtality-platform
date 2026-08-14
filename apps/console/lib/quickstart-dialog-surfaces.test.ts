@@ -13,7 +13,7 @@ describe('quick start dialog surfaces', () => {
   const source = readConsoleFile(QUICKSTART_DIALOG_PATH)
   const dashboardSource = readConsoleFile(PATIENT_DASHBOARD_PATH)
 
-  it('uses the shared catalog-first authoring flow', () => {
+  it('uses the shared settings-first authoring flow', () => {
     expect(source).toMatch(/useCatalogFirstAuthoringFlow/)
     expect(source).toMatch(/isCatalogStep/)
     expect(source).toMatch(/isSelectedListStep/)
@@ -21,8 +21,10 @@ describe('quick start dialog surfaces', () => {
     expect(source).toMatch(/goToCatalog/)
   })
 
-  it('shows the exercise catalog on the first step', () => {
+  it('shows settings on the first step and catalog when adding exercises', () => {
+    expect(source).toMatch(/<ExerciseLibraryList/)
     expect(source).toMatch(/<ExerciseGrid/)
+    expect(source).toMatch(/Add exercises/)
   })
 
   it('allows scrolling on the catalog step so all exercises are reachable', () => {
@@ -32,7 +34,7 @@ describe('quick start dialog surfaces', () => {
     expect(catalogGridWrapper).not.toMatch(/overflow-hidden/)
   })
 
-  it('shows selected-list settings without the legacy library button on the second step', () => {
+  it('shows selected-list settings without the legacy library button on the first step', () => {
     expect(source).toMatch(
       /<ExerciseLibraryList[\s\S]*?showExerciseLibraryAccess=\{false\}/,
     )
@@ -55,26 +57,28 @@ describe('quick start dialog surfaces', () => {
     expect(source).toMatch(/promptForm/)
   })
 
-  it('renders catalog before selected-list in the single-dialog step order', () => {
-    expect(source).toMatch(/isCatalogStep\s*\?[\s\S]*?<ExerciseGrid/)
-    expect(source).toMatch(/:\s*\([\s\S]*?<ExerciseLibraryList/)
+  it('renders selected-list before catalog in the single-dialog step order', () => {
+    expect(source).toMatch(
+      /isSelectedListStep\s*\?[\s\S]*?<ExerciseLibraryList/,
+    )
+    expect(source).toMatch(/:\s*\([\s\S]*?<ExerciseGrid/)
   })
 
-  it('shows selected exercise count and allows next with zero selections', () => {
+  it('shows selected exercise count on the catalog step', () => {
     expect(source).toMatch(
       /selectedExerciseCountLabel\(selectedExercises\.length\)/,
     )
     expect(source).toMatch(/onClick=\{goToSelectedList\}/)
-    expect(source).not.toMatch(
-      /selectedExercises\.length === 0[\s\S]*?goToSelectedList/,
-    )
   })
 
-  it('preserves exercise library selection when navigating back to catalog', () => {
-    const backButtonBlock =
+  it('preserves exercise library selection when navigating to catalog and back', () => {
+    const addExercisesBlock =
       source.match(/onClick=\{goToCatalog\}[\s\S]*?<\/Button>/)?.[0] ?? ''
+    const doneBlock =
+      source.match(/onClick=\{goToSelectedList\}[\s\S]*?<\/Button>/)?.[0] ?? ''
 
-    expect(backButtonBlock).not.toMatch(/updateExercises/)
+    expect(addExercisesBlock).not.toMatch(/updateExercises/)
+    expect(doneBlock).not.toMatch(/updateExercises/)
   })
 
   it('does not mount the nested exercise library dialog path', () => {

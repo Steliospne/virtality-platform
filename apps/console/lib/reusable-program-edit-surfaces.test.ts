@@ -5,37 +5,38 @@ import {
   readConsoleFile,
 } from './catalog-first-authoring-surface-seams.js'
 
-describe('reusable program catalog-first edit flow', () => {
+describe('reusable program settings-first edit flow', () => {
   const formSource = readConsoleFile(REUSABLE_PROGRAM_EDIT_FORM_PATH)
 
-  it('wires edit through the catalog-first authoring hook', () => {
+  it('wires edit through the settings-first authoring hook', () => {
     expect(formSource).toMatch(/useCatalogFirstAuthoringFlow/)
     expect(formSource).toMatch(/isCatalogStep/)
     expect(formSource).toMatch(/isSelectedListStep/)
   })
 
-  it('opens edit on the exercise catalog with existing exercises seeded', () => {
-    expect(formSource).toMatch(/<ExerciseGrid/)
+  it('opens edit on settings with existing exercises seeded', () => {
+    expect(formSource).toMatch(/<ExerciseLibraryList/)
+    expect(formSource).toMatch(/Add exercises/)
     expect(formSource).toMatch(/reusableProgramExercisesForCatalogSeed/)
     expect(formSource).toMatch(/updateExercises\(withRom\(seededExercises\)\)/)
   })
 
-  it('shows selected exercise count near the catalog Next action', () => {
+  it('shows selected exercise count near the catalog Done action', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
+    expect(formSource).toMatch(/>\s*Done\s*</)
   })
 
   it('renders the existing program name only on the selected-list step', () => {
-    const catalogStepBlock =
-      formSource.match(/if \(isCatalogStep\) \{[\s\S]*?\n  \}/)?.[0] ?? ''
+    const settingsStepBlock =
+      formSource.match(/if \(isSelectedListStep\) \{[\s\S]*?\n  \}/)?.[0] ?? ''
 
     expect(formSource).toMatch(/reusableProgramMetadataForEdit/)
     expect(formSource).toMatch(/showProgramNameField/)
-    expect(formSource).toMatch(
+    expect(settingsStepBlock).toMatch(
       /showProgramNameField[\s\S]*<FormField[\s\S]*name=['"]name['"]/,
     )
-    expect(catalogStepBlock).not.toMatch(/<FormField/)
-    expect(catalogStepBlock).not.toMatch(/name=['"]name['"]/)
+    expect(formSource).toMatch(/Add exercises/)
   })
 
   it('uses selected-list settings without the legacy exercise library access', () => {

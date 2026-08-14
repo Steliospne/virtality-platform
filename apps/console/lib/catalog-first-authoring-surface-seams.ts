@@ -42,15 +42,15 @@ export const PARTIAL_SELECTION_RING_CLASS = /ring-cyan-highlight\/70/
 export const LEGACY_LIBRARY_ACCESS_DISABLED =
   /<ExerciseLibraryList[\s\S]*?showExerciseLibraryAccess=\{false\}/
 
-/** Create-form surfaces that hide library access on the catalog-first selected-list step. */
+/** Create-form surfaces that hide library access on the settings selected-list step. */
 export const LEGACY_LIBRARY_ACCESS_DISABLED_ON_CATALOG_FIRST_SELECTED_LIST =
-  /showExerciseLibraryAccess=\{!isCatalogFirstSelectedListStep\}/
+  /showExerciseLibraryAccess=\{false\}/
 
 export const QUICKSTART_DIALOG_CONTENT_CLASS_ATTR =
   /<DialogContent className='([^']+)'/
 
 export const QUICKSTART_CATALOG_GRID_WRAPPER_CLASS_ATTR =
-  /isCatalogStep\s*\?[\s\S]*?<div className=\{scrollableStepContentClass\}>\s*<ExerciseGrid/
+  /isSelectedListStep\s*\?[\s\S]*?:\s*\([\s\S]*?<div className=\{scrollableStepContentClass\}>\s*<ExerciseGrid/
 
 /** At least 70% viewport width (e.g. w-4/5 = 80%, w-3/4 = 75%). */
 export const VIEWPORT_WIDTH_DIALOG_CLASS = /w-4\/5|w-3\/4|w-\[[7-8]\dvw\]/
@@ -71,7 +71,7 @@ export function readQuickstartCatalogGridWrapperClass(source: string): string {
 
   return (
     source.match(
-      /isCatalogStep\s*\?[\s\S]*?<div className='([^']+)'>\s*<ExerciseGrid/,
+      /:\s*\([\s\S]*?<div className='([^']+)'>\s*<ExerciseGrid/,
     )?.[1] ?? ''
   )
 }
