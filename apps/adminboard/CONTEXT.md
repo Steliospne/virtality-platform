@@ -135,5 +135,9 @@ The live redemption of a **Coupon** (optionally via a **Promotion Code**) on a S
 _Avoid_: applied coupon (as the term), deal, stacked offers
 
 **Campaign Window**:
-An Adminboard-owned start/end interval during which Subscribe Checkout may auto-attach a chosen **Coupon** for eligible new subscribers. Ending the window stops new attaches; it does not remove **Discounts** already on Subscriptions.
+An Adminboard-owned start/end interval (at most one scheduled or live) during which Subscribe Checkout auto-attaches a chosen library **Coupon** for clinicians with no prior paid billing. Renew Checkout is excluded. Ending the window stops new attaches; it does not remove **Discounts** already on Subscriptions.
 _Avoid_: promo period, sale event, Campaign Coupon (as a separate object type)
+
+**Campaign registry**:
+App-owned set of **Coupon** ids ever used as a campaign Coupon. Classifies a live **Discount** as campaign (vs staff). Ids remain after the window ends or the Coupon is swapped mid-window.
+_Avoid_: campaign coupon list, active campaign only
