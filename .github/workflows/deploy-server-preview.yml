@@ -56,22 +56,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Hosted runners intermittently fail to dial the VPS (dial tcp :22 i/o timeout).
-      # appleboy/ssh-action has no built-in connection retry, so wrap it.
+      # Retry with OpenSSH instead of nesting appleboy under wretry (multiline keys break YAML).
       - name: Deploy preview to VPS
-        uses: Wandalen/wretry.action@v3.8.0
-        with:
-          attempt_limit: 5
-          attempt_delay: 20000
-          action: appleboy/ssh-action@v1.2.0
-          with: |
-            host: ${{ secrets.VPS_HOST }}
-            username: ${{ secrets.VPS_USER }}
-            key: ${{ secrets.VPS_SSH_KEY }}
-            protocol: tcp4
-            timeout: 1m
-            command_timeout: 15m
-            script: |
-              set -euo pipefail
-              docker pull ghcr.io/virtality-app/virtality-server:preview
-              cd ~/infra
-              ./scripts/infra.sh server-preview-up
+        env:
+          SSH_HOST: ${{ secrets.VPS_HOST }}
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          KEY_FILE=$(mktemp)
+          trap 'rm -f "$KEY_FILE"' EXIT
+          printf '%s\n' "$SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          for attempt in 1 2 3 4 5; do
+            echo "SSH deploy attempt ${attempt}/5"
+            if ssh -4 -i "$KEY_FILE" \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=60 \
+              "${SSH_USER}@${SSH_HOST}" \
+              'set -euo pipefail
+               docker pull ghcr.io/virtality-app/virtality-server:preview
+               cd ~/infra
+               ./scripts/infra.sh server-preview-up'
+            then
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed; waiting 20s..."
+            sleep 20
+          done
+          echo "All SSH deploy attempts failed"
+          exit 1
