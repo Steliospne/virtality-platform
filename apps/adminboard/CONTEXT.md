@@ -122,6 +122,10 @@ _Avoid_: Stripe Billing reminder, renew master switch
 Stripe discount definition (percent or amount off, duration set at creation). Staff and campaigns apply Coupons; clinicians do not type a Coupon id. Distinct from **Trial Redeem Code** and **Tester Code**.
 _Avoid_: Trial Redeem Code, Tester Code, deal, offer code
 
+**Coupon library**:
+Adminboard-managed set of reusable **Coupons** that staff create and select when applying a **Discount** to a clinician Subscription.
+_Avoid_: coupon catalog, discount list
+
 **Promotion Code**:
 Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician (including mid-cycle on Profile → Billing). Distinct from **Trial Redeem Code** and **Tester Code**.
 _Avoid_: Trial Redeem Code, Tester Code, Coupon (as the typed string), promo code, voucher
