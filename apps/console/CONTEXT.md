@@ -200,11 +200,11 @@ _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping 
 
 **Tester Code**:
 A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric characters, that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes by prefix.
-_Avoid_: Referral Code, QA code, Testing Code, promo code
+_Avoid_: Referral Code, QA code, Testing Code, promo
 
 **Trial Redeem Code**:
-A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix.
-_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
+_Avoid_: Billing Code, Access Code, Customer Redeem Code
 
 **Trial Subscription**:
 A Subscription currently in its trial phase, started without requiring a card when configured that way.
@@ -229,6 +229,22 @@ _Avoid_: Stripe Billing reminder email, toast blast
 **Profile Billing**:
 The Profile → Billing tab (`?tab=billing`) where clinicians choose Monthly vs Yearly **Pro** and start Checkout, or open the Customer Portal when already entitled. Sidebar Subscribe/Renew and renew-banner CTAs deep-link here rather than opening Checkout directly. One Product (**Pro**); two Prices (`pro_monthly`, `pro_yearly`). Checkout uses `authClient.subscription.upgrade({ plan: 'pro', annual: true | false, … })`. Yearly display shows monthly equivalent primary with yearly total muted. Do not show role in Billing UI. Checkout is allowed when `stripeCustomerId` exists even without **Billing Path Established** (`resolveProfileBillingCheckoutCta`). Active seats use Manage in portal.
 _Avoid_: Checkout-from-sidebar, role badge on Billing, multi-product plan picker
+
+**Coupon**:
+Stripe discount definition (percent or amount off, duration set at creation). Staff and campaigns apply Coupons; clinicians do not type a Coupon id. Distinct from **Trial Redeem Code** and **Tester Code**.
+_Avoid_: Trial Redeem Code, Tester Code, deal, offer code
+
+**Promotion Code**:
+Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician (including mid-cycle on Profile → Billing). Distinct from **Trial Redeem Code** and **Tester Code**.
+_Avoid_: Trial Redeem Code, Tester Code, Coupon (as the typed string), promo code, voucher
+
+**Discount**:
+The live redemption of a **Coupon** (optionally via a **Promotion Code**) on a Subscription (or Checkout-created Subscription). Product rule: one Discount at a time.
+_Avoid_: applied coupon (as the term), deal, stacked offers
+
+**Campaign Window**:
+An Adminboard-owned start/end interval during which Subscribe Checkout may auto-attach a chosen **Coupon** for eligible new subscribers. Ending the window stops new attaches; it does not remove **Discounts** already on Subscriptions.
+_Avoid_: promo period, sale event, Campaign Coupon (as a separate object type)
 
 ## Example Dialogue
 

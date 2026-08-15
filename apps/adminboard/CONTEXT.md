@@ -84,11 +84,11 @@ _Avoid_: Blast send, publish
 
 **Tester Code**:
 A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric characters, that grants tester access when consumed at sign-up. It is a separate system from a **Trial Redeem Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Tester Codes under Admin (not Billing).
-_Avoid_: Referral Code, QA code, Testing Code, promo code
+_Avoid_: Referral Code, QA code, Testing Code, promo
 
 **Trial Redeem Code**:
-A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Adminboard issues and manages Trial Redeem Codes under Billing.
-_Avoid_: Billing Code, Promotion Code, Coupon, Access Code, Customer Redeem Code
+A one-time bearer code, formatted `PAY-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**. Adminboard issues and manages Trial Redeem Codes under Billing.
+_Avoid_: Billing Code, Access Code, Customer Redeem Code
 
 **Trial Subscription**:
 A Subscription currently in its trial phase, started without requiring a card when configured that way.
@@ -117,3 +117,19 @@ _Avoid_: toast blast, global notification toggle
 **Renew Prompt Delivery**:
 A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
 _Avoid_: Stripe Billing reminder, renew master switch
+
+**Coupon**:
+Stripe discount definition (percent or amount off, duration set at creation). Staff and campaigns apply Coupons; clinicians do not type a Coupon id. Distinct from **Trial Redeem Code** and **Tester Code**.
+_Avoid_: Trial Redeem Code, Tester Code, deal, offer code
+
+**Promotion Code**:
+Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician (including mid-cycle on Profile → Billing). Distinct from **Trial Redeem Code** and **Tester Code**.
+_Avoid_: Trial Redeem Code, Tester Code, Coupon (as the typed string), promo code, voucher
+
+**Discount**:
+The live redemption of a **Coupon** (optionally via a **Promotion Code**) on a Subscription (or Checkout-created Subscription). Product rule: one Discount at a time.
+_Avoid_: applied coupon (as the term), deal, stacked offers
+
+**Campaign Window**:
+An Adminboard-owned start/end interval during which Subscribe Checkout may auto-attach a chosen **Coupon** for eligible new subscribers. Ending the window stops new attaches; it does not remove **Discounts** already on Subscriptions.
+_Avoid_: promo period, sale event, Campaign Coupon (as a separate object type)
