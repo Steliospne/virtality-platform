@@ -55,14 +55,23 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      # Hosted runners intermittently fail to dial the VPS (dial tcp :22 i/o timeout).
+      # appleboy/ssh-action has no built-in connection retry, so wrap it.
       - name: Deploy preview to VPS
-        uses: appleboy/ssh-action@v1.2.0
+        uses: Wandalen/wretry.action@v3.8.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            docker pull ghcr.io/virtality-app/virtality-server:preview
-            cd ~/infra
-            ./scripts/infra.sh server-preview-up
+          attempt_limit: 5
+          attempt_delay: 20000
+          action: appleboy/ssh-action@v1.2.0
+          with: |
+            host: ${{ secrets.VPS_HOST }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_SSH_KEY }}
+            protocol: tcp4
+            timeout: 1m
+            command_timeout: 15m
+            script: |
+              set -euo pipefail
+              docker pull ghcr.io/virtality-app/virtality-server:preview
+              cd ~/infra
+              ./scripts/infra.sh server-preview-up
