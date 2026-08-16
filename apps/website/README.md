@@ -1,29 +1,30 @@
-# Virtality Website
+# Website
 
-## Project Overview
+Public marketing site (landing, blog, waitlist, contact).
 
-<!-- Briefly describe the purpose of the project -->
+Domain language: [`CONTEXT.md`](./CONTEXT.md).  
+Suite setup: [`docs/onboarding/README.md`](../../docs/onboarding/README.md).
 
-## Features
+## Run locally
 
-<!-- List key features of the project -->
+Port: **3000** (Next default)
 
-## Installation
+```sh
+# From repo root (also starts server)
+pnpm dev:website
 
-<!-- Provide steps to set up the project locally -->
+# Or full suite
+pnpm dev:apps
+```
 
-## Usage
+Copy [`.env.example`](./.env.example) to `.env`.
 
-<!-- Explain how to use the project -->
+## Env
 
-## Contributing
+| Variable            | Required for local | Notes                                      |
+| ------------------- | ------------------ | ------------------------------------------ |
+| `REVALIDATE_SECRET` | yes for revalidate | Must match `services/server`               |
+| `NEXT_PUBLIC_ENV`   | yes                | `development`                              |
+| PostHog tokens      | no                 | Analytics disabled if public token missing |
 
-<!-- Outline guidelines for contributing to the project -->
-
-## License
-
-<!-- Specify the license under which the project is distributed -->
-
-## Contact
-
-<!-- Add contact information or links for further inquiries -->
+No auth login on this app.

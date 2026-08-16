@@ -29,6 +29,7 @@
     "db:reset": "turbo run @virtality/db#reset",
     "db:migrate:dev": "turbo run @virtality/db#migrate:dev",
     "db:migrate:deploy": "turbo run @virtality/db#migrate:deploy",
+    "db:seed": "turbo run @virtality/db#seed",
     "db:studio": "turbo run @virtality/db#studio",
     "lint": "turbo run lint",
     "type-check": "PATH=\"$PWD/node_modules/.bin:$PATH\" turbo run type-check",

@@ -142,7 +142,8 @@
         "@virtality/console#dev",
         "@virtality/adminboard#dev",
         "@virtality/website#dev",
-        "@virtality/server#dev"
+        "@virtality/server#dev",
+        "@virtality/socket#dev"
       ],
       "cache": false,
       "persistent": true,
@@ -236,6 +237,10 @@
     "@virtality/db#reset": {
       "cache": false,
       "persistent": true
+    },
+    "@virtality/db#seed": {
+      "cache": false,
+      "env": ["CONSOLE_DATABASE_URL"]
     }
   }
 }

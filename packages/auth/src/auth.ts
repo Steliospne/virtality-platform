@@ -28,9 +28,24 @@ import {
   type ExtendLiveEntitlementClockInput,
 } from '@virtality/shared/utils'
 
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-})
+const runtimeEnv =
+  process.env.ENV ?? process.env.NEXT_PUBLIC_ENV ?? 'development'
+const isDevelopment = runtimeEnv === 'development'
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim()
+
+if (!stripeSecretKey && !isDevelopment) {
+  throw new Error('STRIPE_SECRET_KEY is required outside development')
+}
+
+const stripeClient = stripeSecretKey
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2025-08-27.basil',
+    })
+  : null
+
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
+const googleEnabled = Boolean(googleClientId && googleClientSecret)
 
 /**
  * Canonical sandbox `pro` monthly Price (`prod_SaYNooLgBNvYvA` default;
@@ -108,69 +123,89 @@ export const auth = betterAuth({
     sendVerificationEmail,
   },
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      accessType: 'offline',
-      prompt: 'select_account consent',
-      mapProfileToUser: async (profile) => {
-        const { email, picture } = profile
-        const existingUser = await prisma.user.findFirst({
-          where: { email },
-        })
+    ...(googleEnabled
+      ? {
+          google: {
+            clientId: googleClientId!,
+            clientSecret: googleClientSecret!,
+            accessType: 'offline' as const,
+            prompt: 'select_account consent' as const,
+            mapProfileToUser: async (profile: {
+              email: string
+              picture?: string | null
+            }) => {
+              const { email, picture } = profile
+              const existingUser = await prisma.user.findFirst({
+                where: { email },
+              })
 
-        if (!existingUser) return
+              if (!existingUser) return
 
-        if (picture && !existingUser.image) {
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { ...existingUser, image: picture },
-          })
+              if (picture && !existingUser.image) {
+                await prisma.user.update({
+                  where: { id: existingUser.id },
+                  data: { ...existingUser, image: picture },
+                })
+              }
+            },
+          },
         }
-      },
-    },
+      : {}),
   },
   plugins: [
     admin({ ac, roles }),
-    stripe({
-      stripeClient,
-      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-      createCustomerOnSignUp: true,
-      onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
-        await redeemTrialCodeForCustomer({
-          rawCode: await resolveSignUpCodeForCustomerCreate(ctx.body, ctx.path),
-          userId: user.id,
-          stripeCustomerId: stripeCustomer.id,
-          priceId: PRO_PLAN_PRICE_ID,
-          stripeClient,
-        })
-      },
-      subscription: {
-        enabled: true,
-        plans: [
-          {
-            name: 'pro',
-            priceId: PRO_PLAN_PRICE_ID,
-            annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
-          },
-        ],
-        // Paid Subscribe/Renew Checkout always collects a card. No-card trials
-        // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
-        getCheckoutSessionParams: async () => ({
-          params: {
-            payment_method_collection: 'always',
-          },
-        }),
-        // Successful Subscribe/Renew Checkout starts a new renew epoch.
-        onSubscriptionComplete: async ({ subscription }) => {
-          await rearmRenewPromptsAfterCheckoutSubscription(prisma, subscription)
-        },
-        // Extension (and other live clock-end changes) sync via webhook update.
-        onSubscriptionUpdate: async ({ subscription }) => {
-          await rearmRenewPromptsAfterCheckoutSubscription(prisma, subscription)
-        },
-      },
-    }),
+    ...(stripeClient
+      ? [
+          stripe({
+            stripeClient,
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+            createCustomerOnSignUp: true,
+            onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
+              await redeemTrialCodeForCustomer({
+                rawCode: await resolveSignUpCodeForCustomerCreate(
+                  ctx.body,
+                  ctx.path,
+                ),
+                userId: user.id,
+                stripeCustomerId: stripeCustomer.id,
+                priceId: PRO_PLAN_PRICE_ID,
+                stripeClient,
+              })
+            },
+            subscription: {
+              enabled: true,
+              plans: [
+                {
+                  name: 'pro',
+                  priceId: PRO_PLAN_PRICE_ID,
+                  annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+                },
+              ],
+              // Paid Subscribe/Renew Checkout always collects a card. No-card trials
+              // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
+              getCheckoutSessionParams: async () => ({
+                params: {
+                  payment_method_collection: 'always',
+                },
+              }),
+              // Successful Subscribe/Renew Checkout starts a new renew epoch.
+              onSubscriptionComplete: async ({ subscription }) => {
+                await rearmRenewPromptsAfterCheckoutSubscription(
+                  prisma,
+                  subscription,
+                )
+              },
+              // Extension (and other live clock-end changes) sync via webhook update.
+              onSubscriptionUpdate: async ({ subscription }) => {
+                await rearmRenewPromptsAfterCheckoutSubscription(
+                  prisma,
+                  subscription,
+                )
+              },
+            },
+          }),
+        ]
+      : []),
     phoneNumber({
       expiresIn: 5 * 60,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -286,6 +321,12 @@ export function extendEntitlementClockAction(
   client: typeof prisma,
   input: ExtendLiveEntitlementClockInput,
 ) {
+  if (!stripeClient) {
+    throw new Error(
+      'Stripe is not configured. Set STRIPE_SECRET_KEY to use entitlement extension.',
+    )
+  }
+
   return extendEntitlementClockForAdminboard(
     { ...input, priceId: PRO_PLAN_PRICE_ID },
     {

@@ -1,66 +1,38 @@
-# Virtality Adminboard
+# Adminboard
 
-## Description
+Internal admin dashboard for platform resources and operational content.
 
-An administration dashboard for managing of various internal processes.
+Domain language: [`CONTEXT.md`](./CONTEXT.md).  
+Suite setup: [`docs/onboarding/README.md`](../../docs/onboarding/README.md).
 
-## Table of Contents
+## Run locally
 
-- [Virtality Adminboard](#virtality-adminboard)
-  - [Description](#description)
-  - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Features](#features)
-  - [Technologies Used](#technologies-used)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Contact](#contact)
-
-## Installation
-
-Instructions on how to install and set up the project.
+Port: **3002**
 
 ```sh
-git clone https://github.com/yourusername/project-name.git
-cd project-name
-npm install
+# From repo root (also starts server)
+pnpm dev:adminboard
+
+# Or full suite
+pnpm dev:apps
 ```
 
-## Usage
+Copy [`.env.example`](./.env.example) to `.env`. Minimum:
 
-Instructions on how to use the project.
-Dev mode:
+- `NEXT_PUBLIC_ENV=development`
+- `CONSOLE_DATABASE_URL`
 
-```sh
-npm run dev
-```
+Requires a user with `role=admin`. The local seed creates one (see onboarding).
 
-Prod mode:
+## Env
 
-```sh
-npm run build
-npm start
-```
+| Variable               | Required for local | Notes                           |
+| ---------------------- | ------------------ | ------------------------------- |
+| `NEXT_PUBLIC_ENV`      | yes                | `development`                   |
+| `ENV`                  | recommended        | `development`                   |
+| `CONSOLE_DATABASE_URL` | yes                | Used by the Next proxy / Prisma |
 
-Provide examples or screenshots if necessary.
+Seeded admin:
 
-## Features
-
-## Technologies Used
-
-- List the main technologies, frameworks, and libraries used in the project.
-
-## Contributing
-
-Guidelines on how others can contribute to the project.
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature-branch`)
-3. Commit your changes (`git commit -m 'Add new feature'`)
-4. Push to the branch (`git push origin feature-branch`)
-5. Open a Pull Request
-
-## License
-
-## Contact
+- Email: `dev@virtality.local`
+- Password: `password`
