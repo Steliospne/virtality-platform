@@ -2,7 +2,8 @@
 
 ## Start here
 
-New to the repo? Follow **[docs/onboarding/README.md](docs/onboarding/README.md)** to install, configure env, migrate/seed the DB, and run the full local suite (website, console, adminboard, server, socket).
+1. Host tools: **[docs/onboarding/machine-setup.md](docs/onboarding/machine-setup.md)** (Linux, macOS, Windows/WSL)
+2. Repo suite: **[docs/onboarding/README.md](docs/onboarding/README.md)** (env, DB, `pnpm dev:apps`)
 
 ## Structure
 

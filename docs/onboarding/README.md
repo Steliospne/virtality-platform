@@ -6,6 +6,12 @@ Agent/git/domain conventions live under [`docs/agents/`](../agents/) and [`CONTE
 
 ## Prerequisites
 
+First-time machine setup (Git, Node 24+, pnpm, Docker) by OS:
+
+- **[Machine setup](./machine-setup.md)** (Linux, macOS, Windows/WSL)
+
+You need:
+
 - Node **>= 24** and **pnpm** (see root `packageManager`)
 - Docker (for local Postgres via `pnpm db:up`)
 
