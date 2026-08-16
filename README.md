@@ -1,5 +1,9 @@
 # Virtality Platform
 
+## Start here
+
+New to the repo? Follow **[docs/onboarding/README.md](docs/onboarding/README.md)** to install, configure env, migrate/seed the DB, and run the full local suite (website, console, adminboard, server, socket).
+
 ## Structure
 
 ### Apps
@@ -20,11 +24,13 @@
 - `packages/orpc`
 - `packages/ui`
 - `packages/shared`
+- `packages/react-query`
+- `packages/nodemailer`
 
 ### Tooling
 
-- `packages/eslint-config`
-- `packages/typescript-config`
+- `tooling/eslint-config`
+- `tooling/typescript-config`
 
 ### Infra
 
