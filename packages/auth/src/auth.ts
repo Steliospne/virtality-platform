@@ -300,7 +300,8 @@ export const auth = betterAuth({
   },
 })
 
-export type { AuthContext } from './lib/auth-context.ts'
+export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
+export { asAuthSession } from './lib/auth-context.ts'
 export {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,

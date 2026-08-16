@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import acceptLanguage from 'accept-language'
 import { settings } from '@/i18n/settings'
-import { auth } from '@virtality/auth'
+import { asAuthSession, auth } from '@virtality/auth'
 import { prisma } from '@virtality/db'
 import { decideConsoleSessionGate } from '@virtality/shared/utils'
 import { getWebsiteUrl } from '@virtality/shared/types'
@@ -38,9 +38,11 @@ const sessionHandler = async (request: NextRequest) => {
   const signInURL = new URL('/sign-in', request.url)
 
   try {
-    const data = await auth.api.getSession({
-      headers: request.headers,
-    })
+    const data = asAuthSession(
+      await auth.api.getSession({
+        headers: request.headers,
+      }),
+    )
 
     if (!data) return NextResponse.redirect(signInURL)
 
