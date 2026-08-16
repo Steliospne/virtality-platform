@@ -2,6 +2,8 @@
 
 Install the host tools needed before [`README.md`](./README.md) (clone, env, migrate, `pnpm dev:apps`).
 
+**Order:** pick your OS below and finish that section first. Only then run [Verify install](#verify-install-all-platforms). Do not run the version checks until your platform setup is done.
+
 You need:
 
 | Tool    | Version / notes                                     |
@@ -10,34 +12,11 @@ You need:
 | Node.js | **>= 24** (`devEngines` in root `package.json`)     |
 | pnpm    | **11.9.0** (root `packageManager`; prefer Corepack) |
 | Docker  | Engine + Compose v2 (`pnpm db:up` uses Compose)     |
+| Doppler | CLI for secrets ([Doppler guide](./doppler.md))     |
 
 Optional but useful: a Node version manager ([fnm](https://github.com/Schniz/fnm) or [nvm](https://github.com/nvm-sh/nvm)), and the [GitHub CLI](https://cli.github.com/) (`gh`) for issues/PRs.
 
 After this page, continue at [Onboarding](./README.md).
-
----
-
-## Shared checks (all platforms)
-
-Run these in the shell you will use for the repo (on Windows, that means **inside WSL**):
-
-```sh
-git --version
-node -v          # v24.x or newer
-corepack --version
-pnpm -v          # 11.9.x after Corepack prepare
-docker --version
-docker compose version
-```
-
-Enable pnpm from the repo’s pinned version (from the clone, or after you have Node 24+):
-
-```sh
-corepack enable
-corepack prepare pnpm@11.9.0 --activate
-```
-
-If `corepack` is missing, you are likely on Node **25+** (Corepack is no longer bundled) or a minimal install. Prefer Node **24 LTS-style** for this monorepo, or install pnpm via the [official standalone installer](https://pnpm.io/installation) and still match `11.9.0`.
 
 ---
 
@@ -101,6 +80,20 @@ docker compose version
 
 Do **not** rely on the obsolete `docker-compose` (hyphen) v1 binary; this repo expects `docker compose`.
 
+### Doppler CLI
+
+Debian/Ubuntu (from [Doppler CLI docs](https://docs.doppler.com/docs/cli)):
+
+```sh
+sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+curl -sLf --retry 3 --tlsv1.2 --proto "=https" 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | sudo gpg --dearmor -o /usr/share/keyrings/doppler-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main" | sudo tee /etc/apt/sources.list.d/doppler-cli.list
+sudo apt-get update && sudo apt-get install doppler
+doppler --version
+```
+
+After clone: `doppler login`, then follow [Doppler secrets](./doppler.md) (setup + pull `.env` files).
+
 ### Clone and continue
 
 ```sh
@@ -108,7 +101,7 @@ git clone <repo-url> virtality-platform
 cd virtality-platform
 ```
 
-Then open [Onboarding](./README.md).
+Then run [Verify install](#verify-install-all-platforms), then open [Onboarding](./README.md).
 
 ---
 
@@ -165,6 +158,16 @@ docker run --rm hello-world
 
 On Apple Silicon, use the Apple Silicon build of Docker Desktop.
 
+### Doppler CLI
+
+```sh
+brew install gnupg
+brew install dopplerhq/cli/doppler
+doppler --version
+```
+
+After clone: `doppler login`, then follow [Doppler secrets](./doppler.md) (setup + pull `.env` files).
+
 ### Clone and continue
 
 ```sh
@@ -172,7 +175,7 @@ git clone <repo-url> virtality-platform
 cd virtality-platform
 ```
 
-Then open [Onboarding](./README.md).
+Then run [Verify install](#verify-install-all-platforms), then open [Onboarding](./README.md).
 
 ---
 
@@ -195,7 +198,7 @@ Reboot if Windows asks. Open **Ubuntu** from the Start menu and finish the Linux
 
 Docs: [Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-### Inside WSL: Git, Node, pnpm
+### Inside WSL: Git, Node, pnpm, Doppler
 
 ```sh
 sudo apt update && sudo apt install -y git curl build-essential
@@ -209,6 +212,8 @@ corepack prepare pnpm@11.9.0 --activate
 node -v
 pnpm -v
 ```
+
+Install the Doppler CLI with the same Debian/Ubuntu steps as in the Linux section, then `doppler login` after clone ([Doppler secrets](./doppler.md)).
 
 ### Docker on Windows + WSL
 
@@ -245,7 +250,34 @@ git clone <repo-url> virtality-platform
 cd virtality-platform
 ```
 
-Then open [Onboarding](./README.md).
+Then run [Verify install](#verify-install-all-platforms), then open [Onboarding](./README.md).
+
+---
+
+## Verify install (all platforms)
+
+Run these **after** your OS section above is complete, in the shell you will use for the repo (on Windows, that means **inside WSL**):
+
+```sh
+git --version
+node -v          # v24.x or newer
+corepack --version
+pnpm -v          # 11.9.x after Corepack prepare
+docker --version
+docker compose version
+doppler --version
+```
+
+If pnpm is missing or the wrong version, enable it from the repo’s pinned version (needs Node 24+ already installed):
+
+```sh
+corepack enable
+corepack prepare pnpm@11.9.0 --activate
+```
+
+If `corepack` is missing, you are likely on Node **25+** (Corepack is no longer bundled) or a minimal install. Prefer Node **24 LTS-style** for this monorepo, or install pnpm via the [official standalone installer](https://pnpm.io/installation) and still match `11.9.0`.
+
+When every check passes, go to [Doppler secrets](./doppler.md) for `doppler login` / pull, then [Onboarding](./README.md) for database and `pnpm dev:apps`.
 
 ---
 
@@ -260,5 +292,3 @@ Then open [Onboarding](./README.md).
 | `docker` missing in WSL             | Enable Docker Desktop WSL integration; new shell               |
 | Slow installs on WSL                | Clone under `~`, not `/mnt/c`                                  |
 | `pnpm db:up` fails                  | Docker daemon running; `docker compose version` works          |
-
-When the shared checks pass, go to [Onboarding](./README.md) for env files, database, and `pnpm dev:apps`.

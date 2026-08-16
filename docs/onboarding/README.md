@@ -6,14 +6,13 @@ Agent/git/domain conventions live under [`docs/agents/`](../agents/) and [`CONTE
 
 ## Prerequisites
 
-First-time machine setup (Git, Node 24+, pnpm, Docker) by OS:
-
-- **[Machine setup](./machine-setup.md)** (Linux, macOS, Windows/WSL)
+**Before anything else:** finish OS install on **[Machine setup](./machine-setup.md)** (Linux, macOS, or Windows/WSL), then run the verify checks on that page. Do not start install/`pnpm` here until those pass.
 
 You need:
 
 - Node **>= 24** and **pnpm** (see root `packageManager`)
 - Docker (for local Postgres via `pnpm db:up`)
+- Doppler CLI for secrets (see [Doppler secrets](./doppler.md))
 
 ## Monorepo map
 
@@ -48,11 +47,16 @@ Domain detail: read [`CONTEXT-MAP.md`](../../CONTEXT-MAP.md), then the nearest `
 
 ```sh
 pnpm install
+pnpm build
 ```
+
+`pnpm install` pulls workspace deps. `pnpm build` compiles packages the apps depend on (shared libs, Prisma client consumers, etc.) so `pnpm dev:apps` does not start from a cold tree.
 
 ## 2. Env files
 
-Copy each `.env.example` to `.env` in:
+**Preferred:** pull secrets from Doppler (see **[Doppler secrets](./doppler.md)**), then materialize gitignored `.env` files per package.
+
+Fallback if Doppler is not set up yet: copy each `.env.example` to `.env` in:
 
 - `packages/db`
 - `apps/console`
@@ -67,20 +71,42 @@ Examples include a working local `CONSOLE_DATABASE_URL` for Compose Postgres. Ge
 
 ### Sharing real secrets
 
-Do not commit filled `.env` files. For team secret sharing, compare options in [`docs/research/secret-vaults-local-dev.md`](../research/secret-vaults-local-dev.md) (1Password, Doppler, Infisical, Bitwarden Secrets Manager, HashiCorp). Pick one as a team follow-up; until then, ask a teammate for vault access or values that are not in the examples (SMTP, Stripe test keys, Google OAuth, PostHog).
+Do not commit filled `.env` files. Team source of truth is **Doppler** ([setup + migrate + new machine / new developer](./doppler.md)). Background comparison of other tools: [`docs/research/secret-vaults-local-dev.md`](../research/secret-vaults-local-dev.md).
 
 ## 3. Database
+
+First start local Postgres, then apply migrations + seed:
 
 ```sh
 pnpm db:up
 pnpm db:migrate:dev
 ```
 
-`migrate:dev` applies migrations and then runs Prisma seed (Prisma 7 no longer seeds automatically). You can also run:
+### `pnpm db:up`
 
-```sh
-pnpm db:seed
-```
+Starts the Compose Postgres from `infra/docker/compose.db.yml` in the background (`docker compose … up -d`). Defaults match the example `.env` URLs:
+
+| Setting          | Value                               |
+| ---------------- | ----------------------------------- |
+| Image            | `postgres:17`                       |
+| Host port        | `5434` (container `5432`)           |
+| User / pass / db | `devuser` / `devpass` / `devdb`     |
+| Volume           | `pg_data` (data survives `db:down`) |
+
+Stop the container with `pnpm db:down` (volume kept). Docker must be running; if the port is busy, free `5434` or change the Compose mapping and your `CONSOLE_DATABASE_URL`.
+
+### Useful `db:*` scripts
+
+| Script                   | What it does                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `pnpm db:up`             | Start local Postgres                                                         |
+| `pnpm db:down`           | Stop local Postgres                                                          |
+| `pnpm db:migrate:dev`    | Apply pending migrations, then seed (Prisma 7 no longer seeds automatically) |
+| `pnpm db:seed`           | Seed only (re-run seed without migrating)                                    |
+| `pnpm db:studio`         | Open Prisma Studio against the local DB                                      |
+| `pnpm db:generate`       | Regenerate the Prisma client                                                 |
+| `pnpm db:reset`          | Wipe DB, re-apply migrations, seed (destructive; local only)                 |
+| `pnpm db:migrate:deploy` | Apply migrations without seed (closer to staging/prod)                       |
 
 **Fresh DB is the default.** Cloning a remote DB is optional later when you have a connection string (`apps/console/docs/db-setup.md`).
 
