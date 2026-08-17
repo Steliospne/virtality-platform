@@ -11,9 +11,9 @@
  *   incomplete Coupon terms; see `shouldBillingSoftUnavailable`)
  */
 
-export type DiscountChannel = 'staff' | 'promo' | 'campaign'
+import type { CouponDuration } from './coupon-library.ts'
 
-export type CouponDuration = 'forever' | 'once' | 'repeating'
+export type DiscountChannel = 'staff' | 'promo' | 'campaign'
 
 export type SubscriptionDiscountReadFailureReason =
   | 'stripe_unavailable'

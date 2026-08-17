@@ -77,6 +77,9 @@ export { useTesterCodes } from './tester-code/use-tester-codes.js'
 // Trial Redeem Code queries
 export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.js'
 
+// Coupon library queries
+export { useLibraryCoupons } from './coupon-library/use-library-coupons.js'
+
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 
