@@ -15,6 +15,14 @@ import {
 } from './lib/trial-redeem.ts'
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
+import {
+  archiveLibraryCouponAction,
+  createLibraryCouponAction,
+  createStripeCouponLibraryGateway,
+  deleteLibraryCouponAction,
+  listLibraryCouponsAction,
+  updateLibraryCouponNameAction,
+} from './lib/coupon-library.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -25,7 +33,9 @@ import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
 import {
   routeSignUpCode,
+  type CreateLibraryCouponInput,
   type ExtendLiveEntitlementClockInput,
+  type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 
 const runtimeEnv =
@@ -313,6 +323,41 @@ export {
   rearmRenewPromptsAfterExtension,
   rearmRenewPromptsForNewClockEnd,
 } from './lib/renew-prompt-epoch.ts'
+export { createStripeCouponLibraryGateway }
+
+function requireStripeClient(): Stripe {
+  if (!stripeClient) {
+    throw new Error(
+      'Stripe is not configured. Set STRIPE_SECRET_KEY to use Coupon library.',
+    )
+  }
+  return stripeClient
+}
+
+/** Adminboard Coupon library: create against live Stripe Coupons. */
+export function createLibraryCouponForAdminboard(
+  input: CreateLibraryCouponInput,
+) {
+  return createLibraryCouponAction(requireStripeClient(), input)
+}
+
+export function listLibraryCouponsForAdminboard() {
+  return listLibraryCouponsAction(requireStripeClient())
+}
+
+export function updateLibraryCouponNameForAdminboard(
+  input: UpdateLibraryCouponNameInput,
+) {
+  return updateLibraryCouponNameAction(requireStripeClient(), input)
+}
+
+export function archiveLibraryCouponForAdminboard(id: string) {
+  return archiveLibraryCouponAction(requireStripeClient(), id)
+}
+
+export function deleteLibraryCouponForAdminboard(id: string) {
+  return deleteLibraryCouponAction(requireStripeClient(), id)
+}
 
 /**
  * Adminboard Extension: update live trialing|active, else create a no-card

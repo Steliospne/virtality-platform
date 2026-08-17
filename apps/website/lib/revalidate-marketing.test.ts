@@ -34,7 +34,9 @@ describe('parseRevalidateMarketingBody', () => {
   })
 
   it('rejects unknown tags', () => {
-    expect(parseRevalidateMarketingBody({ tag: 'blog' }).ok).toBe(false)
+    expect(parseRevalidateMarketingBody({ tag: 'not-a-real-tag' }).ok).toBe(
+      false,
+    )
   })
 
   it('accepts allowlisted tag or all: true', () => {

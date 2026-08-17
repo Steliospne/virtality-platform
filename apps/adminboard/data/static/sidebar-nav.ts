@@ -14,6 +14,7 @@ import {
   Mail,
   Newspaper,
   Sparkles,
+  TicketPercent,
   Trash2,
   UserPlus,
 } from 'lucide-react'
@@ -63,6 +64,11 @@ export const sidebarNav: SidebarNavGroup[] = [
         title: 'Trial Redeem Codes',
         href: '/trial-redeem-codes',
         icon: CreditCard,
+      },
+      {
+        title: 'Coupon library',
+        href: '/coupons',
+        icon: TicketPercent,
       },
       { title: 'Extension', href: '/extension', icon: Clock3 },
       { title: 'Renew triggers', href: '/renew-triggers', icon: Bell },

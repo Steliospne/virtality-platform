@@ -52,6 +52,12 @@ export { useCreateTrialRedeemCode } from './trial-redeem-code/use-create-trial-r
 export { useDeleteTrialRedeemCode } from './trial-redeem-code/use-delete-trial-redeem-code.js'
 export { useSendTrialRedeemCodeEmail } from './trial-redeem-code/use-send-trial-redeem-code-email.js'
 
+// Coupon library mutations
+export { useCreateLibraryCoupon } from './coupon-library/use-create-library-coupon.js'
+export { useUpdateLibraryCouponName } from './coupon-library/use-update-library-coupon-name.js'
+export { useArchiveLibraryCoupon } from './coupon-library/use-archive-library-coupon.js'
+export { useDeleteLibraryCoupon } from './coupon-library/use-delete-library-coupon.js'
+
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 
