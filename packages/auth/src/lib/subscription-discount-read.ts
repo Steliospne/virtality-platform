@@ -3,6 +3,7 @@ import type { PrismaClient } from '@virtality/db'
 import {
   readSubscriptionDiscount,
   type CampaignRegistry,
+  type CouponDuration,
   type SubscriptionDiscountCouponSnapshot,
   type SubscriptionDiscountEntrySnapshot,
   type SubscriptionDiscountRead,
@@ -11,17 +12,22 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 
+async function lookupCampaignCouponId(
+  client: PrismaClient,
+  couponId: string,
+): Promise<boolean> {
+  const row = await client.campaignRegistryCoupon.findUnique({
+    where: { couponId },
+    select: { couponId: true },
+  })
+  return row != null
+}
+
 export function createPrismaCampaignRegistry(
   client: PrismaClient = prisma,
 ): CampaignRegistry {
   return {
-    isCampaignCouponId: async (couponId) => {
-      const row = await client.campaignRegistryCoupon.findUnique({
-        where: { couponId },
-        select: { couponId: true },
-      })
-      return row != null
-    },
+    isCampaignCouponId: (couponId) => lookupCampaignCouponId(client, couponId),
   }
 }
 
@@ -30,7 +36,7 @@ export async function isCampaignCouponId(
   couponId: string,
   client: PrismaClient = prisma,
 ): Promise<boolean> {
-  return createPrismaCampaignRegistry(client).isCampaignCouponId(couponId)
+  return lookupCampaignCouponId(client, couponId)
 }
 
 /** Persist a Coupon id into the Campaign registry (idempotent upsert). */
@@ -46,25 +52,24 @@ export async function registerCampaignCouponId(
   })
 }
 
+function isCouponDuration(duration: string): duration is CouponDuration {
+  return (
+    duration === 'forever' || duration === 'once' || duration === 'repeating'
+  )
+}
+
 function mapCoupon(
   coupon: Stripe.Coupon | string | undefined,
 ): SubscriptionDiscountCouponSnapshot | null {
   if (!coupon || typeof coupon === 'string') return null
-  const duration = coupon.duration
-  if (
-    duration !== 'forever' &&
-    duration !== 'once' &&
-    duration !== 'repeating'
-  ) {
-    return null
-  }
+  if (!isCouponDuration(coupon.duration)) return null
   return {
     id: coupon.id,
     name: coupon.name ?? null,
     percent_off: coupon.percent_off,
     amount_off: coupon.amount_off,
     currency: coupon.currency ?? null,
-    duration,
+    duration: coupon.duration,
     duration_in_months: coupon.duration_in_months,
   }
 }
@@ -95,9 +100,8 @@ function mapDiscount(
 function toSnapshot(
   subscription: Stripe.Subscription,
 ): SubscriptionDiscountStripeSnapshot | null {
-  const rawDiscounts = subscription.discounts ?? []
   const discounts: SubscriptionDiscountEntrySnapshot[] = []
-  for (const entry of rawDiscounts) {
+  for (const entry of subscription.discounts ?? []) {
     const mapped = mapDiscount(entry)
     if (!mapped) return null
     discounts.push(mapped)
@@ -114,12 +118,9 @@ function toSnapshot(
 }
 
 function isStripeMissingResource(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'statusCode' in error &&
-    (error as { statusCode?: number }).statusCode === 404
-  )
+  if (typeof error !== 'object' || error === null) return false
+  if (!('statusCode' in error)) return false
+  return error.statusCode === 404
 }
 
 export function createStripeSubscriptionDiscountGateway(

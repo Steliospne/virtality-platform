@@ -13,6 +13,8 @@
 
 export type DiscountChannel = 'staff' | 'promo' | 'campaign'
 
+export type CouponDuration = 'forever' | 'once' | 'repeating'
+
 export type SubscriptionDiscountReadFailureReason =
   | 'stripe_unavailable'
   | 'subscription_missing'
@@ -35,7 +37,7 @@ export type SubscriptionDiscountRead =
       percentOff: number | null
       amountOff: number | null
       currency: string | null
-      duration: 'forever' | 'once' | 'repeating'
+      duration: CouponDuration
       durationInMonths: number | null
     }
   | {
@@ -49,7 +51,7 @@ export type SubscriptionDiscountCouponSnapshot = {
   percent_off: number | null
   amount_off: number | null
   currency: string | null
-  duration: 'forever' | 'once' | 'repeating'
+  duration: CouponDuration
   duration_in_months: number | null
 }
 
@@ -70,13 +72,14 @@ export type SubscriptionDiscountStripeSnapshot = {
   }
 }
 
+export type SubscriptionDiscountRetrieveResult =
+  | { ok: true; subscription: SubscriptionDiscountStripeSnapshot }
+  | { ok: false; reason: 'subscription_missing' | 'stripe_unavailable' }
+
 export type SubscriptionDiscountStripeGateway = {
   retrieveSubscriptionWithDiscounts: (
     stripeSubscriptionId: string,
-  ) => Promise<
-    | { ok: true; subscription: SubscriptionDiscountStripeSnapshot }
-    | { ok: false; reason: 'subscription_missing' | 'stripe_unavailable' }
-  >
+  ) => Promise<SubscriptionDiscountRetrieveResult>
 }
 
 /** Campaign registry membership seam (#70 / #74). */
@@ -106,6 +109,26 @@ function promotionFields(
   }
 }
 
+async function resolveDiscountChannel(
+  couponId: string,
+  promotionCodeId: string | null,
+  registry: CampaignRegistry,
+): Promise<
+  | { ok: true; channel: DiscountChannel }
+  | { ok: false; reason: 'registry_unavailable' }
+> {
+  if (promotionCodeId != null) {
+    return { ok: true, channel: 'promo' }
+  }
+
+  try {
+    const isCampaign = await registry.isCampaignCouponId(couponId)
+    return { ok: true, channel: isCampaign ? 'campaign' : 'staff' }
+  } catch {
+    return { ok: false, reason: 'registry_unavailable' }
+  }
+}
+
 /**
  * Classify a retrieved Subscription Discount snapshot (presence + channel).
  * Does not call Stripe; registry is only consulted when presence is `one`
@@ -131,24 +154,19 @@ export async function classifySubscriptionDiscount(
   const { promotionCodeId, promotionCode } = promotionFields(
     entry.promotion_code,
   )
-
-  let channel: DiscountChannel
-  if (promotionCodeId != null) {
-    channel = 'promo'
-  } else {
-    let isCampaign: boolean
-    try {
-      isCampaign = await registry.isCampaignCouponId(entry.coupon.id)
-    } catch {
-      return { ok: false, reason: 'registry_unavailable' }
-    }
-    channel = isCampaign ? 'campaign' : 'staff'
+  const channelResult = await resolveDiscountChannel(
+    entry.coupon.id,
+    promotionCodeId,
+    registry,
+  )
+  if (!channelResult.ok) {
+    return channelResult
   }
 
   return {
     ok: true,
     presence: 'one',
-    channel,
+    channel: channelResult.channel,
     discountId: entry.id,
     couponId: entry.coupon.id,
     couponName: entry.coupon.name,
@@ -177,11 +195,7 @@ export async function readSubscriptionDiscount(
     return { ok: false, reason: 'subscription_missing' }
   }
 
-  let retrieved: Awaited<
-    ReturnType<
-      SubscriptionDiscountStripeGateway['retrieveSubscriptionWithDiscounts']
-    >
-  >
+  let retrieved: SubscriptionDiscountRetrieveResult
   try {
     retrieved =
       await stripe.retrieveSubscriptionWithDiscounts(stripeSubscriptionId)
@@ -203,10 +217,8 @@ export function shouldBillingSoftUnavailable(
   if (!result.ok) return true
   if (result.presence === 'none') return false
   if (result.percentOff == null && result.amountOff == null) return true
-  if (
-    result.amountOff != null &&
-    (result.currency == null || result.currency !== 'eur')
-  ) {
+  // Amount-off requires a known EUR currency; other currencies (and null) soft-fail.
+  if (result.amountOff != null && result.currency !== 'eur') {
     return true
   }
   return false

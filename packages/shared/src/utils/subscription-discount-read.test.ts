@@ -1,19 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   applyCouponMinor,
   classifySubscriptionDiscount,
   readSubscriptionDiscount,
   shouldBillingSoftUnavailable,
   type CampaignRegistry,
+  type SubscriptionDiscountCouponSnapshot,
+  type SubscriptionDiscountEntrySnapshot,
   type SubscriptionDiscountStripeGateway,
   type SubscriptionDiscountStripeSnapshot,
 } from './subscription-discount-read.ts'
 
 function coupon(
-  overrides: Partial<
-    SubscriptionDiscountStripeSnapshot['discounts'][number]['coupon']
-  > = {},
-): SubscriptionDiscountStripeSnapshot['discounts'][number]['coupon'] {
+  overrides: Partial<SubscriptionDiscountCouponSnapshot> = {},
+): SubscriptionDiscountCouponSnapshot {
   return {
     id: 'coupon_staff_1',
     name: 'Staff deal',
@@ -27,10 +27,8 @@ function coupon(
 }
 
 function discount(
-  overrides: Partial<
-    SubscriptionDiscountStripeSnapshot['discounts'][number]
-  > = {},
-): SubscriptionDiscountStripeSnapshot['discounts'][number] {
+  overrides: Partial<SubscriptionDiscountEntrySnapshot> = {},
+): SubscriptionDiscountEntrySnapshot {
   return {
     id: 'di_1',
     start: 1_700_000_000,
@@ -73,7 +71,7 @@ function gateway(
     | { ok: false; reason: 'subscription_missing' | 'stripe_unavailable' },
 ): SubscriptionDiscountStripeGateway {
   return {
-    retrieveSubscriptionWithDiscounts: vi.fn(async () => result),
+    retrieveSubscriptionWithDiscounts: async () => result,
   }
 }
 
@@ -260,17 +258,22 @@ describe('readSubscriptionDiscount', () => {
 })
 
 describe('shouldBillingSoftUnavailable', () => {
-  it('is soft-unavailable on read failure and incomplete amount-off terms', async () => {
+  it('is soft-unavailable when the Discount read fails', () => {
     expect(
       shouldBillingSoftUnavailable({
         ok: false,
         reason: 'stripe_unavailable',
       }),
     ).toBe(true)
+  })
+
+  it('is available when presence is none', () => {
     expect(shouldBillingSoftUnavailable({ ok: true, presence: 'none' })).toBe(
       false,
     )
+  })
 
+  it('is soft-unavailable for amount-off Coupons without EUR currency', async () => {
     const one = await classifySubscriptionDiscount(
       snapshot({
         discounts: [
