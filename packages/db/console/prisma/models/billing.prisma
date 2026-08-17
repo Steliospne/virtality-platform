@@ -51,3 +51,16 @@ model CampaignRegistryCoupon {
   couponId  String   @id
   createdAt DateTime @db.Timestamp(6)
 }
+
+/// At most one scheduled-or-live Campaign Window (singleton row). Subscribe
+/// Checkout auto-attaches `couponId` while live and healthy; closing sets
+/// `closedAt` and stops new attaches without clearing existing Discounts.
+model CampaignWindow {
+  id        String    @id
+  couponId  String
+  startsAt  DateTime  @db.Timestamp(6)
+  endsAt    DateTime  @db.Timestamp(6)
+  closedAt  DateTime? @db.Timestamp(6)
+  createdAt DateTime  @db.Timestamp(6)
+  updatedAt DateTime  @db.Timestamp(6)
+}

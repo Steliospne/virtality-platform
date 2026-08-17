@@ -58,6 +58,10 @@ export { useUpdateLibraryCouponName } from './coupon-library/use-update-library-
 export { useArchiveLibraryCoupon } from './coupon-library/use-archive-library-coupon.js'
 export { useDeleteLibraryCoupon } from './coupon-library/use-delete-library-coupon.js'
 
+// Campaign Window mutations
+export { useUpsertCampaignWindow } from './campaign-window/use-upsert-campaign-window.js'
+export { useCloseCampaignWindow } from './campaign-window/use-close-campaign-window.js'
+
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 

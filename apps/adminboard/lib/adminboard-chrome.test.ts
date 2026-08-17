@@ -34,6 +34,7 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/Billing/)
     expect(nav).toMatch(/href: ['"]\/trial-redeem-codes['"]/)
     expect(nav).toMatch(/href: ['"]\/coupons['"]/)
+    expect(nav).toMatch(/href: ['"]\/campaign['"]/)
     expect(nav).toMatch(/href: ['"]\/extension['"]/)
     expect(nav).toMatch(/Admin/)
     expect(nav).toMatch(/href: ['"]\/tester-codes['"]/)
@@ -60,7 +61,7 @@ describe('adminboard sidebar chrome', () => {
     expect(topBar).toMatch(/Adminboard/)
     expect(topBar).toMatch(/Avatar/)
     expect(topBar).not.toMatch(
-      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/tester-codes|\/trial-redeem-codes|\/coupons|\/bucket/,
+      /\/partner-logos|\/promo-video|\/mosaic|\/email|\/tester-codes|\/trial-redeem-codes|\/coupons|\/campaign|\/bucket/,
     )
     expect(layout).toMatch(/AppShell|app-shell/)
     expect(layout).not.toMatch(/from ['"]@\/components\/layout\/navbar['"]/)
