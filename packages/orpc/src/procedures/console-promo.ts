@@ -18,18 +18,22 @@ import {
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 
+const CONSOLE_PROMO_CLIENT_ERRORS = [
+  ConsolePromoValidationError,
+  ConsolePromoNoEligibleSubscriptionError,
+  ConsolePromoStaffBlockedError,
+  ConsolePromoConfirmRequiredError,
+  ConsolePromoInvalidCodeError,
+  ConsolePromoCouponUnavailableError,
+  ConsolePromoReadFailedError,
+  ConsolePromoNotPromoError,
+] as const
+
 function throwConsolePromoOrpcError(error: unknown): never {
-  if (
-    error instanceof ConsolePromoValidationError ||
-    error instanceof ConsolePromoNoEligibleSubscriptionError ||
-    error instanceof ConsolePromoStaffBlockedError ||
-    error instanceof ConsolePromoConfirmRequiredError ||
-    error instanceof ConsolePromoInvalidCodeError ||
-    error instanceof ConsolePromoCouponUnavailableError ||
-    error instanceof ConsolePromoReadFailedError ||
-    error instanceof ConsolePromoNotPromoError
-  ) {
-    throw new ORPCError('BAD_REQUEST', { message: error.message })
+  for (const ErrorClass of CONSOLE_PROMO_CLIENT_ERRORS) {
+    if (error instanceof ErrorClass) {
+      throw new ORPCError('BAD_REQUEST', { message: error.message })
+    }
   }
   if (error instanceof Error) {
     throw new ORPCError('BAD_REQUEST', {

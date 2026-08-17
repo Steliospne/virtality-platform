@@ -177,7 +177,8 @@ export function isConsolePromoEligibleStatus(
   return (CONSOLE_PROMO_ELIGIBLE_STATUSES as readonly string[]).includes(status)
 }
 
-function currentDiscountLabel(
+/** Label for the live Discount when present (promo code or Coupon name/id). */
+export function currentDiscountLabel(
   read: Extract<SubscriptionDiscountRead, { ok: true }>,
 ): ConsolePromoCurrentLabel {
   if (read.presence === 'none') return null
@@ -194,6 +195,36 @@ function currentDiscountLabel(
     channel: read.channel,
     label: read.couponName?.trim() ? read.couponName : read.couponId,
   }
+}
+
+type LiveDiscountOne = Extract<
+  SubscriptionDiscountRead,
+  { ok: true; presence: 'one' }
+>
+
+/** Campaign or prior promo must be confirmed before replace. */
+export function requiresReplaceConfirm(
+  read: Extract<SubscriptionDiscountRead, { ok: true }>,
+): read is LiveDiscountOne & { channel: 'campaign' | 'promo' } {
+  return (
+    read.presence === 'one' &&
+    (read.channel === 'campaign' || read.channel === 'promo')
+  )
+}
+
+/**
+ * Customer-facing label for the replace-confirm dialog when a campaign or
+ * prior promo Discount is on the seat.
+ */
+export function replaceConfirmDiscountLabel(
+  read: SubscriptionDiscountRead | undefined,
+): string | null {
+  if (!read?.ok || !requiresReplaceConfirm(read)) return null
+  if (read.channel === 'promo') {
+    const code = read.promotionCode?.trim()
+    return code ? code : (read.couponName ?? read.couponId)
+  }
+  return read.couponName ?? read.couponId
 }
 
 function assertUserId(userId: string): void {
@@ -221,7 +252,7 @@ async function requireEligibleSubscription(
   return subscription
 }
 
-async function requireConfirmRead(
+async function requireSuccessfulDiscountRead(
   readGateway: ConsolePromoReadGateway,
   stripeSubscriptionId: string,
 ): Promise<Extract<SubscriptionDiscountRead, { ok: true }>> {
@@ -305,33 +336,27 @@ export async function loadConsolePromoRedeemPreflight(
     return { ok: false, reason: 'read_failed' }
   }
 
-  if (read.presence === 'one' && read.channel === 'staff') {
-    return {
-      ok: true,
-      state: 'staff_blocked',
-      stripeSubscriptionId: subscription.stripeSubscriptionId,
-      status: subscription.status,
-    }
+  const base = {
+    stripeSubscriptionId: subscription.stripeSubscriptionId,
+    status: subscription.status,
   }
 
-  if (read.presence === 'one') {
+  if (read.presence === 'one' && read.channel === 'staff') {
+    return { ok: true, state: 'staff_blocked', ...base }
+  }
+
+  if (requiresReplaceConfirm(read)) {
     const current = currentDiscountLabel(read)
     return {
       ok: true,
       state: 'needs_replace_confirm',
-      stripeSubscriptionId: subscription.stripeSubscriptionId,
-      status: subscription.status,
+      ...base,
       currentChannel: current?.channel,
       currentLabel: current?.label,
     }
   }
 
-  return {
-    ok: true,
-    state: 'can_apply',
-    stripeSubscriptionId: subscription.stripeSubscriptionId,
-    status: subscription.status,
-  }
+  return { ok: true, state: 'can_apply', ...base }
 }
 
 /**
@@ -349,7 +374,7 @@ export async function redeemPromotionCodeOnSubscription(
   const nowUnix = input.nowUnix ?? Math.floor(Date.now() / 1000)
 
   const subscription = await requireEligibleSubscription(store, input.userId)
-  const priorRead = await requireConfirmRead(
+  const priorRead = await requireSuccessfulDiscountRead(
     readGateway,
     subscription.stripeSubscriptionId,
   )
@@ -359,11 +384,7 @@ export async function redeemPromotionCodeOnSubscription(
     throw new ConsolePromoStaffBlockedError()
   }
 
-  if (
-    priorRead.presence === 'one' &&
-    (priorRead.channel === 'campaign' || priorRead.channel === 'promo') &&
-    !input.confirmReplace
-  ) {
+  if (requiresReplaceConfirm(priorRead) && !input.confirmReplace) {
     throw new ConsolePromoConfirmRequiredError()
   }
 
@@ -405,7 +426,7 @@ export async function removePromoDiscountFromSubscription(
   assertUserId(input.userId)
 
   const subscription = await requireEligibleSubscription(store, input.userId)
-  const priorRead = await requireConfirmRead(
+  const priorRead = await requireSuccessfulDiscountRead(
     readGateway,
     subscription.stripeSubscriptionId,
   )

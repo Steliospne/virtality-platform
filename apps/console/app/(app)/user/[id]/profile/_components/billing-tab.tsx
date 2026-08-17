@@ -5,7 +5,7 @@
  * Discount price rewrite, Promotion Code redeem, and promo remove (#78).
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Check, CheckCircle2, Info, X } from 'lucide-react'
 import {
   useConsoleSubscriptionDiscount,
@@ -36,12 +36,21 @@ import {
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   promoCodeLabel,
+  replaceConfirmDiscountLabel,
+  requiresReplaceConfirm,
   splitCatalogPriceLabel,
   type BillingInterval,
   type BillingStandingView,
 } from '@/lib/profile-billing'
 import { RedeemReplaceConfirmDialog } from './redeem-replace-confirm-dialog'
 import { RemovePromoConfirmDialog } from './remove-promo-confirm-dialog'
+
+type PlanPriceRewrite = {
+  discountedPrimary: string
+  listStrike: string
+  discountedMuted?: string
+  listStrikeMuted?: string
+}
 
 function PriceLine({
   primary,
@@ -69,6 +78,46 @@ function PriceLine({
   )
 }
 
+function PlanCardPrices({
+  listPrimary,
+  listMuted,
+  rewrite,
+}: {
+  listPrimary: string
+  listMuted?: string
+  rewrite: PlanPriceRewrite | null
+}) {
+  if (rewrite) {
+    return (
+      <>
+        <PriceLine
+          primary={rewrite.discountedPrimary}
+          strike={rewrite.listStrike}
+        />
+        {rewrite.discountedMuted ? (
+          <div className='mt-0.5'>
+            <PriceLine
+              primary={rewrite.discountedMuted}
+              strike={rewrite.listStrikeMuted}
+              primaryClassName='text-sm font-medium'
+              catalogClassName='text-sm font-medium'
+            />
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className='text-lg font-semibold tabular-nums'>{listPrimary}</p>
+      {listMuted ? (
+        <p className='mt-0.5 text-sm text-zinc-400 tabular-nums'>{listMuted}</p>
+      ) : null}
+    </>
+  )
+}
+
 function PlanCard({
   title,
   description,
@@ -88,12 +137,7 @@ function PlanCard({
   listPrimary: string
   listMuted?: string
   badge?: string
-  rewrite: {
-    discountedPrimary: string
-    listStrike: string
-    discountedMuted?: string
-    listStrikeMuted?: string
-  } | null
+  rewrite: PlanPriceRewrite | null
 }) {
   return (
     <button
@@ -117,35 +161,11 @@ function PlanCard({
           <p className='mt-1 text-sm text-zinc-500'>{description}</p>
         </div>
         <div className='text-right'>
-          {rewrite ? (
-            <>
-              <PriceLine
-                primary={rewrite.discountedPrimary}
-                strike={rewrite.listStrike}
-              />
-              {rewrite.discountedMuted ? (
-                <div className='mt-0.5'>
-                  <PriceLine
-                    primary={rewrite.discountedMuted}
-                    strike={rewrite.listStrikeMuted}
-                    primaryClassName='text-sm font-medium'
-                    catalogClassName='text-sm font-medium'
-                  />
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <p className='text-lg font-semibold tabular-nums'>
-                {listPrimary}
-              </p>
-              {listMuted ? (
-                <p className='mt-0.5 text-sm text-zinc-400 tabular-nums'>
-                  {listMuted}
-                </p>
-              ) : null}
-            </>
-          )}
+          <PlanCardPrices
+            listPrimary={listPrimary}
+            listMuted={listMuted}
+            rewrite={rewrite}
+          />
         </div>
       </div>
       {selected ? (
@@ -192,6 +212,136 @@ function RemoveSuccessBanner({ onDismiss }: { onDismiss: () => void }) {
   )
 }
 
+function AppliedPromoRow({
+  appliedCode,
+  onRemove,
+}: {
+  appliedCode: string | null
+  onRemove: () => void
+}) {
+  return (
+    <div className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800'>
+      <div className='flex flex-wrap items-center gap-2'>
+        <Badge variant='secondary' className='font-mono'>
+          {appliedCode ?? 'Applied'}
+        </Badge>
+        <span className='text-sm text-zinc-600 dark:text-zinc-400'>
+          Promotion Code on your subscription
+        </span>
+      </div>
+      <Button type='button' variant='outline' size='sm' onClick={onRemove}>
+        Remove discount
+      </Button>
+    </div>
+  )
+}
+
+function PromoCodeEntryForm({
+  code,
+  onCodeChange,
+  redeeming,
+  redeemError,
+  successFlash,
+  onApply,
+}: {
+  code: string
+  onCodeChange: (value: string) => void
+  redeeming: boolean
+  redeemError: string | null
+  successFlash: boolean
+  onApply: () => void
+}) {
+  return (
+    <>
+      {successFlash ? (
+        <p className='text-sm text-emerald-700 dark:text-emerald-300'>
+          You can enter a new Promotion Code below when ready.
+        </p>
+      ) : null}
+      <div className='flex gap-2'>
+        <Input
+          value={code}
+          onChange={(event) => onCodeChange(event.target.value.toUpperCase())}
+          placeholder='Enter code'
+          className='font-mono'
+          aria-label='Promotion Code'
+          disabled={redeeming}
+        />
+        <Button
+          type='button'
+          variant='outline'
+          disabled={!code.trim() || redeeming}
+          onClick={onApply}
+        >
+          {redeeming ? 'Applying…' : 'Apply'}
+        </Button>
+      </div>
+      {redeemError ? (
+        <p className='text-sm text-red-600 dark:text-red-400'>{redeemError}</p>
+      ) : null}
+    </>
+  )
+}
+
+function promoRedeemBody({
+  discount,
+  staffBlocked,
+  onRemove,
+  successFlash,
+  redeemError,
+  redeeming,
+  code,
+  onCodeChange,
+  onApply,
+}: {
+  discount: SubscriptionDiscountRead | undefined
+  staffBlocked: boolean
+  onRemove: () => void
+  successFlash: boolean
+  redeemError: string | null
+  redeeming: boolean
+  code: string
+  onCodeChange: (value: string) => void
+  onApply: () => void
+}): ReactNode {
+  if (discount == null) {
+    return <p className='text-sm text-zinc-500'>Checking current discount…</p>
+  }
+
+  if (!discount.ok) {
+    return (
+      <p className='text-sm text-zinc-500'>
+        Promotion Code redeem is unavailable until discount details load. Try
+        again shortly.
+      </p>
+    )
+  }
+
+  if (staffBlocked) {
+    return <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
+  }
+
+  if (canRemovePromoDiscount(discount)) {
+    return (
+      <AppliedPromoRow
+        appliedCode={promoCodeLabel(discount)}
+        onRemove={onRemove}
+      />
+    )
+  }
+
+  return (
+    <PromoCodeEntryForm
+      code={code}
+      onCodeChange={onCodeChange}
+      redeeming={redeeming}
+      redeemError={redeemError}
+      successFlash={successFlash}
+      onApply={onApply}
+    />
+  )
+}
+
 function PromoRedeemSection({
   discount,
   staffBlocked,
@@ -212,15 +362,7 @@ function PromoRedeemSection({
   const [code, setCode] = useState('')
   const [replaceOpen, setReplaceOpen] = useState(false)
   const [pendingCode, setPendingCode] = useState<string | null>(null)
-  const promoActive = discount ? canRemovePromoDiscount(discount) : false
-  const appliedCode = discount ? promoCodeLabel(discount) : null
-  const currentLabel =
-    discount &&
-    discount.ok &&
-    discount.presence === 'one' &&
-    (discount.channel === 'promo' || discount.channel === 'campaign')
-      ? (promoCodeLabel(discount) ?? discount.couponName ?? discount.couponId)
-      : null
+  const currentLabel = replaceConfirmDiscountLabel(discount)
 
   async function submitApply(confirmReplace: boolean) {
     const trimmed = code.trim()
@@ -237,10 +379,7 @@ function PromoRedeemSection({
     const trimmed = code.trim()
     if (!trimmed || !discount?.ok) return
 
-    if (
-      discount.presence === 'one' &&
-      (discount.channel === 'campaign' || discount.channel === 'promo')
-    ) {
+    if (requiresReplaceConfirm(discount)) {
       setPendingCode(trimmed)
       setReplaceOpen(true)
       return
@@ -249,69 +388,22 @@ function PromoRedeemSection({
     await submitApply(false)
   }
 
-  const readFailed = discount != null && !discount.ok
-  const readPending = discount == null
-
   return (
     <div className='space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800'>
       <p className='text-sm font-medium'>Have a Promotion Code?</p>
-      {readPending ? (
-        <p className='text-sm text-zinc-500'>Checking current discount…</p>
-      ) : readFailed ? (
-        <p className='text-sm text-zinc-500'>
-          Promotion Code redeem is unavailable until discount details load. Try
-          again shortly.
-        </p>
-      ) : staffBlocked ? (
-        <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
-      ) : promoActive ? (
-        <div className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800'>
-          <div className='flex flex-wrap items-center gap-2'>
-            <Badge variant='secondary' className='font-mono'>
-              {appliedCode ?? 'Applied'}
-            </Badge>
-            <span className='text-sm text-zinc-600 dark:text-zinc-400'>
-              Promotion Code on your subscription
-            </span>
-          </div>
-          <Button type='button' variant='outline' size='sm' onClick={onRemove}>
-            Remove discount
-          </Button>
-        </div>
-      ) : (
-        <>
-          {successFlash ? (
-            <p className='text-sm text-emerald-700 dark:text-emerald-300'>
-              You can enter a new Promotion Code below when ready.
-            </p>
-          ) : null}
-          <div className='flex gap-2'>
-            <Input
-              value={code}
-              onChange={(event) => setCode(event.target.value.toUpperCase())}
-              placeholder='Enter code'
-              className='font-mono'
-              aria-label='Promotion Code'
-              disabled={redeeming}
-            />
-            <Button
-              type='button'
-              variant='outline'
-              disabled={!code.trim() || redeeming}
-              onClick={() => {
-                void handleApplyClick()
-              }}
-            >
-              {redeeming ? 'Applying…' : 'Apply'}
-            </Button>
-          </div>
-          {redeemError ? (
-            <p className='text-sm text-red-600 dark:text-red-400'>
-              {redeemError}
-            </p>
-          ) : null}
-        </>
-      )}
+      {promoRedeemBody({
+        discount,
+        staffBlocked,
+        onRemove,
+        successFlash,
+        redeemError,
+        redeeming,
+        code,
+        onCodeChange: setCode,
+        onApply: () => {
+          void handleApplyClick()
+        },
+      })}
 
       <RedeemReplaceConfirmDialog
         open={replaceOpen}
@@ -325,6 +417,22 @@ function PromoRedeemSection({
       />
     </div>
   )
+}
+
+function primaryCtaPendingLabel(standing: BillingStandingView): string {
+  if (profileBillingOpensPortal(standing)) return 'Opening portal…'
+  return 'Starting Checkout…'
+}
+
+function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
+  if (replaced) {
+    return `Promotion Code ${promotionCode} applied (replaced previous discount). ${BILLING_DISCOUNT_TIMING_COPY}`
+  }
+  return `Promotion Code ${promotionCode} applied. ${BILLING_DISCOUNT_TIMING_COPY}`
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
 }
 
 export function BillingTab() {
@@ -370,7 +478,7 @@ export function BillingTab() {
   )
   const cta = profileBillingPrimaryCtaLabel(standing, hasStripeCustomer)
   const ctaPending = isCheckoutStarting || isPortalStarting
-  const discount = discountQuery.data as SubscriptionDiscountRead | undefined
+  const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount)
   const showPromoChrome = profileBillingShowsPromoChrome(standing)
   const staffBlocked = discount ? isStaffRedeemBlocked(discount) : false
@@ -394,16 +502,12 @@ export function BillingTab() {
       })
       setRemoveSuccess(false)
       setRedeemSuccessMessage(
-        result.replaced
-          ? `Promotion Code ${result.promotionCode} applied (replaced previous discount). ${BILLING_DISCOUNT_TIMING_COPY}`
-          : `Promotion Code ${result.promotionCode} applied. ${BILLING_DISCOUNT_TIMING_COPY}`,
+        redeemSuccessCopy(result.promotionCode, result.replaced),
       )
       return true
     } catch (error) {
       setRedeemError(
-        error instanceof Error
-          ? error.message
-          : 'Could not apply that Promotion Code.',
+        errorMessage(error, 'Could not apply that Promotion Code.'),
       )
       return false
     }
@@ -417,9 +521,7 @@ export function BillingTab() {
       setRedeemSuccessMessage(null)
     } catch (error) {
       setRedeemError(
-        error instanceof Error
-          ? error.message
-          : 'Could not remove that Promotion Code.',
+        errorMessage(error, 'Could not remove that Promotion Code.'),
       )
       setRemoveOpen(false)
     }
@@ -516,11 +618,7 @@ export function BillingTab() {
               void handlePrimaryCta()
             }}
           >
-            {ctaPending
-              ? profileBillingOpensPortal(standing)
-                ? 'Opening portal…'
-                : 'Starting Checkout…'
-              : cta}
+            {ctaPending ? primaryCtaPendingLabel(standing) : cta}
           </Button>
         ) : (
           <p className='text-center text-sm text-zinc-500'>

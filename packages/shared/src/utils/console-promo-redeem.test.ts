@@ -14,6 +14,8 @@ import {
   loadConsolePromoRedeemPreflight,
   redeemPromotionCodeOnSubscription,
   removePromoDiscountFromSubscription,
+  replaceConfirmDiscountLabel,
+  requiresReplaceConfirm,
   type ConsolePromoEligibleSubscription,
   type ConsolePromoReadGateway,
   type ConsolePromoStore,
@@ -125,6 +127,23 @@ const campaignRead: SubscriptionDiscountRead = {
   promotionCode: null,
   couponName: 'Launch',
 }
+
+describe('requiresReplaceConfirm and replaceConfirmDiscountLabel', () => {
+  it('requires confirm only for campaign or prior promo', () => {
+    expect(requiresReplaceConfirm(promoRead)).toBe(true)
+    expect(requiresReplaceConfirm(campaignRead)).toBe(true)
+    expect(requiresReplaceConfirm(staffRead)).toBe(false)
+    expect(requiresReplaceConfirm(noneRead)).toBe(false)
+  })
+
+  it('labels replace-confirm from promo code or Coupon name', () => {
+    expect(replaceConfirmDiscountLabel(promoRead)).toBe('OLD20')
+    expect(replaceConfirmDiscountLabel(campaignRead)).toBe('Launch')
+    expect(replaceConfirmDiscountLabel(staffRead)).toBeNull()
+    expect(replaceConfirmDiscountLabel(noneRead)).toBeNull()
+    expect(replaceConfirmDiscountLabel(undefined)).toBeNull()
+  })
+})
 
 describe('loadConsolePromoRedeemPreflight', () => {
   it('reports can_apply when no Discount is present', async () => {

@@ -15,6 +15,8 @@ import {
   isConsolePromoEligibleStatus,
   isStaffRedeemBlocked,
   promoCodeLabel,
+  replaceConfirmDiscountLabel,
+  requiresReplaceConfirm,
   resolveBillingDiscountDisplay,
   resolveProfileBillingCheckoutCta,
   type BillingDiscountDisplay,
@@ -48,6 +50,8 @@ export {
   canRemovePromoDiscount,
   isStaffRedeemBlocked,
   promoCodeLabel,
+  replaceConfirmDiscountLabel,
+  requiresReplaceConfirm,
   resolveBillingDiscountDisplay,
 }
 
@@ -146,5 +150,10 @@ export function splitCatalogPriceLabel(label: string): {
 } {
   const match = label.match(/^(.+?)\s+(\/.+)$/)
   if (!match) return { amount: label, interval: '' }
-  return { amount: match[1]!, interval: match[2]! }
+  const amount = match[1]
+  const interval = match[2]
+  if (amount == null || interval == null) {
+    return { amount: label, interval: '' }
+  }
+  return { amount, interval }
 }

@@ -95,23 +95,28 @@ export function resolveBillingDiscountDisplay(
   }
 }
 
+type LiveDiscountOne = Extract<
+  SubscriptionDiscountRead,
+  { ok: true; presence: 'one' }
+>
+
 /** Staff Discount blocks redeem chrome (#67); only when read succeeds. */
-export function isStaffRedeemBlocked(read: SubscriptionDiscountRead): boolean {
+export function isStaffRedeemBlocked(
+  read: SubscriptionDiscountRead,
+): read is LiveDiscountOne & { channel: 'staff' } {
   return read.ok && read.presence === 'one' && read.channel === 'staff'
 }
 
 /** Clinician may clear only a live promo Discount (#72 / #73). */
 export function canRemovePromoDiscount(
   read: SubscriptionDiscountRead,
-): boolean {
+): read is LiveDiscountOne & { channel: 'promo' } {
   return read.ok && read.presence === 'one' && read.channel === 'promo'
 }
 
 /** Customer-facing Promotion Code string when known on a promo Discount. */
 export function promoCodeLabel(read: SubscriptionDiscountRead): string | null {
-  if (!canRemovePromoDiscount(read) || !read.ok || read.presence !== 'one') {
-    return null
-  }
+  if (!canRemovePromoDiscount(read)) return null
   const code = read.promotionCode?.trim()
   return code ? code : null
 }

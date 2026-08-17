@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useORPC } from '../../../orpc-context.js'
+import { invalidateConsolePromoQueries } from './invalidate-console-promo-queries.js'
 
 export function useRedeemPromotionCode() {
   const orpc = useORPC()
@@ -7,14 +8,7 @@ export function useRedeemPromotionCode() {
   return useMutation(
     orpc.consolePromo.redeem.mutationOptions({
       onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: orpc.consolePromo.readDiscount.key(),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: orpc.consolePromo.redeemPreflight.key(),
-          }),
-        ])
+        await invalidateConsolePromoQueries(queryClient, orpc)
       },
     }),
   )

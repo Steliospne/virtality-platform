@@ -17,6 +17,18 @@ import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library.ts'
 import { readLiveSubscriptionDiscount } from './subscription-discount-read.ts'
 
+type ConsolePromoDeps = {
+  prisma?: PrismaClient
+  stripeClient: Stripe
+}
+
+type ConsolePromoRuntime = {
+  client: PrismaClient
+  store: ConsolePromoStore
+  stripe: ConsolePromoStripeGateway
+  read: ConsolePromoReadGateway
+}
+
 function productIdsForPlan(plan: string): string[] {
   if (plan === 'pro' || plan.trim() === '') {
     return [PRO_PLAN_PRODUCT_ID]
@@ -43,6 +55,18 @@ function mapPromotionCodeLookup(
     expiresAt: promotionCode.expires_at,
     maxRedemptions: promotionCode.max_redemptions,
     timesRedeemed: promotionCode.times_redeemed,
+  }
+}
+
+function createConsolePromoRuntime(
+  deps: ConsolePromoDeps,
+): ConsolePromoRuntime {
+  const client = deps.prisma ?? prisma
+  return {
+    client,
+    store: createPrismaConsolePromoStore(client),
+    stripe: createStripeConsolePromoGateway(deps.stripeClient),
+    read: createConsolePromoReadGateway(deps.stripeClient, client),
   }
 }
 
@@ -123,54 +147,50 @@ export function createConsolePromoReadGateway(
   }
 }
 
+async function resolveStripeSubscriptionIdForDiscountRead(
+  userId: string,
+  runtime: ConsolePromoRuntime,
+): Promise<string | null> {
+  const eligible = await runtime.store.findEligibleSubscriptionByUserId(userId)
+  if (eligible) return eligible.stripeSubscriptionId
+
+  // No eligible seat: still try latest subscription id for soft display.
+  const row = await runtime.client.subscription.findFirst({
+    where: {
+      referenceId: userId,
+      stripeSubscriptionId: { not: null },
+    },
+    orderBy: { id: 'desc' },
+    select: { stripeSubscriptionId: true },
+  })
+  return row?.stripeSubscriptionId ?? null
+}
+
 export async function readConsoleSubscriptionDiscountForUser(
   userId: string,
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
+  deps: ConsolePromoDeps,
 ) {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaConsolePromoStore(client)
-  const subscription = await store.findEligibleSubscriptionByUserId(userId)
-  if (!subscription) {
-    // No eligible seat: still try latest subscription id for soft display.
-    const row = await client.subscription.findFirst({
-      where: {
-        referenceId: userId,
-        stripeSubscriptionId: { not: null },
-      },
-      orderBy: { id: 'desc' },
-      select: { stripeSubscriptionId: true },
-    })
-    if (!row?.stripeSubscriptionId) {
-      return { ok: true as const, presence: 'none' as const }
-    }
-    return readLiveSubscriptionDiscount(
-      { stripeSubscriptionId: row.stripeSubscriptionId },
-      { prisma: client, stripeClient: deps.stripeClient },
-    )
+  const runtime = createConsolePromoRuntime(deps)
+  const stripeSubscriptionId = await resolveStripeSubscriptionIdForDiscountRead(
+    userId,
+    runtime,
+  )
+  if (!stripeSubscriptionId) {
+    return { ok: true as const, presence: 'none' as const }
   }
 
   return readLiveSubscriptionDiscount(
-    { stripeSubscriptionId: subscription.stripeSubscriptionId },
-    { prisma: client, stripeClient: deps.stripeClient },
+    { stripeSubscriptionId },
+    { prisma: runtime.client, stripeClient: deps.stripeClient },
   )
 }
 
 export async function loadConsolePromoRedeemPreflightForUser(
   input: { userId: string },
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
+  deps: ConsolePromoDeps,
 ) {
-  const client = deps.prisma ?? prisma
-  return loadConsolePromoRedeemPreflight(
-    createPrismaConsolePromoStore(client),
-    createConsolePromoReadGateway(deps.stripeClient, client),
-    input,
-  )
+  const { store, read } = createConsolePromoRuntime(deps)
+  return loadConsolePromoRedeemPreflight(store, read, input)
 }
 
 export async function redeemPromotionCodeForUser(
@@ -179,34 +199,18 @@ export async function redeemPromotionCodeForUser(
     code: string
     confirmReplace: boolean
   },
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
+  deps: ConsolePromoDeps,
 ) {
-  const client = deps.prisma ?? prisma
-  return redeemPromotionCodeOnSubscription(
-    createPrismaConsolePromoStore(client),
-    createStripeConsolePromoGateway(deps.stripeClient),
-    createConsolePromoReadGateway(deps.stripeClient, client),
-    input,
-  )
+  const { store, stripe, read } = createConsolePromoRuntime(deps)
+  return redeemPromotionCodeOnSubscription(store, stripe, read, input)
 }
 
 export async function removePromoDiscountForUser(
   input: { userId: string },
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
+  deps: ConsolePromoDeps,
 ) {
-  const client = deps.prisma ?? prisma
-  return removePromoDiscountFromSubscription(
-    createPrismaConsolePromoStore(client),
-    createStripeConsolePromoGateway(deps.stripeClient),
-    createConsolePromoReadGateway(deps.stripeClient, client),
-    input,
-  )
+  const { store, stripe, read } = createConsolePromoRuntime(deps)
+  return removePromoDiscountFromSubscription(store, stripe, read, input)
 }
 
 export type { ConsolePromoEligibleStatus }
