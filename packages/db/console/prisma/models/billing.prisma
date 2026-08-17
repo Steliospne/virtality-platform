@@ -43,3 +43,11 @@ model TrialRedeemCode {
 
   usedByUser User? @relation(fields: [usedBy], references: [id], onDelete: SetNull)
 }
+
+/// App-owned set of Stripe Coupon ids ever used as a campaign Coupon.
+/// Classifies a live Subscription Discount as campaign (vs staff). Ids remain
+/// after the Campaign Window ends or the Coupon is swapped mid-window.
+model CampaignRegistryCoupon {
+  couponId  String   @id
+  createdAt DateTime @db.Timestamp(6)
+}

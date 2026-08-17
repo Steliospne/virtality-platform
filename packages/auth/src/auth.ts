@@ -313,6 +313,13 @@ export {
   rearmRenewPromptsAfterExtension,
   rearmRenewPromptsForNewClockEnd,
 } from './lib/renew-prompt-epoch.ts'
+export {
+  createPrismaCampaignRegistry,
+  createStripeSubscriptionDiscountGateway,
+  isCampaignCouponId,
+  readLiveSubscriptionDiscount,
+  registerCampaignCouponId,
+} from './lib/subscription-discount-read.ts'
 
 /**
  * Adminboard Extension: update live trialing|active, else create a no-card

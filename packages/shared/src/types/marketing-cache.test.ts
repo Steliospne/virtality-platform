@@ -6,13 +6,14 @@ import {
 } from './marketing-cache'
 
 describe('marketing cache tags', () => {
-  it('lists the five allowlisted tags', () => {
+  it('lists the allowlisted tags', () => {
     expect(MARKETING_CACHE_TAGS).toEqual([
       'partner-logos',
       'mosaic',
       'promo-video',
       'highlight-cards-benefits',
       'highlight-cards-features',
+      'blog',
     ])
   })
 
