@@ -51,3 +51,21 @@ model CampaignRegistryCoupon {
   couponId  String   @id
   createdAt DateTime @db.Timestamp(6)
 }
+
+/// In-app Promotion Code notify write path. One open row per user + Stripe
+/// Promotion Code id. Console delivery chrome is out of scope for Adminboard.
+model PromotionCodeDelivery {
+  id              String                       @id @default(cuid())
+  userId          String
+  promotionCodeId String
+  code            String
+  couponId        String
+  status          PromotionCodeDeliveryStatus  @default(open)
+  createdAt       DateTime                     @db.Timestamp(6)
+  updatedAt       DateTime                     @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promotionCodeId])
+  @@index([userId, status])
+}

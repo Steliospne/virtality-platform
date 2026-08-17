@@ -58,6 +58,12 @@ export { useUpdateLibraryCouponName } from './coupon-library/use-update-library-
 export { useArchiveLibraryCoupon } from './coupon-library/use-archive-library-coupon.js'
 export { useDeleteLibraryCoupon } from './coupon-library/use-delete-library-coupon.js'
 
+// Promotion Code mutations
+export { useCreatePromotionCode } from './promotion-code/use-create-promotion-code.js'
+export { useDeactivatePromotionCode } from './promotion-code/use-deactivate-promotion-code.js'
+export { useSendPromotionCodeEmail } from './promotion-code/use-send-promotion-code-email.js'
+export { useNotifyPromotionCodeInApp } from './promotion-code/use-notify-promotion-code-in-app.js'
+
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 

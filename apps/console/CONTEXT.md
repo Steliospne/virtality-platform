@@ -238,6 +238,10 @@ _Avoid_: Trial Redeem Code, Tester Code, deal, offer code
 Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician (including mid-cycle on Profile → Billing). Distinct from **Trial Redeem Code** and **Tester Code**.
 _Avoid_: Trial Redeem Code, Tester Code, Coupon (as the typed string), promo code, voucher
 
+**Promotion Code Delivery**:
+Staff-upserted open row that notifies this Console user about a **Promotion Code** (one open row per userId + promotionCodeId). Adminboard owns the write path; Console delivery chrome is out of this map.
+_Avoid_: promo inbox, discount notification, code bind
+
 **Discount**:
 The live redemption of a **Coupon** (optionally via a **Promotion Code**) on a Subscription (or Checkout-created Subscription). Product rule: one Discount at a time.
 _Avoid_: applied coupon (as the term), deal, stacked offers

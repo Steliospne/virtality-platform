@@ -50,6 +50,7 @@ describe('adminboard table kit migration', () => {
       'components/trial-redeem-code/trial-redeem-code-table.tsx',
     ],
     ['coupon-library', 'components/coupon-library/coupon-library-table.tsx'],
+    ['promotion-code', 'components/promotion-code/promotion-code-table.tsx'],
     ['user', 'components/resources/user/user-table.tsx'],
     ['patients', 'components/resources/patients/patient-table.tsx'],
     ['map', 'components/resources/map/map-table.tsx'],

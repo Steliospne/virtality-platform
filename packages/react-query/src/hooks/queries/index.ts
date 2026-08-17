@@ -80,6 +80,9 @@ export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.
 // Coupon library queries
 export { useLibraryCoupons } from './coupon-library/use-library-coupons.js'
 
+// Promotion Code queries
+export { usePromotionCodes } from './promotion-code/use-promotion-codes.js'
+
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 

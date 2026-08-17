@@ -22,7 +22,8 @@ import { getErrorMessage } from '@/lib/get-error-message'
 import { useArchiveLibraryCoupon } from '@virtality/react-query'
 import type { CouponLibraryRecord } from '@virtality/shared/utils'
 import { ColumnDef } from '@tanstack/react-table'
-import { Archive, Ellipsis, Pencil, Trash2 } from 'lucide-react'
+import { Archive, Ellipsis, Pencil, Tag, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -120,6 +121,12 @@ export const columns: ColumnDef<CouponLibraryRecord>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent id='actions'>
+              <DropdownMenuItem asChild>
+                <Link href={`/coupons/${coupon.id}`}>
+                  <Tag />
+                  Promotion Codes
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => runAfterClose(() => setEditOpen(true))}
               >

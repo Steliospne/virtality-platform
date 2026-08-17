@@ -16,6 +16,7 @@ import {
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
 import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
+import { createStripePromotionCodeGateway } from './lib/promotion-code.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -27,12 +28,22 @@ import { getServerUrl } from '@virtality/shared/types'
 import {
   archiveLibraryCoupon,
   createLibraryCoupon,
+  createPromotionCode,
+  deactivatePromotionCode,
   deleteLibraryCoupon,
   listLibraryCoupons,
+  listPromotionCodesForCoupon,
+  notifyPromotionCodeDelivery,
   routeSignUpCode,
+  sendPromotionCodeEmail,
   updateLibraryCouponName,
   type CreateLibraryCouponInput,
+  type CreatePromotionCodeInput,
   type ExtendLiveEntitlementClockInput,
+  type NotifyPromotionCodeDeliveryInput,
+  type PromotionCodeDeliveryStore,
+  type SendPromotionCodeEmailInput,
+  type SendPromotionCodeEmailRuntime,
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 
@@ -329,6 +340,7 @@ export {
   registerCampaignCouponId,
 } from './lib/subscription-discount-read.ts'
 export { createStripeCouponLibraryGateway }
+export { createStripePromotionCodeGateway }
 
 function requireStripeClient(): Stripe {
   if (!stripeClient) {
@@ -341,6 +353,10 @@ function requireStripeClient(): Stripe {
 
 function couponLibraryGateway() {
   return createStripeCouponLibraryGateway(requireStripeClient())
+}
+
+function promotionCodeGateway() {
+  return createStripePromotionCodeGateway(requireStripeClient())
 }
 
 /** Adminboard Coupon library: create against live Stripe Coupons. */
@@ -366,6 +382,35 @@ export function archiveLibraryCouponForAdminboard(id: string) {
 
 export function deleteLibraryCouponForAdminboard(id: string) {
   return deleteLibraryCoupon(couponLibraryGateway(), id)
+}
+
+/** Adminboard Promotion Codes nested under a library Coupon. */
+export function createPromotionCodeForAdminboard(
+  input: CreatePromotionCodeInput,
+) {
+  return createPromotionCode(promotionCodeGateway(), input)
+}
+
+export function listPromotionCodesForCouponForAdminboard(couponId: string) {
+  return listPromotionCodesForCoupon(promotionCodeGateway(), couponId)
+}
+
+export function deactivatePromotionCodeForAdminboard(id: string) {
+  return deactivatePromotionCode(promotionCodeGateway(), id)
+}
+
+export function sendPromotionCodeEmailForAdminboard(
+  input: SendPromotionCodeEmailInput,
+  runtime: SendPromotionCodeEmailRuntime,
+) {
+  return sendPromotionCodeEmail(promotionCodeGateway(), input, runtime)
+}
+
+export function notifyPromotionCodeDeliveryForAdminboard(
+  store: PromotionCodeDeliveryStore,
+  input: NotifyPromotionCodeDeliveryInput,
+) {
+  return notifyPromotionCodeDelivery(promotionCodeGateway(), store, input)
 }
 
 /**

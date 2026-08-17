@@ -46,3 +46,7 @@ enum TrialRedeemCodeStatus {
   redeemed
   already_entitled
 }
+
+enum PromotionCodeDeliveryStatus {
+  open
+}
