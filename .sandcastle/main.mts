@@ -25,7 +25,7 @@ import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
 
-const AGENT_MODEL = 'composer-2.5'
+const AGENT_MODEL = 'cursor-grok-4.5-medium'
 
 // The planner emits its plan as JSON inside <plan> tags; Output.object extracts
 // and validates it against this schema. We use Zod here, but any Standard
