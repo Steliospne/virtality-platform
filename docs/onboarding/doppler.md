@@ -107,15 +107,15 @@ Do this from a machine that already has working local `.env` files (or vault exp
 
 ### 2.1 Inventory (source of truth today)
 
-| Path              | Example file                         | Typical secrets                                                                        |
-| ----------------- | ------------------------------------ | -------------------------------------------------------------------------------------- |
-| `packages/db`     | `.env.example`                       | `CONSOLE_DATABASE_URL`                                                                 |
-| `apps/console`    | `.env.example`                       | DB, PostHog, AWS, Discord                                                              |
-| `apps/adminboard` | `.env.example`                       | DB                                                                                     |
-| `apps/website`    | `.env.example`                       | `REVALIDATE_SECRET`, PostHog                                                           |
-| `services/server` | `.env.example`                       | Auth, DB, Stripe, Google, SMTP, TURN, waitlist                                         |
-| `services/socket` | `.env.example`                       | `ENV`, `PORT`, optional `SIM`                                                          |
-| `.sandcastle`     | `.env.example` (optional / personal) | `CURSOR_API_KEY`, `GH_TOKEN` (keep personal; do not put personal tokens in team `dev`) |
+| Path              | Example file                         | Typical secrets                                                                  |
+| ----------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
+| `packages/db`     | `.env.example`                       | `CONSOLE_DATABASE_URL`                                                           |
+| `apps/console`    | `.env.example`                       | DB, PostHog, AWS, Discord                                                        |
+| `apps/adminboard` | `.env.example`                       | DB                                                                               |
+| `apps/website`    | `.env.example`                       | `REVALIDATE_SECRET`, PostHog                                                     |
+| `services/server` | `.env.example`                       | Auth, DB, Stripe, Google, SMTP, TURN, waitlist                                   |
+| `services/socket` | `.env.example`                       | `ENV`, `PORT`, optional `SIM`                                                    |
+| `.sandcastle`     | `.env.example` (optional / personal) | `CURSOR_API_KEY`, `GH_TOKEN`, `GH_REPO` (keep personal tokens out of team `dev`) |
 
 Also migrate any filled local `.env` values that are **not** in the examples (SMTP, Stripe test keys, Google OAuth, real PostHog tokens).
 

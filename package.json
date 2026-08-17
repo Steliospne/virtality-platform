@@ -37,7 +37,7 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "sandcastle": "npx tsx .sandcastle/main.mts"
+    "sandcastle": "npx tsx --env-file=.sandcastle/.env .sandcastle/main.mts"
   },
   "devDependencies": {
     "@ai-hero/sandcastle": "0.12.0",

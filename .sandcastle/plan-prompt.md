@@ -1,5 +1,7 @@
 # ISSUES
 
+Issue tracker commands use the `GH_REPO` env var (upstream org repo). Do not retarget `gh` to a personal fork.
+
 Here are the open issues in the repo:
 
 <issues-json>

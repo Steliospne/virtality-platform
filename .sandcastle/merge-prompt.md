@@ -15,7 +15,7 @@ After all branches are merged, make a single commit summarizing the merge.
 
 # CLOSE ISSUES
 
-For each branch that was merged, close its issue using the following command:
+For each branch that was merged, close its issue using the following command (`GH_REPO` already points at the upstream org repo):
 
 `gh issue close <ID> --comment "Completed by Sandcastle"`
 

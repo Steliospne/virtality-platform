@@ -2,7 +2,7 @@
 
 Fix issue {{TASK_ID}}: {{ISSUE_TITLE}}
 
-Pull in the issue using `gh issue view <ID>`. If it has a parent PRD, pull that in too.
+Pull in the issue using `gh issue view <ID>` (`GH_REPO` already points at the upstream org repo). If it has a parent PRD, pull that in too.
 
 Only work on the issue specified.
 
