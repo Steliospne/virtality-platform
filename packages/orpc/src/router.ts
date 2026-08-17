@@ -24,6 +24,7 @@ import { testerCode } from './procedures/tester-code.ts'
 import { trialRedeemCode } from './procedures/trial-redeem-code.ts'
 import { couponLibrary } from './procedures/coupon-library.ts'
 import { promotionCode } from './procedures/promotion-code.ts'
+import { campaignWindow } from './procedures/campaign-window.ts'
 import { renewTrigger } from './procedures/renew-trigger.ts'
 import { renewPrompt } from './procedures/renew-prompt.ts'
 import { entitlementExtension } from './procedures/entitlement-extension.ts'
@@ -64,6 +65,7 @@ export const router = {
   trialRedeemCode,
   couponLibrary,
   promotionCode,
+  campaignWindow,
   renewTrigger,
   renewPrompt,
   entitlementExtension,

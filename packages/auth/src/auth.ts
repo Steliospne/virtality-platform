@@ -17,6 +17,12 @@ import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension
 import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
 import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
 import { createStripePromotionCodeGateway } from './lib/promotion-code.ts'
+import {
+  buildCampaignAwareCheckoutSessionParams,
+  closeCampaignWindowForAdminboard,
+  loadCampaignWindowView,
+  upsertCampaignWindowForAdminboard,
+} from './lib/campaign-window.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -202,11 +208,25 @@ export const auth = betterAuth({
               ],
               // Paid Subscribe/Renew Checkout always collects a card. No-card trials
               // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
-              getCheckoutSessionParams: async () => ({
-                params: {
-                  payment_method_collection: 'always',
-                },
-              }),
+              // Campaign Window may attach discounts[{coupon}] for Subscribe only
+              // (!hadPaidBilling); never allow_promotion_codes on the same Session.
+              getCheckoutSessionParams: async ({ user }) => {
+                if (!stripeClient) {
+                  return {
+                    params: {
+                      payment_method_collection: 'always' as const,
+                    },
+                  }
+                }
+                return buildCampaignAwareCheckoutSessionParams({
+                  userId: user.id,
+                  stripeCustomerId:
+                    typeof user.stripeCustomerId === 'string'
+                      ? user.stripeCustomerId
+                      : null,
+                  stripeClient,
+                })
+              },
               // Successful Subscribe/Renew Checkout starts a new renew epoch.
               onSubscriptionComplete: async ({ subscription }) => {
                 await rearmRenewPromptsAfterCheckoutSubscription(
@@ -339,6 +359,13 @@ export {
   readLiveSubscriptionDiscount,
   registerCampaignCouponId,
 } from './lib/subscription-discount-read.ts'
+export {
+  buildCampaignAwareCheckoutSessionParams,
+  closeCampaignWindowForAdminboard,
+  createPrismaCampaignWindowStore,
+  loadCampaignWindowView,
+  upsertCampaignWindowForAdminboard,
+} from './lib/campaign-window.ts'
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
 
@@ -411,6 +438,27 @@ export function notifyPromotionCodeDeliveryForAdminboard(
   input: NotifyPromotionCodeDeliveryInput,
 ) {
   return notifyPromotionCodeDelivery(promotionCodeGateway(), store, input)
+}
+
+/** Adminboard Campaign Window: read singleton + Coupon health / attaching. */
+export function getCampaignWindowForAdminboard() {
+  return loadCampaignWindowView({ stripeClient: requireStripeClient() })
+}
+
+/** Adminboard Campaign Window: upsert singleton and register Coupon id. */
+export function saveCampaignWindowForAdminboard(input: {
+  couponId: string
+  startsAt: Date
+  endsAt: Date
+}) {
+  return upsertCampaignWindowForAdminboard(input, {
+    stripeClient: requireStripeClient(),
+  })
+}
+
+/** Adminboard Campaign Window: close to stop new Checkout attaches. */
+export function closeCampaignWindowAction() {
+  return closeCampaignWindowForAdminboard()
 }
 
 /**

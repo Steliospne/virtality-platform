@@ -64,6 +64,10 @@ export { useDeactivatePromotionCode } from './promotion-code/use-deactivate-prom
 export { useSendPromotionCodeEmail } from './promotion-code/use-send-promotion-code-email.js'
 export { useNotifyPromotionCodeInApp } from './promotion-code/use-notify-promotion-code-in-app.js'
 
+// Campaign Window mutations
+export { useUpsertCampaignWindow } from './campaign-window/use-upsert-campaign-window.js'
+export { useCloseCampaignWindow } from './campaign-window/use-close-campaign-window.js'
+
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 

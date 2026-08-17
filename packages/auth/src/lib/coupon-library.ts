@@ -39,6 +39,29 @@ function mapStripeCoupon(coupon: Stripe.Coupon): CouponLibraryRecord {
   }
 }
 
+/**
+ * Retrieve one library Coupon. Returns null when Stripe reports the Coupon
+ * missing (deleted); other Stripe errors propagate.
+ */
+export async function retrieveLibraryCoupon(
+  stripeClient: Stripe,
+  id: string,
+): Promise<CouponLibraryRecord | null> {
+  try {
+    return mapStripeCoupon(await stripeClient.coupons.retrieve(id))
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'statusCode' in error &&
+      error.statusCode === 404
+    ) {
+      return null
+    }
+    throw error
+  }
+}
+
 export function createStripeCouponLibraryGateway(
   stripeClient: Stripe,
 ): CouponLibraryStripeGateway {

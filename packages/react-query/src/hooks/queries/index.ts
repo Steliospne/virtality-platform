@@ -83,6 +83,10 @@ export { useLibraryCoupons } from './coupon-library/use-library-coupons.js'
 // Promotion Code queries
 export { usePromotionCodes } from './promotion-code/use-promotion-codes.js'
 
+// Campaign Window queries
+export { useCampaignWindow } from './campaign-window/use-campaign-window.js'
+export { useCampaignPickerCoupons } from './campaign-window/use-campaign-picker-coupons.js'
+
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 
