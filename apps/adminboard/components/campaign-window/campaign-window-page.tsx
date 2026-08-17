@@ -19,14 +19,19 @@ import {
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import {
-  CAMPAIGN_COUPON_HEALTH_LABELS,
   CAMPAIGN_WINDOW_LIFECYCLE_LABELS,
   CAMPAIGN_WINDOW_PAGE_DESCRIPTION,
+  campaignCouponSelectPlaceholder,
   formatCampaignAttachingStatus,
+  formatCampaignCouponHealthLabel,
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from '@/lib/campaign-window'
 import { formatCouponDiscount } from '@/lib/coupon-library-display'
+
+function mutationErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
+}
 
 export function CampaignWindowPage() {
   const { data, isPending } = useCampaignWindow()
@@ -48,6 +53,16 @@ export function CampaignWindowPage() {
 
   const busy = saving || closing
   const canClose = data?.lifecycle === 'scheduled' || data?.lifecycle === 'live'
+  const lifecycleLabel = isPending
+    ? 'Loading...'
+    : CAMPAIGN_WINDOW_LIFECYCLE_LABELS[data?.lifecycle ?? 'none']
+  const couponHealthLabel = formatCampaignCouponHealthLabel(
+    Boolean(data?.window),
+    data?.couponHealth ?? 'deleted',
+  )
+  const attachingLabel = data
+    ? formatCampaignAttachingStatus(data.attaching)
+    : 'Loading...'
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -80,9 +95,7 @@ export function CampaignWindowPage() {
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Failed to save Campaign Window',
+            mutationErrorMessage(error, 'Failed to save Campaign Window'),
           )
         },
       },
@@ -96,9 +109,7 @@ export function CampaignWindowPage() {
       },
       onError: (error) => {
         toast.error(
-          error instanceof Error
-            ? error.message
-            : 'Failed to close Campaign Window',
+          mutationErrorMessage(error, 'Failed to close Campaign Window'),
         )
       },
     })
@@ -115,26 +126,14 @@ export function CampaignWindowPage() {
 
       <div className='bg-muted/40 mb-8 grid gap-2 rounded-lg p-4 text-sm'>
         <p>
-          Status:{' '}
-          <span className='font-medium'>
-            {isPending
-              ? 'Loading…'
-              : CAMPAIGN_WINDOW_LIFECYCLE_LABELS[data?.lifecycle ?? 'none']}
-          </span>
+          Status: <span className='font-medium'>{lifecycleLabel}</span>
         </p>
         <p>
           Coupon health:{' '}
-          <span className='font-medium'>
-            {data?.window
-              ? CAMPAIGN_COUPON_HEALTH_LABELS[data.couponHealth]
-              : '—'}
-          </span>
+          <span className='font-medium'>{couponHealthLabel}</span>
         </p>
         <p>
-          Checkout:{' '}
-          <span className='font-medium'>
-            {data ? formatCampaignAttachingStatus(data.attaching) : 'Loading…'}
-          </span>
+          Checkout: <span className='font-medium'>{attachingLabel}</span>
         </p>
       </div>
 
@@ -148,13 +147,10 @@ export function CampaignWindowPage() {
           >
             <SelectTrigger id='campaign-coupon' className='w-full'>
               <SelectValue
-                placeholder={
-                  pickerPending
-                    ? 'Loading Coupons…'
-                    : (pickerCoupons?.length ?? 0) === 0
-                      ? 'No eligible Coupons'
-                      : 'Select a Coupon'
-                }
+                placeholder={campaignCouponSelectPlaceholder(
+                  pickerPending,
+                  pickerCoupons?.length ?? 0,
+                )}
               />
             </SelectTrigger>
             <SelectContent>
@@ -194,7 +190,7 @@ export function CampaignWindowPage() {
 
         <div className='flex flex-wrap gap-3'>
           <Button type='submit' variant='primary' disabled={busy}>
-            {saving ? 'Saving…' : 'Save Campaign Window'}
+            {saving ? 'Saving...' : 'Save Campaign Window'}
           </Button>
           <Button
             type='button'
@@ -202,7 +198,7 @@ export function CampaignWindowPage() {
             disabled={busy || !canClose}
             onClick={handleClose}
           >
-            {closing ? 'Closing…' : 'Close window'}
+            {closing ? 'Closing...' : 'Close window'}
           </Button>
         </div>
       </form>

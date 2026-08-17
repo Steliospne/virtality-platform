@@ -8,6 +8,7 @@ import {
 import {
   CampaignWindowValidationError,
   listCouponsForCampaignPicker,
+  type CampaignWindowRecord,
 } from '@virtality/shared/utils'
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
@@ -48,9 +49,7 @@ async function runCampaignWindowHandler<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
-function serializeWindow(
-  window: Awaited<ReturnType<typeof getCampaignWindowForAdminboard>>['window'],
-) {
+function serializeWindow(window: CampaignWindowRecord | null) {
   if (!window) return null
   return {
     id: window.id,

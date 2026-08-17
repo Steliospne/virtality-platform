@@ -33,6 +33,23 @@ export function formatCampaignAttachingStatus(attaching: boolean): string {
     : 'Not attaching (window closed, not live, or Coupon unhealthy)'
 }
 
+export function formatCampaignCouponHealthLabel(
+  hasWindow: boolean,
+  couponHealth: CampaignCouponHealth,
+): string {
+  if (!hasWindow) return 'None'
+  return CAMPAIGN_COUPON_HEALTH_LABELS[couponHealth]
+}
+
+export function campaignCouponSelectPlaceholder(
+  pickerPending: boolean,
+  couponCount: number,
+): string {
+  if (pickerPending) return 'Loading Coupons...'
+  if (couponCount === 0) return 'No eligible Coupons'
+  return 'Select a Coupon'
+}
+
 /** datetime-local value from an ISO timestamp (local timezone). */
 export function toDatetimeLocalValue(iso: string | null | undefined): string {
   if (!iso) return ''

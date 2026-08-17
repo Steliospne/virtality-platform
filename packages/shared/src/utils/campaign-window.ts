@@ -96,10 +96,12 @@ export function resolveCampaignCheckoutCouponId(input: {
   hadPaidBilling: boolean
   now: Date
 }): string | null {
+  const { window } = input
   if (input.hadPaidBilling) return null
-  if (!isCampaignWindowAttaching(input.window, input.now)) return null
+  if (!window) return null
+  if (!isCampaignWindowAttaching(window, input.now)) return null
   if (input.couponHealth !== 'healthy') return null
-  return input.window!.couponId
+  return window.couponId
 }
 
 /** Checkout Session params for campaign attach (no allow_promotion_codes). */

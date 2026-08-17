@@ -11,6 +11,7 @@ import {
   toCampaignCheckoutSessionParams,
   upsertCampaignWindow,
   CampaignWindowValidationError,
+  type CampaignCheckoutSessionParams,
   type CampaignCouponHealth,
   type CampaignWindowLifecycle,
   type CampaignWindowRecord,
@@ -22,7 +23,7 @@ import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library.ts'
 import { registerCampaignCouponId } from './subscription-discount-read.ts'
 
-function mapDbRow(row: {
+type CampaignWindowRow = {
   id: string
   couponId: string
   startsAt: Date
@@ -30,7 +31,9 @@ function mapDbRow(row: {
   closedAt: Date | null
   createdAt: Date
   updatedAt: Date
-}): CampaignWindowRecord {
+}
+
+function mapDbRow(row: CampaignWindowRow): CampaignWindowRecord {
   return {
     id: row.id,
     couponId: row.couponId,
@@ -39,6 +42,25 @@ function mapDbRow(row: {
     closedAt: row.closedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  }
+}
+
+function assertCampaignCouponEligible(health: CampaignCouponHealth): void {
+  switch (health) {
+    case 'healthy':
+      return
+    case 'deleted':
+      throw new CampaignWindowValidationError(
+        'Select a Coupon from the Coupon library',
+      )
+    case 'archived':
+      throw new CampaignWindowValidationError(
+        'Archived Coupons cannot be used for a Campaign Window',
+      )
+    case 'applies_to_miss':
+      throw new CampaignWindowValidationError(
+        'Campaign Window Coupon must apply to Pro',
+      )
   }
 }
 
@@ -112,9 +134,13 @@ export async function loadCampaignWindowView(deps: {
   const window = await store.get()
   const lifecycle = resolveCampaignWindowLifecycle(window, now)
 
-  const { coupon, couponHealth } = window
-    ? await loadCouponHealth(deps.stripeClient, window.couponId)
-    : { coupon: null, couponHealth: 'deleted' as const }
+  let coupon: CouponLibraryRecord | null = null
+  let couponHealth: CampaignCouponHealth = 'deleted'
+  if (window) {
+    const loaded = await loadCouponHealth(deps.stripeClient, window.couponId)
+    coupon = loaded.coupon
+    couponHealth = loaded.couponHealth
+  }
 
   return {
     window,
@@ -139,22 +165,7 @@ export async function upsertCampaignWindowForAdminboard(
 ): Promise<CampaignWindowRecord> {
   const client = deps.prisma ?? prisma
   const coupon = await retrieveLibraryCoupon(deps.stripeClient, input.couponId)
-  const health = assessCampaignCouponHealth(coupon)
-  if (health === 'deleted') {
-    throw new CampaignWindowValidationError(
-      'Select a Coupon from the Coupon library',
-    )
-  }
-  if (health === 'archived') {
-    throw new CampaignWindowValidationError(
-      'Archived Coupons cannot be used for a Campaign Window',
-    )
-  }
-  if (health === 'applies_to_miss') {
-    throw new CampaignWindowValidationError(
-      'Campaign Window Coupon must apply to Pro',
-    )
-  }
+  assertCampaignCouponEligible(assessCampaignCouponHealth(coupon))
 
   const store = createPrismaCampaignWindowStore(client)
   return upsertCampaignWindow(store, input, {
@@ -186,7 +197,7 @@ export async function buildCampaignAwareCheckoutSessionParams(input: {
   prisma?: PrismaClient
   stripeClient: Stripe
   now?: Date
-}): Promise<{ params: ReturnType<typeof toCampaignCheckoutSessionParams> }> {
+}): Promise<{ params: CampaignCheckoutSessionParams }> {
   const client = input.prisma ?? prisma
   const now = input.now ?? new Date()
 
@@ -209,9 +220,11 @@ export async function buildCampaignAwareCheckoutSessionParams(input: {
   const hadPaidBilling = hadPaidBillingHistory(subscriptions)
   const window = await createPrismaCampaignWindowStore(client).get()
 
-  const couponHealth = window
-    ? (await loadCouponHealth(input.stripeClient, window.couponId)).couponHealth
-    : 'deleted'
+  let couponHealth: CampaignCouponHealth = 'deleted'
+  if (window) {
+    couponHealth = (await loadCouponHealth(input.stripeClient, window.couponId))
+      .couponHealth
+  }
 
   const couponId = resolveCampaignCheckoutCouponId({
     window,
