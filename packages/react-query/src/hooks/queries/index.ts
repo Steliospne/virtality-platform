@@ -87,6 +87,9 @@ export { usePromotionCodes } from './promotion-code/use-promotion-codes.js'
 export { useCampaignWindow } from './campaign-window/use-campaign-window.js'
 export { useCampaignPickerCoupons } from './campaign-window/use-campaign-picker-coupons.js'
 
+// Console promo / Billing Discount queries
+export { useConsoleSubscriptionDiscount } from './console-promo/use-console-subscription-discount.js'
+
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 

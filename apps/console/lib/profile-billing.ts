@@ -4,10 +4,22 @@
  */
 
 import {
+  BILLING_DISCOUNT_TIMING_COPY,
+  BILLING_SOFT_UNAVAILABLE_COPY,
+  PROMO_REMOVE_NO_RESTORE_COPY,
+  PROMO_REMOVE_SUCCESS_COPY,
+  STAFF_REDEEM_BLOCK_COPY,
+  canRemovePromoDiscount,
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
+  isConsolePromoEligibleStatus,
+  isStaffRedeemBlocked,
+  promoCodeLabel,
+  resolveBillingDiscountDisplay,
   resolveProfileBillingCheckoutCta,
+  type BillingDiscountDisplay,
   type EntitlementBillingInterval,
+  type SubscriptionDiscountRead,
 } from '@virtality/shared/utils'
 
 export type BillingInterval = EntitlementBillingInterval
@@ -25,6 +37,18 @@ export const PRO_BILLING_PRICES: BillingPlanPrices = {
   yearlyAsMonthlyLabel: '€125 / month',
   yearlyTotalMutedLabel: '€1500 / year',
   yearlySavingsLabel: 'Save ~2 months',
+}
+
+export {
+  BILLING_DISCOUNT_TIMING_COPY,
+  BILLING_SOFT_UNAVAILABLE_COPY,
+  PROMO_REMOVE_NO_RESTORE_COPY,
+  PROMO_REMOVE_SUCCESS_COPY,
+  STAFF_REDEEM_BLOCK_COPY,
+  canRemovePromoDiscount,
+  isStaffRedeemBlocked,
+  promoCodeLabel,
+  resolveBillingDiscountDisplay,
 }
 
 export type BillingStandingView = {
@@ -97,4 +121,30 @@ export function profileBillingStatusDetail(
   if (standing.entitled) return 'Your Pro access is active.'
 
   return 'Choose Monthly or Yearly Pro, then continue to Checkout.'
+}
+
+/** Redeem / remove chrome only on eligible Subscription statuses (#65 / #72). */
+export function profileBillingShowsPromoChrome(
+  standing: Pick<BillingStandingView, 'status'>,
+): boolean {
+  return (
+    standing.status != null && isConsolePromoEligibleStatus(standing.status)
+  )
+}
+
+export function profileBillingDiscountDisplay(
+  read: SubscriptionDiscountRead | undefined,
+): BillingDiscountDisplay {
+  if (!read) return { kind: 'catalog' }
+  return resolveBillingDiscountDisplay(read)
+}
+
+/** Split catalog label into amount + interval for struck-through rewrite. */
+export function splitCatalogPriceLabel(label: string): {
+  amount: string
+  interval: string
+} {
+  const match = label.match(/^(.+?)\s+(\/.+)$/)
+  if (!match) return { amount: label, interval: '' }
+  return { amount: match[1]!, interval: match[2]! }
 }

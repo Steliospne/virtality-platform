@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  profileBillingDiscountDisplay,
   profileBillingOpensPortal,
   profileBillingPrimaryCtaLabel,
+  profileBillingShowsPromoChrome,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
+  splitCatalogPriceLabel,
   type BillingStandingView,
 } from './profile-billing.js'
 
@@ -90,5 +93,64 @@ describe('profileBillingStatusHeadline', () => {
 describe('profileBillingStatusDetail', () => {
   it('prompts interval choice when there is no live clock', () => {
     expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Yearly/)
+  })
+})
+
+describe('profileBillingShowsPromoChrome', () => {
+  it('shows redeem/remove chrome only on eligible statuses', () => {
+    expect(profileBillingShowsPromoChrome({ status: 'active' })).toBe(true)
+    expect(profileBillingShowsPromoChrome({ status: 'trialing' })).toBe(true)
+    expect(profileBillingShowsPromoChrome({ status: 'past_due' })).toBe(true)
+    expect(profileBillingShowsPromoChrome({ status: 'canceled' })).toBe(false)
+    expect(profileBillingShowsPromoChrome({ status: null })).toBe(false)
+  })
+})
+
+describe('profileBillingDiscountDisplay', () => {
+  it('rewrites when a healthy Discount is present', () => {
+    expect(
+      profileBillingDiscountDisplay({
+        ok: true,
+        presence: 'one',
+        channel: 'promo',
+        discountId: 'di_1',
+        couponId: 'cou_1',
+        couponName: 'Spring',
+        promotionCodeId: 'promo_1',
+        promotionCode: 'SPRING20',
+        start: 1,
+        end: null,
+        percentOff: 20,
+        amountOff: null,
+        currency: null,
+        duration: 'once',
+        durationInMonths: null,
+      }),
+    ).toEqual({
+      kind: 'rewrite',
+      prices: {
+        monthlyAmount: '€120',
+        yearlyAsMonthlyAmount: '€100',
+        yearlyTotalAmount: '€1200',
+      },
+    })
+  })
+
+  it('soft-unavailables when Discount terms are missing', () => {
+    expect(
+      profileBillingDiscountDisplay({
+        ok: false,
+        reason: 'stripe_unavailable',
+      }),
+    ).toEqual({ kind: 'soft_unavailable' })
+  })
+})
+
+describe('splitCatalogPriceLabel', () => {
+  it('keeps interval outside the struck catalog amount', () => {
+    expect(splitCatalogPriceLabel('€150 / month')).toEqual({
+      amount: '€150',
+      interval: '/ month',
+    })
   })
 })

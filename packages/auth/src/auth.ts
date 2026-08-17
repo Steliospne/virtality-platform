@@ -23,6 +23,12 @@ import {
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
 } from './lib/campaign-window.ts'
+import {
+  loadConsolePromoRedeemPreflightForUser,
+  readConsoleSubscriptionDiscountForUser,
+  redeemPromotionCodeForUser,
+  removePromoDiscountForUser,
+} from './lib/console-promo-redeem.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -366,6 +372,15 @@ export {
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
 } from './lib/campaign-window.ts'
+export {
+  createConsolePromoReadGateway,
+  createPrismaConsolePromoStore,
+  createStripeConsolePromoGateway,
+  loadConsolePromoRedeemPreflightForUser,
+  readConsoleSubscriptionDiscountForUser,
+  redeemPromotionCodeForUser,
+  removePromoDiscountForUser,
+} from './lib/console-promo-redeem.ts'
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
 
@@ -459,6 +474,54 @@ export function saveCampaignWindowForAdminboard(input: {
 /** Adminboard Campaign Window: close to stop new Checkout attaches. */
 export function closeCampaignWindowAction() {
   return closeCampaignWindowForAdminboard()
+}
+
+function requireStripeForConsolePromo(): Stripe {
+  if (!stripeClient) {
+    throw new Error(
+      'Stripe is not configured. Set STRIPE_SECRET_KEY to redeem Promotion Codes.',
+    )
+  }
+  return stripeClient
+}
+
+/** Console Billing: live Subscription Discount read for display + chrome. */
+export function readConsoleSubscriptionDiscountAction(userId: string) {
+  return readConsoleSubscriptionDiscountForUser(userId, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: redeem preflight (staff-block / replace-confirm). */
+export function loadConsolePromoRedeemPreflightAction(userId: string) {
+  return loadConsolePromoRedeemPreflightForUser(
+    { userId },
+    {
+      prisma,
+      stripeClient: requireStripeForConsolePromo(),
+    },
+  )
+}
+
+/** Console Billing: mid-cycle Promotion Code redeem. */
+export function redeemPromotionCodeAction(input: {
+  userId: string
+  code: string
+  confirmReplace: boolean
+}) {
+  return redeemPromotionCodeForUser(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: clinician self-remove of promo Discount only. */
+export function removePromoDiscountAction(input: { userId: string }) {
+  return removePromoDiscountForUser(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
 }
 
 /**

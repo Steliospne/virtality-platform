@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { getConsoleUrl } from '@virtality/shared/types'
 import {
+  CUSTOMER_PORTAL_PROMOTION_CODES_ON_SUBSCRIPTION_UPDATE,
   buildProBillingPortalInput,
   startProBillingPortal,
 } from './subscription-billing-portal.js'
 
 const consoleOrigin = getConsoleUrl()
+
+describe('Customer Portal promo posture', () => {
+  it('keeps promo-on-subscription-update off', () => {
+    expect(CUSTOMER_PORTAL_PROMOTION_CODES_ON_SUBSCRIPTION_UPDATE).toBe(false)
+  })
+
+  it('opens portal with returnUrl only (no promo enablement flags)', () => {
+    expect(buildProBillingPortalInput('/user/abc/profile?tab=billing')).toEqual(
+      {
+        returnUrl: `${consoleOrigin}/user/abc/profile?tab=billing`,
+      },
+    )
+  })
+})
 
 describe('buildProBillingPortalInput', () => {
   it('resolves relative return paths to absolute console URLs', () => {

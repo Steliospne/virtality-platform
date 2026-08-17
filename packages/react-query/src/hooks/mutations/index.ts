@@ -68,6 +68,10 @@ export { useNotifyPromotionCodeInApp } from './promotion-code/use-notify-promoti
 export { useUpsertCampaignWindow } from './campaign-window/use-upsert-campaign-window.js'
 export { useCloseCampaignWindow } from './campaign-window/use-close-campaign-window.js'
 
+// Console promo / Billing Discount mutations
+export { useRedeemPromotionCode } from './console-promo/use-redeem-promotion-code.js'
+export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discount.js'
+
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 
