@@ -63,11 +63,10 @@ export function NotifyPromotionCodeDialog({
           toast.success('Promotion Code Delivery upserted')
           onOpenChange(false)
         },
-        onError: (error: unknown) => {
+        onError: (error) =>
           toast.error(
             getErrorMessage(error, 'Failed to upsert Promotion Code Delivery'),
-          )
-        },
+          ),
       },
     )
   }

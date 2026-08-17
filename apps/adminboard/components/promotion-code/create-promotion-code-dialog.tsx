@@ -37,10 +37,11 @@ export function CreatePromotionCodeDialog({
   const { mutate: createPromotionCode, isPending } = useCreatePromotionCode()
 
   useEffect(() => {
-    if (open) return
-    setCode('')
-    setExpiresAtLocal('')
-    setMaxRedemptions('')
+    if (!open) {
+      setCode('')
+      setExpiresAtLocal('')
+      setMaxRedemptions('')
+    }
   }, [open])
 
   const handleSubmit = (event: FormEvent) => {
@@ -71,10 +72,11 @@ export function CreatePromotionCodeDialog({
       maxRedemptionsValue = parsed
     }
 
+    const trimmedCode = code.trim()
     createPromotionCode(
       {
         couponId,
-        code: code.trim() ? code.trim() : null,
+        code: trimmedCode || null,
         expiresAt: expiresAt ?? null,
         maxRedemptions: maxRedemptionsValue ?? null,
       },

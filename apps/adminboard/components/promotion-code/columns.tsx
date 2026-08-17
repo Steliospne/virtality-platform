@@ -22,7 +22,7 @@ import { getErrorMessage } from '@/lib/get-error-message'
 import { useDeactivatePromotionCode } from '@virtality/react-query'
 import type { PromotionCodeRecord } from '@virtality/shared/utils'
 import { ColumnDef } from '@tanstack/react-table'
-import { Bell, Copy, Ellipsis, Mail, Ban } from 'lucide-react'
+import { Ban, Bell, Copy, Ellipsis, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 

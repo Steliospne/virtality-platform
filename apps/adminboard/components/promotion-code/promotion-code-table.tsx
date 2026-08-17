@@ -9,6 +9,7 @@ import { ArrowLeft, PlusSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { useLibraryCoupons, usePromotionCodes } from '@virtality/react-query'
+import type { CouponLibraryRecord } from '@virtality/shared/utils'
 import { createPromotionCodeColumns } from '@/components/promotion-code/columns'
 import { CreatePromotionCodeDialog } from '@/components/promotion-code/create-promotion-code-dialog'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,26 @@ const STATUS_FILTERS = [
 
 type PromotionCodeTableProps = {
   couponId: string
+}
+
+function formatCouponSubtitle(
+  coupon: CouponLibraryRecord | null,
+  couponId: string,
+  couponsPending: boolean,
+): string {
+  if (couponsPending) return 'Loading Coupon…'
+  if (!coupon) return `Coupon ${couponId}`
+
+  const parts = [
+    coupon.name ?? coupon.id,
+    formatCouponDiscount(coupon),
+    formatCouponDuration(coupon),
+    formatCouponAppliesTo(coupon),
+  ]
+  if (coupon.archived) {
+    parts.push('Archived')
+  }
+  return parts.join(' · ')
 }
 
 const PromotionCodeTable = ({ couponId }: PromotionCodeTableProps) => {
@@ -68,11 +89,7 @@ const PromotionCodeTable = ({ couponId }: PromotionCodeTableProps) => {
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Promotion Codes</h1>
           <p className='text-muted-foreground mt-1'>
-            {couponsPending
-              ? 'Loading Coupon…'
-              : coupon
-                ? `${coupon.name ?? coupon.id} · ${formatCouponDiscount(coupon)} · ${formatCouponDuration(coupon)} · ${formatCouponAppliesTo(coupon)}${coupon.archived ? ' · Archived' : ''}`
-                : `Coupon ${couponId}`}
+            {formatCouponSubtitle(coupon, couponId, couponsPending)}
           </p>
         </div>
       </div>

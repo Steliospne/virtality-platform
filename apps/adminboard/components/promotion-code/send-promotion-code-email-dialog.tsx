@@ -56,11 +56,10 @@ export function SendPromotionCodeEmailDialog({
           toast.success(`Email sent to ${trimmed}`)
           onOpenChange(false)
         },
-        onError: (error: unknown) => {
+        onError: (error) =>
           toast.error(
             getErrorMessage(error, 'Failed to send Promotion Code email'),
-          )
-        },
+          ),
       },
     )
   }

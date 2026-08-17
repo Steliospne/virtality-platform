@@ -175,6 +175,29 @@ async function requireNonArchivedCoupon(
   }
 }
 
+async function requirePromotionCode(
+  stripe: PromotionCodeStripeGateway,
+  id: string,
+): Promise<PromotionCodeRecord> {
+  assertPromotionCodeId(id)
+  const existing = await stripe.retrieve(id.trim())
+  if (!existing) {
+    throw new PromotionCodeNotFoundError(id)
+  }
+  return existing
+}
+
+async function requireActivePromotionCode(
+  stripe: PromotionCodeStripeGateway,
+  id: string,
+): Promise<PromotionCodeRecord> {
+  const existing = await requirePromotionCode(stripe, id)
+  if (!existing.active) {
+    throw new PromotionCodeNotShareableError(id)
+  }
+  return existing
+}
+
 export async function createPromotionCode(
   stripe: PromotionCodeStripeGateway,
   input: CreatePromotionCodeInput,
@@ -205,11 +228,7 @@ export async function deactivatePromotionCode(
   stripe: PromotionCodeStripeGateway,
   id: string,
 ): Promise<PromotionCodeRecord> {
-  assertPromotionCodeId(id)
-  const existing = await stripe.retrieve(id.trim())
-  if (!existing) {
-    throw new PromotionCodeNotFoundError(id)
-  }
+  const existing = await requirePromotionCode(stripe, id)
   if (!existing.active) {
     return existing
   }
@@ -237,14 +256,7 @@ export async function sendPromotionCodeEmail(
   input: SendPromotionCodeEmailInput,
   runtime: SendPromotionCodeEmailRuntime,
 ): Promise<PromotionCodeEmailDelivery> {
-  assertPromotionCodeId(input.id)
-  const existing = await stripe.retrieve(input.id.trim())
-  if (!existing) {
-    throw new PromotionCodeNotFoundError(input.id)
-  }
-  if (!existing.active) {
-    throw new PromotionCodeNotShareableError(input.id)
-  }
+  const existing = await requireActivePromotionCode(stripe, input.id)
 
   const recipientEmail = input.recipientEmail.trim()
   if (!recipientEmail) {
@@ -271,19 +283,15 @@ export async function notifyPromotionCodeDelivery(
   input: NotifyPromotionCodeDeliveryInput,
   now: () => Date = () => new Date(),
 ): Promise<PromotionCodeDeliveryRecord> {
-  assertPromotionCodeId(input.promotionCodeId)
   const userId = input.userId.trim()
   if (!userId) {
     throw new PromotionCodeValidationError('userId is required')
   }
 
-  const existing = await stripe.retrieve(input.promotionCodeId.trim())
-  if (!existing) {
-    throw new PromotionCodeNotFoundError(input.promotionCodeId)
-  }
-  if (!existing.active) {
-    throw new PromotionCodeNotShareableError(input.promotionCodeId)
-  }
+  const existing = await requireActivePromotionCode(
+    stripe,
+    input.promotionCodeId,
+  )
 
   const user = await store.findUserById(userId)
   if (!user) {

@@ -6,6 +6,26 @@ import {
   type PromotionCodeStripeGateway,
 } from '@virtality/shared/utils'
 
+function isStripeResourceMissing(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === 'resource_missing'
+  )
+}
+
+async function nullIfResourceMissing<T>(
+  run: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await run()
+  } catch (error) {
+    if (isStripeResourceMissing(error)) return null
+    throw error
+  }
+}
+
 function couponIdFromPromotionCode(
   promotionCode: Stripe.PromotionCode,
 ): string {
@@ -33,24 +53,14 @@ export function createStripePromotionCodeGateway(
   stripeClient: Stripe,
 ): PromotionCodeStripeGateway {
   return {
-    getCoupon: async (couponId) => {
-      try {
+    getCoupon: (couponId) =>
+      nullIfResourceMissing(async () => {
         const coupon = await stripeClient.coupons.retrieve(couponId)
         return {
           id: coupon.id,
           archived: isCouponArchivedMetadata(coupon.metadata),
         }
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          'code' in error &&
-          (error as { code?: string }).code === 'resource_missing'
-        ) {
-          return null
-        }
-        throw error
-      }
-    },
+      }),
 
     create: async (input: PromotionCodeCreateParams) => {
       const params: Stripe.PromotionCodeCreateParams = {
@@ -81,21 +91,10 @@ export function createStripePromotionCodeGateway(
       return records
     },
 
-    retrieve: async (id) => {
-      try {
-        const promotionCode = await stripeClient.promotionCodes.retrieve(id)
-        return mapStripePromotionCode(promotionCode)
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          'code' in error &&
-          (error as { code?: string }).code === 'resource_missing'
-        ) {
-          return null
-        }
-        throw error
-      }
-    },
+    retrieve: (id) =>
+      nullIfResourceMissing(async () =>
+        mapStripePromotionCode(await stripeClient.promotionCodes.retrieve(id)),
+      ),
 
     deactivate: async (id) => {
       const updated = await stripeClient.promotionCodes.update(id, {

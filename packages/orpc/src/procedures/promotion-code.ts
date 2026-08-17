@@ -53,8 +53,8 @@ export function createPrismaPromotionCodeDeliveryStore(
         where: { id: userId, deletedAt: null },
         select: { id: true },
       }),
-    upsertOpen: async (data) => {
-      const row = await prisma.promotionCodeDelivery.upsert({
+    upsertOpen: (data) =>
+      prisma.promotionCodeDelivery.upsert({
         where: {
           userId_promotionCodeId: {
             userId: data.userId,
@@ -76,9 +76,7 @@ export function createPrismaPromotionCodeDeliveryStore(
           status: 'open',
           updatedAt: data.now,
         },
-      })
-      return row
-    },
+      }),
   }
 }
 
@@ -124,14 +122,7 @@ const create = authed
   .route({ path: '/promotion-code/create', method: 'POST' })
   .input(createInputSchema)
   .handler(async ({ input }) =>
-    runPromotionCodeHandler(() =>
-      createPromotionCodeForAdminboard({
-        couponId: input.couponId,
-        code: input.code,
-        expiresAt: input.expiresAt,
-        maxRedemptions: input.maxRedemptions,
-      }),
-    ),
+    runPromotionCodeHandler(() => createPromotionCodeForAdminboard(input)),
   )
 
 const deactivate = authed
