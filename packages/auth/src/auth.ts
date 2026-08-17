@@ -15,14 +15,7 @@ import {
 } from './lib/trial-redeem.ts'
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
-import {
-  archiveLibraryCouponAction,
-  createLibraryCouponAction,
-  createStripeCouponLibraryGateway,
-  deleteLibraryCouponAction,
-  listLibraryCouponsAction,
-  updateLibraryCouponNameAction,
-} from './lib/coupon-library.ts'
+import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -32,7 +25,12 @@ import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
 import {
+  archiveLibraryCoupon,
+  createLibraryCoupon,
+  deleteLibraryCoupon,
+  listLibraryCoupons,
   routeSignUpCode,
+  updateLibraryCouponName,
   type CreateLibraryCouponInput,
   type ExtendLiveEntitlementClockInput,
   type UpdateLibraryCouponNameInput,
@@ -334,29 +332,33 @@ function requireStripeClient(): Stripe {
   return stripeClient
 }
 
+function couponLibraryGateway() {
+  return createStripeCouponLibraryGateway(requireStripeClient())
+}
+
 /** Adminboard Coupon library: create against live Stripe Coupons. */
 export function createLibraryCouponForAdminboard(
   input: CreateLibraryCouponInput,
 ) {
-  return createLibraryCouponAction(requireStripeClient(), input)
+  return createLibraryCoupon(couponLibraryGateway(), input)
 }
 
 export function listLibraryCouponsForAdminboard() {
-  return listLibraryCouponsAction(requireStripeClient())
+  return listLibraryCoupons(couponLibraryGateway())
 }
 
 export function updateLibraryCouponNameForAdminboard(
   input: UpdateLibraryCouponNameInput,
 ) {
-  return updateLibraryCouponNameAction(requireStripeClient(), input)
+  return updateLibraryCouponName(couponLibraryGateway(), input)
 }
 
 export function archiveLibraryCouponForAdminboard(id: string) {
-  return archiveLibraryCouponAction(requireStripeClient(), id)
+  return archiveLibraryCoupon(couponLibraryGateway(), id)
 }
 
 export function deleteLibraryCouponForAdminboard(id: string) {
-  return deleteLibraryCouponAction(requireStripeClient(), id)
+  return deleteLibraryCoupon(couponLibraryGateway(), id)
 }
 
 /**

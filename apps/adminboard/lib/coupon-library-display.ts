@@ -24,7 +24,8 @@ export function formatCouponDuration(coupon: CouponLibraryRecord): string {
   if (coupon.duration === 'forever') return 'Forever'
   const months = coupon.durationInMonths
   if (months == null) return 'Repeating'
-  return months === 1 ? 'Repeating (1 month)' : `Repeating (${months} months)`
+  if (months === 1) return 'Repeating (1 month)'
+  return `Repeating (${months} months)`
 }
 
 export function formatCouponAppliesTo(coupon: CouponLibraryRecord): string {

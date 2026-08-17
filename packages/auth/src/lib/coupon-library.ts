@@ -2,35 +2,29 @@ import type Stripe from 'stripe'
 import {
   COUPON_LIBRARY_ARCHIVE_METADATA_KEY,
   COUPON_DURATIONS,
-  archiveLibraryCoupon,
-  createLibraryCoupon,
-  deleteLibraryCoupon,
   isCouponArchivedMetadata,
-  listLibraryCoupons,
-  updateLibraryCouponName,
   type CouponDuration,
   type CouponLibraryCreateParams,
   type CouponLibraryRecord,
   type CouponLibraryStripeGateway,
-  type CreateLibraryCouponInput,
-  type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 
+function isCouponDuration(value: string): value is CouponDuration {
+  return (COUPON_DURATIONS as readonly string[]).includes(value)
+}
+
 function mapDuration(duration: string): CouponDuration {
-  if ((COUPON_DURATIONS as readonly string[]).includes(duration)) {
-    return duration as CouponDuration
-  }
-  return 'once'
+  return isCouponDuration(duration) ? duration : 'once'
+}
+
+function productIdsFromAppliesTo(coupon: Stripe.Coupon): string[] {
+  const appliesTo = coupon.applies_to
+  if (!appliesTo || typeof appliesTo !== 'object') return []
+  if (!Array.isArray(appliesTo.products)) return []
+  return appliesTo.products
 }
 
 function mapStripeCoupon(coupon: Stripe.Coupon): CouponLibraryRecord {
-  const appliesTo =
-    coupon.applies_to &&
-    typeof coupon.applies_to === 'object' &&
-    Array.isArray(coupon.applies_to.products)
-      ? coupon.applies_to.products
-      : []
-
   return {
     id: coupon.id,
     name: coupon.name,
@@ -39,7 +33,7 @@ function mapStripeCoupon(coupon: Stripe.Coupon): CouponLibraryRecord {
     currency: coupon.currency,
     duration: mapDuration(coupon.duration),
     durationInMonths: coupon.duration_in_months,
-    appliesToProductIds: appliesTo,
+    appliesToProductIds: productIdsFromAppliesTo(coupon),
     archived: isCouponArchivedMetadata(coupon.metadata),
     created: coupon.created,
   }
@@ -48,6 +42,10 @@ function mapStripeCoupon(coupon: Stripe.Coupon): CouponLibraryRecord {
 export function createStripeCouponLibraryGateway(
   stripeClient: Stripe,
 ): CouponLibraryStripeGateway {
+  // List (and some mutate) responses omit applies_to; retrieve for a complete record.
+  const retrieveMapped = async (id: string) =>
+    mapStripeCoupon(await stripeClient.coupons.retrieve(id))
+
   return {
     create: async (input: CouponLibraryCreateParams) => {
       const params: Stripe.CouponCreateParams = {
@@ -73,25 +71,20 @@ export function createStripeCouponLibraryGateway(
       }
 
       const created = await stripeClient.coupons.create(params)
-      // List responses omit applies_to; retrieve so the library record is complete.
-      const retrieved = await stripeClient.coupons.retrieve(created.id)
-      return mapStripeCoupon(retrieved)
+      return retrieveMapped(created.id)
     },
 
     list: async () => {
       const coupons: CouponLibraryRecord[] = []
       for await (const coupon of stripeClient.coupons.list({ limit: 100 })) {
-        // applies_to is omitted from list payloads; retrieve for library display.
-        const detailed = await stripeClient.coupons.retrieve(coupon.id)
-        coupons.push(mapStripeCoupon(detailed))
+        coupons.push(await retrieveMapped(coupon.id))
       }
       return coupons
     },
 
     updateName: async (id, name) => {
       await stripeClient.coupons.update(id, { name })
-      const retrieved = await stripeClient.coupons.retrieve(id)
-      return mapStripeCoupon(retrieved)
+      return retrieveMapped(id)
     },
 
     archive: async (id) => {
@@ -102,55 +95,11 @@ export function createStripeCouponLibraryGateway(
           [COUPON_LIBRARY_ARCHIVE_METADATA_KEY]: 'true',
         },
       })
-      const retrieved = await stripeClient.coupons.retrieve(id)
-      return mapStripeCoupon(retrieved)
+      return retrieveMapped(id)
     },
 
     delete: async (id) => {
       await stripeClient.coupons.del(id)
     },
   }
-}
-
-export async function runCouponLibraryAction<T>(
-  stripeClient: Stripe,
-  run: (gateway: CouponLibraryStripeGateway) => Promise<T>,
-): Promise<T> {
-  return run(createStripeCouponLibraryGateway(stripeClient))
-}
-
-export function createLibraryCouponAction(
-  stripeClient: Stripe,
-  input: CreateLibraryCouponInput,
-) {
-  return runCouponLibraryAction(stripeClient, (gateway) =>
-    createLibraryCoupon(gateway, input),
-  )
-}
-
-export function listLibraryCouponsAction(stripeClient: Stripe) {
-  return runCouponLibraryAction(stripeClient, (gateway) =>
-    listLibraryCoupons(gateway),
-  )
-}
-
-export function updateLibraryCouponNameAction(
-  stripeClient: Stripe,
-  input: UpdateLibraryCouponNameInput,
-) {
-  return runCouponLibraryAction(stripeClient, (gateway) =>
-    updateLibraryCouponName(gateway, input),
-  )
-}
-
-export function archiveLibraryCouponAction(stripeClient: Stripe, id: string) {
-  return runCouponLibraryAction(stripeClient, (gateway) =>
-    archiveLibraryCoupon(gateway, id),
-  )
-}
-
-export function deleteLibraryCouponAction(stripeClient: Stripe, id: string) {
-  return runCouponLibraryAction(stripeClient, (gateway) =>
-    deleteLibraryCoupon(gateway, id),
-  )
 }

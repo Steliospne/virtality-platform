@@ -27,6 +27,7 @@ import {
   majorToMinorUnits,
   type CouponDuration,
   type CouponLibraryPlanId,
+  type CreateLibraryCouponInput,
 } from '@virtality/shared/utils'
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -38,6 +39,8 @@ type CreateLibraryCouponDialogProps = {
 
 type DiscountKind = 'percent' | 'amount'
 
+const DEFAULT_PLAN_IDS: CouponLibraryPlanId[] = ['pro']
+
 export function CreateLibraryCouponDialog({
   open,
   onOpenChange,
@@ -48,19 +51,19 @@ export function CreateLibraryCouponDialog({
   const [amountMajor, setAmountMajor] = useState('')
   const [duration, setDuration] = useState<CouponDuration>('once')
   const [durationInMonths, setDurationInMonths] = useState('')
-  const [planIds, setPlanIds] = useState<CouponLibraryPlanId[]>(['pro'])
+  const [planIds, setPlanIds] =
+    useState<CouponLibraryPlanId[]>(DEFAULT_PLAN_IDS)
   const { mutate: createLibraryCoupon, isPending } = useCreateLibraryCoupon()
 
   useEffect(() => {
-    if (!open) {
-      setName('')
-      setDiscountKind('percent')
-      setPercentOff('')
-      setAmountMajor('')
-      setDuration('once')
-      setDurationInMonths('')
-      setPlanIds(['pro'])
-    }
+    if (open) return
+    setName('')
+    setDiscountKind('percent')
+    setPercentOff('')
+    setAmountMajor('')
+    setDuration('once')
+    setDurationInMonths('')
+    setPlanIds(DEFAULT_PLAN_IDS)
   }, [open])
 
   const togglePlan = (planId: CouponLibraryPlanId) => {
@@ -79,14 +82,7 @@ export function CreateLibraryCouponDialog({
       return
     }
 
-    const payload: {
-      name: string
-      percentOff?: number
-      amountOff?: number
-      duration: CouponDuration
-      durationInMonths?: number
-      planIds: CouponLibraryPlanId[]
-    } = {
+    const payload: CreateLibraryCouponInput = {
       name: name.trim(),
       duration,
       planIds,

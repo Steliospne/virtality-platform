@@ -141,6 +141,12 @@ function requireTrimmedName(name: string): string {
   return trimmed
 }
 
+function assertCouponId(id: string): void {
+  if (!id.trim()) {
+    throw new CouponLibraryValidationError('Coupon id is required')
+  }
+}
+
 function validateDiscountFields(input: CreateLibraryCouponInput): {
   percentOff?: number
   amountOff?: number
@@ -196,7 +202,7 @@ function validateDuration(input: CreateLibraryCouponInput): {
 
   if (input.duration === 'repeating') {
     const months = input.durationInMonths
-    if (!Number.isInteger(months) || months === undefined || months < 1) {
+    if (months === undefined || !Number.isInteger(months) || months < 1) {
       throw new CouponLibraryValidationError(
         'durationInMonths is required for repeating Coupons',
       )
@@ -240,10 +246,8 @@ export async function updateLibraryCouponName(
   stripe: CouponLibraryStripeGateway,
   input: UpdateLibraryCouponNameInput,
 ): Promise<CouponLibraryRecord> {
+  assertCouponId(input.id)
   const name = requireTrimmedName(input.name)
-  if (!input.id.trim()) {
-    throw new CouponLibraryValidationError('Coupon id is required')
-  }
   return stripe.updateName(input.id, name)
 }
 
@@ -251,9 +255,7 @@ export async function archiveLibraryCoupon(
   stripe: CouponLibraryStripeGateway,
   id: string,
 ): Promise<CouponLibraryRecord> {
-  if (!id.trim()) {
-    throw new CouponLibraryValidationError('Coupon id is required')
-  }
+  assertCouponId(id)
   return stripe.archive(id)
 }
 
@@ -261,9 +263,7 @@ export async function deleteLibraryCoupon(
   stripe: CouponLibraryStripeGateway,
   id: string,
 ): Promise<void> {
-  if (!id.trim()) {
-    throw new CouponLibraryValidationError('Coupon id is required')
-  }
+  assertCouponId(id)
   await stripe.delete(id)
 }
 

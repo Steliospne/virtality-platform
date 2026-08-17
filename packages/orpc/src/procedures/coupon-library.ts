@@ -39,7 +39,7 @@ const createInputSchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Provide either percentOff or amountOff, not both',
-        path: hasPercent ? ['amountOff'] : ['percentOff'],
+        path: hasPercent && hasAmount ? ['amountOff'] : ['percentOff'],
       })
     }
     if (
