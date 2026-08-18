@@ -1,9 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useFeatureFlagResult } from 'posthog-js/react'
+import {
+  BILLING_FEATURE_FLAG,
+  resolveBillingFeatureEnabled,
+} from '@/lib/billing-feature'
 
-/** PostHog flag: Profile Billing + Remaining Time clock (virtality.app only). */
-export const BILLING_FEATURE_FLAG = 'billing_feature'
+export { BILLING_FEATURE_FLAG }
 
 /**
  * Whether billing UI (Profile → Billing tab, Remaining Time sidebar, renew
@@ -11,6 +15,10 @@ export const BILLING_FEATURE_FLAG = 'billing_feature'
  * flag resolves enabled (release condition: email contains @virtality.app).
  */
 export function useBillingFeatureEnabled(): boolean {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   const result = useFeatureFlagResult(BILLING_FEATURE_FLAG)
-  return result?.enabled === true
+  return resolveBillingFeatureEnabled(mounted, result)
 }
