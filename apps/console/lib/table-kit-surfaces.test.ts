@@ -76,7 +76,9 @@ describe('console table kit migration', () => {
   })
 
   it('imports table primitives from the shared UI bucket on forms page', () => {
-    const formsSource = readConsoleFile('app/(app)/forms/page.tsx')
+    const formsSource = readConsoleFile(
+      'app/(app)/forms/_components/help-dialog.tsx',
+    )
 
     expect(formsSource).toMatch(/@virtality\/ui\/components\/table/)
     expect(formsSource).not.toMatch(/@\/components\/ui\/table/)
