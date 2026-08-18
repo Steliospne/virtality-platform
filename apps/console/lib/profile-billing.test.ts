@@ -57,8 +57,8 @@ describe('profileBillingPrimaryCtaLabel', () => {
     ).toBe('Renew')
   })
 
-  it('hides CTA without a Stripe Customer', () => {
-    expect(profileBillingPrimaryCtaLabel(base, false)).toBeNull()
+  it('uses Subscribe when no Stripe Customer is linked', () => {
+    expect(profileBillingPrimaryCtaLabel(base, false)).toBe('Subscribe')
   })
 })
 
@@ -97,12 +97,22 @@ describe('profileBillingStatusDetail', () => {
 })
 
 describe('profileBillingShowsPromoChrome', () => {
-  it('shows redeem/remove chrome only on eligible statuses', () => {
-    expect(profileBillingShowsPromoChrome({ status: 'active' })).toBe(true)
-    expect(profileBillingShowsPromoChrome({ status: 'trialing' })).toBe(true)
-    expect(profileBillingShowsPromoChrome({ status: 'past_due' })).toBe(true)
-    expect(profileBillingShowsPromoChrome({ status: 'canceled' })).toBe(false)
-    expect(profileBillingShowsPromoChrome({ status: null })).toBe(false)
+  it('shows promo chrome on entitled eligible statuses and on all non-entitled seats', () => {
+    expect(
+      profileBillingShowsPromoChrome({ entitled: true, status: 'active' }),
+    ).toBe(true)
+    expect(
+      profileBillingShowsPromoChrome({ entitled: true, status: 'trialing' }),
+    ).toBe(true)
+    expect(
+      profileBillingShowsPromoChrome({ entitled: true, status: 'past_due' }),
+    ).toBe(true)
+    expect(
+      profileBillingShowsPromoChrome({ entitled: true, status: 'canceled' }),
+    ).toBe(false)
+    expect(
+      profileBillingShowsPromoChrome({ entitled: false, status: null }),
+    ).toBe(true)
   })
 })
 

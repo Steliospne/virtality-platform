@@ -82,7 +82,9 @@ export function profileBillingPrimaryCtaLabel(
   if (cta == null) return null
 
   if (cta === 'renew') return 'Renew'
-  if (!standing.billingPathEstablished) return 'Become a paying customer'
+  if (!standing.billingPathEstablished && hasStripeCustomer) {
+    return 'Become a paying customer'
+  }
   return formatCheckoutCtaLabel(cta)
 }
 
@@ -129,8 +131,9 @@ export function profileBillingStatusDetail(
 
 /** Redeem / remove chrome only on eligible Subscription statuses (#65 / #72). */
 export function profileBillingShowsPromoChrome(
-  standing: Pick<BillingStandingView, 'status'>,
+  standing: Pick<BillingStandingView, 'entitled' | 'status'>,
 ): boolean {
+  if (!standing.entitled) return true
   return (
     standing.status != null && isConsolePromoEligibleStatus(standing.status)
   )

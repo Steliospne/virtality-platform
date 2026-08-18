@@ -8,9 +8,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Check, CheckCircle2, Info, X } from 'lucide-react'
 import {
+  useCancelPendingPromotionCode,
+  useConsolePromoRedeemPreflight,
   useConsoleSubscriptionDiscount,
   useRedeemPromotionCode,
   useRemovePromoDiscount,
+  useSavePendingPromotionCode,
 } from '@virtality/react-query'
 import type { SubscriptionDiscountRead } from '@virtality/shared/utils'
 import { Badge } from '@virtality/ui/components/badge'
@@ -20,6 +23,7 @@ import { authClient } from '@/auth-client'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import { useSubscriptionBillingPortal } from '@/hooks/use-subscription-billing-portal'
 import { useSubscriptionCheckout } from '@/hooks/use-subscription-checkout'
+import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import { cn } from '@/lib/utils'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
@@ -243,6 +247,7 @@ function PromoCodeEntryForm({
   redeemError,
   successFlash,
   onApply,
+  applyLabel,
 }: {
   code: string
   onCodeChange: (value: string) => void
@@ -250,6 +255,7 @@ function PromoCodeEntryForm({
   redeemError: string | null
   successFlash: boolean
   onApply: () => void
+  applyLabel?: string
 }) {
   return (
     <>
@@ -273,7 +279,7 @@ function PromoCodeEntryForm({
           disabled={!code.trim() || redeeming}
           onClick={onApply}
         >
-          {redeeming ? 'Applying…' : 'Apply'}
+          {redeeming ? 'Applying…' : (applyLabel ?? 'Apply')}
         </Button>
       </div>
       {redeemError ? (
@@ -285,6 +291,7 @@ function PromoCodeEntryForm({
 
 function promoRedeemBody({
   discount,
+  hasEligibleSubscription,
   staffBlocked,
   onRemove,
   successFlash,
@@ -295,6 +302,7 @@ function promoRedeemBody({
   onApply,
 }: {
   discount: SubscriptionDiscountRead | undefined
+  hasEligibleSubscription: boolean
   staffBlocked: boolean
   onRemove: () => void
   successFlash: boolean
@@ -304,6 +312,20 @@ function promoRedeemBody({
   onCodeChange: (value: string) => void
   onApply: () => void
 }): ReactNode {
+  if (!hasEligibleSubscription) {
+    return (
+      <PromoCodeEntryForm
+        code={code}
+        onCodeChange={onCodeChange}
+        redeeming={redeeming}
+        redeemError={redeemError}
+        successFlash={successFlash}
+        onApply={onApply}
+        applyLabel='Apply Code'
+      />
+    )
+  }
+
   if (discount == null) {
     return <p className='text-sm text-zinc-500'>Checking current discount…</p>
   }
@@ -344,32 +366,39 @@ function promoRedeemBody({
 
 function PromoRedeemSection({
   discount,
+  hasEligibleSubscription,
   staffBlocked,
   onRemove,
   successFlash,
   redeemError,
   onRedeem,
   redeeming,
+  code,
+  onCodeChange,
 }: {
   discount: SubscriptionDiscountRead | undefined
+  hasEligibleSubscription: boolean
   staffBlocked: boolean
   onRemove: () => void
   successFlash: boolean
   redeemError: string | null
   onRedeem: (code: string, confirmReplace: boolean) => Promise<boolean>
   redeeming: boolean
+  code: string
+  onCodeChange: (value: string) => void
 }) {
-  const [code, setCode] = useState('')
   const [replaceOpen, setReplaceOpen] = useState(false)
   const [pendingCode, setPendingCode] = useState<string | null>(null)
-  const currentLabel = replaceConfirmDiscountLabel(discount)
+  const currentLabel = hasEligibleSubscription
+    ? replaceConfirmDiscountLabel(discount)
+    : null
 
   async function submitApply(confirmReplace: boolean) {
     const trimmed = code.trim()
     if (!trimmed) return
     const ok = await onRedeem(trimmed, confirmReplace)
     if (ok) {
-      setCode('')
+      onCodeChange('')
       setReplaceOpen(false)
       setPendingCode(null)
     }
@@ -377,7 +406,12 @@ function PromoRedeemSection({
 
   async function handleApplyClick() {
     const trimmed = code.trim()
-    if (!trimmed || !discount?.ok) return
+    if (!trimmed) return
+    if (!hasEligibleSubscription) {
+      await submitApply(false)
+      return
+    }
+    if (!discount?.ok) return
 
     if (requiresReplaceConfirm(discount)) {
       setPendingCode(trimmed)
@@ -393,13 +427,14 @@ function PromoRedeemSection({
       <p className='text-sm font-medium'>Have a Promotion Code?</p>
       {promoRedeemBody({
         discount,
+        hasEligibleSubscription,
         staffBlocked,
         onRemove,
         successFlash,
         redeemError,
         redeeming,
         code,
-        onCodeChange: setCode,
+        onCodeChange,
         onApply: () => {
           void handleApplyClick()
         },
@@ -439,7 +474,10 @@ export function BillingTab() {
   const { data: session } = authClient.useSession()
   const standingQuery = useLiveEntitlementStanding()
   const discountQuery = useConsoleSubscriptionDiscount()
+  const preflightQuery = useConsolePromoRedeemPreflight()
   const redeemMutation = useRedeemPromotionCode()
+  const savePendingMutation = useSavePendingPromotionCode()
+  const cancelPendingMutation = useCancelPendingPromotionCode()
   const removeMutation = useRemovePromoDiscount()
   const { startCheckout, isStarting: isCheckoutStarting } =
     useSubscriptionCheckout()
@@ -451,9 +489,15 @@ export function BillingTab() {
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removeSuccess, setRemoveSuccess] = useState(false)
   const [redeemError, setRedeemError] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState('')
   const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<
     string | null
   >(null)
+  const [initialCheckoutIntent] = useState(() =>
+    typeof window === 'undefined'
+      ? null
+      : readCheckoutReturnIntent(window.location.search),
+  )
 
   const prices = PRO_BILLING_PRICES
   const entitled = standingQuery.entitled
@@ -481,13 +525,31 @@ export function BillingTab() {
   const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount)
   const showPromoChrome = profileBillingShowsPromoChrome(standing)
+  const hasEligibleSubscription = preflightQuery.data?.ok === true
   const staffBlocked = discount ? isStaffRedeemBlocked(discount) : false
   const appliedPromoCode = discount ? promoCodeLabel(discount) : null
+
+  useEffect(() => {
+    if (initialCheckoutIntent !== 'cancel') return
+    void cancelPendingMutation.mutateAsync(undefined)
+  }, [cancelPendingMutation, initialCheckoutIntent])
+
+  async function savePendingPromotionCode(code: string) {
+    await savePendingMutation.mutateAsync({ code })
+    setRemoveSuccess(false)
+    setRedeemSuccessMessage(
+      `Promotion Code ${code} saved for Checkout. Finish subscribing within 2 minutes.`,
+    )
+  }
 
   async function handlePrimaryCta() {
     if (profileBillingOpensPortal(standing)) {
       await startPortal()
       return
+    }
+    if (!hasEligibleSubscription && promoCode.trim()) {
+      await savePendingPromotionCode(promoCode.trim())
+      setPromoCode('')
     }
     await startCheckout({ annual: selectedInterval === 'year' })
   }
@@ -496,6 +558,11 @@ export function BillingTab() {
     setRedeemError(null)
     setRedeemSuccessMessage(null)
     try {
+      if (!hasEligibleSubscription) {
+        await savePendingPromotionCode(code)
+        setPromoCode('')
+        return true
+      }
       const result = await redeemMutation.mutateAsync({
         code,
         confirmReplace,
@@ -630,12 +697,17 @@ export function BillingTab() {
         {showPromoChrome ? (
           <PromoRedeemSection
             discount={discount}
+            hasEligibleSubscription={hasEligibleSubscription}
             staffBlocked={staffBlocked}
             successFlash={removeSuccess}
             redeemError={redeemError}
-            redeeming={redeemMutation.isPending}
+            redeeming={
+              redeemMutation.isPending || savePendingMutation.isPending
+            }
             onRemove={() => setRemoveOpen(true)}
             onRedeem={handleRedeem}
+            code={promoCode}
+            onCodeChange={setPromoCode}
           />
         ) : null}
       </div>
