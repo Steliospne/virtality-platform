@@ -1,28 +1,21 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { getMosaicTileGridStyle } from '@/lib/mosaic-grid'
 import {
   formatMosaicSpan,
   getEmptyMosaicCells,
   getLegalMosaicSpansForTile,
   mosaicSpansEqual,
-  MOSAIC_BOARD_TILE_DRAG_MIME,
   MOSAIC_TRAY_DRAG_MIME,
   type MosaicEditorTile,
   type MosaicSpan,
 } from '@/lib/mosaic-editor'
-import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
 import { cn } from '@/lib/utils'
-import type { MosaicLiveEligibility } from '@virtality/shared/types'
-import {
-  assessMosaicLiveEligibility,
-  bucketCdnUrl,
-  shouldBypassVercelImageOptimization,
-} from '@virtality/shared/utils'
+import { assessMosaicLiveEligibility } from '@virtality/shared/utils'
 import { Trash2 } from 'lucide-react'
-import Image from 'next/image'
 import { useMemo, useState } from 'react'
+import { MosaicEditorValidation } from './mosaic-editor-validation'
+import { MosaicPlacedTile } from './mosaic-placed-tile'
 
 type MosaicBoardEditorProps = {
   tiles: MosaicEditorTile[]
@@ -31,91 +24,6 @@ type MosaicBoardEditorProps = {
   onPlaceTile: (trayItemId: string, row: number, col: number) => void
   onResizeTile: (tileId: string, span: MosaicSpan) => void
   onRemoveTile: (tileId: string) => void
-}
-
-function MosaicEditorValidation({
-  eligibility,
-}: {
-  eligibility: MosaicLiveEligibility
-}) {
-  switch (eligibility.status) {
-    case 'live':
-      return (
-        <p className='text-sm text-emerald-700 dark:text-emerald-400'>
-          Perfect tiling — ready to publish on save.
-        </p>
-      )
-    case 'empty':
-      return (
-        <p className='text-muted-foreground text-sm'>
-          The board is empty. Saving requires an explicit hide warning.
-        </p>
-      )
-    case 'incomplete':
-      return (
-        <div className='space-y-2'>
-          <p className='text-sm font-medium'>
-            This board is not a perfect tiling yet:
-          </p>
-          <ul className='text-muted-foreground list-disc space-y-1 pl-5 text-sm'>
-            {eligibility.errors.map((error) => (
-              <li key={error}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )
-  }
-}
-
-type MosaicPlacedTileProps = {
-  tile: MosaicEditorTile
-  isSelected: boolean
-  onSelect: () => void
-}
-
-function MosaicPlacedTile({
-  tile,
-  isSelected,
-  onSelect,
-}: MosaicPlacedTileProps) {
-  const src = bucketCdnUrl(tile.objectKey)
-
-  return (
-    <button
-      type='button'
-      draggable
-      onDragStart={(event) => {
-        event.dataTransfer.setData(MOSAIC_BOARD_TILE_DRAG_MIME, tile.id)
-        event.dataTransfer.effectAllowed = 'move'
-      }}
-      className={cn(
-        'relative overflow-hidden rounded-md border bg-zinc-100 text-left dark:bg-zinc-900',
-        isSelected
-          ? 'ring-primary ring-2 ring-offset-2'
-          : 'hover:ring-primary/40 hover:ring-2',
-      )}
-      style={getMosaicTileGridStyle(tile)}
-      onClick={(event) => {
-        event.stopPropagation()
-        onSelect()
-      }}
-      aria-pressed={isSelected}
-      aria-label={`${tile.alt}, span ${formatMosaicSpan(tile)}. Drag back to the tray to remove.`}
-    >
-      {tile.mediaKind === 'image' ? (
-        <Image
-          src={src}
-          alt={tile.alt}
-          fill
-          unoptimized={shouldBypassVercelImageOptimization(src)}
-          className='object-cover'
-          sizes='(min-width: 768px) 200px, 120px'
-        />
-      ) : (
-        <BucketVideoPreview src={src} label={tile.alt} fill playOnHover />
-      )}
-    </button>
-  )
 }
 
 const MosaicBoardEditor = ({

@@ -21,17 +21,12 @@ import { formatBucketUploadFileCount } from '@/lib/bucket-upload-display'
 import { inferMosaicMediaKindFromContentType } from '@/lib/mosaic-media-picker'
 import { getErrorMessage } from '@/lib/get-error-message'
 import type { MosaicTrayItem } from '@/lib/mosaic-editor'
-import {
-  bucketCdnUrl,
-  shouldBypassVercelImageOptimization,
-  validateBucketTargetPrefix,
-} from '@virtality/shared/utils'
-import { BucketVideoPreview } from '@/components/bucket/bucket-video-preview'
+import { validateBucketTargetPrefix } from '@virtality/shared/utils'
 import { useUploadBucketObjects } from '@virtality/react-query'
 import { ImageIcon, Upload } from 'lucide-react'
-import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { SelectedMediaPreview } from './mosaic-selected-media-preview'
 
 type MosaicAddMediaDialogProps = {
   open: boolean
@@ -47,38 +42,6 @@ type PendingTrayMedia = MosaicMediaSelection & {
 
 function isSourceMode(value: string): value is SourceMode {
   return value === 'pick' || value === 'upload'
-}
-
-function SelectedMediaPreview({
-  selection,
-  alt,
-}: {
-  selection: MosaicMediaSelection
-  alt: string
-}) {
-  if (selection.mediaKind === 'image') {
-    const src = bucketCdnUrl(selection.objectKey)
-    return (
-      <Image
-        src={src}
-        alt={alt || 'Selected media'}
-        width={64}
-        height={64}
-        unoptimized={shouldBypassVercelImageOptimization(src)}
-        className='size-16 shrink-0 rounded object-cover'
-      />
-    )
-  }
-
-  return (
-    <BucketVideoPreview
-      src={bucketCdnUrl(selection.objectKey)}
-      label={alt || 'Selected media'}
-      className='size-16 shrink-0 rounded'
-      fallbackClassName='bg-muted size-16 shrink-0 rounded'
-      iconClassName='text-muted-foreground size-8'
-    />
-  )
 }
 
 function toPendingTrayMedia(

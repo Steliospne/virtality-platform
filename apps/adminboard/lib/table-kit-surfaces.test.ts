@@ -37,7 +37,7 @@ function expectFetchLoading(source: string) {
 
 describe('adminboard table kit migration', () => {
   it('imports shared table primitives in bucket browser', () => {
-    const relativePath = 'components/bucket/bucket-browser.tsx'
+    const relativePath = 'components/bucket/bucket-browser-table.tsx'
     expectSharedTablePrimitives(readAdminboardFile(relativePath))
   })
 
@@ -51,7 +51,7 @@ describe('adminboard table kit migration', () => {
     ],
     [
       'coupon-library',
-      'components/coupon-library/coupon-library-workspace.tsx',
+      'components/coupon-library/coupon-promotion-code-table.tsx',
     ],
     ['user', 'components/resources/user/user-table.tsx'],
     ['patients', 'components/resources/patients/patient-table.tsx'],

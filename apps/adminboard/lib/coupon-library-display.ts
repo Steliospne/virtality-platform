@@ -37,3 +37,23 @@ export function formatCouponAppliesTo(coupon: CouponLibraryRecord): string {
   })
   return labels.length > 0 ? labels.join(', ') : '-'
 }
+
+export function formatCouponName(coupon: CouponLibraryRecord): string {
+  return coupon.name ?? coupon.id
+}
+
+export function getCouponStateLabel(coupon: CouponLibraryRecord): string {
+  return coupon.archived ? 'Archived' : 'Active'
+}
+
+export function formatRelativeCreated(createdSeconds: number): string {
+  return new Date(createdSeconds * 1000).toLocaleDateString()
+}
+
+export function getPromotionSummary(
+  codes: readonly { active: boolean; timesRedeemed: number }[],
+) {
+  const active = codes.filter((code) => code.active).length
+  const redeemed = codes.reduce((sum, code) => sum + code.timesRedeemed, 0)
+  return { total: codes.length, active, redeemed }
+}
