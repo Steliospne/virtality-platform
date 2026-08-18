@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    useTypeScriptCli: true,
   },
   allowedDevOrigins: ['*.virtality.app'],
   pageExtensions,

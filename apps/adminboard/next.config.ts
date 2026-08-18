@@ -8,6 +8,9 @@ const remoteHosts = [
 ]
 
 const nextConfig: NextConfig = {
+  experimental: {
+    useTypeScriptCli: true,
+  },
   /* config options here */
   images: {
     remotePatterns: remoteHosts.map((host) => ({

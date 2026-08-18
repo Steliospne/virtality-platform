@@ -13,6 +13,10 @@
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
 
+    // TypeScript 6/7 default `types` to []. Keep auto-including `@types/*`
+    // so Node/DOM globals from those packages keep working.
+    "types": ["*"],
+
     // Strictness
     "skipLibCheck": true,
     "strict": true,

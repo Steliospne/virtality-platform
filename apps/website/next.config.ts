@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    useTypeScriptCli: true,
   },
   images: {
     remotePatterns: remoteHosts.map((host) => ({
