@@ -70,6 +70,8 @@ export { useCloseCampaignWindow } from './campaign-window/use-close-campaign-win
 
 // Console promo / Billing Discount mutations
 export { useRedeemPromotionCode } from './console-promo/use-redeem-promotion-code.js'
+export { useSavePendingPromotionCode } from './console-promo/use-save-pending-promotion-code.js'
+export { useCancelPendingPromotionCode } from './console-promo/use-cancel-pending-promotion-code.js'
 export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discount.js'
 
 // Entitlement Extension mutations

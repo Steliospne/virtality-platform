@@ -188,7 +188,10 @@ export function resolveProfileBillingCheckoutCta(input: {
   hasStripeCustomer: boolean
   hadPaidBilling: boolean
 }): CheckoutCta | null {
-  if (input.entitled || !input.hasStripeCustomer) return null
+  // For Profile Billing, we allow Subscribe even when the console user does not
+  // yet have a stored Stripe Customer id. Stripe/Better Auth can create the
+  // customer as part of the Stripe Checkout flow.
+  if (input.entitled) return null
   return input.hadPaidBilling ? 'renew' : 'subscribe'
 }
 

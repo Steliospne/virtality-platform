@@ -107,7 +107,7 @@ export function resolveCampaignCheckoutCouponId(input: {
 /** Checkout Session params for campaign attach (no allow_promotion_codes). */
 export type CampaignCheckoutSessionParams = {
   payment_method_collection: 'always'
-  discounts?: Array<{ coupon: string }>
+  discounts?: Array<{ coupon: string } | { promotion_code: string }>
 }
 
 export function toCampaignCheckoutSessionParams(

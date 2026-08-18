@@ -1,11 +1,16 @@
 import { ORPCError } from '@orpc/server'
 import {
+  cancelPendingPromotionCodeAction,
   loadConsolePromoRedeemPreflightAction,
   readConsoleSubscriptionDiscountAction,
   redeemPromotionCodeAction,
   removePromoDiscountAction,
+  savePendingPromotionCodeAction,
 } from '@virtality/auth'
-import { redeemPromotionCodeInputSchema } from '@virtality/shared/types'
+import {
+  redeemPromotionCodeInputSchema,
+  savePendingPromotionCodeInputSchema,
+} from '@virtality/shared/types'
 import {
   ConsolePromoConfirmRequiredError,
   ConsolePromoCouponUnavailableError,
@@ -80,6 +85,26 @@ const redeem = authed
     ),
   )
 
+const savePending = authed
+  .route({ path: '/console-promo/pending', method: 'POST' })
+  .input(savePendingPromotionCodeInputSchema)
+  .handler(async ({ context, input }) =>
+    runConsolePromoHandler(() =>
+      savePendingPromotionCodeAction({
+        userId: context.user.id,
+        code: input.code,
+      }),
+    ),
+  )
+
+const cancelPending = authed
+  .route({ path: '/console-promo/pending/cancel', method: 'POST' })
+  .handler(async ({ context }) =>
+    runConsolePromoHandler(() =>
+      cancelPendingPromotionCodeAction({ userId: context.user.id }),
+    ),
+  )
+
 const remove = authed
   .route({ path: '/console-promo/remove', method: 'POST' })
   .handler(async ({ context }) =>
@@ -92,5 +117,7 @@ export const consolePromo = {
   readDiscount,
   redeemPreflight,
   redeem,
+  savePending,
+  cancelPending,
   remove,
 }

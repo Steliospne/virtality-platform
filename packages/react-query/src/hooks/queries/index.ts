@@ -89,6 +89,7 @@ export { useCampaignPickerCoupons } from './campaign-window/use-campaign-picker-
 
 // Console promo / Billing Discount queries
 export { useConsoleSubscriptionDiscount } from './console-promo/use-console-subscription-discount.js'
+export { useConsolePromoRedeemPreflight } from './console-promo/use-console-promo-redeem-preflight.js'
 
 // Entitlement Extension queries
 export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'

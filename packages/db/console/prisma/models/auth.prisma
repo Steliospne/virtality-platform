@@ -37,6 +37,7 @@ model User {
   devicePairingAttempts        DevicePairingAttempt[]
   renewPromptDeliveries        RenewPromptDelivery[]
   promotionCodeDeliveries       PromotionCodeDelivery[]
+  pendingPromotionCodes        PendingPromotionCode[]
 }
 
 model Account {

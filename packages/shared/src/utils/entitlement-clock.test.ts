@@ -467,14 +467,14 @@ describe('resolveProfileBillingCheckoutCta', () => {
     ).toBeNull()
   })
 
-  it('returns null without a Stripe Customer', () => {
+  it('allows Subscribe when no Stripe Customer is linked', () => {
     expect(
       resolveProfileBillingCheckoutCta({
         entitled: false,
         hasStripeCustomer: false,
         hadPaidBilling: false,
       }),
-    ).toBeNull()
+    ).toBe('subscribe')
   })
 
   it('allows Subscribe when a Customer exists without Billing Path', () => {

@@ -29,6 +29,11 @@ import {
   redeemPromotionCodeForUser,
   removePromoDiscountForUser,
 } from './lib/console-promo-redeem.ts'
+import {
+  cancelPendingPromotionCodeForCheckout,
+  getOpenPendingPromotionCodeForCheckout,
+  savePendingPromotionCodeForCheckout,
+} from './lib/pending-promotion-code.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -224,14 +229,33 @@ export const auth = betterAuth({
                     },
                   }
                 }
-                return buildCampaignAwareCheckoutSessionParams({
-                  userId: user.id,
-                  stripeCustomerId:
-                    typeof user.stripeCustomerId === 'string'
-                      ? user.stripeCustomerId
-                      : null,
-                  stripeClient,
-                })
+                const checkoutParams =
+                  await buildCampaignAwareCheckoutSessionParams({
+                    userId: user.id,
+                    stripeCustomerId:
+                      typeof user.stripeCustomerId === 'string'
+                        ? user.stripeCustomerId
+                        : null,
+                    stripeClient,
+                  })
+                const pendingPromotionCode =
+                  await getOpenPendingPromotionCodeForCheckout(
+                    { userId: user.id },
+                    { prisma, stripeClient },
+                  )
+                if (!pendingPromotionCode) {
+                  return checkoutParams
+                }
+                return {
+                  params: {
+                    ...checkoutParams.params,
+                    discounts: [
+                      {
+                        promotion_code: pendingPromotionCode.promotionCodeId,
+                      },
+                    ],
+                  },
+                }
               },
               // Successful Subscribe/Renew Checkout starts a new renew epoch.
               onSubscriptionComplete: async ({ subscription }) => {
@@ -521,6 +545,24 @@ export function removePromoDiscountAction(input: { userId: string }) {
   return removePromoDiscountForUser(input, {
     prisma,
     stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: save Promotion Code for the next Checkout session. */
+export function savePendingPromotionCodeAction(input: {
+  userId: string
+  code: string
+}) {
+  return savePendingPromotionCodeForCheckout(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: cancel a pending Promotion Code after Checkout cancel. */
+export function cancelPendingPromotionCodeAction(input: { userId: string }) {
+  return cancelPendingPromotionCodeForCheckout(input, {
+    prisma,
   })
 }
 

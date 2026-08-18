@@ -50,3 +50,11 @@ enum TrialRedeemCodeStatus {
 enum PromotionCodeDeliveryStatus {
   open
 }
+
+enum PendingPromotionCodeStatus {
+  open
+  applied
+  canceled
+  failed
+  expired
+}
