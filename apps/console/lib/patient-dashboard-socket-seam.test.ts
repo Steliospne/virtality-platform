@@ -14,10 +14,16 @@ describe('patient dashboard session launch seam', () => {
     const controlPanelSource = readConsoleFile(
       'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
     )
+    const controlPanelHookSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/use-control-panel.ts',
+    )
+    const controlsSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel-controls.tsx',
+    )
 
-    expect(controlPanelSource).toMatch(/setProgramState\('launching'\)/)
+    expect(controlPanelHookSource).toMatch(/setProgramState\('launching'\)/)
     expect(controlPanelSource).toMatch(/isProgramLaunching/)
-    expect(controlPanelSource).toMatch(/isProgramLaunching \|\|/)
+    expect(controlsSource).toMatch(/isProgramLaunching \|\|/)
   })
 
   it('persists started sessions on StartAck via startFromAck', () => {
@@ -53,13 +59,16 @@ describe('patient dashboard session launch seam', () => {
     const controlPanelSource = readConsoleFile(
       'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
     )
+    const controlPanelHookSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/use-control-panel.ts',
+    )
     const treatmentLaunchSource = readConsoleFile(
       'lib/patient-dashboard-treatment-launch.ts',
     )
 
-    expect(controlPanelSource).toMatch(/useVrHeadsetPresence/)
-    expect(controlPanelSource).toMatch(/canLaunchTreatment/)
-    expect(controlPanelSource).toMatch(/getTreatmentLaunchError/)
+    expect(controlPanelHookSource).toMatch(/useVrHeadsetPresence/)
+    expect(controlPanelHookSource).toMatch(/canLaunchTreatment/)
+    expect(controlPanelHookSource).toMatch(/getTreatmentLaunchError/)
     expect(controlPanelSource).toMatch(/treatmentLaunchReady/)
     expect(treatmentLaunchSource).toMatch(
       /Waiting for the VR headset to connect\./,

@@ -3,6 +3,10 @@ import { readConsoleFile } from './catalog-first-authoring-surface-seams.js'
 
 const CONTROL_PANEL_PATH =
   'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx'
+const CONTROL_PANEL_CONTROLS_PATH =
+  'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel-controls.tsx'
+const CONTROL_PANEL_HOOK_PATH =
+  'app/(app)/patients/[patientId]/patient-dashboard/_components/use-control-panel.ts'
 const EXERCISE_LIST_PATH =
   'app/(app)/patients/[patientId]/patient-dashboard/_components/exercise-list.tsx'
 const STATUS_PATH =
@@ -32,11 +36,12 @@ describe('session exercise change UI surfaces', () => {
   })
 
   it('explains disabled skip controls and locked direct selection', () => {
-    const controlPanel = readConsoleFile(CONTROL_PANEL_PATH)
+    const controlPanelHook = readConsoleFile(CONTROL_PANEL_HOOK_PATH)
+    const controls = readConsoleFile(CONTROL_PANEL_CONTROLS_PATH)
     const exerciseList = readConsoleFile(EXERCISE_LIST_PATH)
 
-    expect(controlPanel).toMatch(/resolveSkipControlUiState/)
-    expect(controlPanel).toMatch(/SkipControlButton/)
+    expect(controlPanelHook).toMatch(/resolveSkipControlUiState/)
+    expect(controls).toMatch(/SkipControlButton/)
     expect(exerciseList).toMatch(/resolveDirectSelectionBlockedTooltip/)
     expect(exerciseList).toMatch(
       /selection is locked while a change is in flight/,

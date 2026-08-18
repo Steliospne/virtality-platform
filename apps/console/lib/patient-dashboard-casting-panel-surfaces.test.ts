@@ -14,10 +14,15 @@ describe('patient dashboard casting panel surfaces', () => {
     const controlPanelSource = readConsoleFile(
       'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
     )
+    const castingButtonSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel-casting-button.tsx',
+    )
 
-    expect(controlPanelSource).toMatch(/setShowCasting\(\(prev\) => !prev\)/)
+    expect(castingButtonSource).toMatch(/setShowCasting\(\(prev\) => !prev\)/)
     expect(controlPanelSource).not.toMatch(/startCasting/)
     expect(controlPanelSource).not.toMatch(/stopCasting/)
+    expect(castingButtonSource).not.toMatch(/startCasting/)
+    expect(castingButtonSource).not.toMatch(/stopCasting/)
   })
 
   it('renders a single casting control and player states in the panel', () => {

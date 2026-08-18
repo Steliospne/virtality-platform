@@ -11,14 +11,14 @@ function readConsoleFile(relativePath: string): string {
 
 describe('patient dashboard device dropdown presence', () => {
   it('polls VR presence only while the device dropdown is open', () => {
-    const controlPanelSource = readConsoleFile(
-      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel.tsx',
+    const deviceSelectorSource = readConsoleFile(
+      'app/(app)/patients/[patientId]/patient-dashboard/_components/control-panel-device-selector.tsx',
     )
     const vrControlPanelSource = readConsoleFile(
       'components/ui/vr-control-panel.tsx',
     )
 
-    expect(controlPanelSource).toMatch(/openDevicePop/)
+    expect(deviceSelectorSource).toMatch(/openDevicePop/)
     expect(vrControlPanelSource).toMatch(/useVrPresencePolling/)
     expect(vrControlPanelSource).toMatch(/enabled:\s*isOpen/)
   })
@@ -27,11 +27,14 @@ describe('patient dashboard device dropdown presence', () => {
     const vrControlPanelSource = readConsoleFile(
       'components/ui/vr-control-panel.tsx',
     )
+    const presenceStatusSource = readConsoleFile(
+      'components/ui/device-presence-status.tsx',
+    )
 
     expect(vrControlPanelSource).toMatch(/DevicePresenceStatus/)
-    expect(vrControlPanelSource).toMatch(/Unpaired/)
-    expect(vrControlPanelSource).toMatch(/Online/)
-    expect(vrControlPanelSource).toMatch(/Offline/)
-    expect(vrControlPanelSource).toMatch(/Loader2/)
+    expect(presenceStatusSource).toMatch(/Unpaired/)
+    expect(presenceStatusSource).toMatch(/Online/)
+    expect(presenceStatusSource).toMatch(/Offline/)
+    expect(presenceStatusSource).toMatch(/Loader2/)
   })
 })
