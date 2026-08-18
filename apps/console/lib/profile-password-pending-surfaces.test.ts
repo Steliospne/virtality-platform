@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PROFILE_INFO_PATH,
-  readConsoleFile,
   readPasswordCardBody,
+  readProfilePasswordSurface,
   readZodObjectSchema,
 } from './password-surface-seams.js'
 
 describe('profile password card regression surfaces', () => {
-  const source = readConsoleFile(PROFILE_INFO_PATH)
+  const source = readProfilePasswordSurface()
   const passwordCardBody = readPasswordCardBody(source)
 
   it('shows a loading skeleton while password state is resolving', () => {
