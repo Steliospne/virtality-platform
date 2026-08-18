@@ -3,6 +3,7 @@ import { ThemeProvider } from 'next-themes'
 import TinyBaseProvider from '@/context/tinybase-context'
 import TourProvider from '@/context/tour-context'
 import SocketWarmUp from '@/components/auth/socket-warm-up'
+import PostHogIdentify from '@/components/analytics/posthog-identify'
 import CookieBanner from '@/components/layout/cookie-banner'
 import { ToastContainer } from 'react-toastify'
 import { ORPC_PREFIX, getServerUrl } from '@virtality/shared/types'
@@ -22,6 +23,7 @@ async function RootProvider({ children }: { children: React.ReactNode }) {
             <TourProvider>
               <div id='root'>
                 <SocketWarmUp />
+                <PostHogIdentify />
                 {children}
                 <ToastContainer
                   position='bottom-right'

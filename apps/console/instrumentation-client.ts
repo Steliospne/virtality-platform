@@ -1,6 +1,7 @@
 import posthog from 'posthog-js'
 import { authClient } from './auth-client'
 import { installTranslateCrashGuard } from './lib/translate-crash-guard'
+import { identifyPostHogUser } from './lib/posthog-user'
 
 installTranslateCrashGuard()
 
@@ -32,10 +33,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
       const { data } = await authClient.getSession()
       if (!data) return
 
-      posthogClient.identify(data.user.id, {
-        email: data.user.email,
-        name: data.user.name,
-      })
+      identifyPostHogUser(posthogClient, data.user)
     } catch (error) {
       console.error('Error initializing PostHog:', error)
     }
