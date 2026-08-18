@@ -139,7 +139,6 @@ Each test responds to what you learned from the previous cycle. Never refactor w
 
 ## Architecture
 
-<!-- Example:
-- Keep modules focused on a single responsibility
-- Prefer composition over inheritance
--->
+### Composition
+
+Compose UI from small files: one JSX component per file, within the line budget. The rule set lives in `docs/agents/ui-composition.md`. Apply it when implementing or reviewing React components, pages, or feature UI.

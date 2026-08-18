@@ -33,7 +33,7 @@ If applicable, use RGR to complete the task.
 3. REPEAT until done
 4. REFACTOR the code
 
-Tests must follow `.sandcastle/CODING_STANDARDS.md`. Do not leave source-scanning or `*-prd.test.ts` implementation locks in the tree when the issue is done — keep only behavior tests through public interfaces.
+Follow `.sandcastle/CODING_STANDARDS.md` for tests and architecture. Compose UI from small files (`docs/agents/ui-composition.md`). Do not leave source-scanning or `*-prd.test.ts` implementation locks in the tree when the issue is done — keep only behavior tests through public interfaces.
 
 # FEEDBACK LOOPS
 

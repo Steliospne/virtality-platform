@@ -4,6 +4,10 @@
 
 Before staging or committing code changes, run `pnpm format` from the repo root (`prettier --write .`). Include any files Prettier modifies in the same commit as the related work. Do not skip formatting because a diff looks small or formatting-only.
 
+### Database migrations
+
+Do not hand-write Prisma migration files. When schema changes are needed, update the Prisma schema and use `pnpm db:migrate:dev` to generate the migration, or `pnpm db:generate` when only client/codegen output is needed.
+
 ### Git / PRs
 
 PRs target **`dev`** (staging). Promote to production with `dev` → **`main`** after staging verification. Never open routine work PRs into `main`. See `docs/agents/git-workflow.md`.
@@ -19,3 +23,7 @@ Five canonical triage roles mapped to GitHub label strings. See `docs/agents/tri
 ### Domain docs
 
 Multi-context monorepo — read `CONTEXT-MAP.md` at the repo root, then the relevant per-context `CONTEXT.md`. System-wide ADRs in `docs/adr/`. See `docs/agents/domain.md`.
+
+### Composition
+
+Compose UI from small files: one JSX component per file. Read `docs/agents/ui-composition.md` when creating or editing React components, pages, or feature UI.
