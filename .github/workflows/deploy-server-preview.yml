@@ -8,6 +8,7 @@ on:
       - 'services/server/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
+      - '.pnpmfile.cjs'
       - 'turbo.json'
       - '.dockerignore'
       - '.github/workflows/deploy-server-preview.yml'
