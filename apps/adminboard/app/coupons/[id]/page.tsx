@@ -1,16 +1,14 @@
-import PromotionCodeTable from '@/components/promotion-code/promotion-code-table'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-type CouponPromotionCodesPageProps = {
+type CouponPromotionCodesRedirectProps = {
   params: Promise<{ id: string }>
 }
 
-const CouponPromotionCodesPage = async ({
+const CouponPromotionCodesRedirect = async ({
   params,
-}: CouponPromotionCodesPageProps) => {
+}: CouponPromotionCodesRedirectProps) => {
   const { id } = await params
-  return <PromotionCodeTable couponId={id} />
+  redirect(`/coupons?coupon=${encodeURIComponent(id)}`)
 }
 
-export default CouponPromotionCodesPage
+export default CouponPromotionCodesRedirect
