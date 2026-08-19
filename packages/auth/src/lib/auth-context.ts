@@ -1,4 +1,4 @@
-import { auth } from '../auth.ts'
+import { auth } from '../auth-instance.ts'
 
 /**
  * Session user from Better Auth, plus Stripe plugin fields.
