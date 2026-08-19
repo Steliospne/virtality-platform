@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { PRO_BILLING_CATALOG_SANDBOX } from '@virtality/shared/utils'
 import {
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
@@ -119,23 +120,26 @@ describe('profileBillingShowsPromoChrome', () => {
 describe('profileBillingDiscountDisplay', () => {
   it('rewrites when a healthy Discount is present', () => {
     expect(
-      profileBillingDiscountDisplay({
-        ok: true,
-        presence: 'one',
-        channel: 'promo',
-        discountId: 'di_1',
-        couponId: 'cou_1',
-        couponName: 'Spring',
-        promotionCodeId: 'promo_1',
-        promotionCode: 'SPRING20',
-        start: 1,
-        end: null,
-        percentOff: 20,
-        amountOff: null,
-        currency: null,
-        duration: 'once',
-        durationInMonths: null,
-      }),
+      profileBillingDiscountDisplay(
+        {
+          ok: true,
+          presence: 'one',
+          channel: 'promo',
+          discountId: 'di_1',
+          couponId: 'cou_1',
+          couponName: 'Spring',
+          promotionCodeId: 'promo_1',
+          promotionCode: 'SPRING20',
+          start: 1,
+          end: null,
+          percentOff: 20,
+          amountOff: null,
+          currency: null,
+          duration: 'once',
+          durationInMonths: null,
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({
       kind: 'rewrite',
       prices: {
@@ -148,10 +152,13 @@ describe('profileBillingDiscountDisplay', () => {
 
   it('soft-unavailables when Discount terms are missing', () => {
     expect(
-      profileBillingDiscountDisplay({
-        ok: false,
-        reason: 'stripe_unavailable',
-      }),
+      profileBillingDiscountDisplay(
+        {
+          ok: false,
+          reason: 'stripe_unavailable',
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({ kind: 'soft_unavailable' })
   })
 })

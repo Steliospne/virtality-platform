@@ -17,6 +17,7 @@ import { PlanCard } from './billing-plan-card'
 import { PromoRedeemSection } from './promo-redeem-section'
 import { RemovePromoConfirmDialog } from './remove-promo-confirm-dialog'
 import { RemoveSuccessBanner } from './remove-success-banner'
+import { BillingTabSkeleton } from './billing-tab-skeleton'
 import { primaryCtaPendingLabel, useBillingTab } from './use-billing-tab'
 
 function SoftUnavailableBanner() {
@@ -30,6 +31,8 @@ function SoftUnavailableBanner() {
 export function BillingTab() {
   const {
     isStandingPending,
+    isCatalogPending,
+    isCatalogUnavailable,
     standing,
     selectedInterval,
     setSelectedInterval,
@@ -59,8 +62,20 @@ export function BillingTab() {
     removePending,
   } = useBillingTab()
 
-  if (isStandingPending) {
-    return <p className='text-sm text-zinc-500'>Loading billing…</p>
+  if (isStandingPending || isCatalogPending) {
+    return <BillingTabSkeleton />
+  }
+
+  if (!prices) {
+    return (
+      <div className='rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950'>
+        <p className='text-sm text-zinc-500'>
+          {isCatalogUnavailable
+            ? BILLING_SOFT_UNAVAILABLE_COPY
+            : 'Billing prices are unavailable right now. Try again shortly.'}
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -98,7 +113,7 @@ export function BillingTab() {
             onSelect={() => setSelectedInterval('year')}
             listPrimary={prices.yearlyAsMonthlyLabel}
             listMuted={prices.yearlyTotalMutedLabel}
-            badge={prices.yearlySavingsLabel}
+            badge={prices.yearlySavingsLabel ?? undefined}
             rewrite={rewrite?.yearly ?? null}
           />
         </div>

@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
+  useConsoleBillingCatalog,
   useConsolePromoRedeemPreflight,
   useConsoleSubscriptionDiscount,
   useRedeemPromotionCode,
@@ -20,7 +21,8 @@ import { useSubscriptionCheckout } from '@/hooks/use-subscription-checkout'
 import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
-  PRO_BILLING_PRICES,
+  billingCatalogMinor,
+  billingCatalogPrices,
   isStaffRedeemBlocked,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
@@ -50,6 +52,7 @@ function errorMessage(error: unknown, fallback: string): string {
 export function useBillingTab() {
   const { data: session } = authClient.useSession()
   const standingQuery = useLiveEntitlementStanding()
+  const catalogQuery = useConsoleBillingCatalog()
   const discountQuery = useConsoleSubscriptionDiscount()
   const preflightQuery = useConsolePromoRedeemPreflight()
   const redeemMutation = useRedeemPromotionCode()
@@ -76,7 +79,8 @@ export function useBillingTab() {
       : readCheckoutReturnIntent(window.location.search),
   )
 
-  const prices = PRO_BILLING_PRICES
+  const prices = billingCatalogPrices(catalogQuery.data)
+  const catalogMinor = billingCatalogMinor(catalogQuery.data)
   const entitled = standingQuery.entitled
   const standing: BillingStandingView = {
     entitled,
@@ -100,7 +104,7 @@ export function useBillingTab() {
   const cta = profileBillingPrimaryCtaLabel(standing, hasStripeCustomer)
   const ctaPending = isCheckoutStarting || isPortalStarting
   const discount = discountQuery.data
-  const display = profileBillingDiscountDisplay(discount)
+  const display = profileBillingDiscountDisplay(discount, catalogMinor)
   const showPromoChrome = profileBillingShowsPromoChrome(standing)
   const hasEligibleSubscription = preflightQuery.data?.ok === true
   const staffBlocked = discount ? isStaffRedeemBlocked(discount) : false
@@ -172,7 +176,7 @@ export function useBillingTab() {
   }
 
   const rewrite =
-    display.kind === 'rewrite'
+    display.kind === 'rewrite' && prices
       ? {
           monthly: {
             discountedPrimary: display.prices.monthlyAmount,
@@ -189,6 +193,8 @@ export function useBillingTab() {
 
   return {
     isStandingPending: standingQuery.isPending,
+    isCatalogPending: catalogQuery.isPending,
+    isCatalogUnavailable: catalogQuery.data != null && !catalogQuery.data.ok,
     standing,
     selectedInterval,
     setSelectedInterval,

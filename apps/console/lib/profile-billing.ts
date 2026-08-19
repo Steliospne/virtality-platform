@@ -1,6 +1,6 @@
 /**
  * Profile → Billing presentation helpers (stacked plan cards).
- * Prices match sandbox canonical Pro Prices (monthly + yearly).
+ * Catalog list prices load from Stripe at runtime via consoleBilling.readCatalog.
  */
 
 import {
@@ -19,27 +19,17 @@ import {
   requiresReplaceConfirm,
   resolveBillingDiscountDisplay,
   resolveProfileBillingCheckoutCta,
+  type BillingCatalogMinor,
+  type BillingCatalogRead,
   type BillingDiscountDisplay,
+  type BillingPlanPriceLabels,
   type EntitlementBillingInterval,
   type SubscriptionDiscountRead,
 } from '@virtality/shared/utils'
 
 export type BillingInterval = EntitlementBillingInterval
 
-export type BillingPlanPrices = {
-  monthlyLabel: string
-  yearlyAsMonthlyLabel: string
-  yearlyTotalMutedLabel: string
-  yearlySavingsLabel: string
-}
-
-/** Sandbox amounts: pro_monthly €150, pro_yearly €1500 (provisional). */
-export const PRO_BILLING_PRICES: BillingPlanPrices = {
-  monthlyLabel: '€150 / month',
-  yearlyAsMonthlyLabel: '€125 / month',
-  yearlyTotalMutedLabel: '€1500 / year',
-  yearlySavingsLabel: 'Save ~2 months',
-}
+export type BillingPlanPrices = BillingPlanPriceLabels
 
 export {
   BILLING_DISCOUNT_TIMING_COPY,
@@ -111,7 +101,7 @@ export function profileBillingStatusHeadline(
     case undefined:
       return 'No plan yet'
     default:
-      return 'Entitlement ended'
+      return 'Subscription ended'
   }
 }
 
@@ -141,9 +131,10 @@ export function profileBillingShowsPromoChrome(
 
 export function profileBillingDiscountDisplay(
   read: SubscriptionDiscountRead | undefined,
+  catalogMinor: BillingCatalogMinor | undefined,
 ): BillingDiscountDisplay {
-  if (!read) return { kind: 'catalog' }
-  return resolveBillingDiscountDisplay(read)
+  if (!read || !catalogMinor) return { kind: 'catalog' }
+  return resolveBillingDiscountDisplay(read, catalogMinor)
 }
 
 /** Split catalog label into amount + interval for struck-through rewrite. */
@@ -159,4 +150,18 @@ export function splitCatalogPriceLabel(label: string): {
     return { amount: label, interval: '' }
   }
   return { amount, interval }
+}
+
+export function billingCatalogPrices(
+  catalog: BillingCatalogRead | undefined,
+): BillingPlanPrices | null {
+  if (!catalog?.ok) return null
+  return catalog.labels
+}
+
+export function billingCatalogMinor(
+  catalog: BillingCatalogRead | undefined,
+): BillingCatalogMinor | undefined {
+  if (!catalog?.ok) return undefined
+  return catalog.minor
 }
