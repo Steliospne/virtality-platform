@@ -6,17 +6,13 @@
  * staff redeem-block; remove affordance is promo-only (#72 / #73).
  */
 
+import type { BillingCatalogMinor } from './billing-catalog.ts'
+import { formatEurFromMinor } from './billing-catalog.ts'
 import {
   applyCouponMinor,
   shouldBillingSoftUnavailable,
   type SubscriptionDiscountRead,
 } from './subscription-discount-read.ts'
-
-/** Sandbox Pro catalog list amounts in minor units (€150 / €1500). */
-export const PRO_BILLING_CATALOG_MINOR = {
-  monthly: 15_000,
-  yearly: 150_000,
-} as const
 
 export type DiscountedBillingPriceLabels = {
   /** Discounted amount only (e.g. €120). */
@@ -44,25 +40,16 @@ export const PROMO_REMOVE_NO_RESTORE_COPY =
 
 export const PROMO_REMOVE_SUCCESS_COPY = 'Promotion Code removed'
 
-function formatEurFromMinor(minor: number): string {
-  const major = minor / 100
-  if (Number.isInteger(major)) return `€${major}`
-  return `€${major.toFixed(2)}`
-}
-
 /** Catalog list × Coupon in major-display form for plan-card rewrite. */
-export function buildDiscountedBillingPriceLabels(terms: {
-  percentOff: number | null
-  amountOff: number | null
-}): DiscountedBillingPriceLabels {
-  const monthlyMinor = applyCouponMinor(
-    PRO_BILLING_CATALOG_MINOR.monthly,
-    terms,
-  )
-  const yearlyTotalMinor = applyCouponMinor(
-    PRO_BILLING_CATALOG_MINOR.yearly,
-    terms,
-  )
+export function buildDiscountedBillingPriceLabels(
+  terms: {
+    percentOff: number | null
+    amountOff: number | null
+  },
+  catalogMinor: BillingCatalogMinor,
+): DiscountedBillingPriceLabels {
+  const monthlyMinor = applyCouponMinor(catalogMinor.monthly, terms)
+  const yearlyTotalMinor = applyCouponMinor(catalogMinor.yearly, terms)
   const yearlyAsMonthlyMinor = Math.round(yearlyTotalMinor / 12)
 
   return {
@@ -78,6 +65,7 @@ export function buildDiscountedBillingPriceLabels(terms: {
  */
 export function resolveBillingDiscountDisplay(
   read: SubscriptionDiscountRead,
+  catalogMinor: BillingCatalogMinor,
 ): BillingDiscountDisplay {
   if (shouldBillingSoftUnavailable(read)) {
     return { kind: 'soft_unavailable' }
@@ -88,10 +76,13 @@ export function resolveBillingDiscountDisplay(
 
   return {
     kind: 'rewrite',
-    prices: buildDiscountedBillingPriceLabels({
-      percentOff: read.percentOff,
-      amountOff: read.amountOff,
-    }),
+    prices: buildDiscountedBillingPriceLabels(
+      {
+        percentOff: read.percentOff,
+        amountOff: read.amountOff,
+      },
+      catalogMinor,
+    ),
   }
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SubscriptionDiscountRead } from './subscription-discount-read.ts'
+import { PRO_BILLING_CATALOG_SANDBOX } from './billing-catalog.ts'
 import {
-  PRO_BILLING_CATALOG_MINOR,
   buildDiscountedBillingPriceLabels,
   canRemovePromoDiscount,
   isStaffRedeemBlocked,
@@ -31,26 +31,30 @@ const onePercent: Extract<
 
 describe('buildDiscountedBillingPriceLabels', () => {
   it('rewrites monthly and yearly catalog list × percent-off Coupon', () => {
-    const labels = buildDiscountedBillingPriceLabels({
-      percentOff: 20,
-      amountOff: null,
-    })
+    const labels = buildDiscountedBillingPriceLabels(
+      {
+        percentOff: 20,
+        amountOff: null,
+      },
+      PRO_BILLING_CATALOG_SANDBOX,
+    )
 
     expect(labels).toEqual({
       monthlyAmount: '€120',
       yearlyAsMonthlyAmount: '€100',
       yearlyTotalAmount: '€1200',
     })
-    expect(PRO_BILLING_CATALOG_MINOR.monthly).toBe(15_000)
-    expect(PRO_BILLING_CATALOG_MINOR.yearly).toBe(150_000)
   })
 
   it('subtracts amount-off from each interval list (interval-agnostic)', () => {
     expect(
-      buildDiscountedBillingPriceLabels({
-        percentOff: null,
-        amountOff: 3_000,
-      }),
+      buildDiscountedBillingPriceLabels(
+        {
+          percentOff: null,
+          amountOff: 3_000,
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({
       monthlyAmount: '€120',
       yearlyAsMonthlyAmount: '€122.50',
@@ -61,7 +65,10 @@ describe('buildDiscountedBillingPriceLabels', () => {
 
 describe('resolveBillingDiscountDisplay', () => {
   it('rewrites plan cards when the live Discount read is healthy', () => {
-    const display = resolveBillingDiscountDisplay(onePercent)
+    const display = resolveBillingDiscountDisplay(
+      onePercent,
+      PRO_BILLING_CATALOG_SANDBOX,
+    )
 
     expect(display).toEqual({
       kind: 'rewrite',
@@ -75,33 +82,45 @@ describe('resolveBillingDiscountDisplay', () => {
 
   it('keeps catalog list when no Discount is present', () => {
     expect(
-      resolveBillingDiscountDisplay({ ok: true, presence: 'none' }),
+      resolveBillingDiscountDisplay(
+        { ok: true, presence: 'none' },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({ kind: 'catalog' })
   })
 
   it('soft-unavailables when the read fails or Coupon terms are incomplete', () => {
     expect(
-      resolveBillingDiscountDisplay({
-        ok: false,
-        reason: 'stripe_unavailable',
-      }),
+      resolveBillingDiscountDisplay(
+        {
+          ok: false,
+          reason: 'stripe_unavailable',
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({ kind: 'soft_unavailable' })
 
     expect(
-      resolveBillingDiscountDisplay({
-        ...onePercent,
-        percentOff: null,
-        amountOff: null,
-      }),
+      resolveBillingDiscountDisplay(
+        {
+          ...onePercent,
+          percentOff: null,
+          amountOff: null,
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({ kind: 'soft_unavailable' })
 
     expect(
-      resolveBillingDiscountDisplay({
-        ...onePercent,
-        percentOff: null,
-        amountOff: 3_000,
-        currency: 'usd',
-      }),
+      resolveBillingDiscountDisplay(
+        {
+          ...onePercent,
+          percentOff: null,
+          amountOff: 3_000,
+          currency: 'usd',
+        },
+        PRO_BILLING_CATALOG_SANDBOX,
+      ),
     ).toEqual({ kind: 'soft_unavailable' })
   })
 })
