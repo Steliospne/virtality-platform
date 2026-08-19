@@ -1,10 +1,16 @@
 export type ProfileTab = 'info' | 'billing' | 'organizations' | 'sessions'
 
-const PROFILE_TABS = new Set<Exclude<ProfileTab, 'billing'>>([
+type NonBillingProfileTab = Exclude<ProfileTab, 'billing'>
+
+const PROFILE_TABS = new Set<NonBillingProfileTab>([
   'info',
   'organizations',
   'sessions',
 ])
+
+function isNonBillingProfileTab(value: string): value is NonBillingProfileTab {
+  return PROFILE_TABS.has(value as NonBillingProfileTab)
+}
 
 export function resolveProfileTab(
   requested: string | null | undefined,
@@ -13,8 +19,8 @@ export function resolveProfileTab(
   if (requested === 'billing') {
     return billingEnabled ? 'billing' : 'info'
   }
-  if (requested != null && PROFILE_TABS.has(requested as ProfileTab)) {
-    return requested as ProfileTab
+  if (requested != null && isNonBillingProfileTab(requested)) {
+    return requested
   }
   return 'info'
 }

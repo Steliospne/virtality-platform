@@ -42,7 +42,6 @@ export const getDraftSendReadiness = (draft: DraftRecord) =>
     subject: draft.subject,
     bodyBlocks: parseDraftBodyBlocks(draft),
     recipients: draft.recipients,
-    hasSuccessfulTestSend: draft.hasSuccessfulTestSend,
   })
 
 export const validateDraftRecipientsInput = (

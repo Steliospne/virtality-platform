@@ -17,6 +17,7 @@ import {
   sectionHeading,
   listItem,
 } from '../styles/email.js'
+import { renderEmailMultilineText } from '../render-email-multiline-text.js'
 
 type EmailHeadingBlock = {
   type: 'heading'
@@ -120,7 +121,7 @@ const renderBlock = (block: AdminEmailBodyBlock) => {
     case 'paragraph':
       return (
         <Text key={block.id} style={paragraph}>
-          {block.text}
+          {renderEmailMultilineText(block.text)}
         </Text>
       )
     case 'image':
@@ -164,7 +165,11 @@ const renderBlock = (block: AdminEmailBodyBlock) => {
               {block.heading}
             </Heading>
           ) : null}
-          {block.body ? <Text style={paragraph}>{block.body}</Text> : null}
+          {block.body ? (
+            <Text style={paragraph}>
+              {renderEmailMultilineText(block.body)}
+            </Text>
+          ) : null}
           {block.imageObjectKey && block.imageAlt ? (
             <Img
               src={bucketCdnUrl(block.imageObjectKey)}

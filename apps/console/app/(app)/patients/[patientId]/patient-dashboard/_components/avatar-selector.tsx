@@ -25,7 +25,7 @@ import placeholder from '@/public/placeholder.svg'
 import { MouseEvent } from 'react'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { Button } from '@virtality/ui/components/button'
-import { usePatient, useAvatar } from '@virtality/react-query'
+import { useAvatar } from '@virtality/react-query'
 import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 
 const AvatarSelector = () => {
@@ -34,11 +34,10 @@ const AvatarSelector = () => {
   const { selectedAvatar, programState } = state
   const { setSelectedAvatar } = handler
   const { data: avatars } = useAvatar()
-  const { data: patient } = usePatient({ patientId })
 
   const avatarChange = (value: string) => {
     const avatar = avatars?.find((avatar) => avatar.id === value) ?? null
-    store?.setRow('patients', patient!.id, {
+    store?.setRow('patients', patientId, {
       ...patientLocalData,
       lastAvatar: avatar?.id ?? '',
     })
@@ -47,7 +46,7 @@ const AvatarSelector = () => {
 
   const avatarSelectionClear = (e: MouseEvent) => {
     e.stopPropagation()
-    store?.delCell('patients', patient!.id, 'lastAvatar')
+    store?.delCell('patients', patientId, 'lastAvatar')
     setSelectedAvatar(null)
   }
 

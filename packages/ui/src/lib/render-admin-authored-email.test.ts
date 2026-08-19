@@ -65,4 +65,23 @@ describe('renderAdminAuthoredEmail', () => {
     expect(rendered.html).toContain('Sitting mode')
     expect(rendered.html).toContain('All rights reserved')
   })
+
+  it('preserves paragraph line breaks in rendered html', async () => {
+    const rendered = await renderAdminAuthoredEmail({
+      subject: 'Line break test',
+      bodyBlocks: [
+        {
+          type: 'paragraph',
+          id: 'paragraph-1',
+          text: 'The sun will sun\n\nAre you sure ?',
+        },
+      ],
+    })
+
+    expect(rendered.html).toContain('The sun will sun')
+    expect(rendered.html).toContain('Are you sure ?')
+    expect(rendered.html).toMatch(
+      /The sun will sun[\s\S]*<br[\s\S]*Are you sure \?/,
+    )
+  })
 })

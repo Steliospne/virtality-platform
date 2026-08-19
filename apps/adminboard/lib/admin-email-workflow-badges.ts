@@ -4,9 +4,10 @@ const WARNING_BADGE_CLASS =
 const SUCCESS_BADGE_CLASS =
   'border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100'
 
-export type AdminEmailWorkflowBadgeInput =
-  | { kind: 'test-send'; complete: boolean }
-  | { kind: 'send-readiness'; ready: boolean }
+export type AdminEmailWorkflowBadgeInput = {
+  kind: 'send-readiness'
+  ready: boolean
+}
 
 export type AdminEmailWorkflowBadgeConfig = {
   label: string
@@ -33,12 +34,6 @@ export function getAdminEmailWorkflowBadgeConfig(
   input: AdminEmailWorkflowBadgeInput,
 ): AdminEmailWorkflowBadgeConfig {
   switch (input.kind) {
-    case 'test-send':
-      return createWorkflowBadgeConfig(
-        input.complete ? 'Test send complete' : 'Test send required',
-        input.complete,
-        'min-w-[9.25rem]',
-      )
     case 'send-readiness':
       return createWorkflowBadgeConfig(
         input.ready ? 'Send-ready' : 'Not send-ready',

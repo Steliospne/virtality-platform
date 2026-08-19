@@ -9,7 +9,6 @@ export type EmailSendReadinessInput = {
   subject: string
   bodyBlocks: EmailBodyBlock[]
   recipients: string[]
-  hasSuccessfulTestSend: boolean
 }
 
 export type EmailSendReadinessResult = {
@@ -36,10 +35,6 @@ export const assessEmailSendReadiness = (
   const recipientError = validateEmailRecipientList(input.recipients)
   if (recipientError) {
     reasons.push('recipient list is required')
-  }
-
-  if (!input.hasSuccessfulTestSend) {
-    reasons.push('successful test send is required')
   }
 
   return {

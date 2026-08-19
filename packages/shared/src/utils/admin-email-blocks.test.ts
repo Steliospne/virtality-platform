@@ -188,7 +188,6 @@ describe('assessEmailSendReadiness', () => {
     subject: 'June update',
     bodyBlocks: [paragraph('Hello team')],
     recipients: ['admin@virtality.app'],
-    hasSuccessfulTestSend: true,
   }
 
   it('reports a send-ready draft when all requirements pass', () => {
@@ -198,7 +197,7 @@ describe('assessEmailSendReadiness', () => {
     })
   })
 
-  it('requires subject, valid body, recipients, and a successful test send', () => {
+  it('requires subject, valid body, and recipients', () => {
     expect(
       assessEmailSendReadiness({
         ...readyDraft,
@@ -219,12 +218,5 @@ describe('assessEmailSendReadiness', () => {
         recipients: [],
       }).reasons,
     ).toContain('recipient list is required')
-
-    expect(
-      assessEmailSendReadiness({
-        ...readyDraft,
-        hasSuccessfulTestSend: false,
-      }).reasons,
-    ).toContain('successful test send is required')
   })
 })

@@ -50,7 +50,6 @@ type DraftWorkspaceData = {
   previewText: string | null
   bodyBlocks: EmailBodyBlock[]
   recipients: string[]
-  hasSuccessfulTestSend: boolean
   isFinalSent: boolean
   updatedAt: string | Date
   sendReadiness: {
@@ -298,10 +297,6 @@ export const AdminEmailDraftWorkspace = ({
             <div className='flex flex-wrap items-center gap-2'>
               {isArchived ? <Badge variant='outline'>Archived</Badge> : null}
               <AdminEmailWorkflowBadge
-                kind='test-send'
-                complete={draft.hasSuccessfulTestSend}
-              />
-              <AdminEmailWorkflowBadge
                 kind='send-readiness'
                 ready={draft.sendReadiness.ready}
               />
@@ -403,7 +398,7 @@ export const AdminEmailDraftWorkspace = ({
             <CardHeader>
               <CardTitle>Test send</CardTitle>
               <CardDescription>
-                Send a test email to your inbox before final send.
+                Send a test email to your inbox to preview delivery.
               </CardDescription>
             </CardHeader>
             <CardContent>

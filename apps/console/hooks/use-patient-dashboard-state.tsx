@@ -6,7 +6,13 @@ import {
   PatientLocalData,
   VRDevice,
 } from '@/types/models'
-import { useAvatar, useMap, useReusablePrograms } from '@virtality/react-query'
+import {
+  useAvatar,
+  useMap,
+  usePatient,
+  useReusablePrograms,
+} from '@virtality/react-query'
+import { resolveDashboardAvatar } from '@/lib/patient-dashboard-avatar-selection'
 import {
   buildProgramSelectionState,
   resolveLastUsedProgram,
@@ -106,12 +112,14 @@ interface usePatientDashboardStateProps {
 }
 
 const usePatientDashboardState = ({
+  patientId,
   patientLocalData,
 }: usePatientDashboardStateProps) => {
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const { data: avatars } = useAvatar()
   const { data: maps } = useMap()
   const { data: programs } = useReusablePrograms()
+  const { data: patient } = usePatient({ patientId })
 
   useEffect(() => {
     const program = resolveLastUsedProgram(
@@ -125,19 +133,20 @@ const usePatientDashboardState = ({
       )
     }
 
-    const avatar = avatars?.find(
-      (avatar) => avatar.id === patientLocalData.lastAvatar,
+    setSelectedAvatar(
+      resolveDashboardAvatar({
+        avatars,
+        lastAvatarId: patientLocalData.lastAvatar,
+        patientSex: patient?.sex,
+      }),
     )
-
-    if (avatar) setSelectedAvatar(avatar)
-    else setSelectedAvatar(avatars?.[0] ?? null)
     const map = maps?.find((map) => map.id === patientLocalData.lastMap)
 
     if (map) setSelectedMap(map)
     else setSelectedMap(maps?.[0] ?? null)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [avatars, maps, patientLocalData, dispatch, programs])
+  }, [avatars, maps, patient?.sex, patientLocalData, dispatch, programs])
 
   const setSelectedMode = (value: 'main' | 'free') => {
     dispatch({ type: 'setSelectedMode', payload: value })
