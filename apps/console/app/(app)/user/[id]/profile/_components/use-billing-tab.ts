@@ -4,7 +4,7 @@
  * Local state for the profile Billing tab: standing, Checkout, redeem, remove.
  */
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
@@ -23,6 +23,7 @@ import {
   BILLING_DISCOUNT_TIMING_COPY,
   billingCatalogMinor,
   billingCatalogPrices,
+  buildPendingCouponRewrite,
   isStaffRedeemBlocked,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
@@ -31,6 +32,7 @@ import {
   promoCodeLabel,
   type BillingInterval,
   type BillingStandingView,
+  type PendingCouponTerms,
 } from '@/lib/profile-billing'
 
 export function primaryCtaPendingLabel(standing: BillingStandingView): string {
@@ -73,6 +75,8 @@ export function useBillingTab() {
   const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<
     string | null
   >(null)
+  const [pendingCouponTerms, setPendingCouponTerms] =
+    useState<PendingCouponTerms | null>(null)
   const [initialCheckoutIntent] = useState(() =>
     typeof window === 'undefined'
       ? null
@@ -112,11 +116,13 @@ export function useBillingTab() {
 
   useEffect(() => {
     if (initialCheckoutIntent !== 'cancel') return
+    setPendingCouponTerms(null)
     void cancelPendingMutation.mutateAsync(undefined)
   }, [cancelPendingMutation, initialCheckoutIntent])
 
   async function savePendingPromotionCode(code: string) {
-    await savePendingMutation.mutateAsync({ code })
+    const result = await savePendingMutation.mutateAsync({ code })
+    setPendingCouponTerms(result.couponTerms)
     setRemoveSuccess(false)
     setRedeemSuccessMessage(
       `Promotion Code ${code} saved for Checkout. Finish subscribing within 2 minutes.`,
@@ -175,6 +181,11 @@ export function useBillingTab() {
     }
   }
 
+  const pendingRewrite =
+    pendingCouponTerms && catalogMinor && prices
+      ? buildPendingCouponRewrite(pendingCouponTerms, catalogMinor, prices)
+      : null
+
   const rewrite =
     display.kind === 'rewrite' && prices
       ? {
@@ -189,7 +200,7 @@ export function useBillingTab() {
             listStrikeMuted: prices.yearlyTotalMutedLabel,
           },
         }
-      : null
+      : pendingRewrite
 
   return {
     isStandingPending: standingQuery.isPending,

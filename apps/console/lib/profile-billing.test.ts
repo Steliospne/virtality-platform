@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { PRO_BILLING_CATALOG_SANDBOX } from '@virtality/shared/utils'
 import {
+  buildBillingPlanPriceLabels,
+  PRO_BILLING_CATALOG_SANDBOX,
+} from '@virtality/shared/utils'
+import {
+  buildPendingCouponRewrite,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
   profileBillingPrimaryCtaLabel,
@@ -160,6 +164,36 @@ describe('profileBillingDiscountDisplay', () => {
         PRO_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'soft_unavailable' })
+  })
+})
+
+describe('buildPendingCouponRewrite', () => {
+  const prices = buildBillingPlanPriceLabels(PRO_BILLING_CATALOG_SANDBOX)
+
+  it('rewrites plan card prices from pending coupon percent-off terms', () => {
+    const rewrite = buildPendingCouponRewrite(
+      { percentOff: 20, amountOff: null },
+      PRO_BILLING_CATALOG_SANDBOX,
+      prices,
+    )
+
+    expect(rewrite.monthly.discountedPrimary).toBe('€120')
+    expect(rewrite.monthly.listStrike).toBe(prices.monthlyLabel)
+    expect(rewrite.yearly.discountedPrimary).toBe('€100')
+    expect(rewrite.yearly.listStrike).toBe(prices.yearlyAsMonthlyLabel)
+    expect(rewrite.yearly.discountedMuted).toBe('€1200')
+    expect(rewrite.yearly.listStrikeMuted).toBe(prices.yearlyTotalMutedLabel)
+  })
+
+  it('rewrites plan card prices from pending coupon amount-off terms', () => {
+    const rewrite = buildPendingCouponRewrite(
+      { percentOff: null, amountOff: 5000 },
+      PRO_BILLING_CATALOG_SANDBOX,
+      prices,
+    )
+
+    expect(rewrite.monthly.discountedPrimary).toBe('€100')
+    expect(rewrite.yearly.discountedMuted).toBe('€1450')
   })
 })
 

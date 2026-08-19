@@ -17,6 +17,7 @@ import {
 import {
   cancelPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
+  type PendingPromotionCodeCouponTerms,
 } from './lib/pending-promotion-code.ts'
 import { prisma } from '@virtality/db'
 import Stripe from 'stripe'
@@ -86,6 +87,7 @@ export {
 } from './lib/console-promo-redeem.ts'
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
+export type { PendingPromotionCodeCouponTerms }
 
 function requireStripeClient(): Stripe {
   if (!stripeClient) {

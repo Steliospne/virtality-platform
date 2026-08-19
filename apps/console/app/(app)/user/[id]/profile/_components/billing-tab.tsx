@@ -5,10 +5,8 @@
  * Discount price rewrite, Promotion Code redeem, and promo remove (#78).
  */
 
-import { Info } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import {
-  BILLING_DISCOUNT_TIMING_COPY,
   BILLING_SOFT_UNAVAILABLE_COPY,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
@@ -117,16 +115,6 @@ export function BillingTab() {
             rewrite={rewrite?.yearly ?? null}
           />
         </div>
-
-        {rewrite ? (
-          <p className='flex gap-2 text-xs text-zinc-500'>
-            <Info className='mt-0.5 size-3.5 shrink-0' />
-            <span>
-              Discounted figures are catalog list × Coupon (not a live invoice
-              preview). {BILLING_DISCOUNT_TIMING_COPY}
-            </span>
-          </p>
-        ) : null}
 
         {removeSuccess ? (
           <RemoveSuccessBanner onDismiss={() => setRemoveSuccess(false)} />

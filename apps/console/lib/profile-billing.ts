@@ -9,6 +9,7 @@ import {
   PROMO_REMOVE_NO_RESTORE_COPY,
   PROMO_REMOVE_SUCCESS_COPY,
   STAFF_REDEEM_BLOCK_COPY,
+  buildDiscountedBillingPriceLabels,
   canRemovePromoDiscount,
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
@@ -150,6 +151,32 @@ export function splitCatalogPriceLabel(label: string): {
     return { amount: label, interval: '' }
   }
   return { amount, interval }
+}
+
+export type PendingCouponTerms = {
+  percentOff: number | null
+  amountOff: number | null
+}
+
+/** Build a plan-card rewrite from pending coupon terms (pre-subscribe). */
+export function buildPendingCouponRewrite(
+  terms: PendingCouponTerms,
+  catalogMinor: BillingCatalogMinor,
+  prices: BillingPlanPriceLabels,
+) {
+  const discounted = buildDiscountedBillingPriceLabels(terms, catalogMinor)
+  return {
+    monthly: {
+      discountedPrimary: discounted.monthlyAmount,
+      listStrike: prices.monthlyLabel,
+    },
+    yearly: {
+      discountedPrimary: discounted.yearlyAsMonthlyAmount,
+      listStrike: prices.yearlyAsMonthlyLabel,
+      discountedMuted: discounted.yearlyTotalAmount,
+      listStrikeMuted: prices.yearlyTotalMutedLabel,
+    },
+  }
 }
 
 export function billingCatalogPrices(

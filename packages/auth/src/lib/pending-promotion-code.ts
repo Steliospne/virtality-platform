@@ -31,10 +31,20 @@ function couponIdFromPromotionCode(
   return typeof coupon === 'string' ? coupon : coupon.id
 }
 
+export type PendingPromotionCodeCouponTerms = {
+  percentOff: number | null
+  amountOff: number | null
+}
+
 async function resolvePromotionCodeForProCheckout(
   stripeClient: Stripe,
   code: string,
-): Promise<{ code: string; promotionCodeId: string; couponId: string }> {
+): Promise<{
+  code: string
+  promotionCodeId: string
+  couponId: string
+  couponTerms: PendingPromotionCodeCouponTerms
+}> {
   const trimmed = code.trim()
   if (!trimmed) {
     throw new Error('Promotion Code is required')
@@ -83,6 +93,10 @@ async function resolvePromotionCodeForProCheckout(
     code: promotionCode.code,
     promotionCodeId: promotionCode.id,
     couponId,
+    couponTerms: {
+      percentOff: coupon.percentOff,
+      amountOff: coupon.amountOff,
+    },
   }
 }
 
@@ -125,7 +139,7 @@ export async function savePendingPromotionCodeForCheckout(
   })
 
   const expiresAt = new Date(now.getTime() + PENDING_PROMOTION_CODE_TTL_MS)
-  return client.pendingPromotionCode.create({
+  const row = await client.pendingPromotionCode.create({
     data: {
       userId: input.userId,
       code: resolved.code,
@@ -136,6 +150,8 @@ export async function savePendingPromotionCodeForCheckout(
       updatedAt: now,
     },
   })
+
+  return { ...row, couponTerms: resolved.couponTerms }
 }
 
 export async function getOpenPendingPromotionCodeForCheckout(
