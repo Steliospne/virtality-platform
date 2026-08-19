@@ -41,6 +41,7 @@ import {
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 import { PRO_PLAN_PRICE_ID, stripeClient } from './auth-instance.ts'
+import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
 
 export {
   auth,
@@ -193,6 +194,11 @@ export function readConsoleSubscriptionDiscountAction(userId: string) {
     prisma,
     stripeClient: requireStripeForConsolePromo(),
   })
+}
+
+/** Console Billing: Pro catalog list prices from canonical Stripe Prices. */
+export function readConsoleBillingCatalogAction() {
+  return readConsoleBillingCatalogOrSandbox(stripeClient)
 }
 
 /** Console Billing: redeem preflight (staff-block / replace-confirm). */

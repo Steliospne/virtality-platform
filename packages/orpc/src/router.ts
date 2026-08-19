@@ -26,6 +26,7 @@ import { couponLibrary } from './procedures/coupon-library.ts'
 import { promotionCode } from './procedures/promotion-code.ts'
 import { campaignWindow } from './procedures/campaign-window.ts'
 import { consolePromo } from './procedures/console-promo.ts'
+import { consoleBilling } from './procedures/console-billing.ts'
 import { renewTrigger } from './procedures/renew-trigger.ts'
 import { renewPrompt } from './procedures/renew-prompt.ts'
 import { entitlementExtension } from './procedures/entitlement-extension.ts'
@@ -68,6 +69,7 @@ export const router = {
   promotionCode,
   campaignWindow,
   consolePromo,
+  consoleBilling,
   renewTrigger,
   renewPrompt,
   entitlementExtension,
