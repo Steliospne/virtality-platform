@@ -19,6 +19,7 @@ type CatalogFirstFlowSurface = {
   readonly catalogStepPattern: RegExp
   readonly selectedListPattern: RegExp
   readonly legacyLibraryHidden: RegExp
+  readonly opensOnCatalog?: boolean
   readonly flowMarker?: RegExp
   readonly seedPattern?: RegExp
   readonly companionPath?: string
@@ -32,6 +33,7 @@ const CATALOG_FIRST_FLOW_SURFACES: readonly CatalogFirstFlowSurface[] = [
     catalogStepPattern: /isCatalogStep/,
     selectedListPattern: /isSelectedListStep/,
     legacyLibraryHidden: LEGACY_LIBRARY_ACCESS_DISABLED,
+    opensOnCatalog: true,
   },
   {
     id: 'scratch-create',
@@ -41,6 +43,7 @@ const CATALOG_FIRST_FLOW_SURFACES: readonly CatalogFirstFlowSurface[] = [
     flowMarker: /editorSource\.kind === 'scratch'/,
     legacyLibraryHidden:
       LEGACY_LIBRARY_ACCESS_DISABLED_ON_CATALOG_FIRST_SELECTED_LIST,
+    opensOnCatalog: true,
   },
   {
     id: 'starter-template-create',
@@ -100,10 +103,15 @@ describe('settings-first authoring rollout seam', () => {
         }
       })
 
-      it('opens on settings with ExerciseLibraryList before catalog', () => {
+      it('opens with ExerciseLibraryList and catalog step wiring', () => {
         expect(source).toMatch(flow.catalogStepPattern)
         expect(source).toMatch(flow.selectedListPattern)
         expectSelectedListBeforeCatalog(source)
+        if (flow.opensOnCatalog) {
+          expect(source).toMatch(
+            /initialStep:\s*CATALOG_CATALOG_FIRST_AUTHORING_STEP/,
+          )
+        }
       })
 
       it('hides the legacy exercise library access on selected-list', () => {

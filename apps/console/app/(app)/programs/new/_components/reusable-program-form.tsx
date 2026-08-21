@@ -44,6 +44,7 @@ import {
   suggestedProgramNameFromTemplate,
 } from '@/lib/starter-template-create'
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
+import { CATALOG_CATALOG_FIRST_AUTHORING_STEP } from '@/lib/catalog-first-authoring-flow'
 
 type EditorSource =
   | { kind: 'scratch' }
@@ -75,7 +76,11 @@ const ReusableProgramFormView = ({
     goToSelectedList,
     goToCatalog,
     selectedExerciseCountLabel,
-  } = useCatalogFirstAuthoringFlow()
+  } = useCatalogFirstAuthoringFlow(
+    isScratch
+      ? { initialStep: CATALOG_CATALOG_FIRST_AUTHORING_STEP }
+      : undefined,
+  )
   const isCatalogFirstCatalogStep = isCatalogFirstCreate && isCatalogStep
   const isCatalogFirstSelectedListStep =
     isCatalogFirstCreate && isSelectedListStep

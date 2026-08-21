@@ -13,10 +13,13 @@ describe('scratch reusable program settings-first create flow', () => {
     expect(formSource).toMatch(/editorSource\.kind === 'scratch'/)
   })
 
-  it('opens scratch creation on the settings selected-list step', () => {
-    expect(formSource).toMatch(/isSelectedListStep/)
-    expect(formSource).toMatch(/<ExerciseLibraryList/)
-    expect(formSource).toMatch(/Add exercises/)
+  it('opens scratch creation on the exercise catalog step', () => {
+    expect(formSource).toMatch(
+      /isScratch[\s\S]*?initialStep:\s*CATALOG_CATALOG_FIRST_AUTHORING_STEP/,
+    )
+    expect(formSource).toMatch(/isCatalogFirstCatalogStep/)
+    expect(formSource).toMatch(/<ExerciseGrid/)
+    expect(formSource).toMatch(/goToSelectedList/)
   })
 
   it('shows selected exercise count near the catalog Done action', () => {

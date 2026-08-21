@@ -36,6 +36,7 @@ import {
 import { withRom } from '@/lib/with-rom'
 import { ZERO_ENABLED_VARIANTS_MESSAGE } from '@/lib/program-submit-enabled-variants'
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
+import { CATALOG_CATALOG_FIRST_AUTHORING_STEP } from '@/lib/catalog-first-authoring-flow'
 import { canQuickStartFinalAction } from '@/lib/quickstart-authoring-flow'
 
 const scrollableStepContentClass = 'min-h-0 flex-1 overflow-auto'
@@ -77,7 +78,9 @@ const QuickStartDialog = () => {
     goToCatalog,
     resetFlow,
     selectedExerciseCountLabel,
-  } = useCatalogFirstAuthoringFlow()
+  } = useCatalogFirstAuthoringFlow({
+    initialStep: CATALOG_CATALOG_FIRST_AUTHORING_STEP,
+  })
 
   const [savePromptOpen, setSavePromptOpen] = useState(false)
   const savePromptCloseReasonRef = useRef<'continue' | 'save' | null>(null)

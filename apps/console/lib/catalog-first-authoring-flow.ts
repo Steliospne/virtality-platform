@@ -1,8 +1,8 @@
 /**
- * Shared settings-first program authoring flow (evolved from PRD #98 catalog-first).
- * Step one is the selected Program Exercise list/settings; step two is the exercise
- * catalog for adding or removing variants.
- * Exercise selection and settings live outside this reducer — callers must not reset them on back navigation.
+ * Shared program authoring flow (evolved from PRD #98 catalog-first).
+ * Default entry is settings (selected-list); scratch create and quick start can
+ * open on the exercise catalog instead. Callers keep exercise selection outside
+ * this reducer and must not reset it on back navigation.
  */
 
 export const CATALOG_FIRST_AUTHORING_STEPS = [
@@ -22,6 +22,7 @@ export const CATALOG_CATALOG_FIRST_AUTHORING_STEP = 'catalog'
 
 export type CatalogFirstAuthoringFlowState = {
   step: CatalogFirstAuthoringStep
+  initialStep: CatalogFirstAuthoringStep
 }
 
 export type CatalogFirstAuthoringFlowAction =
@@ -29,8 +30,10 @@ export type CatalogFirstAuthoringFlowAction =
   | { type: 'returnToCatalog' }
   | { type: 'reset' }
 
-export function createCatalogFirstAuthoringFlowState(): CatalogFirstAuthoringFlowState {
-  return { step: INITIAL_CATALOG_FIRST_AUTHORING_STEP }
+export function createCatalogFirstAuthoringFlowState(
+  initialStep: CatalogFirstAuthoringStep = INITIAL_CATALOG_FIRST_AUTHORING_STEP,
+): CatalogFirstAuthoringFlowState {
+  return { step: initialStep, initialStep }
 }
 
 export function catalogFirstAuthoringFlowReducer(
@@ -39,11 +42,11 @@ export function catalogFirstAuthoringFlowReducer(
 ): CatalogFirstAuthoringFlowState {
   switch (action.type) {
     case 'advanceToSelectedList':
-      return { step: SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP }
+      return { ...state, step: SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP }
     case 'returnToCatalog':
-      return { step: CATALOG_CATALOG_FIRST_AUTHORING_STEP }
+      return { ...state, step: CATALOG_CATALOG_FIRST_AUTHORING_STEP }
     case 'reset':
-      return createCatalogFirstAuthoringFlowState()
+      return { ...state, step: state.initialStep }
     default:
       return state
   }

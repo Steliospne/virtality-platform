@@ -4,14 +4,25 @@ import {
   catalogFirstAuthoringFlowReducer,
   catalogFirstSelectedExerciseCountLabel,
   createCatalogFirstAuthoringFlowState,
+  INITIAL_CATALOG_FIRST_AUTHORING_STEP,
   isCatalogStep,
   isSelectedListStep,
+  type CatalogFirstAuthoringStep,
 } from '@/lib/catalog-first-authoring-flow'
 
-export function useCatalogFirstAuthoringFlow() {
+export type UseCatalogFirstAuthoringFlowOptions = {
+  initialStep?: CatalogFirstAuthoringStep
+}
+
+export function useCatalogFirstAuthoringFlow(
+  options?: UseCatalogFirstAuthoringFlowOptions,
+) {
+  const initialStep =
+    options?.initialStep ?? INITIAL_CATALOG_FIRST_AUTHORING_STEP
+
   const [{ step }, dispatch] = useReducer(
     catalogFirstAuthoringFlowReducer,
-    undefined,
+    initialStep,
     createCatalogFirstAuthoringFlowState,
   )
 

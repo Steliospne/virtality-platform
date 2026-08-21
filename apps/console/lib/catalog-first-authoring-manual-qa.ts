@@ -17,8 +17,8 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       label: 'Quick Start',
       entry: 'Patient dashboard → Quick Start',
       checks: [
-        'Single dialog opens with settings (selected-list) as the first step',
-        'Add exercises opens the catalog; Done returns to settings',
+        'Single dialog opens with the exercise catalog as the first step',
+        'Done returns to settings (selected-list); Add exercises returns to catalog',
         'Selected exercise count appears on the catalog step',
         'Continue and Save Program are disabled when no enabled variants remain',
         'Continue opens a save reminder dialog before loading the session',
@@ -32,8 +32,8 @@ export const CATALOG_FIRST_AUTHORING_MANUAL_QA: readonly CatalogFirstAuthoringMa
       label: 'Scratch Reusable Program create',
       entry: 'Program Library → Create program → Create your own program',
       checks: [
-        'Editor opens on the settings (selected-list) step',
-        'Program name field is visible on the settings step',
+        'Editor opens on the exercise catalog step',
+        'Done returns to settings; program name field is visible on the settings step',
         'Add exercises opens the catalog; Done/Back returns to settings',
         'Submit is blocked when no enabled variants remain',
         'No Exercise Library button on the selected-list step',

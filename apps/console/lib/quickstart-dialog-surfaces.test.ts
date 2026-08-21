@@ -21,10 +21,16 @@ describe('quick start dialog surfaces', () => {
     expect(source).toMatch(/goToCatalog/)
   })
 
-  it('shows settings on the first step and catalog when adding exercises', () => {
+  it('shows settings on the selected-list step and catalog when adding exercises', () => {
     expect(source).toMatch(/<ExerciseLibraryList/)
     expect(source).toMatch(/<ExerciseGrid/)
     expect(source).toMatch(/Add exercises/)
+  })
+
+  it('opens quick start on the exercise catalog step', () => {
+    expect(source).toMatch(
+      /useCatalogFirstAuthoringFlow\(\{\s*initialStep:\s*CATALOG_CATALOG_FIRST_AUTHORING_STEP/,
+    )
   })
 
   it('allows scrolling on the catalog step so all exercises are reachable', () => {
