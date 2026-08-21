@@ -20,7 +20,12 @@ function youtubeEmbedUrl(watchUrl: string): string | null {
         ? url.pathname.replace(/^\//, '')
         : null)
     if (!id) return null
-    return `https://www.youtube.com/embed/${id}`
+
+    const startAt = url.searchParams.get('t')
+    const startParameter =
+      startAt && /^\d+$/.test(startAt) ? `?start=${startAt}` : ''
+
+    return `https://www.youtube.com/embed/${id}${startParameter}`
   } catch {
     return null
   }
