@@ -27,6 +27,7 @@ import { routeSignUpCode } from '@virtality/shared/utils'
 const runtimeEnv =
   process.env.ENV ?? process.env.NEXT_PUBLIC_ENV ?? 'development'
 const isDevelopment = runtimeEnv === 'development'
+const authCookieNameSuffix = runtimeEnv === 'preview' ? '_preview' : ''
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim()
 
 if (!stripeSecretKey && !isDevelopment) {
@@ -246,8 +247,10 @@ export const auth = betterAuth({
   ],
   advanced: {
     cookies: {
-      session_token: { name: 'virtality_session' },
-      admin_session: { name: 'virtality_admin_session' },
+      session_token: { name: `virtality${authCookieNameSuffix}_session` },
+      admin_session: {
+        name: `virtality${authCookieNameSuffix}_admin_session`,
+      },
     },
     crossSubDomainCookies: {
       enabled: true,
