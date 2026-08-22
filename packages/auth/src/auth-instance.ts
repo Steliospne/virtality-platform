@@ -117,6 +117,7 @@ export const auth = betterAuth({
     sendResetPassword,
   },
   emailVerification: {
+    autoSignInAfterVerification: true,
     sendVerificationEmail,
   },
   socialProviders: {
