@@ -11,6 +11,7 @@ import {
 import { SignUpForm } from '@/lib/definitions'
 import { UseFormReturn } from 'react-hook-form'
 import { User } from '@/auth-client'
+import { getPasswordRequirementStatus } from '@virtality/shared/utils'
 
 interface SignupFormProps {
   id?: string
@@ -20,6 +21,8 @@ interface SignupFormProps {
 
 const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
   const formPwdErrorType = form.formState.errors.password?.types
+  const password = form.watch('password')
+  const passwordRequirementStatus = getPasswordRequirementStatus(password)
 
   return (
     <Form {...form}>
@@ -71,8 +74,7 @@ const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
               ) : (
                 <FormDescription>
                   {'• Password must be between 8 and 16 characters long. '}
-                  {(form.formState.dirtyFields.password ||
-                    formPwdErrorType?.['length']) && (
+                  {password && passwordRequirementStatus.length && (
                     <span className='text-green-500'>✓</span>
                   )}
                 </FormDescription>
@@ -85,8 +87,7 @@ const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
               ) : (
                 <FormDescription>
                   {'• Password must contain at least one uppercase letter. '}
-                  {(form.formState.dirtyFields.password ||
-                    formPwdErrorType?.['uppercase']) && (
+                  {password && passwordRequirementStatus.uppercase && (
                     <span className='text-green-500'>✓</span>
                   )}
                 </FormDescription>
@@ -99,8 +100,7 @@ const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
               ) : (
                 <FormDescription>
                   {'• Password must contain at least one lowercase letter. '}
-                  {(form.formState.dirtyFields.password ||
-                    formPwdErrorType?.['lowercase']) && (
+                  {password && passwordRequirementStatus.lowercase && (
                     <span className='text-green-500'>✓</span>
                   )}
                 </FormDescription>
@@ -112,8 +112,8 @@ const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
                 </FormDescription>
               ) : (
                 <FormDescription>
-                  {'• Password must contain at least one digit letter. '}
-                  {form.formState.dirtyFields?.password && (
+                  {'• Password must contain at least one digit. '}
+                  {password && passwordRequirementStatus.digit && (
                     <span className='text-green-500'>✓</span>
                   )}
                 </FormDescription>

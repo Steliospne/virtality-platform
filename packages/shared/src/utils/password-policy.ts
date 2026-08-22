@@ -5,11 +5,22 @@ export const PASSWORD_MAX_LENGTH = 16
 export const INVALID_APPROVAL_LINK_MESSAGE =
   'This approval link is invalid or has expired.'
 
+export const getPasswordRequirementStatus = (password: string) => ({
+  length:
+    password.length >= PASSWORD_MIN_LENGTH &&
+    password.length <= PASSWORD_MAX_LENGTH,
+  uppercase: /[A-Z]/.test(password),
+  lowercase: /[a-z]/.test(password),
+  digit: /\d/.test(password),
+})
+
+export const isPasswordValid = (password: string) =>
+  Object.values(getPasswordRequirementStatus(password)).every(Boolean)
+
 export const isValidPassword = (ctx: ParsePayload<string>) => {
-  if (
-    ctx.value.length < PASSWORD_MIN_LENGTH ||
-    ctx.value.length > PASSWORD_MAX_LENGTH
-  ) {
+  const status = getPasswordRequirementStatus(ctx.value)
+
+  if (!status.length) {
     ctx.issues.push({
       message: '• Password must be between 8 and 16 characters long.',
       input: ctx.value,
@@ -17,7 +28,7 @@ export const isValidPassword = (ctx: ParsePayload<string>) => {
     })
   }
 
-  if (!/(?=.*[A-Z]).+/.test(ctx.value)) {
+  if (!status.uppercase) {
     ctx.issues.push({
       message: '• Password must contain at least one uppercase letter.',
       input: ctx.value,
@@ -25,7 +36,7 @@ export const isValidPassword = (ctx: ParsePayload<string>) => {
     })
   }
 
-  if (!/(?=.*[a-z]).+/.test(ctx.value)) {
+  if (!status.lowercase) {
     ctx.issues.push({
       message: '• Password must contain at least one lowercase letter.',
       input: ctx.value,
@@ -33,7 +44,7 @@ export const isValidPassword = (ctx: ParsePayload<string>) => {
     })
   }
 
-  if (!/(?=.*\d).+/.test(ctx.value)) {
+  if (!status.digit) {
     ctx.issues.push({
       message: '• Password must contain at least one digit.',
       input: ctx.value,

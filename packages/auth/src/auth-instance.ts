@@ -4,7 +4,7 @@ import {
   sendResetPassword,
   sendVerificationEmail,
 } from '@virtality/nodemailer'
-import { createAuthMiddleware, getOAuthState } from 'better-auth/api'
+import { APIError, createAuthMiddleware, getOAuthState } from 'better-auth/api'
 import validateAndConsumeTesterCode from './lib/tester-code.ts'
 import {
   assertTrialRedeemAllowedAtSignUp,
@@ -22,7 +22,7 @@ import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
-import { routeSignUpCode } from '@virtality/shared/utils'
+import { isPasswordValid, routeSignUpCode } from '@virtality/shared/utils'
 
 const runtimeEnv =
   process.env.ENV ?? process.env.NEXT_PUBLIC_ENV ?? 'development'
@@ -291,6 +291,17 @@ export const auth = betterAuth({
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       const { path } = ctx
+
+      if (
+        path === '/sign-up/email' &&
+        (typeof ctx.body?.password !== 'string' ||
+          !isPasswordValid(ctx.body.password))
+      ) {
+        throw new APIError('BAD_REQUEST', {
+          message:
+            'Password must be 8-16 characters with at least one uppercase letter, lowercase letter, and digit.',
+        })
+      }
 
       if (path.startsWith('/sign-up')) {
         await assertTrialRedeemAllowedAtSignUp(

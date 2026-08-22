@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { collectPasswordIssues } from './password-policy.ts'
+import {
+  collectPasswordIssues,
+  getPasswordRequirementStatus,
+} from './password-policy.ts'
 
 describe('isValidPassword', () => {
   it('accepts passwords that meet the shared policy', () => {
@@ -11,5 +14,14 @@ describe('isValidPassword', () => {
     expect(collectPasswordIssues('alllowercase1')).not.toEqual([])
     expect(collectPasswordIssues('ALLUPPERCASE1')).not.toEqual([])
     expect(collectPasswordIssues('NoDigitsHere')).not.toEqual([])
+  })
+
+  it('reports each individual requirement independently', () => {
+    expect(getPasswordRequirementStatus('alllowercase1')).toEqual({
+      length: true,
+      uppercase: false,
+      lowercase: true,
+      digit: true,
+    })
   })
 })
