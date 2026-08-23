@@ -1,0 +1,18 @@
+/// Durable audit trail for Adminboard customer billing mutations.
+model AdminCustomerAudit {
+  id                 String   @id @default(cuid())
+  targetUserId       String
+  actorUserId        String
+  action             String
+  reason             String
+  outcome            String
+  stripeOperationId  String?
+  beforeBillingState Json?
+  afterBillingState    Json?
+  createdAt          DateTime @db.Timestamp(6)
+
+  targetUser User @relation("AdminCustomerAuditTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  actorUser  User @relation("AdminCustomerAuditActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([targetUserId, createdAt])
+}

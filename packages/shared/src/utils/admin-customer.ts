@@ -206,6 +206,28 @@ export type AdminCustomerSubscriptionHistoryItem =
     stripeCustomerId: string | null
   }
 
+export type AdminCustomerBillingSnapshotState = {
+  role: string | null
+  stripeCustomerId: string | null
+  primaryPlan: string | null
+  primaryStatus: string | null
+  stripeSubscriptionId: string | null
+}
+
+export type AdminCustomerAuditHistoryItem = {
+  id: string
+  actorUserId: string
+  actorName: string
+  actorEmail: string
+  action: string
+  reason: string
+  outcome: string
+  stripeOperationId: string | null
+  beforeBillingState: AdminCustomerBillingSnapshotState | null
+  afterBillingState: AdminCustomerBillingSnapshotState | null
+  createdAt: Date
+}
+
 export type AdminCustomerProfile = {
   userId: string
   name: string
@@ -227,4 +249,5 @@ export type AdminCustomerProfile = {
     primarySubscriptionUrl: string | null
   }
   subscriptionHistory: AdminCustomerSubscriptionHistoryItem[]
+  auditHistory: AdminCustomerAuditHistoryItem[]
 }
