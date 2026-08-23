@@ -529,14 +529,28 @@ describe('resolveCheckoutCta', () => {
 })
 
 describe('resolveProfileBillingCheckoutCta', () => {
-  it('returns null while entitled even with a Stripe Customer', () => {
+  it('returns null for entitled paid Pro seats that use the portal', () => {
+    expect(
+      resolveProfileBillingCheckoutCta({
+        entitled: true,
+        hasStripeCustomer: true,
+        hadPaidBilling: true,
+        plan: PRO_SUBSCRIPTION_PLAN,
+        status: 'active',
+      }),
+    ).toBeNull()
+  })
+
+  it('allows Subscribe for entitled Free trial seats upgrading to Pro', () => {
     expect(
       resolveProfileBillingCheckoutCta({
         entitled: true,
         hasStripeCustomer: true,
         hadPaidBilling: false,
+        plan: FREE_SUBSCRIPTION_PLAN,
+        status: 'trialing',
       }),
-    ).toBeNull()
+    ).toBe('subscribe')
   })
 
   it('allows Subscribe when no Stripe Customer is linked', () => {

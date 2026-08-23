@@ -13,8 +13,12 @@
  * Subscriptions restore.
  */
 
-import { isFreeSubscriptionPlan } from './billing-plans.ts'
+import {
+  isFreeSubscriptionPlan,
+  isProSubscriptionPlan,
+} from './billing-plans.ts'
 import { hasBillingPathEstablished } from './console-session-gate.ts'
+import { resolveExpiredFreeUpgradeQualifies } from './expired-free-upgrade-prompt.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
 export type EntitlementBillingInterval = 'month' | 'year'
@@ -198,19 +202,37 @@ export function resolveCheckoutCta(input: {
 }
 
 /**
+ * Profile → Billing Customer Portal eligibility: live paid Pro only. Free and
+ * trialing clinicians upgrade through per-card Checkout instead.
+ */
+export function isPaidProPortalEligible(input: {
+  plan?: string | null
+  entitled: boolean
+  status?: string | null
+}): boolean {
+  if (!input.entitled) return false
+  if (!isProSubscriptionPlan(input.plan)) return false
+  return isLiveEntitlementSubscriptionStatus(input.status ?? '')
+}
+
+/**
  * Profile → Billing Checkout CTA. Unlike sidebar Subscribe/Renew, a Stripe
  * Customer alone is enough to start Checkout even when Billing Path is not
  * established yet (typical tester seat: Customer id, no synced Subscription).
+ * Entitled paid Pro seats use the portal instead; Free trial seats stay on
+ * Subscribe even while their clock is live.
  */
 export function resolveProfileBillingCheckoutCta(input: {
   entitled: boolean
   hasStripeCustomer: boolean
   hadPaidBilling: boolean
+  plan?: string | null
+  status?: string | null
 }): CheckoutCta | null {
   // For Profile Billing, we allow Subscribe even when the console user does not
   // yet have a stored Stripe Customer id. Stripe/Better Auth can create the
   // customer as part of the Stripe Checkout flow.
-  if (input.entitled) return null
+  if (isPaidProPortalEligible(input)) return null
   return input.hadPaidBilling ? 'renew' : 'subscribe'
 }
 
@@ -242,6 +264,10 @@ export type EntitlementStanding = EntitlementClockStanding & {
   checkoutCta: CheckoutCta | null
   /** Interval on the picked Subscription when known. */
   billingInterval: EntitlementBillingInterval | null
+  /** Synced plan on the picked Subscription (`free` | `pro`). */
+  plan: string | null
+  /** Expired Free upgrade dialog eligibility (not trialing or paid). */
+  expiredFreeUpgradeQualifies: boolean
 }
 
 /** Normalize synced interval strings to month/year when recognizable. */
@@ -282,6 +308,11 @@ export function buildEntitlementStanding(input: {
       hadPaidBilling,
     }),
     billingInterval: normalizeBillingInterval(subscription?.billingInterval),
+    plan: subscription?.plan ?? null,
+    expiredFreeUpgradeQualifies: resolveExpiredFreeUpgradeQualifies({
+      now: input.now,
+      subscriptions: input.subscriptions,
+    }),
   }
 }
 

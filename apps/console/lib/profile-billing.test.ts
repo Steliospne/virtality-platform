@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBillingPlanPriceLabels,
+  FREE_SUBSCRIPTION_PLAN,
   PRO_BILLING_CATALOG_SANDBOX,
+  PRO_SUBSCRIPTION_PLAN,
 } from '@virtality/shared/utils'
 import {
   buildPendingCouponRewrite,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
+  profileBillingPlanCardCheckoutLabel,
   profileBillingPrimaryCtaLabel,
+  profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
@@ -18,6 +22,7 @@ import {
 const base: BillingStandingView = {
   entitled: false,
   status: null,
+  plan: null,
   billingPathEstablished: false,
   hadPaidBilling: false,
   billingInterval: null,
@@ -25,24 +30,110 @@ const base: BillingStandingView = {
 }
 
 describe('profileBillingPrimaryCtaLabel', () => {
-  it('opens portal copy while entitled', () => {
+  it('shows Manage billing only for entitled paid Pro seats', () => {
     expect(
-      profileBillingPrimaryCtaLabel(
-        { ...base, entitled: true, status: 'active' },
-        true,
-      ),
-    ).toBe('Manage in portal')
+      profileBillingPrimaryCtaLabel({
+        ...base,
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe('Manage billing')
   })
 
-  it('uses Become a paying customer when Customer exists without Billing Path', () => {
-    expect(profileBillingPrimaryCtaLabel(base, true)).toBe(
+  it('hides the centralized CTA for Free and trialing clinicians', () => {
+    expect(
+      profileBillingPrimaryCtaLabel({
+        ...base,
+        entitled: true,
+        status: 'trialing',
+        plan: FREE_SUBSCRIPTION_PLAN,
+        billingPathEstablished: true,
+      }),
+    ).toBeNull()
+    expect(profileBillingPrimaryCtaLabel(base)).toBeNull()
+  })
+})
+
+describe('profileBillingOpensPortal', () => {
+  it('is true only for entitled paid Pro subscriptions', () => {
+    expect(
+      profileBillingOpensPortal({
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(true)
+    expect(
+      profileBillingOpensPortal({
+        entitled: true,
+        status: 'trialing',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingOpensPortal({
+        entitled: false,
+        status: 'active',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe('profileBillingShowsPlanCardCheckout', () => {
+  it('offers Checkout on plan cards for Free and trialing clinicians', () => {
+    expect(
+      profileBillingShowsPlanCardCheckout(
+        {
+          ...base,
+          entitled: true,
+          status: 'trialing',
+          plan: FREE_SUBSCRIPTION_PLAN,
+          billingPathEstablished: true,
+        },
+        true,
+      ),
+    ).toBe(true)
+    expect(
+      profileBillingShowsPlanCardCheckout(
+        {
+          ...base,
+          entitled: false,
+          status: 'active',
+          plan: FREE_SUBSCRIPTION_PLAN,
+          billingPathEstablished: true,
+        },
+        true,
+      ),
+    ).toBe(true)
+  })
+
+  it('hides plan-card Checkout for entitled paid Pro seats', () => {
+    expect(
+      profileBillingShowsPlanCardCheckout(
+        {
+          ...base,
+          entitled: true,
+          status: 'active',
+          plan: PRO_SUBSCRIPTION_PLAN,
+        },
+        true,
+      ),
+    ).toBe(false)
+  })
+})
+
+describe('profileBillingPlanCardCheckoutLabel', () => {
+  it('uses Become a paying customer when a Customer exists without Billing Path', () => {
+    expect(profileBillingPlanCardCheckoutLabel(base, true)).toBe(
       'Become a paying customer',
     )
   })
 
   it('uses Subscribe after Billing Path without paid history', () => {
     expect(
-      profileBillingPrimaryCtaLabel(
+      profileBillingPlanCardCheckoutLabel(
         { ...base, billingPathEstablished: true },
         true,
       ),
@@ -51,7 +142,7 @@ describe('profileBillingPrimaryCtaLabel', () => {
 
   it('uses Renew after paid history', () => {
     expect(
-      profileBillingPrimaryCtaLabel(
+      profileBillingPlanCardCheckoutLabel(
         {
           ...base,
           billingPathEstablished: true,
@@ -63,14 +154,7 @@ describe('profileBillingPrimaryCtaLabel', () => {
   })
 
   it('uses Subscribe when no Stripe Customer is linked', () => {
-    expect(profileBillingPrimaryCtaLabel(base, false)).toBe('Subscribe')
-  })
-})
-
-describe('profileBillingOpensPortal', () => {
-  it('is true only while entitled', () => {
-    expect(profileBillingOpensPortal({ entitled: true })).toBe(true)
-    expect(profileBillingOpensPortal({ entitled: false })).toBe(false)
+    expect(profileBillingPlanCardCheckoutLabel(base, false)).toBe('Subscribe')
   })
 })
 
@@ -81,6 +165,7 @@ describe('profileBillingStatusHeadline', () => {
         ...base,
         entitled: true,
         status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
         billingInterval: 'year',
       }),
     ).toBe('Pro · Yearly')
@@ -89,8 +174,17 @@ describe('profileBillingStatusHeadline', () => {
         ...base,
         entitled: true,
         status: 'trialing',
+        plan: FREE_SUBSCRIPTION_PLAN,
       }),
     ).toBe('Trial in progress')
+    expect(
+      profileBillingStatusHeadline({
+        ...base,
+        entitled: false,
+        status: 'active',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe('Free')
     expect(profileBillingStatusHeadline(base)).toBe('No plan yet')
   })
 })

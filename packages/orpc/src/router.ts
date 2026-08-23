@@ -34,6 +34,7 @@ import { entitlementClock } from './procedures/entitlement-clock.ts'
 import { bucket } from './procedures/bucket.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
+import { adminCustomer } from './procedures/admin-customer.ts'
 import { account } from './procedures/account/index.ts'
 import { pendingPasswordChange } from './procedures/pending-password-change/index.ts'
 import { devicePairing } from './procedures/device-pairing/index.ts'
@@ -77,6 +78,7 @@ export const router = {
   bucket,
   favoriteExercise,
   dashboard,
+  adminCustomer,
   account,
 }
 

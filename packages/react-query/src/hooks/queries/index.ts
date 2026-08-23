@@ -98,6 +98,10 @@ export { useExtendableSeats } from './entitlement-extension/use-extendable-seats
 // Entitlement Clock queries
 export { useEntitlementStanding } from './entitlement-clock/use-entitlement-standing.js'
 
+// Admin customer queries
+export { useAdminCustomers } from './admin-customer/use-admin-customers.js'
+export { useAdminCustomerProfile } from './admin-customer/use-admin-customer-profile.js'
+
 // Renew trigger queries
 export { useRenewTriggers } from './renew-trigger/use-renew-triggers.js'
 

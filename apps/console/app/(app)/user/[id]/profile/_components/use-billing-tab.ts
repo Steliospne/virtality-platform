@@ -4,7 +4,7 @@
  * Local state for the profile Billing tab: standing, Checkout, redeem, remove.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
@@ -27,18 +27,15 @@ import {
   isStaffRedeemBlocked,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
+  profileBillingPlanCardCheckoutLabel,
   profileBillingPrimaryCtaLabel,
+  profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   promoCodeLabel,
   type BillingInterval,
   type BillingStandingView,
   type PendingCouponTerms,
 } from '@/lib/profile-billing'
-
-export function primaryCtaPendingLabel(standing: BillingStandingView): string {
-  if (profileBillingOpensPortal(standing)) return 'Opening portal…'
-  return 'Starting Checkout…'
-}
 
 function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
   if (replaced) {
@@ -85,10 +82,10 @@ export function useBillingTab() {
 
   const prices = billingCatalogPrices(catalogQuery.data)
   const catalogMinor = billingCatalogMinor(catalogQuery.data)
-  const entitled = standingQuery.entitled
   const standing: BillingStandingView = {
-    entitled,
+    entitled: standingQuery.entitled,
     status: standingQuery.data?.status ?? null,
+    plan: standingQuery.data?.plan ?? null,
     billingPathEstablished: standingQuery.data?.billingPathEstablished ?? false,
     hadPaidBilling: standingQuery.data?.hadPaidBilling ?? false,
     billingInterval: standingQuery.data?.billingInterval ?? null,
@@ -105,7 +102,15 @@ export function useBillingTab() {
     (session?.user as { stripeCustomerId?: string | null } | undefined)
       ?.stripeCustomerId,
   )
-  const cta = profileBillingPrimaryCtaLabel(standing, hasStripeCustomer)
+  const cta = profileBillingPrimaryCtaLabel(standing)
+  const showPlanCardCheckout = profileBillingShowsPlanCardCheckout(
+    standing,
+    hasStripeCustomer,
+  )
+  const planCardCheckoutLabel = profileBillingPlanCardCheckoutLabel(
+    standing,
+    hasStripeCustomer,
+  )
   const ctaPending = isCheckoutStarting || isPortalStarting
   const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount, catalogMinor)
@@ -129,16 +134,23 @@ export function useBillingTab() {
     )
   }
 
-  async function handlePrimaryCta() {
-    if (profileBillingOpensPortal(standing)) {
-      await startPortal()
-      return
-    }
+  async function startCheckoutForInterval(interval: BillingInterval) {
     if (!hasEligibleSubscription && promoCode.trim()) {
       await savePendingPromotionCode(promoCode.trim())
       setPromoCode('')
     }
-    await startCheckout({ annual: selectedInterval === 'year' })
+    await startCheckout({ annual: interval === 'year' })
+  }
+
+  async function handlePrimaryCta() {
+    if (profileBillingOpensPortal(standing)) {
+      await startPortal()
+    }
+  }
+
+  async function handlePlanCardCheckout(interval: BillingInterval) {
+    setSelectedInterval(interval)
+    await startCheckoutForInterval(interval)
   }
 
   async function handleRedeem(code: string, confirmReplace: boolean) {
@@ -209,7 +221,6 @@ export function useBillingTab() {
     standing,
     selectedInterval,
     setSelectedInterval,
-    entitled,
     prices,
     display,
     rewrite,
@@ -217,6 +228,8 @@ export function useBillingTab() {
     setRemoveSuccess,
     redeemSuccessMessage,
     cta,
+    showPlanCardCheckout,
+    planCardCheckoutLabel,
     ctaPending,
     showPromoChrome,
     discount,
@@ -227,6 +240,7 @@ export function useBillingTab() {
     setPromoCode,
     redeeming: redeemMutation.isPending || savePendingMutation.isPending,
     handlePrimaryCta,
+    handlePlanCardCheckout,
     handleRedeem,
     handleRemoveConfirm,
     removeOpen,

@@ -16,7 +16,7 @@ import { PromoRedeemSection } from './promo-redeem-section'
 import { RemovePromoConfirmDialog } from './remove-promo-confirm-dialog'
 import { RemoveSuccessBanner } from './remove-success-banner'
 import { BillingTabSkeleton } from './billing-tab-skeleton'
-import { primaryCtaPendingLabel, useBillingTab } from './use-billing-tab'
+import { useBillingTab } from './use-billing-tab'
 
 function SoftUnavailableBanner() {
   return (
@@ -34,7 +34,6 @@ export function BillingTab() {
     standing,
     selectedInterval,
     setSelectedInterval,
-    entitled,
     prices,
     display,
     rewrite,
@@ -42,6 +41,8 @@ export function BillingTab() {
     setRemoveSuccess,
     redeemSuccessMessage,
     cta,
+    showPlanCardCheckout,
+    planCardCheckoutLabel,
     ctaPending,
     showPromoChrome,
     discount,
@@ -52,6 +53,7 @@ export function BillingTab() {
     setPromoCode,
     redeeming,
     handlePrimaryCta,
+    handlePlanCardCheckout,
     handleRedeem,
     handleRemoveConfirm,
     removeOpen,
@@ -76,6 +78,14 @@ export function BillingTab() {
     )
   }
 
+  const showPortalCta = cta != null
+  const planCardCheckoutProps = showPlanCardCheckout
+    ? {
+        checkoutLabel: planCardCheckoutLabel,
+        checkoutPending: ctaPending,
+      }
+    : null
+
   return (
     <div className='rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950'>
       <div className='space-y-6'>
@@ -98,21 +108,37 @@ export function BillingTab() {
             title='Monthly'
             description='Flexible. Cancel anytime before renewal.'
             selected={selectedInterval === 'month'}
-            disabled={entitled}
+            disabled={showPortalCta}
             onSelect={() => setSelectedInterval('month')}
             listPrimary={prices.monthlyLabel}
             rewrite={rewrite?.monthly ?? null}
+            {...planCardCheckoutProps}
+            onCheckout={
+              planCardCheckoutProps
+                ? () => {
+                    void handlePlanCardCheckout('month')
+                  }
+                : undefined
+            }
           />
           <PlanCard
             title='Yearly'
             description='One payment. Same Pro access for twelve months.'
             selected={selectedInterval === 'year'}
-            disabled={entitled}
+            disabled={showPortalCta}
             onSelect={() => setSelectedInterval('year')}
             listPrimary={prices.yearlyAsMonthlyLabel}
             listMuted={prices.yearlyTotalMutedLabel}
             badge={prices.yearlySavingsLabel ?? undefined}
             rewrite={rewrite?.yearly ?? null}
+            {...planCardCheckoutProps}
+            onCheckout={
+              planCardCheckoutProps
+                ? () => {
+                    void handlePlanCardCheckout('year')
+                  }
+                : undefined
+            }
           />
         </div>
 
@@ -137,14 +163,9 @@ export function BillingTab() {
               void handlePrimaryCta()
             }}
           >
-            {ctaPending ? primaryCtaPendingLabel(standing) : cta}
+            {ctaPending ? 'Opening portal…' : cta}
           </Button>
-        ) : (
-          <p className='text-center text-sm text-zinc-500'>
-            Billing is unavailable until a Stripe Customer is linked to this
-            account.
-          </p>
-        )}
+        ) : null}
 
         {showPromoChrome ? (
           <PromoRedeemSection

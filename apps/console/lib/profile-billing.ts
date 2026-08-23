@@ -14,6 +14,8 @@ import {
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
   isConsolePromoEligibleStatus,
+  isFreeSubscriptionPlan,
+  isPaidProPortalEligible,
   isStaffRedeemBlocked,
   promoCodeLabel,
   replaceConfirmDiscountLabel,
@@ -49,45 +51,81 @@ export {
 export type BillingStandingView = {
   entitled: boolean
   status: string | null
+  plan: string | null
   billingPathEstablished: boolean
   hadPaidBilling: boolean
   billingInterval: BillingInterval | null
   clockEnd: Date | string | null
 }
 
+function resolveProfileBillingPlanCardCheckoutCta(
+  standing: BillingStandingView,
+  hasStripeCustomer: boolean,
+) {
+  return resolveProfileBillingCheckoutCta({
+    entitled: standing.entitled,
+    hasStripeCustomer,
+    hadPaidBilling: standing.hadPaidBilling,
+    plan: standing.plan,
+    status: standing.status,
+  })
+}
+
 /**
- * Primary CTA on Profile Billing. Entitled seats open Customer Portal;
- * others start Checkout when a Stripe Customer exists.
+ * Centralized Manage billing CTA. Paid Pro seats with a live clock open the
+ * Customer Portal; Free and trialing clinicians use per-card Checkout instead.
  */
 export function profileBillingPrimaryCtaLabel(
   standing: BillingStandingView,
+): string | null {
+  if (profileBillingOpensPortal(standing)) return 'Manage billing'
+  return null
+}
+
+export function profileBillingOpensPortal(
+  standing: Pick<BillingStandingView, 'entitled' | 'plan' | 'status'>,
+): boolean {
+  return isPaidProPortalEligible(standing)
+}
+
+/** Whether each paid Pro plan card should expose its own Checkout action. */
+export function profileBillingShowsPlanCardCheckout(
+  standing: BillingStandingView,
+  hasStripeCustomer: boolean,
+): boolean {
+  return (
+    resolveProfileBillingPlanCardCheckoutCta(standing, hasStripeCustomer) !=
+    null
+  )
+}
+
+/** Interval-specific Checkout label on a paid Pro plan card. */
+export function profileBillingPlanCardCheckoutLabel(
+  standing: BillingStandingView,
   hasStripeCustomer: boolean,
 ): string | null {
-  if (standing.entitled) return 'Manage in portal'
-
-  const cta = resolveProfileBillingCheckoutCta({
-    entitled: false,
+  const cta = resolveProfileBillingPlanCardCheckoutCta(
+    standing,
     hasStripeCustomer,
-    hadPaidBilling: standing.hadPaidBilling,
-  })
+  )
   if (cta == null) return null
 
-  if (cta === 'renew') return 'Renew'
   if (!standing.billingPathEstablished && hasStripeCustomer) {
     return 'Become a paying customer'
   }
   return formatCheckoutCtaLabel(cta)
 }
 
-export function profileBillingOpensPortal(
-  standing: Pick<BillingStandingView, 'entitled'>,
-): boolean {
-  return standing.entitled
-}
-
 export function profileBillingStatusHeadline(
   standing: BillingStandingView,
 ): string {
+  if (isFreeSubscriptionPlan(standing.plan)) {
+    if (standing.status === 'trialing' && standing.entitled) {
+      return 'Trial in progress'
+    }
+    return 'Free'
+  }
+
   if (standing.entitled) {
     if (standing.status === 'trialing') return 'Trial in progress'
     if (standing.billingInterval === 'year') return 'Pro · Yearly'

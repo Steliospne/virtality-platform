@@ -8,6 +8,7 @@ import { Check } from 'lucide-react'
 import { Badge } from '@virtality/ui/components/badge'
 import { cn } from '@/lib/utils'
 import { splitCatalogPriceLabel } from '@/lib/profile-billing'
+import { BillingPlanCardCheckoutButton } from './billing-plan-card-checkout-button'
 
 type PlanPriceRewrite = {
   discountedPrimary: string
@@ -92,6 +93,9 @@ export function PlanCard({
   listMuted,
   badge,
   rewrite,
+  checkoutLabel,
+  checkoutPending,
+  onCheckout,
 }: {
   title: string
   description: string
@@ -102,20 +106,20 @@ export function PlanCard({
   listMuted?: string
   badge?: string
   rewrite: PlanPriceRewrite | null
+  checkoutLabel?: string | null
+  checkoutPending?: boolean
+  onCheckout?: () => void
 }) {
-  return (
-    <button
-      type='button'
-      disabled={disabled}
-      onClick={onSelect}
-      className={cn(
-        'rounded-xl border-2 p-5 text-left transition',
-        selected
-          ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
-          : 'border-zinc-200 dark:border-zinc-800',
-        disabled && 'opacity-60',
-      )}
-    >
+  const hasCheckout = checkoutLabel != null && onCheckout != null
+  const className = cn(
+    'rounded-xl border-2 p-5 text-left transition',
+    selected
+      ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
+      : 'border-zinc-200 dark:border-zinc-800',
+    disabled && 'opacity-60',
+  )
+  const body = (
+    <>
       <div className='flex items-start justify-between gap-3'>
         <div>
           <div className='flex flex-wrap items-center gap-2'>
@@ -132,11 +136,33 @@ export function PlanCard({
           />
         </div>
       </div>
-      {selected ? (
+      {selected && !hasCheckout ? (
         <p className='mt-3 flex items-center gap-1.5 text-sm font-medium'>
           <Check className='size-4' /> Selected
         </p>
       ) : null}
+      {hasCheckout ? (
+        <BillingPlanCardCheckoutButton
+          label={checkoutLabel}
+          pending={checkoutPending ?? false}
+          onCheckout={onCheckout}
+        />
+      ) : null}
+    </>
+  )
+
+  if (hasCheckout) {
+    return <div className={className}>{body}</div>
+  }
+
+  return (
+    <button
+      type='button'
+      disabled={disabled}
+      onClick={onSelect}
+      className={className}
+    >
+      {body}
     </button>
   )
 }

@@ -3,6 +3,7 @@ import { SidebarProvider, SIDEBAR_COOKIE_NAME } from '@/components/ui/sidebar'
 import RootSidebar from '@/components/layout/sidebar'
 import Navbar from '@/components/layout/navbar'
 import { RenewPromptBanner } from '@/components/layout/renew-prompt-banner'
+import { ExpiredFreeUpgradeDialog } from '@/components/layout/expired-free-upgrade-dialog'
 
 export default async function AppLayout({
   children,
@@ -18,6 +19,7 @@ export default async function AppLayout({
       <main className='w-full'>
         <Navbar />
         <RenewPromptBanner />
+        <ExpiredFreeUpgradeDialog />
         {children}
       </main>
     </SidebarProvider>

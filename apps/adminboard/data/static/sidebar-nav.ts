@@ -18,6 +18,7 @@ import {
   TicketPercent,
   Trash2,
   UserPlus,
+  Users,
 } from 'lucide-react'
 
 export type SidebarNavItem = {
@@ -78,6 +79,7 @@ export const sidebarNav: SidebarNavGroup[] = [
       },
       { title: 'Extension', href: '/extension', icon: Clock3 },
       { title: 'Renew triggers', href: '/renew-triggers', icon: Bell },
+      { title: 'Customers', href: '/customers', icon: Users },
     ],
   },
   {
