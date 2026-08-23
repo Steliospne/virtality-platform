@@ -46,6 +46,7 @@ import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
 
 export {
   auth,
+  FREE_PLAN_PRICE_ID,
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_PRICE_ID,
 } from './auth-instance.ts'

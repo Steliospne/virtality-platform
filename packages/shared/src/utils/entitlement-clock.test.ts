@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { FREE_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   buildEntitlementStanding,
   canLaunchVrPrograms,
@@ -118,6 +119,24 @@ describe('resolveEntitlementClock', () => {
 })
 
 describe('pickEntitlementSubscription', () => {
+  it('prefers a live paid Pro row over a live Free trial', () => {
+    const picked = pickEntitlementSubscription([
+      {
+        plan: FREE_SUBSCRIPTION_PLAN,
+        status: 'trialing',
+        trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+      },
+      {
+        plan: 'pro',
+        status: 'active',
+        periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+      },
+    ])
+
+    expect(picked?.status).toBe('active')
+    expect(picked?.plan).toBe('pro')
+  })
+
   it('prefers a live active or trialing row over expired history', () => {
     const picked = pickEntitlementSubscription([
       {
@@ -204,6 +223,43 @@ describe('buildEntitlementStanding', () => {
     })
     expect(admin.entitled).toBe(false)
     expect(admin.canLaunchVr).toBe(true)
+  })
+
+  it('allows VR while a Free Trial Subscription clock is live', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          plan: FREE_SUBSCRIPTION_PLAN,
+          status: 'trialing',
+          trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(true)
+    expect(standing.canLaunchVr).toBe(true)
+    expect(standing.remainingMs).toBeGreaterThan(0)
+  })
+
+  it('blocks VR after a Free trial expires while the Free subscription stays active', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          plan: FREE_SUBSCRIPTION_PLAN,
+          status: 'active',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(false)
+    expect(standing.canLaunchVr).toBe(false)
+    expect(standing.remainingMs).toBe(0)
+    expect(standing.billingPathEstablished).toBe(true)
+    expect(standing.checkoutCta).toBe('subscribe')
   })
 
   it('allows VR while the Entitlement Clock is live', () => {
@@ -390,6 +446,19 @@ describe('hadPaidBillingHistory', () => {
           status: 'canceled',
           trialEnd: new Date('2026-08-01T12:00:00.000Z'),
           periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ]),
+    ).toBe(false)
+  })
+
+  it('is false for active Free seats after trial expiry', () => {
+    expect(
+      hadPaidBillingHistory([
+        {
+          plan: FREE_SUBSCRIPTION_PLAN,
+          status: 'active',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
         },
       ]),
     ).toBe(false)

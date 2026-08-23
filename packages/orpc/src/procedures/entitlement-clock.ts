@@ -23,6 +23,7 @@ export async function loadEntitlementStandingForSession(input: {
     where: { OR: orFilters },
     select: {
       status: true,
+      plan: true,
       trialEnd: true,
       periodEnd: true,
       billingInterval: true,
