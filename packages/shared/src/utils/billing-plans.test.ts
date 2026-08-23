@@ -4,6 +4,7 @@ import {
   FREE_SUBSCRIPTION_PLAN,
   PRO_SUBSCRIPTION_PLAN,
   PRO_PLAN_MONTHLY_PRICE_ID,
+  PRO_PLAN_ANNUAL_PRICE_ID,
   buildFreeTrialSubscriptionCreateParams,
   isFreePlanPriceId,
   isFreeSubscriptionPlan,
@@ -13,8 +14,10 @@ import {
 describe('billing plan identifiers', () => {
   it('keeps Free and Pro sandbox Prices distinct', () => {
     expect(FREE_PLAN_PRICE_ID).not.toBe(PRO_PLAN_MONTHLY_PRICE_ID)
+    expect(FREE_PLAN_PRICE_ID).not.toBe(PRO_PLAN_ANNUAL_PRICE_ID)
     expect(isFreePlanPriceId(FREE_PLAN_PRICE_ID)).toBe(true)
     expect(isProPlanPriceId(PRO_PLAN_MONTHLY_PRICE_ID)).toBe(true)
+    expect(isProPlanPriceId(PRO_PLAN_ANNUAL_PRICE_ID)).toBe(true)
     expect(isFreePlanPriceId(PRO_PLAN_MONTHLY_PRICE_ID)).toBe(false)
     expect(isProPlanPriceId(FREE_PLAN_PRICE_ID)).toBe(false)
   })

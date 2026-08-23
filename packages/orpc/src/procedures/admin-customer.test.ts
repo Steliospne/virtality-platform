@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { assertAdminRole } from '../middleware/admin.ts'
 import {
   getAdminCustomerProfile,
   listAdminCustomers,
@@ -79,6 +80,15 @@ function createPrismaMock(input: {
     },
   }
 }
+
+describe('admin customer authorization', () => {
+  it('rejects non-admin roles for privileged customer procedures', () => {
+    expect(() => assertAdminRole('user')).toThrow()
+    expect(() => assertAdminRole('tester')).toThrow()
+    expect(() => assertAdminRole(null)).toThrow()
+    expect(() => assertAdminRole('admin')).not.toThrow()
+  })
+})
 
 describe('listAdminCustomers', () => {
   it('includes non-deleted users without Stripe customers or subscriptions', async () => {

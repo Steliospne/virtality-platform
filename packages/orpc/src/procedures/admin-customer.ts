@@ -1,17 +1,32 @@
 import { ORPCError } from '@orpc/server'
 import {
+  assignFreeAfterCancellationAction,
   assignPermanentFreeAction,
+  cancelPaidSubscriptionAction,
+  changePaidPlanAction,
   grantTimedTrialAction,
+  previewChangePaidPlanAction,
+  reactivatePaidSubscriptionAction,
+  sendPaidCheckoutLinkAction,
 } from '@virtality/auth'
 import { z } from 'zod'
 import {
+  assignFreeAfterCancellationInputSchema,
   assignPermanentFreeInputSchema,
+  cancelPaidSubscriptionInputSchema,
+  changePaidPlanInputSchema,
   grantTimedTrialInputSchema,
+  previewChangePaidPlanInputSchema,
+  reactivatePaidSubscriptionInputSchema,
+  sendPaidCheckoutLinkInputSchema,
 } from '@virtality/shared/types'
 import {
   AdminCustomerAccessAlreadyEntitledError,
   AdminCustomerAccessNotFoundError,
   AdminCustomerAccessValidationError,
+  AdminCustomerBillingNotFoundError,
+  AdminCustomerBillingStateError,
+  AdminCustomerBillingValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
 import {
@@ -24,17 +39,20 @@ const profileInputSchema = z.object({
   userId: z.string().trim().min(1),
 })
 
-function throwAdminCustomerAccessOrpcError(error: unknown): never {
+function throwAdminCustomerOrpcError(error: unknown): never {
   if (
     error instanceof AdminCustomerAccessValidationError ||
     error instanceof AdminCustomerAccessNotFoundError ||
-    error instanceof AdminCustomerAccessAlreadyEntitledError
+    error instanceof AdminCustomerAccessAlreadyEntitledError ||
+    error instanceof AdminCustomerBillingValidationError ||
+    error instanceof AdminCustomerBillingNotFoundError ||
+    error instanceof AdminCustomerBillingStateError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
   if (error instanceof Error) {
     throw new ORPCError('BAD_REQUEST', {
-      message: `Customer access mutation failed: ${error.message}`,
+      message: `Customer action failed: ${error.message}`,
     })
   }
   throw error
@@ -71,7 +89,7 @@ const assignPermanentFree = adminAuthed
         reason: input.reason,
       })
     } catch (error) {
-      throwAdminCustomerAccessOrpcError(error)
+      throwAdminCustomerOrpcError(error)
     }
   })
 
@@ -88,7 +106,105 @@ const grantTimedTrial = adminAuthed
         unit: input.unit,
       })
     } catch (error) {
-      throwAdminCustomerAccessOrpcError(error)
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const previewChangePaidPlan = adminAuthed
+  .route({ path: '/admin-customer/preview-change-paid-plan', method: 'GET' })
+  .input(previewChangePaidPlanInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await previewChangePaidPlanAction(context.prisma, {
+        userId: input.userId,
+        targetPriceId: input.targetPriceId,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const changePaidPlan = adminAuthed
+  .route({ path: '/admin-customer/change-paid-plan', method: 'POST' })
+  .input(changePaidPlanInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await changePaidPlanAction(context.prisma, {
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        targetPriceId: input.targetPriceId,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const cancelPaidSubscription = adminAuthed
+  .route({ path: '/admin-customer/cancel-paid-subscription', method: 'POST' })
+  .input(cancelPaidSubscriptionInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await cancelPaidSubscriptionAction(context.prisma, {
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        mode: input.mode,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const reactivatePaidSubscription = adminAuthed
+  .route({
+    path: '/admin-customer/reactivate-paid-subscription',
+    method: 'POST',
+  })
+  .input(reactivatePaidSubscriptionInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await reactivatePaidSubscriptionAction(context.prisma, {
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const assignFreeAfterCancellation = adminAuthed
+  .route({
+    path: '/admin-customer/assign-free-after-cancellation',
+    method: 'POST',
+  })
+  .input(assignFreeAfterCancellationInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await assignFreeAfterCancellationAction(context.prisma, {
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const sendPaidCheckoutLink = adminAuthed
+  .route({ path: '/admin-customer/send-paid-checkout-link', method: 'POST' })
+  .input(sendPaidCheckoutLinkInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await sendPaidCheckoutLinkAction(context.prisma, {
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        targetPriceId: input.targetPriceId,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
     }
   })
 
@@ -97,4 +213,10 @@ export const adminCustomer = {
   getProfile,
   assignPermanentFree,
   grantTimedTrial,
+  previewChangePaidPlan,
+  changePaidPlan,
+  cancelPaidSubscription,
+  reactivatePaidSubscription,
+  assignFreeAfterCancellation,
+  sendPaidCheckoutLink,
 }

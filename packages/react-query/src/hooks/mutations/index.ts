@@ -82,6 +82,14 @@ export {
   useAssignPermanentFree,
   useGrantTimedTrial,
 } from './admin-customer/use-admin-customer-access-mutations.js'
+export {
+  useAssignFreeAfterCancellation,
+  useCancelPaidSubscription,
+  useChangePaidPlan,
+  usePreviewChangePaidPlan,
+  useReactivatePaidSubscription,
+  useSendPaidCheckoutLink,
+} from './admin-customer/use-admin-customer-billing-mutations.js'
 
 // Renew trigger mutations
 export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'

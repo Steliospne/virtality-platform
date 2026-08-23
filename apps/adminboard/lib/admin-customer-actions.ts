@@ -1,6 +1,10 @@
 import {
+  customerHadPaidBillingHistory,
+  findLivePaidProSubscription,
   formatAdminCustomerAccessActionLabel,
+  formatAdminCustomerBillingActionLabel,
   isAdminCustomerAccessAction,
+  isAdminCustomerBillingAction,
   type AdminCustomerBillingSnapshotState,
   type AdminCustomerProfile,
 } from '@virtality/shared/utils'
@@ -38,7 +42,86 @@ export function formatAuditActionLabel(action: string): string {
   if (isAdminCustomerAccessAction(action)) {
     return formatAdminCustomerAccessActionLabel(action)
   }
+  if (isAdminCustomerBillingAction(action)) {
+    return formatAdminCustomerBillingActionLabel(action)
+  }
   return action
+}
+
+export function canAdministerPaidBilling(
+  profile: AdminCustomerProfile,
+): boolean {
+  if (profile.role === 'admin') return false
+  return (
+    profile.billingStatus === 'active' || profile.billingStatus === 'past_due'
+  )
+}
+
+export function canCancelPaidBilling(profile: AdminCustomerProfile): boolean {
+  return canAdministerPaidBilling(profile)
+}
+
+export function canChangePaidPlan(profile: AdminCustomerProfile): boolean {
+  if (profile.role === 'admin') return false
+  return (
+    profile.billingStatus === 'active' ||
+    profile.billingStatus === 'past_due' ||
+    profile.billingStatus === 'absent' ||
+    profile.billingStatus === 'canceled' ||
+    profile.accessStatus === 'free' ||
+    profile.accessStatus === 'blocked'
+  )
+}
+
+export function canReactivatePaidBilling(
+  profile: AdminCustomerProfile,
+): boolean {
+  if (!canAdministerPaidBilling(profile)) return false
+  const livePaidPro = findLivePaidProSubscription(profile.subscriptionHistory)
+  return livePaidPro?.cancelAtPeriodEnd === true
+}
+
+export function getCancelPaidSubscriptionPreviewPeriodEnd(
+  profile: AdminCustomerProfile,
+): Date | null {
+  return (
+    findLivePaidProSubscription(profile.subscriptionHistory)?.periodEnd ?? null
+  )
+}
+
+export function getReactivatePaidSubscriptionPreviewPeriodEnd(
+  profile: AdminCustomerProfile,
+): Date | null {
+  const livePaidPro = findLivePaidProSubscription(profile.subscriptionHistory)
+  if (!livePaidPro?.cancelAtPeriodEnd) return null
+  return livePaidPro.periodEnd ?? null
+}
+
+export function canAssignFreeAfterCancellation(
+  profile: AdminCustomerProfile,
+): boolean {
+  if (profile.role === 'admin') return false
+  if (
+    profile.billingStatus === 'active' ||
+    profile.billingStatus === 'trialing'
+  ) {
+    return true
+  }
+  if (profile.billingStatus === 'canceled') return true
+  return customerHadPaidBillingHistory(profile.subscriptionHistory)
+}
+
+export function formatBillingMutationSuccessMessage(input: {
+  pendingWebhookSync: boolean
+  checkoutUrl?: string
+}): string {
+  if (input.checkoutUrl) {
+    return `Checkout link created. Share it with the customer. Billing state settles after Stripe webhook sync.`
+  }
+  if (input.pendingWebhookSync) {
+    return 'Billing mutation accepted. Subscription state settles after Stripe webhook sync.'
+  }
+  return 'Billing mutation completed.'
 }
 
 export const TESTER_RECIPIENT_DIALOG_NOTE =

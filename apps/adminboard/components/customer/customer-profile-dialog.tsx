@@ -1,6 +1,7 @@
 'use client'
 
 import { CustomerProfileActions } from '@/components/customer/customer-profile-actions'
+import { CustomerProfileBillingActions } from '@/components/customer/customer-profile-billing-actions'
 import { CustomerProfileAuditHistory } from '@/components/customer/customer-profile-audit-history'
 import { CustomerProfileIdentity } from '@/components/customer/customer-profile-identity'
 import { CustomerProfileStatus } from '@/components/customer/customer-profile-status'
@@ -35,7 +36,7 @@ export function CustomerProfileDialog({
           <DialogTitle>Customer profile</DialogTitle>
           <DialogDescription>
             Identity, Entitlement Clock, subscription history, access grants,
-            audit trail, and Stripe links.
+            billing administration, audit trail, and Stripe links.
           </DialogDescription>
         </DialogHeader>
 
@@ -52,6 +53,7 @@ export function CustomerProfileDialog({
             <CustomerProfileIdentity profile={profile} />
             <CustomerProfileStatus profile={profile} />
             <CustomerProfileActions profile={profile} />
+            <CustomerProfileBillingActions profile={profile} />
             <CustomerProfileSubscriptions profile={profile} />
             <CustomerProfileAuditHistory profile={profile} />
             <CustomerProfileStripeLinks profile={profile} />

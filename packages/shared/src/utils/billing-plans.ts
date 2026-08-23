@@ -17,6 +17,18 @@ export const FREE_PLAN_PRICE_ID = 'price_1U3f2h4Fc2DAAhEfFr33Mn0' as const
 export const PRO_PLAN_MONTHLY_PRICE_ID =
   'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
 
+/**
+ * Canonical sandbox Pro yearly Price on the same Product
+ * (`lookup_key: pro_yearly`).
+ */
+export const PRO_PLAN_ANNUAL_PRICE_ID =
+  'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
+
+export const SUPPORTED_PRO_PLAN_PRICE_IDS = [
+  PRO_PLAN_MONTHLY_PRICE_ID,
+  PRO_PLAN_ANNUAL_PRICE_ID,
+] as const
+
 export function isFreeSubscriptionPlan(
   plan: string | null | undefined,
 ): boolean {
@@ -34,7 +46,13 @@ export function isFreePlanPriceId(priceId: string): boolean {
 }
 
 export function isProPlanPriceId(priceId: string): boolean {
-  return priceId === PRO_PLAN_MONTHLY_PRICE_ID
+  return (SUPPORTED_PRO_PLAN_PRICE_IDS as readonly string[]).includes(priceId)
+}
+
+export function formatProPlanPriceLabel(priceId: string): string {
+  if (priceId === PRO_PLAN_MONTHLY_PRICE_ID) return 'Pro monthly'
+  if (priceId === PRO_PLAN_ANNUAL_PRICE_ID) return 'Pro yearly'
+  return priceId
 }
 
 export type FreeTrialSubscriptionCreateInput = {
