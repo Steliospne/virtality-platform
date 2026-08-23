@@ -65,8 +65,6 @@ export {
   createPrismaAdminCustomerAccessStore,
   createStripeAdminCustomerAccessGateway,
   grantTimedTrialForAdminboard,
-  listAdminCustomerAuditForUser,
-  type AdminCustomerAuditListItem,
 } from './lib/admin-customer-access.ts'
 export {
   createPrismaRenewPromptDeliveryStore,

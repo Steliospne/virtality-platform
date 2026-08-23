@@ -41,15 +41,14 @@ export function formatAuditActionLabel(action: string): string {
   return action
 }
 
-export const GRANT_TRIAL_DURATION_UNITS = ['days', 'weeks', 'months'] as const
+export const TESTER_RECIPIENT_DIALOG_NOTE =
+  ' This tester account will become a standard user.'
 
-export const GRANT_TRIAL_DURATION_UNIT_LABELS: Record<
-  (typeof GRANT_TRIAL_DURATION_UNITS)[number],
-  string
-> = {
-  days: 'Days',
-  weeks: 'Weeks',
-  months: 'Months',
+export function formatMutationErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  return error instanceof Error ? error.message : fallback
 }
 
 export function formatAssignPermanentFreeSuccessMessage(input: {

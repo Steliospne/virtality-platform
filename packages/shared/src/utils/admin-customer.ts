@@ -1,3 +1,4 @@
+import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import {
   isFreeSubscriptionPlan,
   isProSubscriptionPlan,
@@ -206,13 +207,7 @@ export type AdminCustomerSubscriptionHistoryItem =
     stripeCustomerId: string | null
   }
 
-export type AdminCustomerBillingSnapshotState = {
-  role: string | null
-  stripeCustomerId: string | null
-  primaryPlan: string | null
-  primaryStatus: string | null
-  stripeSubscriptionId: string | null
-}
+export type AdminCustomerBillingSnapshotState = AdminCustomerBillingSnapshot
 
 export type AdminCustomerAuditHistoryItem = {
   id: string
@@ -226,6 +221,36 @@ export type AdminCustomerAuditHistoryItem = {
   beforeBillingState: AdminCustomerBillingSnapshotState | null
   afterBillingState: AdminCustomerBillingSnapshotState | null
   createdAt: Date
+}
+
+export function mapAdminCustomerAuditHistoryItem(row: {
+  id: string
+  actorUserId: string
+  actorName: string
+  actorEmail: string
+  action: string
+  reason: string
+  outcome: string
+  stripeOperationId: string | null
+  beforeBillingState: unknown
+  afterBillingState: unknown
+  createdAt: Date
+}): AdminCustomerAuditHistoryItem {
+  return {
+    id: row.id,
+    actorUserId: row.actorUserId,
+    actorName: row.actorName,
+    actorEmail: row.actorEmail,
+    action: row.action,
+    reason: row.reason,
+    outcome: row.outcome,
+    stripeOperationId: row.stripeOperationId,
+    beforeBillingState:
+      row.beforeBillingState as AdminCustomerBillingSnapshot | null,
+    afterBillingState:
+      row.afterBillingState as AdminCustomerBillingSnapshot | null,
+    createdAt: row.createdAt,
+  }
 }
 
 export type AdminCustomerProfile = {

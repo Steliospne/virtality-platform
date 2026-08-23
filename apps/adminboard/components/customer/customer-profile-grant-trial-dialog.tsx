@@ -27,9 +27,13 @@ import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import {
   formatGrantTimedTrialSuccessMessage,
-  GRANT_TRIAL_DURATION_UNIT_LABELS,
-  GRANT_TRIAL_DURATION_UNITS,
+  formatMutationErrorMessage,
+  TESTER_RECIPIENT_DIALOG_NOTE,
 } from '@/lib/admin-customer-actions'
+import {
+  EXTENSION_DURATION_UNIT_LABELS,
+  EXTENSION_DURATION_UNITS,
+} from '@/lib/entitlement-extension'
 
 type CustomerProfileGrantTrialDialogProps = {
   userId: string
@@ -77,9 +81,7 @@ export function CustomerProfileGrantTrialDialog({
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Failed to grant timed trial',
+            formatMutationErrorMessage(error, 'Failed to grant timed trial'),
           )
         },
       },
@@ -95,9 +97,7 @@ export function CustomerProfileGrantTrialDialog({
             <DialogDescription>
               Creates a no-card Free Trial Subscription for the selected
               duration. VR launch is allowed until the Entitlement Clock ends.
-              {testerRecipient
-                ? ' This tester account will become a standard user.'
-                : null}
+              {testerRecipient ? TESTER_RECIPIENT_DIALOG_NOTE : null}
             </DialogDescription>
           </DialogHeader>
 
@@ -127,9 +127,9 @@ export function CustomerProfileGrantTrialDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {GRANT_TRIAL_DURATION_UNITS.map((durationUnit) => (
+                    {EXTENSION_DURATION_UNITS.map((durationUnit) => (
                       <SelectItem key={durationUnit} value={durationUnit}>
-                        {GRANT_TRIAL_DURATION_UNIT_LABELS[durationUnit]}
+                        {EXTENSION_DURATION_UNIT_LABELS[durationUnit]}
                       </SelectItem>
                     ))}
                   </SelectContent>

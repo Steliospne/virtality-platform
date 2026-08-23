@@ -14,7 +14,11 @@ import { Label } from '@virtality/ui/components/label'
 import { useAssignPermanentFree } from '@virtality/react-query'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
-import { formatAssignPermanentFreeSuccessMessage } from '@/lib/admin-customer-actions'
+import {
+  formatAssignPermanentFreeSuccessMessage,
+  formatMutationErrorMessage,
+  TESTER_RECIPIENT_DIALOG_NOTE,
+} from '@/lib/admin-customer-actions'
 
 type CustomerProfileAssignFreeDialogProps = {
   userId: string
@@ -50,9 +54,10 @@ export function CustomerProfileAssignFreeDialog({
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Failed to assign permanent Free',
+            formatMutationErrorMessage(
+              error,
+              'Failed to assign permanent Free',
+            ),
           )
         },
       },
@@ -68,9 +73,7 @@ export function CustomerProfileAssignFreeDialog({
             <DialogDescription>
               Creates a Stripe customer when needed and a zero-value Free
               subscription without a trial. VR program launch stays blocked.
-              {testerRecipient
-                ? ' This tester account will become a standard user.'
-                : null}
+              {testerRecipient ? TESTER_RECIPIENT_DIALOG_NOTE : null}
             </DialogDescription>
           </DialogHeader>
 

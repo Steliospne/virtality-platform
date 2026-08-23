@@ -8,8 +8,9 @@ import {
   pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
   sortCustomerSubscriptionHistory,
+  mapAdminCustomerAuditHistoryItem,
   type AdminCustomerAuditHistoryItem,
-  type AdminCustomerBillingSnapshotState,
+  type AdminCustomerBillingSnapshot,
   type AdminCustomerListItem,
   type AdminCustomerProfile,
   type AdminCustomerSubscriptionHistoryItem,
@@ -56,21 +57,21 @@ async function listAdminCustomerAuditHistory(
     },
   })
 
-  return rows.map((row) => ({
-    id: row.id,
-    actorUserId: row.actorUserId,
-    actorName: row.actorUser.name,
-    actorEmail: row.actorUser.email,
-    action: row.action,
-    reason: row.reason,
-    outcome: row.outcome,
-    stripeOperationId: row.stripeOperationId,
-    beforeBillingState:
-      row.beforeBillingState as AdminCustomerBillingSnapshotState | null,
-    afterBillingState:
-      row.afterBillingState as AdminCustomerBillingSnapshotState | null,
-    createdAt: row.createdAt,
-  }))
+  return rows.map((row) =>
+    mapAdminCustomerAuditHistoryItem({
+      id: row.id,
+      actorUserId: row.actorUserId,
+      actorName: row.actorUser.name,
+      actorEmail: row.actorUser.email,
+      action: row.action,
+      reason: row.reason,
+      outcome: row.outcome,
+      stripeOperationId: row.stripeOperationId,
+      beforeBillingState: row.beforeBillingState,
+      afterBillingState: row.afterBillingState,
+      createdAt: row.createdAt,
+    }),
+  )
 }
 
 function mapSubscriptionHistoryItem(
@@ -220,8 +221,7 @@ export async function getAdminCustomerProfile(
     subscriptions: subscriptionHistory,
   })
 
-  const auditRows = await listAdminCustomerAuditHistory(prisma, user.id)
-  const auditHistory: AdminCustomerAuditHistoryItem[] = auditRows
+  const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)
 
   return {
     userId: user.id,

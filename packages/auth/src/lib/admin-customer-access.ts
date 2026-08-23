@@ -11,7 +11,6 @@ import {
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   type AdminCustomerAccessStore,
   type AdminCustomerAccessStripeGateway,
-  type AdminCustomerBillingSnapshot,
   type AssignPermanentFreeInput,
   type AssignPermanentFreeResult,
   type GrantTimedTrialInput,
@@ -180,6 +179,16 @@ export function createStripeAdminCustomerAccessGateway(
   }
 }
 
+function createAdminCustomerAccessDeps(
+  client: PrismaClient,
+  stripeClient: Stripe,
+) {
+  return {
+    store: createPrismaAdminCustomerAccessStore(client),
+    stripe: createStripeAdminCustomerAccessGateway(stripeClient),
+  }
+}
+
 export async function assignPermanentFreeForAdminboard(
   input: AssignPermanentFreeInput,
   deps: {
@@ -188,11 +197,11 @@ export async function assignPermanentFreeForAdminboard(
   },
 ): Promise<AssignPermanentFreeResult> {
   const client = deps.prisma ?? prisma
-  return assignPermanentFreeToCustomer(
-    createPrismaAdminCustomerAccessStore(client),
-    createStripeAdminCustomerAccessGateway(deps.stripeClient),
-    input,
+  const { store, stripe } = createAdminCustomerAccessDeps(
+    client,
+    deps.stripeClient,
   )
+  return assignPermanentFreeToCustomer(store, stripe, input)
 }
 
 export async function grantTimedTrialForAdminboard(
@@ -203,11 +212,11 @@ export async function grantTimedTrialForAdminboard(
   },
 ): Promise<GrantTimedTrialResult> {
   const client = deps.prisma ?? prisma
-  const result = await grantTimedTrialToCustomer(
-    createPrismaAdminCustomerAccessStore(client),
-    createStripeAdminCustomerAccessGateway(deps.stripeClient),
-    input,
+  const { store, stripe } = createAdminCustomerAccessDeps(
+    client,
+    deps.stripeClient,
   )
+  const result = await grantTimedTrialToCustomer(store, stripe, input)
 
   await rearmRenewPromptsForNewClockEnd(client, {
     userId: input.userId,
@@ -215,49 +224,4 @@ export async function grantTimedTrialForAdminboard(
   })
 
   return result
-}
-
-export type AdminCustomerAuditListItem = {
-  id: string
-  actorUserId: string
-  actorName: string
-  actorEmail: string
-  action: string
-  reason: string
-  outcome: string
-  stripeOperationId: string | null
-  beforeBillingState: AdminCustomerBillingSnapshot | null
-  afterBillingState: AdminCustomerBillingSnapshot | null
-  createdAt: Date
-}
-
-export async function listAdminCustomerAuditForUser(
-  client: PrismaClient,
-  userId: string,
-): Promise<AdminCustomerAuditListItem[]> {
-  const rows = await client.adminCustomerAudit.findMany({
-    where: { targetUserId: userId },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      actorUser: {
-        select: { id: true, name: true, email: true },
-      },
-    },
-  })
-
-  return rows.map((row) => ({
-    id: row.id,
-    actorUserId: row.actorUserId,
-    actorName: row.actorUser.name,
-    actorEmail: row.actorUser.email,
-    action: row.action,
-    reason: row.reason,
-    outcome: row.outcome,
-    stripeOperationId: row.stripeOperationId,
-    beforeBillingState:
-      row.beforeBillingState as AdminCustomerBillingSnapshot | null,
-    afterBillingState:
-      row.afterBillingState as AdminCustomerBillingSnapshot | null,
-    createdAt: row.createdAt,
-  }))
 }

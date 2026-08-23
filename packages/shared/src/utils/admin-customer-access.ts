@@ -207,18 +207,18 @@ async function demoteTesterIfNeeded(
   return true
 }
 
-export async function assignPermanentFreeToCustomer(
+type CustomerAccessGrantContext = {
+  user: AdminCustomerAccessTargetUser
+  beforeBillingState: AdminCustomerBillingSnapshot
+  testerDemoted: boolean
+  stripeCustomerId: string
+}
+
+async function prepareCustomerAccessGrant(
   store: AdminCustomerAccessStore,
   stripe: AdminCustomerAccessStripeGateway,
-  input: AssignPermanentFreeInput,
-  runtime: { now?: () => Date } = {},
-): Promise<AssignPermanentFreeResult> {
-  assertActors(input)
-  assertReason(input.reason)
-  if (!input.priceId.trim()) {
-    throw new AdminCustomerAccessValidationError('priceId is required.')
-  }
-
+  input: { userId: string; actorUserId: string },
+): Promise<CustomerAccessGrantContext> {
   const user = await store.findTargetUser(input.userId)
   if (!user) {
     throw new AdminCustomerAccessNotFoundError(input.userId)
@@ -233,6 +233,24 @@ export async function assignPermanentFreeToCustomer(
     input.actorUserId,
   )
   await assertNoEntitledSubscription(stripe, stripeCustomerId, user.id)
+
+  return { user, beforeBillingState, testerDemoted, stripeCustomerId }
+}
+
+export async function assignPermanentFreeToCustomer(
+  store: AdminCustomerAccessStore,
+  stripe: AdminCustomerAccessStripeGateway,
+  input: AssignPermanentFreeInput,
+  _runtime: { now?: () => Date } = {},
+): Promise<AssignPermanentFreeResult> {
+  assertActors(input)
+  assertReason(input.reason)
+  if (!input.priceId.trim()) {
+    throw new AdminCustomerAccessValidationError('priceId is required.')
+  }
+
+  const { user, beforeBillingState, testerDemoted, stripeCustomerId } =
+    await prepareCustomerAccessGrant(store, stripe, input)
 
   const created = await stripe.createPermanentFreeSubscription({
     customerId: stripeCustomerId,
@@ -289,20 +307,8 @@ export async function grantTimedTrialToCustomer(
   const trialEnd = computeExtensionTrialEnd(now, input.amount, input.unit)
   const trialEndUnix = Math.floor(trialEnd.getTime() / 1000)
 
-  const user = await store.findTargetUser(input.userId)
-  if (!user) {
-    throw new AdminCustomerAccessNotFoundError(input.userId)
-  }
-
-  const beforeBillingState = await store.summarizeBillingState(user.id)
-  const testerDemoted = await demoteTesterIfNeeded(store, user)
-  const stripeCustomerId = await ensureStripeCustomer(
-    store,
-    stripe,
-    user,
-    input.actorUserId,
-  )
-  await assertNoEntitledSubscription(stripe, stripeCustomerId, user.id)
+  const { user, beforeBillingState, testerDemoted, stripeCustomerId } =
+    await prepareCustomerAccessGrant(store, stripe, input)
 
   const created = await stripe.createTimedTrialSubscription({
     customerId: stripeCustomerId,
