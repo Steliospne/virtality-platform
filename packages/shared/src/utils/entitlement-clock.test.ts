@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { FREE_SUBSCRIPTION_PLAN } from './billing-plans.ts'
+import {
+  FREE_SUBSCRIPTION_PLAN,
+  PRO_SUBSCRIPTION_PLAN,
+} from './billing-plans.ts'
 import {
   buildEntitlementStanding,
   canLaunchVrPrograms,
@@ -127,14 +130,14 @@ describe('pickEntitlementSubscription', () => {
         trialEnd: new Date('2026-08-20T12:00:00.000Z'),
       },
       {
-        plan: 'pro',
+        plan: PRO_SUBSCRIPTION_PLAN,
         status: 'active',
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
       },
     ])
 
     expect(picked?.status).toBe('active')
-    expect(picked?.plan).toBe('pro')
+    expect(picked?.plan).toBe(PRO_SUBSCRIPTION_PLAN)
   })
 
   it('prefers a live active or trialing row over expired history', () => {

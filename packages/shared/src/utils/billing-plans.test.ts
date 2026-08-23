@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   FREE_PLAN_PRICE_ID,
   FREE_SUBSCRIPTION_PLAN,
+  PRO_SUBSCRIPTION_PLAN,
   PRO_PLAN_MONTHLY_PRICE_ID,
   buildFreeTrialSubscriptionCreateParams,
   isFreePlanPriceId,
@@ -20,7 +21,7 @@ describe('billing plan identifiers', () => {
 
   it('recognizes the Free subscription plan name', () => {
     expect(isFreeSubscriptionPlan(FREE_SUBSCRIPTION_PLAN)).toBe(true)
-    expect(isFreeSubscriptionPlan('pro')).toBe(false)
+    expect(isFreeSubscriptionPlan(PRO_SUBSCRIPTION_PLAN)).toBe(false)
     expect(isFreeSubscriptionPlan(null)).toBe(false)
   })
 })

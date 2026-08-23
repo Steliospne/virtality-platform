@@ -57,6 +57,7 @@ export function clockEndForSubscriptionStatus(
 
 /**
  * Prefer a live (active|trialing) Subscription when several rows exist.
+ * Paid (non-free) seats win over live Free trials when both are present.
  * Otherwise keep the first row so callers can still see expired history.
  */
 export function pickEntitlementSubscription<
@@ -68,11 +69,9 @@ export function pickEntitlementSubscription<
     isLiveEntitlementSubscriptionStatus(sub.status),
   )
   if (live.length > 0) {
-    const paidLive = live.find((sub) => !isFreeSubscriptionPlan(sub.plan))
-    if (paidLive) return paidLive
-    const freeLive = live.find((sub) => isFreeSubscriptionPlan(sub.plan))
-    if (freeLive) return freeLive
-    return live[0] ?? null
+    return (
+      live.find((sub) => !isFreeSubscriptionPlan(sub.plan)) ?? live[0] ?? null
+    )
   }
 
   return subscriptions[0] ?? null
