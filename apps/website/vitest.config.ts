@@ -13,6 +13,10 @@ export default defineConfig({
         __dirname,
         '../../packages/shared/src/types/index.ts',
       ),
+      '@virtality/orpc/client': path.resolve(
+        __dirname,
+        '../../packages/orpc/src/client.ts',
+      ),
     },
   },
   test: {
