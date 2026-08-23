@@ -1,3 +1,7 @@
+import {
+  assignPermanentFreeForAdminboard,
+  grantTimedTrialForAdminboard,
+} from './lib/admin-customer-access.ts'
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
 import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
@@ -41,7 +45,11 @@ import {
   type SendPromotionCodeEmailRuntime,
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
-import { PRO_PLAN_PRICE_ID, stripeClient } from './auth-instance.ts'
+import {
+  FREE_PLAN_PRICE_ID,
+  PRO_PLAN_PRICE_ID,
+  stripeClient,
+} from './auth-instance.ts'
 import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
 
 export {
@@ -53,10 +61,11 @@ export {
 export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
 export { asAuthSession } from './lib/auth-context.ts'
 export {
-  createPrismaEntitlementExtensionStore,
-  createStripeEntitlementExtensionGateway,
-  extendEntitlementClockForAdminboard,
-} from './lib/entitlement-extension.ts'
+  assignPermanentFreeForAdminboard,
+  createPrismaAdminCustomerAccessStore,
+  createStripeAdminCustomerAccessGateway,
+  grantTimedTrialForAdminboard,
+} from './lib/admin-customer-access.ts'
 export {
   createPrismaRenewPromptDeliveryStore,
   rearmRenewPromptsAfterCheckoutSubscription,
@@ -278,3 +287,49 @@ export function extendEntitlementClockAction(
 
 /** @deprecated Prefer extendEntitlementClockAction. */
 export const extendLiveEntitlementClockAction = extendEntitlementClockAction
+
+/** Adminboard customer profile: assign permanent Free (no trial). */
+export function assignPermanentFreeAction(
+  client: typeof prisma,
+  input: { userId: string; actorUserId: string; reason: string },
+) {
+  return assignPermanentFreeForAdminboard(
+    {
+      userId: input.userId,
+      actorUserId: input.actorUserId,
+      reason: input.reason,
+      priceId: FREE_PLAN_PRICE_ID,
+    },
+    {
+      prisma: client,
+      stripeClient: requireStripeClient(),
+    },
+  )
+}
+
+/** Adminboard customer profile: grant a timed no-card Free Trial Subscription. */
+export function grantTimedTrialAction(
+  client: typeof prisma,
+  input: {
+    userId: string
+    actorUserId: string
+    reason: string
+    amount: number
+    unit: 'days' | 'weeks' | 'months'
+  },
+) {
+  return grantTimedTrialForAdminboard(
+    {
+      userId: input.userId,
+      actorUserId: input.actorUserId,
+      reason: input.reason,
+      amount: input.amount,
+      unit: input.unit,
+      priceId: FREE_PLAN_PRICE_ID,
+    },
+    {
+      prisma: client,
+      stripeClient: requireStripeClient(),
+    },
+  )
+}

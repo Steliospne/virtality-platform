@@ -38,6 +38,8 @@ model User {
   renewPromptDeliveries        RenewPromptDelivery[]
   promotionCodeDeliveries       PromotionCodeDelivery[]
   pendingPromotionCodes        PendingPromotionCode[]
+  adminCustomerAuditsAsTarget  AdminCustomerAudit[] @relation("AdminCustomerAuditTarget")
+  adminCustomerAuditsAsActor   AdminCustomerAudit[] @relation("AdminCustomerAuditActor")
 }
 
 model Account {

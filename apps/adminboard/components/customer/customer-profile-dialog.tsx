@@ -1,5 +1,7 @@
 'use client'
 
+import { CustomerProfileActions } from '@/components/customer/customer-profile-actions'
+import { CustomerProfileAuditHistory } from '@/components/customer/customer-profile-audit-history'
 import { CustomerProfileIdentity } from '@/components/customer/customer-profile-identity'
 import { CustomerProfileStatus } from '@/components/customer/customer-profile-status'
 import { CustomerProfileStripeLinks } from '@/components/customer/customer-profile-stripe-links'
@@ -32,7 +34,8 @@ export function CustomerProfileDialog({
         <DialogHeader>
           <DialogTitle>Customer profile</DialogTitle>
           <DialogDescription>
-            Identity, Entitlement Clock, subscription history, and Stripe links.
+            Identity, Entitlement Clock, subscription history, access grants,
+            audit trail, and Stripe links.
           </DialogDescription>
         </DialogHeader>
 
@@ -48,7 +51,9 @@ export function CustomerProfileDialog({
           <div className='grid gap-6'>
             <CustomerProfileIdentity profile={profile} />
             <CustomerProfileStatus profile={profile} />
+            <CustomerProfileActions profile={profile} />
             <CustomerProfileSubscriptions profile={profile} />
+            <CustomerProfileAuditHistory profile={profile} />
             <CustomerProfileStripeLinks profile={profile} />
           </div>
         ) : null}

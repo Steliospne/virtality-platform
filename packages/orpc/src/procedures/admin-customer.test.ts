@@ -74,6 +74,9 @@ function createPrismaMock(input: {
         return subscriptions
       }),
     },
+    adminCustomerAudit: {
+      findMany: vi.fn(async () => []),
+    },
   }
 }
 
@@ -203,5 +206,6 @@ describe('getAdminCustomerProfile', () => {
       'sub_live',
       'sub_old',
     ])
+    expect(profile?.auditHistory).toEqual([])
   })
 })

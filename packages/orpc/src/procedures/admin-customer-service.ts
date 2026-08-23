@@ -8,6 +8,9 @@ import {
   pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
   sortCustomerSubscriptionHistory,
+  mapAdminCustomerAuditHistoryItem,
+  type AdminCustomerAuditHistoryItem,
+  type AdminCustomerBillingSnapshot,
   type AdminCustomerListItem,
   type AdminCustomerProfile,
   type AdminCustomerSubscriptionHistoryItem,
@@ -38,6 +41,37 @@ type CustomerSubscriptionRow = {
   trialStart: Date | null
   trialEnd: Date | null
   billingInterval: string | null
+}
+
+async function listAdminCustomerAuditHistory(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<AdminCustomerAuditHistoryItem[]> {
+  const rows = await prisma.adminCustomerAudit.findMany({
+    where: { targetUserId: userId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      actorUser: {
+        select: { name: true, email: true },
+      },
+    },
+  })
+
+  return rows.map((row) =>
+    mapAdminCustomerAuditHistoryItem({
+      id: row.id,
+      actorUserId: row.actorUserId,
+      actorName: row.actorUser.name,
+      actorEmail: row.actorUser.email,
+      action: row.action,
+      reason: row.reason,
+      outcome: row.outcome,
+      stripeOperationId: row.stripeOperationId,
+      beforeBillingState: row.beforeBillingState,
+      afterBillingState: row.afterBillingState,
+      createdAt: row.createdAt,
+    }),
+  )
 }
 
 function mapSubscriptionHistoryItem(
@@ -187,6 +221,8 @@ export async function getAdminCustomerProfile(
     subscriptions: subscriptionHistory,
   })
 
+  const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)
+
   return {
     userId: user.id,
     name: user.name,
@@ -213,6 +249,7 @@ export async function getAdminCustomerProfile(
       stripeMode: input.stripeMode,
     }),
     subscriptionHistory,
+    auditHistory,
   }
 }
 

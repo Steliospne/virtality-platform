@@ -77,6 +77,12 @@ export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discoun
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
 
+// Admin customer mutations
+export {
+  useAssignPermanentFree,
+  useGrantTimedTrial,
+} from './admin-customer/use-admin-customer-access-mutations.js'
+
 // Renew trigger mutations
 export { useCreateRenewTrigger } from './renew-trigger/use-create-renew-trigger.js'
 export { useUpdateRenewTrigger } from './renew-trigger/use-update-renew-trigger.js'
