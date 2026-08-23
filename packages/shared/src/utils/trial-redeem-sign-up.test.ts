@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { FREE_PLAN_PRICE_ID } from './billing-plans.ts'
 import {
   DEFAULT_TRIAL_REDEEM_DAYS,
   TRIAL_REDEEM_CODE_TTL_MS,
@@ -220,7 +221,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
         code: 'PAY-ABCDEFGHIJ',
         userId: 'user_1',
         stripeCustomerId: 'cus_1',
-        priceId: 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9',
+        priceId: FREE_PLAN_PRICE_ID,
       },
       { now: () => NOW },
     )
@@ -233,7 +234,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
     expect(stripeCalls).toEqual([
       {
         customerId: 'cus_1',
-        priceId: 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9',
+        priceId: FREE_PLAN_PRICE_ID,
         trialPeriodDays: 14,
         metadata: { trialRedeemCodeId: '42' },
       },
@@ -256,12 +257,17 @@ describe('redeemTrialCodeAfterSignUp', () => {
       },
     })
 
-    const result = await redeemTrialCodeAfterSignUp(store, stripe, {
-      code: 'PAY-ABCDEFGHIJ',
-      userId: 'user_2',
-      stripeCustomerId: 'cus_2',
-      priceId: 'price_canonical',
-    })
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'PAY-ABCDEFGHIJ',
+        userId: 'user_2',
+        stripeCustomerId: 'cus_2',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
 
     expect(result).toMatchObject({ status: 'redeemed' })
   })
@@ -286,7 +292,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
         code: 'PAY-ENTITLED01',
         userId: 'user_entitled',
         stripeCustomerId: 'cus_entitled',
-        priceId: 'price_canonical',
+        priceId: FREE_PLAN_PRICE_ID,
       },
       { now: () => NOW },
     )
@@ -318,7 +324,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
         code: 'PAY-ENTITLED01',
         userId: 'user_entitled',
         stripeCustomerId: 'cus_entitled',
-        priceId: 'price_canonical',
+        priceId: FREE_PLAN_PRICE_ID,
       },
       { now: () => NOW },
     )
@@ -339,12 +345,17 @@ describe('redeemTrialCodeAfterSignUp', () => {
       },
     })
 
-    const result = await redeemTrialCodeAfterSignUp(store, stripe, {
-      code: 'PAY-ABCDEFGHIJ',
-      userId: 'user_3',
-      stripeCustomerId: 'cus_3',
-      priceId: 'price_canonical',
-    })
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'PAY-ABCDEFGHIJ',
+        userId: 'user_3',
+        stripeCustomerId: 'cus_3',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
 
     expect(result).toEqual({ status: 'failed' })
     expect(store.rows[0]).toMatchObject({
@@ -362,12 +373,17 @@ describe('redeemTrialCodeAfterSignUp', () => {
       },
     })
 
-    await redeemTrialCodeAfterSignUp(store, stripe, {
-      code: 'PAY-ABCDEFGHIJ',
-      userId: 'user_3',
-      stripeCustomerId: 'cus_3',
-      priceId: 'price_canonical',
-    })
+    await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'PAY-ABCDEFGHIJ',
+        userId: 'user_3',
+        stripeCustomerId: 'cus_3',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
 
     await expect(
       evaluateTrialRedeemAtSignUp(store, 'PAY-ABCDEFGHIJ', NOW),
@@ -390,7 +406,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       code: 'PAY-ABCDEFGHIJ',
       userId: 'user_4',
       stripeCustomerId: 'cus_4',
-      priceId: 'price_canonical',
+      priceId: FREE_PLAN_PRICE_ID,
     })
 
     expect(result).toEqual({ status: 'ignored' })

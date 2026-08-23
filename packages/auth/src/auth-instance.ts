@@ -22,7 +22,14 @@ import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
-import { isPasswordValid, routeSignUpCode } from '@virtality/shared/utils'
+import {
+  FREE_PLAN_PRICE_ID,
+  FREE_SUBSCRIPTION_PLAN,
+  PRO_PLAN_MONTHLY_PRICE_ID,
+  PRO_SUBSCRIPTION_PLAN,
+  isPasswordValid,
+  routeSignUpCode,
+} from '@virtality/shared/utils'
 
 const runtimeEnv =
   process.env.ENV ?? process.env.NEXT_PUBLIC_ENV ?? 'development'
@@ -46,11 +53,12 @@ const googleEnabled = Boolean(googleClientId && googleClientSecret)
 
 /**
  * Canonical sandbox `pro` monthly Price (`prod_SaYNooLgBNvYvA` default;
- * lookup_key `pro_monthly`). Same ID for no-card Trial Subscription create
- * and Checkout subscribe/renew. Retired inactive auth price:
- * `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
+ * lookup_key `pro_monthly`). Checkout subscribe/renew only. Retired inactive
+ * auth price: `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
+ * Trial Redeem uses {@link FREE_PLAN_PRICE_ID} instead.
+ * Alias for {@link PRO_PLAN_MONTHLY_PRICE_ID} in `@virtality/shared`.
  */
-export const PRO_PLAN_PRICE_ID = 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
+export const PRO_PLAN_PRICE_ID = PRO_PLAN_MONTHLY_PRICE_ID
 
 /**
  * Canonical sandbox `pro` yearly Price on the same Product
@@ -59,6 +67,8 @@ export const PRO_PLAN_PRICE_ID = 'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
  */
 export const PRO_PLAN_ANNUAL_PRICE_ID =
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
+
+export { FREE_PLAN_PRICE_ID }
 
 const baseURL = getServerUrl()
 
@@ -166,7 +176,7 @@ export const auth = betterAuth({
                 ),
                 userId: user.id,
                 stripeCustomerId: stripeCustomer.id,
-                priceId: PRO_PLAN_PRICE_ID,
+                priceId: FREE_PLAN_PRICE_ID,
                 stripeClient,
               })
             },
@@ -174,7 +184,11 @@ export const auth = betterAuth({
               enabled: true,
               plans: [
                 {
-                  name: 'pro',
+                  name: FREE_SUBSCRIPTION_PLAN,
+                  priceId: FREE_PLAN_PRICE_ID,
+                },
+                {
+                  name: PRO_SUBSCRIPTION_PLAN,
                   priceId: PRO_PLAN_PRICE_ID,
                   annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
                 },

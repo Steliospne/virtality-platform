@@ -150,7 +150,7 @@ export type RedeemTrialCodeResult =
 
 /**
  * Stripe-first redeem: entitled Customers consume as already_entitled without a
- * second Subscription; otherwise create a no-card Trial Subscription then
+ * second Subscription; otherwise create a no-card Free Trial Subscription then
  * consume as redeemed. Does not write a local Subscription row (webhook-only).
  * Does not set the tester role. On Stripe failure the code stays unused.
  */

@@ -3,6 +3,7 @@ import type { PrismaClient } from '@virtality/db'
 import { APIError } from 'better-auth/api'
 import type Stripe from 'stripe'
 import {
+  buildFreeTrialSubscriptionCreateParams,
   evaluateTrialRedeemAtSignUp,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
@@ -61,19 +62,14 @@ export function createStripeTrialRedeemGateway(
       trialPeriodDays,
       metadata,
     }) => {
-      const subscription = await stripeClient.subscriptions.create({
-        customer: customerId,
-        items: [{ price: priceId }],
-        trial_period_days: trialPeriodDays,
-        trial_settings: {
-          end_behavior: {
-            missing_payment_method: 'cancel',
-          },
-        },
-        metadata: {
-          trialRedeemCodeId: metadata.trialRedeemCodeId,
-        },
-      })
+      const subscription = await stripeClient.subscriptions.create(
+        buildFreeTrialSubscriptionCreateParams({
+          customerId,
+          priceId,
+          trialPeriodDays,
+          metadata,
+        }),
+      )
       return { stripeSubscriptionId: subscription.id }
     },
   }

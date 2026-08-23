@@ -13,6 +13,7 @@
  * Subscriptions restore.
  */
 
+import { isFreeSubscriptionPlan } from './billing-plans.ts'
 import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
@@ -20,6 +21,8 @@ export type EntitlementBillingInterval = 'month' | 'year'
 
 export type EntitlementClockSubscription = {
   status: string
+  /** Synced Better Auth plan (`free` | `pro`); Free active seats are not entitled. */
+  plan?: string | null
   trialEnd?: Date | null
   periodEnd?: Date | null
   /** Synced Stripe/Better Auth interval when known (`month` / `year`). */
@@ -54,16 +57,24 @@ export function clockEndForSubscriptionStatus(
 
 /**
  * Prefer a live (active|trialing) Subscription when several rows exist.
+ * Paid (non-free) seats win over live Free trials when both are present.
  * Otherwise keep the first row so callers can still see expired history.
  */
 export function pickEntitlementSubscription<
   T extends EntitlementClockSubscription,
 >(subscriptions: readonly T[]): T | null {
   if (subscriptions.length === 0) return null
-  const live = subscriptions.find((sub) =>
+
+  const live = subscriptions.filter((sub) =>
     isLiveEntitlementSubscriptionStatus(sub.status),
   )
-  return live ?? subscriptions[0] ?? null
+  if (live.length > 0) {
+    return (
+      live.find((sub) => !isFreeSubscriptionPlan(sub.plan)) ?? live[0] ?? null
+    )
+  }
+
+  return subscriptions[0] ?? null
 }
 
 function expiredClockStanding(status: string | null): EntitlementClockStanding {
@@ -82,6 +93,13 @@ export function resolveEntitlementClock(input: {
   const subscription = input.subscription
   if (!subscription) {
     return expiredClockStanding(null)
+  }
+
+  if (
+    subscription.status === 'active' &&
+    isFreeSubscriptionPlan(subscription.plan)
+  ) {
+    return expiredClockStanding(subscription.status)
   }
 
   const clockEnd = clockEndForSubscriptionStatus(
@@ -148,6 +166,7 @@ const PAID_BILLING_STATUSES = new Set([
 function subscriptionImpliesPaidBilling(
   sub: EntitlementClockSubscription,
 ): boolean {
+  if (isFreeSubscriptionPlan(sub.plan)) return false
   if (PAID_BILLING_STATUSES.has(sub.status)) return true
   if (sub.periodEnd == null) return false
   if (sub.trialEnd == null) return true
