@@ -43,6 +43,7 @@ export function BillingTab() {
     cta,
     showPlanCardCheckout,
     planCardCheckoutLabel,
+    planCardCheckoutPending,
     ctaPending,
     showPromoChrome,
     discount,
@@ -79,11 +80,8 @@ export function BillingTab() {
   }
 
   const showPortalCta = cta != null
-  const planCardCheckoutProps = showPlanCardCheckout
-    ? {
-        checkoutLabel: planCardCheckoutLabel,
-        checkoutPending: ctaPending,
-      }
+  const planCardCheckoutLabelProp = showPlanCardCheckout
+    ? planCardCheckoutLabel
     : null
 
   return (
@@ -103,7 +101,7 @@ export function BillingTab() {
 
         {display.kind === 'soft_unavailable' ? <SoftUnavailableBanner /> : null}
 
-        <div className='grid gap-3'>
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
           <PlanCard
             title='Monthly'
             description='Flexible. Cancel anytime before renewal.'
@@ -112,9 +110,10 @@ export function BillingTab() {
             onSelect={() => setSelectedInterval('month')}
             listPrimary={prices.monthlyLabel}
             rewrite={rewrite?.monthly ?? null}
-            {...planCardCheckoutProps}
+            checkoutLabel={planCardCheckoutLabelProp}
+            checkoutPending={planCardCheckoutPending === 'month'}
             onCheckout={
-              planCardCheckoutProps
+              planCardCheckoutLabelProp
                 ? () => {
                     void handlePlanCardCheckout('month')
                   }
@@ -130,10 +129,12 @@ export function BillingTab() {
             listPrimary={prices.yearlyAsMonthlyLabel}
             listMuted={prices.yearlyTotalMutedLabel}
             badge={prices.yearlySavingsLabel ?? undefined}
+            accent
             rewrite={rewrite?.yearly ?? null}
-            {...planCardCheckoutProps}
+            checkoutLabel={planCardCheckoutLabelProp}
+            checkoutPending={planCardCheckoutPending === 'year'}
             onCheckout={
-              planCardCheckoutProps
+              planCardCheckoutLabelProp
                 ? () => {
                     void handlePlanCardCheckout('year')
                   }

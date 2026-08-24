@@ -15,7 +15,7 @@ export function BillingPlanCardCheckoutButton({
     <Button
       type='button'
       variant='primary'
-      className='mt-4 w-full'
+      className='w-full'
       size='lg'
       disabled={pending}
       onClick={(event) => {

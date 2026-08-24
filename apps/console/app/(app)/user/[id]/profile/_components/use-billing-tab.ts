@@ -4,7 +4,7 @@
  * Local state for the profile Billing tab: standing, Checkout, redeem, remove.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
@@ -57,6 +57,8 @@ export function useBillingTab() {
   const redeemMutation = useRedeemPromotionCode()
   const savePendingMutation = useSavePendingPromotionCode()
   const cancelPendingMutation = useCancelPendingPromotionCode()
+  const cancelPendingAsyncRef = useRef(cancelPendingMutation.mutateAsync)
+  cancelPendingAsyncRef.current = cancelPendingMutation.mutateAsync
   const removeMutation = useRemovePromoDiscount()
   const { startCheckout, isStarting: isCheckoutStarting } =
     useSubscriptionCheckout()
@@ -74,11 +76,14 @@ export function useBillingTab() {
   >(null)
   const [pendingCouponTerms, setPendingCouponTerms] =
     useState<PendingCouponTerms | null>(null)
+  const [planCardCheckoutPending, setPlanCardCheckoutPending] =
+    useState<BillingInterval | null>(null)
   const [initialCheckoutIntent] = useState(() =>
     typeof window === 'undefined'
       ? null
       : readCheckoutReturnIntent(window.location.search),
   )
+  const clearedCheckoutCancelRef = useRef(false)
 
   const prices = billingCatalogPrices(catalogQuery.data)
   const catalogMinor = billingCatalogMinor(catalogQuery.data)
@@ -121,9 +126,11 @@ export function useBillingTab() {
 
   useEffect(() => {
     if (initialCheckoutIntent !== 'cancel') return
+    if (clearedCheckoutCancelRef.current) return
+    clearedCheckoutCancelRef.current = true
     setPendingCouponTerms(null)
-    void cancelPendingMutation.mutateAsync(undefined)
-  }, [cancelPendingMutation, initialCheckoutIntent])
+    void cancelPendingAsyncRef.current(undefined)
+  }, [initialCheckoutIntent])
 
   async function savePendingPromotionCode(code: string) {
     const result = await savePendingMutation.mutateAsync({ code })
@@ -150,7 +157,12 @@ export function useBillingTab() {
 
   async function handlePlanCardCheckout(interval: BillingInterval) {
     setSelectedInterval(interval)
-    await startCheckoutForInterval(interval)
+    setPlanCardCheckoutPending(interval)
+    try {
+      await startCheckoutForInterval(interval)
+    } finally {
+      setPlanCardCheckoutPending(null)
+    }
   }
 
   async function handleRedeem(code: string, confirmReplace: boolean) {
@@ -230,6 +242,7 @@ export function useBillingTab() {
     cta,
     showPlanCardCheckout,
     planCardCheckoutLabel,
+    planCardCheckoutPending,
     ctaPending,
     showPromoChrome,
     discount,

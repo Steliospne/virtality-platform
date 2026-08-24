@@ -20,8 +20,8 @@ type PlanPriceRewrite = {
 function PriceLine({
   primary,
   strike,
-  primaryClassName = 'text-lg font-semibold',
-  catalogClassName = 'text-lg font-semibold',
+  primaryClassName = 'text-xl font-semibold sm:text-2xl',
+  catalogClassName = 'text-xl font-semibold sm:text-2xl',
 }: {
   primary: string
   strike?: string
@@ -33,7 +33,7 @@ function PriceLine({
   }
   const { amount, interval } = splitCatalogPriceLabel(strike)
   return (
-    <div className='flex flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5'>
+    <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0.5'>
       <p className={cn('tabular-nums', primaryClassName)}>{primary}</p>
       <p className={cn('tabular-nums', catalogClassName)}>
         <span className='text-zinc-400 line-through'>{amount}</span>
@@ -52,15 +52,27 @@ function PlanCardPrices({
   listMuted?: string
   rewrite: PlanPriceRewrite | null
 }) {
+  const secondaryLine = (
+    <p
+      className={cn(
+        'min-h-5 text-sm tabular-nums',
+        listMuted || rewrite?.discountedMuted ? 'text-zinc-400' : 'invisible',
+      )}
+      aria-hidden={!listMuted && !rewrite?.discountedMuted}
+    >
+      {listMuted ?? rewrite?.discountedMuted ?? '\u00a0'}
+    </p>
+  )
+
   if (rewrite) {
     return (
-      <>
+      <div className='space-y-1'>
         <PriceLine
           primary={rewrite.discountedPrimary}
           strike={rewrite.listStrike}
         />
         {rewrite.discountedMuted ? (
-          <div className='mt-0.5'>
+          <div>
             <PriceLine
               primary={rewrite.discountedMuted}
               strike={rewrite.listStrikeMuted}
@@ -68,18 +80,26 @@ function PlanCardPrices({
               catalogClassName='text-sm font-medium'
             />
           </div>
-        ) : null}
-      </>
+        ) : (
+          secondaryLine
+        )}
+      </div>
     )
   }
 
   return (
-    <>
-      <p className='text-lg font-semibold tabular-nums'>{listPrimary}</p>
+    <div className='space-y-1'>
+      <p className='text-xl font-semibold tabular-nums sm:text-2xl'>
+        {listPrimary}
+      </p>
       {listMuted ? (
-        <p className='mt-0.5 text-sm text-zinc-400 tabular-nums'>{listMuted}</p>
-      ) : null}
-    </>
+        <p className='min-h-5 text-sm text-zinc-400 tabular-nums'>
+          {listMuted}
+        </p>
+      ) : (
+        secondaryLine
+      )}
+    </div>
   )
 }
 
@@ -92,6 +112,7 @@ export function PlanCard({
   listPrimary,
   listMuted,
   badge,
+  accent = false,
   rewrite,
   checkoutLabel,
   checkoutPending,
@@ -105,6 +126,7 @@ export function PlanCard({
   listPrimary: string
   listMuted?: string
   badge?: string
+  accent?: boolean
   rewrite: PlanPriceRewrite | null
   checkoutLabel?: string | null
   checkoutPending?: boolean
@@ -112,41 +134,69 @@ export function PlanCard({
 }) {
   const hasCheckout = checkoutLabel != null && onCheckout != null
   const className = cn(
-    'rounded-xl border-2 p-5 text-left transition',
-    selected
-      ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
-      : 'border-zinc-200 dark:border-zinc-800',
+    'flex h-full min-h-72 flex-col rounded-xl border-2 p-6 text-left transition sm:min-h-80 sm:p-7',
+    accent
+      ? selected
+        ? 'border-vital-blue-600 bg-vital-blue-50 dark:border-vital-blue-400 dark:bg-vital-blue-950/40'
+        : 'border-vital-blue-200 bg-vital-blue-50/60 dark:border-vital-blue-800 dark:bg-vital-blue-950/20'
+      : selected
+        ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
+        : 'border-zinc-200 dark:border-zinc-800',
     disabled && 'opacity-60',
   )
   const body = (
     <>
-      <div className='flex items-start justify-between gap-3'>
-        <div>
-          <div className='flex flex-wrap items-center gap-2'>
-            <p className='text-lg font-semibold'>{title}</p>
-            {badge ? <Badge>{badge}</Badge> : null}
-          </div>
-          <p className='mt-1 text-sm text-zinc-500'>{description}</p>
+      <div className='min-h-28 space-y-2 sm:min-h-32'>
+        <div className='flex min-h-12 flex-wrap items-start gap-2'>
+          <p className='text-xl font-semibold'>{title}</p>
+          {badge ? (
+            <Badge
+              className={
+                accent
+                  ? 'border-vital-blue-200 bg-vital-blue-100 text-vital-blue-800 dark:border-vital-blue-800 dark:bg-vital-blue-900/60 dark:text-vital-blue-200'
+                  : undefined
+              }
+            >
+              {badge}
+            </Badge>
+          ) : null}
         </div>
-        <div className='text-right'>
-          <PlanCardPrices
-            listPrimary={listPrimary}
-            listMuted={listMuted}
-            rewrite={rewrite}
-          />
-        </div>
+        <p className='min-h-11 text-sm leading-relaxed text-zinc-500 sm:min-h-12 sm:text-base'>
+          {description}
+        </p>
+      </div>
+
+      <div className='mt-6 min-h-16'>
+        <PlanCardPrices
+          listPrimary={listPrimary}
+          listMuted={listMuted}
+          rewrite={rewrite}
+        />
       </div>
       {selected && !hasCheckout ? (
-        <p className='mt-3 flex items-center gap-1.5 text-sm font-medium'>
-          <Check className='size-4' /> Selected
+        <p
+          className={cn(
+            'mt-auto flex items-center gap-1.5 pt-5 text-sm font-medium',
+            accent && 'text-vital-blue-800 dark:text-vital-blue-200',
+          )}
+        >
+          <Check
+            className={cn(
+              'size-4',
+              accent && 'text-vital-blue-700 dark:text-vital-blue-300',
+            )}
+          />
+          Selected
         </p>
       ) : null}
       {hasCheckout ? (
-        <BillingPlanCardCheckoutButton
-          label={checkoutLabel}
-          pending={checkoutPending ?? false}
-          onCheckout={onCheckout}
-        />
+        <div className='mt-auto pt-5'>
+          <BillingPlanCardCheckoutButton
+            label={checkoutLabel}
+            pending={checkoutPending ?? false}
+            onCheckout={onCheckout}
+          />
+        </div>
       ) : null}
     </>
   )
