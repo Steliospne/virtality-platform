@@ -27,7 +27,8 @@ import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
 
-const AGENT_MODEL = 'cursor-grok-4.5-medium'
+// const AGENT_MODEL = 'cursor-grok-4.5-medium'
+const AGENT_MODEL = 'composer-2.5'
 
 // Sandcastle also injects `.sandcastle/.env` into sandboxes. Prefer running via
 // `pnpm sandcastle` so `--env-file` populates process.env for this check.
@@ -89,6 +90,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   const plan = await sandcastle.run({
     hooks,
     sandbox: docker(),
+    branchStrategy: { type: 'merge-to-head' },
+    copyToWorktree,
     name: 'planner',
     // One iteration is enough: the planner just needs to read and reason,
     // not write code. (Structured output requires maxIterations: 1.)
@@ -224,6 +227,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   await sandcastle.run({
     hooks,
     sandbox: docker(),
+    branchStrategy: { type: 'merge-to-head' },
+    copyToWorktree,
     name: 'merger',
     maxIterations: 1,
     agent: sandcastle.cursor(AGENT_MODEL),
