@@ -11,7 +11,7 @@ export const PRO_SUBSCRIPTION_PLAN = 'pro' as const
  * Canonical sandbox Free monthly Price on a distinct Product
  * (`lookup_key: free_monthly`, €0 recurring).
  */
-export const FREE_PLAN_PRICE_ID = 'price_1U3f2h4Fc2DAAhEfFr33Mn0' as const
+export const FREE_PLAN_PRICE_ID = 'price_1U7hSd4Fc2DAAhEf1E06qFtt' as const
 
 /** Canonical sandbox Pro monthly Price (`lookup_key: pro_monthly`). */
 export const PRO_PLAN_MONTHLY_PRICE_ID =
