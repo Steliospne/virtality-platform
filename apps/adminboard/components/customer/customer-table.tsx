@@ -7,20 +7,14 @@ import {
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
 import { useAdminCustomers } from '@virtality/react-query'
-import type { AdminCustomerListItem } from '@virtality/shared/utils'
+import { useRouter } from 'next/navigation'
 import { useMemo } from 'react'
 import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 
-type CustomerTableProps = {
-  onViewProfile: (customer: AdminCustomerListItem) => void
-}
-
-export function CustomerTable({ onViewProfile }: CustomerTableProps) {
+export function CustomerTable() {
+  const router = useRouter()
   const { data, isPending } = useAdminCustomers()
-  const columns = useMemo(
-    () => createCustomerColumns({ onViewProfile }),
-    [onViewProfile],
-  )
+  const columns = useMemo(() => createCustomerColumns(), [])
   const { table, globalFilter, setGlobalFilter } = useResourceTable({
     data: data ?? [],
     columns,
@@ -34,7 +28,14 @@ export function CustomerTable({ onViewProfile }: CustomerTableProps) {
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
       />
-      <DataTableBody table={table} columns={columns} isLoading={isPending} />
+      <DataTableBody
+        table={table}
+        columns={columns}
+        rowNavigation={(userId) => {
+          router.push(`/customers/${userId}`)
+        }}
+        isLoading={isPending}
+      />
       <DataTableFooter table={table} />
     </div>
   )

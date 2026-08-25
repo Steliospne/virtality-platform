@@ -1,15 +1,19 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import {
   type ColumnDef,
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { DATA_TABLE_LOADING_ROW_COUNT, DataTableBody } from './data-table.js'
 
 type Row = { id: string; name: string }
+type CustomerRow = { userId: string; name: string }
 
 const columns: ColumnDef<Row>[] = [{ accessorKey: 'name', header: 'Name' }]
+const customerColumns: ColumnDef<CustomerRow>[] = [
+  { accessorKey: 'name', header: 'Name' },
+]
 
 function renderDataTableBody({
   data,
@@ -73,5 +77,32 @@ describe('DataTableBody', () => {
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
     expect(screen.queryByText('No results.')).not.toBeInTheDocument()
     expect(screen.queryAllByTestId('data-table-skeleton-row')).toHaveLength(0)
+  })
+
+  it('navigates with userId when the row has no id field', () => {
+    const rowNavigation = vi.fn()
+
+    function CustomerTableBodyHarness() {
+      const table = useReactTable({
+        data: [{ userId: 'usr_maria', name: 'Maria Kouros' }],
+        columns: customerColumns,
+        getCoreRowModel: getCoreRowModel(),
+        getRowId: (row) => row.userId,
+      })
+
+      return (
+        <DataTableBody
+          table={table}
+          columns={customerColumns}
+          rowNavigation={rowNavigation}
+        />
+      )
+    }
+
+    render(<CustomerTableBodyHarness />)
+
+    fireEvent.click(screen.getByText('Maria Kouros'))
+
+    expect(rowNavigation).toHaveBeenCalledWith('usr_maria')
   })
 })

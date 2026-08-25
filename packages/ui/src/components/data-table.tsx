@@ -31,7 +31,7 @@ import {
 } from '@virtality/ui/components/table'
 import { cn } from '@virtality/ui/lib/utils'
 import { AlertCircle } from 'lucide-react'
-import { MouseEvent, ReactNode } from 'react'
+import { ReactNode } from 'react'
 
 export const DATA_TABLE_LOADING_ROW_COUNT = 8
 
@@ -63,12 +63,17 @@ function getRowNavigationExceptions(
 }
 
 function getRowPresentation(original: unknown) {
-  const record = original as { id?: string; deletedAt?: string | null }
+  const record = original as {
+    id?: string
+    userId?: string
+    deletedAt?: string | null
+  }
   const hasDeletedAt = Object.hasOwn(original as object, 'deletedAt')
   const hasId = Object.hasOwn(original as object, 'id')
+  const hasUserId = Object.hasOwn(original as object, 'userId')
 
   return {
-    id: hasId ? record.id : undefined,
+    id: hasId ? record.id : hasUserId ? record.userId : undefined,
     isDeleted: hasDeletedAt && record.deletedAt !== null,
   }
 }
@@ -152,23 +157,6 @@ export function DataTableBody<TData, TValue>({
 }: DataTableBodyProps<TData, TValue>) {
   'use no memo'
 
-  const rowClickHandler = (event: MouseEvent) => {
-    event.stopPropagation()
-    if (!rowNavigation) return
-
-    const target = event.target as HTMLElement
-    const rowElement = event.currentTarget as HTMLElement
-    const navigationExceptions = getRowNavigationExceptions(
-      rowNavigationExceptions,
-    )
-
-    for (const exception of navigationExceptions) {
-      if (target.closest(exception)) return
-    }
-
-    rowNavigation(rowElement.id)
-  }
-
   const visibleColumns = table.getVisibleLeafColumns()
   const rows = table.getRowModel().rows
 
@@ -204,14 +192,29 @@ export function DataTableBody<TData, TValue>({
     }
 
     return rows.map((row) => {
-      const { id, isDeleted } = getRowPresentation(row.original)
+      const { id: presentationId, isDeleted } = getRowPresentation(row.original)
+      const navigationId = presentationId ?? row.id
 
       return (
         <TableRow
-          id={id}
+          id={navigationId}
           key={row.id}
           data-state={row.getIsSelected() && 'selected'}
-          onClick={rowClickHandler}
+          onClick={(event) => {
+            event.stopPropagation()
+            if (!rowNavigation || !navigationId) return
+
+            const target = event.target as HTMLElement
+            const navigationExceptions = getRowNavigationExceptions(
+              rowNavigationExceptions,
+            )
+
+            for (const exception of navigationExceptions) {
+              if (target.closest(exception)) return
+            }
+
+            rowNavigation(navigationId)
+          }}
           className={cn(
             isDeleted && 'line-through',
             rowNavigation && 'cursor-pointer',
