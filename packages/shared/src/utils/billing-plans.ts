@@ -41,6 +41,16 @@ export function isProSubscriptionPlan(
   return plan === PRO_SUBSCRIPTION_PLAN
 }
 
+/**
+ * Paid Pro monthly ↔ yearly switches apply at the next billing cycle.
+ * Free → Paid charges immediately (Checkout / immediate upgrade).
+ */
+export function shouldScheduleSubscriptionChangeAtPeriodEnd(
+  currentPlan: string | null | undefined,
+): boolean {
+  return isProSubscriptionPlan(currentPlan)
+}
+
 export function isFreePlanPriceId(priceId: string): boolean {
   return priceId === FREE_PLAN_PRICE_ID
 }

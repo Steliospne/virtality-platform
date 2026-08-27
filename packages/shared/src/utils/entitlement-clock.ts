@@ -31,6 +31,13 @@ export type EntitlementClockSubscription = {
   periodEnd?: Date | null
   /** Synced Stripe/Better Auth interval when known (`month` / `year`). */
   billingInterval?: string | null
+  /**
+   * Better Auth / Stripe subscription schedule id when a plan change is queued
+   * for period end (`scheduleAtPeriodEnd`).
+   */
+  stripeScheduleId?: string | null
+  /** Synced Stripe cancel-at-period-end flag on the Subscription row. */
+  cancelAtPeriodEnd?: boolean | null
 }
 
 export type EntitlementClockStanding = {
@@ -266,7 +273,17 @@ export type EntitlementStanding = EntitlementClockStanding & {
   billingInterval: EntitlementBillingInterval | null
   /** Synced plan on the picked Subscription (`free` | `pro`). */
   plan: string | null
-  /** Expired Free upgrade dialog eligibility (not trialing or paid). */
+  /**
+   * Live paid Pro has a Stripe schedule for a plan/interval change at period
+   * end (Better Auth `scheduleAtPeriodEnd`).
+   */
+  hasPendingPlanChange: boolean
+  /**
+   * Live seat is scheduled to cancel at period end (`cancel_at_period_end`).
+   * Still entitled until clockEnd; Console can offer restore ("Don't cancel").
+   */
+  cancelAtPeriodEnd: boolean
+  /** Expired Free / canceled upgrade dialog eligibility (not trialing or paid). */
   expiredFreeUpgradeQualifies: boolean
 }
 
@@ -309,6 +326,8 @@ export function buildEntitlementStanding(input: {
     }),
     billingInterval: normalizeBillingInterval(subscription?.billingInterval),
     plan: subscription?.plan ?? null,
+    hasPendingPlanChange: Boolean(subscription?.stripeScheduleId),
+    cancelAtPeriodEnd: Boolean(subscription?.cancelAtPeriodEnd),
     expiredFreeUpgradeQualifies: resolveExpiredFreeUpgradeQualifies({
       now: input.now,
       subscriptions: input.subscriptions,

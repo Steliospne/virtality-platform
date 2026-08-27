@@ -9,6 +9,7 @@ import {
   isFreePlanPriceId,
   isFreeSubscriptionPlan,
   isProPlanPriceId,
+  shouldScheduleSubscriptionChangeAtPeriodEnd,
 } from './billing-plans.ts'
 
 describe('billing plan identifiers', () => {
@@ -26,6 +27,17 @@ describe('billing plan identifiers', () => {
     expect(isFreeSubscriptionPlan(FREE_SUBSCRIPTION_PLAN)).toBe(true)
     expect(isFreeSubscriptionPlan(PRO_SUBSCRIPTION_PLAN)).toBe(false)
     expect(isFreeSubscriptionPlan(null)).toBe(false)
+  })
+
+  it('schedules only paid Pro plan changes at period end', () => {
+    expect(
+      shouldScheduleSubscriptionChangeAtPeriodEnd(PRO_SUBSCRIPTION_PLAN),
+    ).toBe(true)
+    expect(
+      shouldScheduleSubscriptionChangeAtPeriodEnd(FREE_SUBSCRIPTION_PLAN),
+    ).toBe(false)
+    expect(shouldScheduleSubscriptionChangeAtPeriodEnd(null)).toBe(false)
+    expect(shouldScheduleSubscriptionChangeAtPeriodEnd(undefined)).toBe(false)
   })
 })
 

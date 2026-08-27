@@ -79,6 +79,37 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
       }),
     ).toBe(false)
   })
+
+  it('qualifies canceled seats that are no longer entitled', () => {
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        subscriptions: [
+          {
+            plan: 'pro',
+            status: 'canceled',
+            periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+          },
+        ],
+      }),
+    ).toBe(true)
+  })
+
+  it('does not qualify cancel-at-period-end while still entitled', () => {
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        subscriptions: [
+          {
+            plan: 'pro',
+            status: 'active',
+            periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+            cancelAtPeriodEnd: true,
+          },
+        ],
+      }),
+    ).toBe(false)
+  })
 })
 
 describe('shouldShowExpiredFreeUpgradePrompt', () => {

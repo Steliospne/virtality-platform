@@ -112,8 +112,9 @@ function createGateway(
       prorationAmountCents: 2500,
       currency: 'eur',
     })),
-    updatePaidPlanPrice: vi.fn(async () => ({
+    schedulePaidPlanPriceAtPeriodEnd: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_monthly',
+      stripeScheduleId: 'sub_sched_1',
     })),
     createPaidProSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_new',
@@ -193,7 +194,7 @@ describe('previewChangePaidPlan', () => {
     expect(preview.confirmationMessage).toContain('Checkout link')
   })
 
-  it('discloses proration for paid interval changes', async () => {
+  it('schedules paid interval changes at period end without proration', async () => {
     const preview = await previewChangePaidPlan(
       createStore({
         user: {
@@ -213,7 +214,9 @@ describe('previewChangePaidPlan', () => {
     )
 
     expect(preview.action).toBe('change_paid_plan')
-    expect(preview.prorationSummary).toContain('proration')
+    expect(preview.effectiveTiming).toBe('period_end')
+    expect(preview.prorationSummary).toBeNull()
+    expect(preview.confirmationMessage).toMatch(/period end/)
     expect(
       buildCancelPaidSubscriptionPreview({
         mode: 'immediate',
@@ -224,16 +227,17 @@ describe('previewChangePaidPlan', () => {
       buildChangePaidPlanPreview({
         targetPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
-        prorationAmountCents: 2500,
-        currency: 'eur',
+        prorationAmountCents: null,
+        currency: null,
         usesCheckout: false,
+        schedulesAtPeriodEnd: true,
       }).confirmationMessage,
     ).toContain('yearly')
   })
 })
 
 describe('changePaidPlanForCustomer', () => {
-  it('updates the live paid subscription when a payment method exists', async () => {
+  it('schedules the live paid subscription change at period end', async () => {
     const store = createStore({
       user: {
         id: 'user_paid',
@@ -259,13 +263,19 @@ describe('changePaidPlanForCustomer', () => {
       cancelUrl: CANCEL_URL,
     })
 
-    expect(gateway.updatePaidPlanPrice).toHaveBeenCalled()
+    expect(gateway.schedulePaidPlanPriceAtPeriodEnd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stripeSubscriptionId: 'sub_pro_monthly',
+        currentPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+        newPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+      }),
+    )
     expect(result.pendingWebhookSync).toBe(true)
     expect(store.recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'change_paid_plan',
         outcome: 'pending',
-        stripeOperationId: 'sub_pro_monthly',
+        stripeOperationId: 'sub_sched_1',
       }),
     )
   })

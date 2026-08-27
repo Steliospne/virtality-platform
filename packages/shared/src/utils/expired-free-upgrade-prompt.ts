@@ -1,8 +1,8 @@
 /**
- * Expired Free upgrade prompt: after a Trial Subscription converts to Free,
- * clinicians see a dismissible upgrade dialog on each authenticated login and
- * again every twelve hours during a continuous Console session until paid
- * entitlement is active.
+ * Expired Free / canceled upgrade prompt: after a Trial Subscription converts
+ * to Free, or after a paid seat reaches canceled, clinicians see a dismissible
+ * upgrade dialog on each authenticated login and again every twelve hours
+ * during a continuous Console session until paid entitlement is active.
  */
 
 import { isFreeSubscriptionPlan } from './billing-plans.ts'
@@ -24,9 +24,15 @@ export function isExpiredFreeSeat(
   )
 }
 
+export function isCanceledUpgradeSeat(
+  subscription: EntitlementClockSubscription,
+): boolean {
+  return subscription.status === 'canceled'
+}
+
 /**
- * Whether the seat should receive the expired-Free upgrade prompt. Trialing and
- * paid clinicians are excluded.
+ * Whether the seat should receive the upgrade prompt. Trialing and paid
+ * clinicians are excluded; expired Free and canceled seats qualify.
  */
 export function resolveExpiredFreeUpgradeQualifies(input: {
   now: Date
@@ -50,7 +56,8 @@ export function resolveExpiredFreeUpgradeQualifies(input: {
     return false
   }
 
-  return picked != null && isExpiredFreeSeat(picked)
+  if (picked == null) return false
+  return isExpiredFreeSeat(picked) || isCanceledUpgradeSeat(picked)
 }
 
 export function shouldShowExpiredFreeUpgradePrompt(input: {

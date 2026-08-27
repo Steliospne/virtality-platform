@@ -98,12 +98,12 @@ export type AdminCustomerBillingStripeGateway = {
     subscriptionItemId: string
     newPriceId: string
   }) => Promise<{ prorationAmountCents: number; currency: string }>
-  updatePaidPlanPrice: (input: {
+  schedulePaidPlanPriceAtPeriodEnd: (input: {
     stripeSubscriptionId: string
-    subscriptionItemId: string
+    currentPriceId: string
     newPriceId: string
     metadata: Record<string, string>
-  }) => Promise<{ stripeSubscriptionId: string }>
+  }) => Promise<{ stripeSubscriptionId: string; stripeScheduleId: string }>
   createPaidProSubscription: (input: {
     customerId: string
     priceId: string
@@ -339,6 +339,8 @@ export function buildChangePaidPlanPreview(input: {
   prorationAmountCents: number | null
   currency: string | null
   usesCheckout: boolean
+  /** Live paid Pro interval switch; Free → Paid create stays immediate. */
+  schedulesAtPeriodEnd?: boolean
 }): AdminCustomerBillingPreview {
   const planLabel = formatProPlanPriceLabel(input.targetPriceId)
   if (input.usesCheckout) {
@@ -351,17 +353,21 @@ export function buildChangePaidPlanPreview(input: {
     }
   }
 
+  if (input.schedulesAtPeriodEnd) {
+    return {
+      action: 'change_paid_plan',
+      effectiveTiming: 'period_end',
+      prorationSummary: null,
+      confirmationMessage: `Schedule change to ${planLabel} at period end (${formatPeriodEndLabel(input.periodEnd)}). Current pricing stays until then.`,
+      requiresConfirmation: true,
+    }
+  }
+
   return {
     action: 'change_paid_plan',
     effectiveTiming: 'immediate',
-    prorationSummary:
-      input.prorationAmountCents != null && input.currency
-        ? formatProrationSummary({
-            prorationAmountCents: input.prorationAmountCents,
-            currency: input.currency,
-          })
-        : null,
-    confirmationMessage: `Change the live paid subscription to ${planLabel} immediately.`,
+    prorationSummary: null,
+    confirmationMessage: `Start ${planLabel} immediately and charge the customer now.`,
     requiresConfirmation: true,
   }
 }
@@ -448,9 +454,10 @@ export async function previewChangePaidPlan(
     return buildChangePaidPlanPreview({
       targetPriceId: input.targetPriceId,
       periodEnd: null,
-      prorationAmountCents: 0,
-      currency: 'eur',
+      prorationAmountCents: null,
+      currency: null,
       usesCheckout: false,
+      schedulesAtPeriodEnd: false,
     })
   }
 
@@ -463,19 +470,13 @@ export async function previewChangePaidPlan(
     )
   }
 
-  const preview = await stripe.previewPaidPlanChange({
-    customerId: live.stripeCustomerId,
-    stripeSubscriptionId: live.stripeSubscriptionId,
-    subscriptionItemId: live.subscriptionItemId,
-    newPriceId: input.targetPriceId,
-  })
-
   return buildChangePaidPlanPreview({
     targetPriceId: input.targetPriceId,
     periodEnd: live.periodEnd,
-    prorationAmountCents: preview.prorationAmountCents,
-    currency: preview.currency,
+    prorationAmountCents: null,
+    currency: null,
     usesCheckout: false,
+    schedulesAtPeriodEnd: true,
   })
 }
 
@@ -517,16 +518,16 @@ export async function changePaidPlanForCustomer(
       )
     }
 
-    const updated = await stripe.updatePaidPlanPrice({
+    const updated = await stripe.schedulePaidPlanPriceAtPeriodEnd({
       stripeSubscriptionId: live.stripeSubscriptionId,
-      subscriptionItemId: live.subscriptionItemId,
+      currentPriceId: live.currentPriceId,
       newPriceId: input.targetPriceId,
       metadata: stripeBillingMetadata({
         actorUserId: input.actorUserId,
         action: 'change_paid_plan',
       }),
     })
-    stripeOperationId = updated.stripeSubscriptionId
+    stripeOperationId = updated.stripeScheduleId
   } else {
     const created = await stripe.createPaidProSubscription({
       customerId: stripeCustomerId,

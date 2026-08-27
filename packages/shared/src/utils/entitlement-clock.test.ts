@@ -356,6 +356,71 @@ describe('buildEntitlementStanding', () => {
     expect(standing.billingInterval).toBe('year')
   })
 
+  it('marks hasPendingPlanChange when the live Subscription has a Stripe schedule', () => {
+    const pending = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'pro',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          billingInterval: 'month',
+          stripeScheduleId: 'sub_sched_1',
+        },
+      ],
+    })
+    expect(pending.hasPendingPlanChange).toBe(true)
+
+    const clear = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'pro',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          billingInterval: 'month',
+          stripeScheduleId: null,
+        },
+      ],
+    })
+    expect(clear.hasPendingPlanChange).toBe(false)
+  })
+
+  it('marks cancelAtPeriodEnd when the live Subscription is scheduled to end', () => {
+    const pending = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'pro',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          billingInterval: 'month',
+          cancelAtPeriodEnd: true,
+        },
+      ],
+    })
+    expect(pending.cancelAtPeriodEnd).toBe(true)
+    expect(pending.entitled).toBe(true)
+
+    const clear = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'pro',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          billingInterval: 'month',
+          cancelAtPeriodEnd: false,
+        },
+      ],
+    })
+    expect(clear.cancelAtPeriodEnd).toBe(false)
+  })
+
   it('keeps soft-expired Subscribe CTA after abandoned Checkout incomplete row', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
