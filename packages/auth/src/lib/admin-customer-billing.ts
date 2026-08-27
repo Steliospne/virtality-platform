@@ -221,21 +221,61 @@ export function createStripeAdminCustomerBillingGateway(
         currency: preview.currency ?? 'eur',
       }
     },
-    updatePaidPlanPrice: async (input) => {
-      const updated = await stripeClient.subscriptions.update(
-        input.stripeSubscriptionId,
+    schedulePaidPlanPriceAtPeriodEnd: async (input) => {
+      const schedule = await stripeClient.subscriptionSchedules.create({
+        from_subscription: input.stripeSubscriptionId,
+      })
+      const currentPhase = schedule.phases[0]
+      if (!currentPhase) {
+        throw new Error('Subscription schedule has no current phase.')
+      }
+
+      const newPhaseItems = currentPhase.items.map((item) => {
+        const itemPriceId =
+          typeof item.price === 'string' ? item.price : item.price.id
+        if (itemPriceId === input.currentPriceId) {
+          return {
+            price: input.newPriceId,
+            quantity: item.quantity ?? 1,
+          }
+        }
+        return {
+          price: itemPriceId,
+          quantity: item.quantity ?? 1,
+        }
+      })
+
+      const updated = await stripeClient.subscriptionSchedules.update(
+        schedule.id,
         {
-          items: [
+          end_behavior: 'release',
+          metadata: {
+            ...input.metadata,
+            source: 'admin-customer-billing',
+          },
+          phases: [
             {
-              id: input.subscriptionItemId,
-              price: input.newPriceId,
+              items: currentPhase.items.map((item) => ({
+                price:
+                  typeof item.price === 'string' ? item.price : item.price.id,
+                quantity: item.quantity ?? 1,
+              })),
+              start_date: currentPhase.start_date,
+              end_date: currentPhase.end_date,
+            },
+            {
+              items: newPhaseItems,
+              start_date: currentPhase.end_date,
+              proration_behavior: 'none',
             },
           ],
-          proration_behavior: 'create_prorations',
-          metadata: input.metadata,
         },
       )
-      return { stripeSubscriptionId: updated.id }
+
+      return {
+        stripeSubscriptionId: input.stripeSubscriptionId,
+        stripeScheduleId: updated.id,
+      }
     },
     createPaidProSubscription: async (input) => {
       const subscription = await stripeClient.subscriptions.create(
