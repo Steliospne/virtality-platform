@@ -105,7 +105,6 @@ function PlanCardPrices({
 
 export function PlanCard({
   title,
-  description,
   selected,
   disabled,
   onSelect,
@@ -119,7 +118,6 @@ export function PlanCard({
   onCheckout,
 }: {
   title: string
-  description: string
   selected: boolean
   disabled: boolean
   onSelect: () => void
@@ -133,37 +131,34 @@ export function PlanCard({
   onCheckout?: () => void
 }) {
   const hasCheckout = checkoutLabel != null && onCheckout != null
+  // Active interval (`disabled`): not selectable and not "Selected"; just inert.
+  const interactive = !hasCheckout && !disabled
+  const showSelected = selected && !disabled
   const className = cn(
-    'flex h-full min-h-72 flex-col rounded-xl border-2 p-6 text-left transition sm:min-h-80 sm:p-7',
+    'flex h-full min-h-56 flex-col rounded-xl border-2 p-6 text-left transition sm:min-h-64 sm:p-7',
     accent
-      ? selected
+      ? showSelected
         ? 'border-vital-blue-600 bg-vital-blue-50 dark:border-vital-blue-400 dark:bg-vital-blue-950/40'
         : 'border-vital-blue-200 bg-vital-blue-50/60 dark:border-vital-blue-800 dark:bg-vital-blue-950/20'
-      : selected
+      : showSelected
         ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
         : 'border-zinc-200 dark:border-zinc-800',
-    disabled && 'opacity-60',
   )
   const body = (
     <>
-      <div className='min-h-28 space-y-2 sm:min-h-32'>
-        <div className='flex min-h-12 flex-wrap items-start gap-2'>
-          <p className='text-xl font-semibold'>{title}</p>
-          {badge ? (
-            <Badge
-              className={
-                accent
-                  ? 'border-vital-blue-200 bg-vital-blue-100 text-vital-blue-800 dark:border-vital-blue-800 dark:bg-vital-blue-900/60 dark:text-vital-blue-200'
-                  : undefined
-              }
-            >
-              {badge}
-            </Badge>
-          ) : null}
-        </div>
-        <p className='min-h-11 text-sm leading-relaxed text-zinc-500 sm:min-h-12 sm:text-base'>
-          {description}
-        </p>
+      <div className='flex min-h-12 flex-wrap items-start gap-2'>
+        <p className='text-xl font-semibold'>{title}</p>
+        {badge ? (
+          <Badge
+            className={
+              accent
+                ? 'border-vital-blue-200 bg-vital-blue-100 text-vital-blue-800 dark:border-vital-blue-800 dark:bg-vital-blue-900/60 dark:text-vital-blue-200'
+                : undefined
+            }
+          >
+            {badge}
+          </Badge>
+        ) : null}
       </div>
 
       <div className='mt-6 min-h-16'>
@@ -173,7 +168,7 @@ export function PlanCard({
           rewrite={rewrite}
         />
       </div>
-      {selected && !hasCheckout ? (
+      {showSelected && !hasCheckout ? (
         <p
           className={cn(
             'mt-auto flex items-center gap-1.5 pt-5 text-sm font-medium',
@@ -201,17 +196,12 @@ export function PlanCard({
     </>
   )
 
-  if (hasCheckout) {
+  if (!interactive) {
     return <div className={className}>{body}</div>
   }
 
   return (
-    <button
-      type='button'
-      disabled={disabled}
-      onClick={onSelect}
-      className={className}
-    >
+    <button type='button' onClick={onSelect} className={className}>
       {body}
     </button>
   )

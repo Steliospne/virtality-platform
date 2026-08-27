@@ -103,6 +103,18 @@ export type ProCheckoutUpgradeInput = {
   plan: typeof PRO_SUBSCRIPTION_PLAN
   /** When true, Better Auth uses the plan's annualDiscountPriceId (yearly). */
   annual: boolean
+  /**
+   * When true, Better Auth schedules the price change at period end (paid Pro
+   * monthly ↔ yearly). Free → Paid stays false so the charge is immediate.
+   */
+  scheduleAtPeriodEnd: boolean
+  /**
+   * When true, Better Auth skips client redirect. Used for period-end
+   * interval switches so Profile Billing can refetch standing and show Cancel.
+   */
+  disableRedirect: boolean
+  /** Absolute console URL for Portal / scheduled-change return. */
+  returnUrl: string
   successUrl: string
   cancelUrl: string
 }
@@ -114,15 +126,22 @@ export type ProCheckoutUpgradeInput = {
  * soft-expired and success can await webhook sync (no optimistic entitlement).
  *
  * `annual` selects monthly vs yearly Price on the same `pro` plan.
- * `successUrl` / `cancelUrl` are absolute console URLs.
+ * `scheduleAtPeriodEnd` defers paid Pro interval switches to the next cycle and
+ * disables redirect so the tab can refresh standing (Update → Cancel).
+ * `successUrl` / `cancelUrl` / `returnUrl` are absolute console URLs.
  */
 export function buildProCheckoutUpgradeInput(
   returnUrl: string,
-  options?: { annual?: boolean },
+  options?: { annual?: boolean; scheduleAtPeriodEnd?: boolean },
 ): ProCheckoutUpgradeInput {
+  const absoluteReturn = toAbsoluteConsoleReturnUrl(returnUrl)
+  const scheduleAtPeriodEnd = options?.scheduleAtPeriodEnd ?? false
   return {
     plan: PRO_SUBSCRIPTION_PLAN,
     annual: options?.annual ?? false,
+    scheduleAtPeriodEnd,
+    disableRedirect: scheduleAtPeriodEnd,
+    returnUrl: absoluteReturn,
     successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
     cancelUrl: withCheckoutReturnIntent(returnUrl, 'cancel'),
   }
@@ -140,16 +159,22 @@ export type StartProSubscriptionCheckoutResult =
   | { ok: false; message: string }
 
 /**
- * Starts Better Auth Stripe Checkout for the canonical pro Price (monthly or
- * yearly). Does not write local entitlement; restore is webhook/success sync only.
+ * Starts Better Auth Stripe Checkout / upgrade for the canonical pro Price
+ * (monthly or yearly). Does not write local entitlement; restore is
+ * webhook/success sync only. Paid Pro interval switches pass
+ * `scheduleAtPeriodEnd` so the new price starts next cycle.
  */
 export async function startProSubscriptionCheckout(input: {
   upgrade: ProSubscriptionUpgradeFn
   returnUrl: string
   annual?: boolean
+  scheduleAtPeriodEnd?: boolean
 }): Promise<StartProSubscriptionCheckoutResult> {
   const { error } = await input.upgrade(
-    buildProCheckoutUpgradeInput(input.returnUrl, { annual: input.annual }),
+    buildProCheckoutUpgradeInput(input.returnUrl, {
+      annual: input.annual,
+      scheduleAtPeriodEnd: input.scheduleAtPeriodEnd,
+    }),
   )
 
   if (error) {

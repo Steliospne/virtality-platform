@@ -15,8 +15,8 @@ import { useExpiredFreeUpgradePrompt } from '@/hooks/use-expired-free-upgrade-pr
 import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
- * Dismissible upgrade dialog for clinicians on Free after trial expiry. Deep-links
- * to Profile Billing and does not block non-launch Console use.
+ * Dismissible upgrade dialog for clinicians on expired Free or canceled seats.
+ * Deep-links to Profile Billing and does not block non-launch Console use.
  */
 export function ExpiredFreeUpgradeDialog() {
   const { open, dismiss, userId } = useExpiredFreeUpgradePrompt()
@@ -32,8 +32,8 @@ export function ExpiredFreeUpgradeDialog() {
         <DialogHeader>
           <DialogTitle>Upgrade to launch VR programs</DialogTitle>
           <DialogDescription>
-            Your trial has ended. Subscribe to Pro to start VR programs again.
-            You can keep browsing Console while you decide.
+            Your Pro access has ended. Subscribe to Pro to start VR programs
+            again. You can keep browsing Console while you decide.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -42,7 +42,7 @@ export function ExpiredFreeUpgradeDialog() {
           </Button>
           {userId && (
             <Button asChild variant='primary'>
-              <Link href={profileBillingHref(userId)}>
+              <Link href={profileBillingHref(userId)} onClick={dismiss}>
                 <CreditCard />
                 View billing plans
               </Link>

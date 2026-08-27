@@ -11,12 +11,18 @@ import {
   profileBillingOpensPortal,
   profileBillingPlanCardCheckoutLabel,
   profileBillingPrimaryCtaLabel,
+  profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   splitCatalogPriceLabel,
   type BillingStandingView,
+  PAID_CANCELLATION_UNDO_LABEL,
+  PAID_INTERVAL_CANCEL_LABEL,
+  PAID_INTERVAL_UPDATE_LABEL,
+  profileBillingPendingCancellationBanner,
+  profileBillingPendingPlanChangeBanner,
 } from './profile-billing.js'
 
 const base: BillingStandingView = {
@@ -27,6 +33,8 @@ const base: BillingStandingView = {
   hadPaidBilling: false,
   billingInterval: null,
   clockEnd: null,
+  hasPendingPlanChange: false,
+  cancelAtPeriodEnd: false,
 }
 
 describe('profileBillingPrimaryCtaLabel', () => {
@@ -109,7 +117,7 @@ describe('profileBillingShowsPlanCardCheckout', () => {
     ).toBe(true)
   })
 
-  it('hides plan-card Checkout for entitled paid Pro seats', () => {
+  it('offers plan-card actions for entitled paid Pro seats (interval switch)', () => {
     expect(
       profileBillingShowsPlanCardCheckout(
         {
@@ -120,7 +128,7 @@ describe('profileBillingShowsPlanCardCheckout', () => {
         },
         true,
       ),
-    ).toBe(false)
+    ).toBe(true)
   })
 })
 
@@ -155,6 +163,132 @@ describe('profileBillingPlanCardCheckoutLabel', () => {
 
   it('uses Subscribe when no Stripe Customer is linked', () => {
     expect(profileBillingPlanCardCheckoutLabel(base, false)).toBe('Subscribe')
+  })
+
+  it('offers Update only on the other paid Pro interval', () => {
+    const standing: BillingStandingView = {
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: PRO_SUBSCRIPTION_PLAN,
+      billingInterval: 'month',
+    }
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
+      null,
+    )
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
+      PAID_INTERVAL_UPDATE_LABEL,
+    )
+  })
+
+  it('offers Cancel on the target interval when a switch is scheduled', () => {
+    const standing: BillingStandingView = {
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: PRO_SUBSCRIPTION_PLAN,
+      billingInterval: 'month',
+      hasPendingPlanChange: true,
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    }
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
+      null,
+    )
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
+      PAID_INTERVAL_CANCEL_LABEL,
+    )
+  })
+
+  it("offers Don't cancel on the active interval and Update on the other when cancel-at-period-end", () => {
+    const standing: BillingStandingView = {
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: PRO_SUBSCRIPTION_PLAN,
+      billingInterval: 'month',
+      cancelAtPeriodEnd: true,
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    }
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
+      PAID_CANCELLATION_UNDO_LABEL,
+    )
+    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
+      PAID_INTERVAL_UPDATE_LABEL,
+    )
+  })
+})
+
+describe('profileBillingPendingPlanChangeBanner', () => {
+  it('names the target plan and renewal when a switch is scheduled', () => {
+    const banner = profileBillingPendingPlanChangeBanner({
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: PRO_SUBSCRIPTION_PLAN,
+      billingInterval: 'month',
+      hasPendingPlanChange: true,
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    })
+    expect(banner).toMatch(/Switching to Yearly/)
+    expect(banner).toMatch(/Payment starts/)
+  })
+})
+
+describe('profileBillingPendingCancellationBanner', () => {
+  it('warns that access ends at the next cycle', () => {
+    const banner = profileBillingPendingCancellationBanner({
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: PRO_SUBSCRIPTION_PLAN,
+      billingInterval: 'month',
+      cancelAtPeriodEnd: true,
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    })
+    expect(banner).toMatch(/subscription ends/)
+    expect(banner).toMatch(/keep Pro access/i)
+  })
+
+  it('is absent when cancel-at-period-end is not scheduled', () => {
+    expect(
+      profileBillingPendingCancellationBanner({
+        ...base,
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+        billingInterval: 'month',
+        clockEnd: '2026-09-10T12:00:00.000Z',
+      }),
+    ).toBeNull()
+  })
+})
+
+describe('profileBillingSchedulesAtPeriodEnd', () => {
+  it('is true only for live paid Pro seats that are not canceling', () => {
+    expect(
+      profileBillingSchedulesAtPeriodEnd({
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+        cancelAtPeriodEnd: false,
+      }),
+    ).toBe(true)
+    expect(
+      profileBillingSchedulesAtPeriodEnd({
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+        cancelAtPeriodEnd: true,
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingSchedulesAtPeriodEnd({
+        entitled: true,
+        status: 'trialing',
+        plan: FREE_SUBSCRIPTION_PLAN,
+        cancelAtPeriodEnd: false,
+      }),
+    ).toBe(false)
   })
 })
 
@@ -192,6 +326,34 @@ describe('profileBillingStatusHeadline', () => {
 describe('profileBillingStatusDetail', () => {
   it('prompts interval choice when there is no live clock', () => {
     expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Yearly/)
+  })
+
+  it('mentions the scheduled target plan beside the renewal date', () => {
+    expect(
+      profileBillingStatusDetail({
+        ...base,
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+        billingInterval: 'month',
+        hasPendingPlanChange: true,
+        clockEnd: '2026-09-10T12:00:00.000Z',
+      }),
+    ).toMatch(/switching to Yearly/)
+  })
+
+  it('says Ends when cancel-at-period-end is scheduled', () => {
+    expect(
+      profileBillingStatusDetail({
+        ...base,
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+        billingInterval: 'month',
+        cancelAtPeriodEnd: true,
+        clockEnd: '2026-09-10T12:00:00.000Z',
+      }),
+    ).toMatch(/^Ends /)
   })
 })
 

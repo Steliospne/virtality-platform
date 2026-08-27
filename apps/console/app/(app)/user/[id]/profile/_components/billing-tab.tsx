@@ -16,6 +16,10 @@ import { PromoRedeemSection } from './promo-redeem-section'
 import { RemovePromoConfirmDialog } from './remove-promo-confirm-dialog'
 import { RemoveSuccessBanner } from './remove-success-banner'
 import { BillingTabSkeleton } from './billing-tab-skeleton'
+import { IntervalUpdateConfirmDialog } from './interval-update-confirm-dialog'
+import { IntervalCancelConfirmDialog } from './interval-cancel-confirm-dialog'
+import { PendingCancellationBanner } from './pending-cancellation-banner'
+import { PendingPlanChangeBanner } from './pending-plan-change-banner'
 import { useBillingTab } from './use-billing-tab'
 
 function SoftUnavailableBanner() {
@@ -40,11 +44,13 @@ export function BillingTab() {
     removeSuccess,
     setRemoveSuccess,
     redeemSuccessMessage,
+    pendingCancellationBanner,
+    pendingPlanChangeBanner,
     cta,
     showPlanCardCheckout,
-    planCardCheckoutLabel,
+    planCardCheckoutLabelFor,
     planCardCheckoutPending,
-    ctaPending,
+    portalPending,
     showPromoChrome,
     discount,
     hasEligibleSubscription,
@@ -61,6 +67,16 @@ export function BillingTab() {
     setRemoveOpen,
     appliedPromoCode,
     removePending,
+    updateConfirmOpen,
+    setUpdateConfirmOpen,
+    updateConfirmCopy,
+    handleUpdateConfirm,
+    updateConfirming,
+    cancelConfirmOpen,
+    setCancelConfirmOpen,
+    cancelConfirmCopy,
+    handleCancelConfirm,
+    cancelConfirming,
   } = useBillingTab()
 
   if (isStandingPending || isCatalogPending) {
@@ -80,8 +96,11 @@ export function BillingTab() {
   }
 
   const showPortalCta = cta != null
-  const planCardCheckoutLabelProp = showPlanCardCheckout
-    ? planCardCheckoutLabel
+  const monthlyCheckoutLabel = showPlanCardCheckout
+    ? planCardCheckoutLabelFor('month')
+    : null
+  const yearlyCheckoutLabel = showPlanCardCheckout
+    ? planCardCheckoutLabelFor('year')
     : null
 
   return (
@@ -99,44 +118,50 @@ export function BillingTab() {
           </p>
         </header>
 
+        {pendingCancellationBanner ? (
+          <PendingCancellationBanner message={pendingCancellationBanner} />
+        ) : null}
+
+        {pendingPlanChangeBanner ? (
+          <PendingPlanChangeBanner message={pendingPlanChangeBanner} />
+        ) : null}
+
         {display.kind === 'soft_unavailable' ? <SoftUnavailableBanner /> : null}
 
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
           <PlanCard
             title='Monthly'
-            description='Flexible. Cancel anytime before renewal.'
             selected={selectedInterval === 'month'}
-            disabled={showPortalCta}
+            disabled={standing.billingInterval === 'month'}
             onSelect={() => setSelectedInterval('month')}
             listPrimary={prices.monthlyLabel}
             rewrite={rewrite?.monthly ?? null}
-            checkoutLabel={planCardCheckoutLabelProp}
+            checkoutLabel={monthlyCheckoutLabel}
             checkoutPending={planCardCheckoutPending === 'month'}
             onCheckout={
-              planCardCheckoutLabelProp
+              monthlyCheckoutLabel
                 ? () => {
-                    void handlePlanCardCheckout('month')
+                    handlePlanCardCheckout('month')
                   }
                 : undefined
             }
           />
           <PlanCard
             title='Yearly'
-            description='One payment. Same Pro access for twelve months.'
             selected={selectedInterval === 'year'}
-            disabled={showPortalCta}
+            disabled={standing.billingInterval === 'year'}
             onSelect={() => setSelectedInterval('year')}
             listPrimary={prices.yearlyAsMonthlyLabel}
             listMuted={prices.yearlyTotalMutedLabel}
             badge={prices.yearlySavingsLabel ?? undefined}
             accent
             rewrite={rewrite?.yearly ?? null}
-            checkoutLabel={planCardCheckoutLabelProp}
+            checkoutLabel={yearlyCheckoutLabel}
             checkoutPending={planCardCheckoutPending === 'year'}
             onCheckout={
-              planCardCheckoutLabelProp
+              yearlyCheckoutLabel
                 ? () => {
-                    void handlePlanCardCheckout('year')
+                    handlePlanCardCheckout('year')
                   }
                 : undefined
             }
@@ -153,18 +178,18 @@ export function BillingTab() {
           </div>
         ) : null}
 
-        {cta ? (
+        {showPortalCta ? (
           <Button
             type='button'
-            variant='primary'
+            variant='outline'
             className='w-full'
             size='lg'
-            disabled={ctaPending}
+            disabled={portalPending}
             onClick={() => {
               void handlePrimaryCta()
             }}
           >
-            {ctaPending ? 'Opening portal…' : cta}
+            {portalPending ? 'Opening portal…' : cta}
           </Button>
         ) : null}
 
@@ -193,6 +218,34 @@ export function BillingTab() {
           void handleRemoveConfirm()
         }}
       />
+
+      {updateConfirmCopy ? (
+        <IntervalUpdateConfirmDialog
+          open={updateConfirmOpen}
+          onOpenChange={setUpdateConfirmOpen}
+          title={updateConfirmCopy.title}
+          body={updateConfirmCopy.body}
+          confirmLabel={updateConfirmCopy.confirmLabel}
+          confirming={updateConfirming}
+          onConfirm={() => {
+            void handleUpdateConfirm()
+          }}
+        />
+      ) : null}
+
+      {cancelConfirmCopy ? (
+        <IntervalCancelConfirmDialog
+          open={cancelConfirmOpen}
+          onOpenChange={setCancelConfirmOpen}
+          title={cancelConfirmCopy.title}
+          body={cancelConfirmCopy.body}
+          confirmLabel={cancelConfirmCopy.confirmLabel}
+          confirming={cancelConfirming}
+          onConfirm={() => {
+            void handleCancelConfirm()
+          }}
+        />
+      ) : null}
     </div>
   )
 }

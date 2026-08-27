@@ -13,24 +13,19 @@ function PlanCardSkeleton({
     <div
       className={
         accent
-          ? 'border-vital-blue-200 bg-vital-blue-50/60 dark:border-vital-blue-800 dark:bg-vital-blue-950/20 flex h-full min-h-72 flex-col rounded-xl border-2 p-6 sm:min-h-80 sm:p-7'
-          : 'flex h-full min-h-72 flex-col rounded-xl border-2 border-zinc-200 p-6 sm:min-h-80 sm:p-7 dark:border-zinc-800'
+          ? 'border-vital-blue-200 bg-vital-blue-50/60 dark:border-vital-blue-800 dark:bg-vital-blue-950/20 flex h-full min-h-56 flex-col rounded-xl border-2 p-6 sm:min-h-64 sm:p-7'
+          : 'flex h-full min-h-56 flex-col rounded-xl border-2 border-zinc-200 p-6 sm:min-h-64 sm:p-7 dark:border-zinc-800'
       }
     >
-      <div className='flex min-h-28 flex-col sm:min-h-32'>
-        <div className='space-y-2'>
-          <div className='flex min-h-12 flex-wrap items-start gap-2'>
-            <Skeleton className='h-7 w-24 rounded-md' />
-            {withBadge ? <Skeleton className='h-5 w-44 rounded-md' /> : null}
-          </div>
-          <Skeleton className='h-11 w-full max-w-none sm:h-12' />
-        </div>
-        <div className='mt-6 min-h-16 space-y-1'>
-          <Skeleton className='h-8 w-28' />
-          <Skeleton
-            className={withListMuted ? 'h-5 w-24' : 'h-5 w-24 opacity-0'}
-          />
-        </div>
+      <div className='flex min-h-12 flex-wrap items-start gap-2'>
+        <Skeleton className='h-7 w-24 rounded-md' />
+        {withBadge ? <Skeleton className='h-5 w-44 rounded-md' /> : null}
+      </div>
+      <div className='mt-6 min-h-16 space-y-1'>
+        <Skeleton className='h-8 w-28' />
+        <Skeleton
+          className={withListMuted ? 'h-5 w-24' : 'h-5 w-24 opacity-0'}
+        />
       </div>
     </div>
   )
