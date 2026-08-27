@@ -27,6 +27,8 @@ export async function loadEntitlementStandingForSession(input: {
       trialEnd: true,
       periodEnd: true,
       billingInterval: true,
+      stripeScheduleId: true,
+      cancelAtPeriodEnd: true,
     },
   })
 
