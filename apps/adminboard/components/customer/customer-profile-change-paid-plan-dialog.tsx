@@ -99,9 +99,9 @@ export function CustomerProfileChangePaidPlanDialog({
           <DialogHeader>
             <DialogTitle>Change paid plan</DialogTitle>
             <DialogDescription>
-              Select a supported Pro interval. Customers without a payment
-              method receive a Checkout link and stay on Free until purchase
-              completes.
+              Select a supported Pro interval. Live paid interval changes apply
+              at the next billing cycle. Customers without a payment method
+              receive a Checkout link and stay on Free until purchase completes.
             </DialogDescription>
           </DialogHeader>
 
@@ -156,10 +156,7 @@ export function CustomerProfileChangePaidPlanDialog({
                 checked={confirmed}
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
-              <span>
-                I confirm the effective timing and any proration described
-                above.
-              </span>
+              <span>I confirm the effective timing described above.</span>
             </label>
           </div>
 
