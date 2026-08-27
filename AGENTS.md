@@ -4,6 +4,10 @@
 
 Before staging or committing code changes, run `pnpm format` from the repo root (`prettier --write .`). Include any files Prettier modifies in the same commit as the related work. Do not skip formatting because a diff looks small or formatting-only.
 
+### Package builds
+
+Apps and services load workspace packages from `dist/`, not `src/`. After changing anything under `packages/` (or any other non-`apps/` tree that publishes into those packages), run `pnpm build:packages` from the repo root before verifying the change in an app or against a running API. Done when the command exits 0.
+
 ### Database migrations
 
 Do not hand-write Prisma migration files. When schema changes are needed, update the Prisma schema and use `pnpm db:migrate:dev` to generate the migration, or `pnpm db:generate` when only client/codegen output is needed.
