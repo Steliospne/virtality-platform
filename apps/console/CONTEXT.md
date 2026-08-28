@@ -214,6 +214,14 @@ _Avoid_: free sub, trialing subscription (as the term), trial offer
 The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable.
 _Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
 
+**Entitlement Standing**:
+Server read model of the clinician's Entitlement Clock and related billing flags from synced Subscriptions (`buildEntitlementStanding`). Includes entitled, status, clockEnd, Billing Path Established, Paid billing history, Checkout CTA, pending Cycle plan change, and cancel-at-period-end.
+_Avoid_: session entitlement blob, live countdown (that is Live Entitlement Standing)
+
+**Live Entitlement Standing**:
+Entitlement Standing re-evaluated at a client `now` for Remaining Time, VR soft gate, sidebar Checkout CTA, and related labels (`projectLiveEntitlementStanding`). Synced flags pass through; time-sensitive fields overwrite the standing values that went stale after the server `now`. Checkout restore polling after success return stays in the Console hook, not in this projection.
+_Avoid_: client-side entitlement invent, dual-write clock, refetch-only countdown
+
 **Billing Path Established**:
 At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
 _Avoid_: has Stripe customer, ever paid, currently entitled
