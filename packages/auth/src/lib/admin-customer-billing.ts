@@ -1,6 +1,5 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
-import { getConsoleUrl } from '@virtality/shared/types'
 import {
   assignFreeAfterCancellationForCustomer,
   billingSnapshotFromPrimarySubscription,
@@ -12,6 +11,7 @@ import {
   previewChangePaidPlan,
   reactivatePaidSubscriptionForCustomer,
   sendPaidCheckoutLinkForCustomer,
+  withCheckoutReturnIntent,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AssignFreeAfterCancellationInput,
@@ -24,8 +24,6 @@ import {
 import type Stripe from 'stripe'
 import { FREE_PLAN_PRICE_ID } from '../auth-instance.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
-
-const CHECKOUT_RETURN_PARAM = 'checkoutReturn'
 
 function readStripeSubscriptionPeriodEnd(
   subscription: Stripe.Subscription,
@@ -42,20 +40,10 @@ function buildAdminCheckoutReturnUrls(userId: string): {
   successUrl: string
   cancelUrl: string
 } {
-  const base = new URL(
-    `/user/${userId}/profile`,
-    getConsoleUrl().replace(/\/$/, ''),
-  )
-  base.searchParams.set('tab', 'billing')
-
-  const success = new URL(base)
-  success.searchParams.set(CHECKOUT_RETURN_PARAM, 'success')
-  const cancel = new URL(base)
-  cancel.searchParams.set(CHECKOUT_RETURN_PARAM, 'cancel')
-
+  const returnUrl = `/user/${userId}/profile?tab=billing`
   return {
-    successUrl: success.href,
-    cancelUrl: cancel.href,
+    successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
+    cancelUrl: withCheckoutReturnIntent(returnUrl, 'cancel'),
   }
 }
 

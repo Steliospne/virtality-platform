@@ -13,6 +13,13 @@ function errorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+function asPortError(
+  error: unknown,
+  fallback: string,
+): { error: { message: string } } {
+  return { error: { message: errorMessage(error, fallback) } }
+}
+
 async function readStripeScheduleId(
   client: PrismaClient,
   referenceId: string,
@@ -26,6 +33,18 @@ async function readStripeScheduleId(
     select: { stripeScheduleId: true },
   })
   return row?.stripeScheduleId ?? null
+}
+
+function stripeSubscriptionIdFromRestore(restored: unknown): string | null {
+  if (
+    restored &&
+    typeof restored === 'object' &&
+    'id' in restored &&
+    typeof restored.id === 'string'
+  ) {
+    return restored.id
+  }
+  return null
 }
 
 /**
@@ -57,14 +76,7 @@ export function createBetterAuthCyclePlanChangePort(
           : null
         return { data: {}, stripeScheduleId }
       } catch (error) {
-        return {
-          error: {
-            message: errorMessage(
-              error,
-              'Failed to schedule Cycle plan change',
-            ),
-          },
-        }
+        return asPortError(error, 'Failed to schedule Cycle plan change')
       }
     },
     restore: async (input) => {
@@ -75,20 +87,12 @@ export function createBetterAuthCyclePlanChangePort(
             ...(input.referenceId ? { referenceId: input.referenceId } : {}),
           },
         })
-        const stripeSubscriptionId =
-          restored &&
-          typeof restored === 'object' &&
-          'id' in restored &&
-          typeof restored.id === 'string'
-            ? restored.id
-            : null
-        return { data: restored, stripeSubscriptionId }
-      } catch (error) {
         return {
-          error: {
-            message: errorMessage(error, 'Failed to restore the subscription'),
-          },
+          data: restored,
+          stripeSubscriptionId: stripeSubscriptionIdFromRestore(restored),
         }
+      } catch (error) {
+        return asPortError(error, 'Failed to restore the subscription')
       }
     },
   }

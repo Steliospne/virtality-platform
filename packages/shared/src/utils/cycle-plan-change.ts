@@ -5,7 +5,10 @@
  * port so Console (browser client) and Adminboard (auth.api) share one path.
  */
 
-import { getConsoleUrl } from '../types/index.ts'
+import {
+  toAbsoluteConsoleReturnUrl,
+  withCheckoutReturnIntent,
+} from './checkout-return-url.ts'
 import {
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_SUBSCRIPTION_PLAN,
@@ -77,28 +80,11 @@ export function authorizeAdminCyclePlanReference(input: {
   )
 }
 
-const ABSOLUTE_URL_RE = /^[a-zA-Z][a-zA-Z0-9+\-.]*:/
-const CHECKOUT_RETURN_PARAM = 'checkoutReturn'
-
-function isAbsoluteUrl(url: string): boolean {
-  return ABSOLUTE_URL_RE.test(url)
-}
-
-function toAbsoluteConsoleReturnUrl(returnUrl: string): string {
-  if (isAbsoluteUrl(returnUrl)) return returnUrl
-  const base = getConsoleUrl().replace(/\/$/, '')
-  const path = returnUrl.startsWith('/') ? returnUrl : `/${returnUrl}`
-  return `${base}${path}`
-}
-
-function withCheckoutReturnIntent(
-  returnUrl: string,
-  intent: 'success' | 'cancel',
+function portErrorMessage(
+  error: { message?: string | null } | null | undefined,
+  fallback: string,
 ): string {
-  const absolute = toAbsoluteConsoleReturnUrl(returnUrl)
-  const url = new URL(absolute)
-  url.searchParams.set(CHECKOUT_RETURN_PARAM, intent)
-  return url.href
+  return error?.message?.trim() || fallback
 }
 
 /** True when the Price id is the canonical Pro yearly Price. */
@@ -167,7 +153,7 @@ export async function scheduleCyclePlanChange(input: {
   if (error) {
     return {
       ok: false,
-      message: error.message?.trim() || 'Failed to schedule Cycle plan change',
+      message: portErrorMessage(error, 'Failed to schedule Cycle plan change'),
     }
   }
 
@@ -192,7 +178,7 @@ export async function restoreSubscription(input: {
   if (error) {
     return {
       ok: false,
-      message: error.message?.trim() || 'Failed to restore the subscription',
+      message: portErrorMessage(error, 'Failed to restore the subscription'),
     }
   }
 

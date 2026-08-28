@@ -8,7 +8,6 @@ import {
   readCheckoutReturnIntent,
   shouldPollCheckoutEntitlementRestore,
   startProSubscriptionCheckout,
-  stripCheckoutReturnIntent,
 } from './subscription-checkout.js'
 
 const consoleOrigin = getConsoleUrl()
@@ -98,20 +97,6 @@ describe('buildProCheckoutUpgradeInput', () => {
 })
 
 describe('checkout return intent', () => {
-  it('reads success and cancel markers from the search string', () => {
-    expect(readCheckoutReturnIntent('?checkoutReturn=success')).toBe('success')
-    expect(readCheckoutReturnIntent('?checkoutReturn=cancel')).toBe('cancel')
-    expect(readCheckoutReturnIntent('')).toBeNull()
-    expect(readCheckoutReturnIntent('?other=1')).toBeNull()
-  })
-
-  it('strips the checkout return marker without dropping other params', () => {
-    expect(stripCheckoutReturnIntent('/app?checkoutReturn=success&tab=1')).toBe(
-      '/app?tab=1',
-    )
-    expect(stripCheckoutReturnIntent('/app?checkoutReturn=cancel')).toBe('/app')
-  })
-
   it('polls for entitlement restore only after success return while still soft-expired', () => {
     expect(
       shouldPollCheckoutEntitlementRestore({

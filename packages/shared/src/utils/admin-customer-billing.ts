@@ -691,6 +691,51 @@ export async function cancelPaidSubscriptionForCustomer(
   }
 }
 
+/**
+ * Shared Better Auth restore + pending audit for Reactivate and Cancel Cycle
+ * plan change (same restore underneath, distinct audit actions).
+ */
+async function restoreLivePaidProAndRecordAudit(input: {
+  store: AdminCustomerBillingStore
+  cyclePlan: AdminCustomerCyclePlanPort
+  user: AdminCustomerBillingTargetUser
+  actorUserId: string
+  reason: string
+  action: 'reactivate_subscription' | 'cancel_cycle_plan_change'
+  fallbackStripeSubscriptionId: string
+  beforeBillingState: AdminCustomerBillingSnapshot
+}): Promise<AdminCustomerBillingMutationResult> {
+  const restored = await restoreSubscription({
+    port: input.cyclePlan,
+    referenceId: input.user.id,
+  })
+  if (!restored.ok) {
+    throw new AdminCustomerBillingStateError(restored.message)
+  }
+
+  const stripeOperationId =
+    restored.stripeSubscriptionId ?? input.fallbackStripeSubscriptionId
+  const afterBillingState = await input.store.summarizeBillingState(
+    input.user.id,
+  )
+  const audit = await input.store.recordAudit({
+    targetUserId: input.user.id,
+    actorUserId: input.actorUserId,
+    action: input.action,
+    reason: input.reason.trim(),
+    outcome: 'pending',
+    stripeOperationId,
+    beforeBillingState: input.beforeBillingState,
+    afterBillingState,
+  })
+
+  return {
+    auditId: audit.id,
+    stripeOperationId,
+    pendingWebhookSync: true,
+  }
+}
+
 export async function reactivatePaidSubscriptionForCustomer(
   store: AdminCustomerBillingStore,
   cyclePlan: AdminCustomerCyclePlanPort,
@@ -714,33 +759,16 @@ export async function reactivatePaidSubscriptionForCustomer(
     )
   }
 
-  const restored = await restoreSubscription({
-    port: cyclePlan,
-    referenceId: user.id,
-  })
-  if (!restored.ok) {
-    throw new AdminCustomerBillingStateError(restored.message)
-  }
-
-  const stripeOperationId =
-    restored.stripeSubscriptionId ?? livePaidPro.stripeSubscriptionId
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
+  return restoreLivePaidProAndRecordAudit({
+    store,
+    cyclePlan,
+    user,
     actorUserId: input.actorUserId,
+    reason: input.reason,
     action: 'reactivate_subscription',
-    reason: input.reason.trim(),
-    outcome: 'pending',
-    stripeOperationId,
+    fallbackStripeSubscriptionId: livePaidPro.stripeSubscriptionId,
     beforeBillingState,
-    afterBillingState,
   })
-
-  return {
-    auditId: audit.id,
-    stripeOperationId,
-    pendingWebhookSync: true,
-  }
 }
 
 export async function cancelCyclePlanChangeForCustomer(
@@ -766,33 +794,16 @@ export async function cancelCyclePlanChangeForCustomer(
     )
   }
 
-  const restored = await restoreSubscription({
-    port: cyclePlan,
-    referenceId: user.id,
-  })
-  if (!restored.ok) {
-    throw new AdminCustomerBillingStateError(restored.message)
-  }
-
-  const stripeOperationId =
-    restored.stripeSubscriptionId ?? livePaidPro.stripeSubscriptionId
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
+  return restoreLivePaidProAndRecordAudit({
+    store,
+    cyclePlan,
+    user,
     actorUserId: input.actorUserId,
+    reason: input.reason,
     action: 'cancel_cycle_plan_change',
-    reason: input.reason.trim(),
-    outcome: 'pending',
-    stripeOperationId,
+    fallbackStripeSubscriptionId: livePaidPro.stripeSubscriptionId,
     beforeBillingState,
-    afterBillingState,
   })
-
-  return {
-    auditId: audit.id,
-    stripeOperationId,
-    pendingWebhookSync: true,
-  }
 }
 
 export async function assignFreeAfterCancellationForCustomer(
