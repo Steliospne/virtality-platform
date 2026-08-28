@@ -218,6 +218,10 @@ _Avoid_: trial_end (as product speak), access window, license timer, Seat, org s
 At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
 _Avoid_: has Stripe customer, ever paid, currently entitled
 
+**Paid billing history**:
+Synced Subscription history shows a completed paid Pro billing period (not only trial-style entitlement that never converted). Free rows never count. Canceled seats count only when the paid period continued past trial end (`periodEnd > trialEnd`). Drives Subscribe vs Renew, Campaign Window Subscribe attach eligibility, and Adminboard Assign Free after cancellation (with live paid Pro as an alternate gate).
+_Avoid_: ever had a Subscription, Billing Path Established, any canceled Pro
+
 **Remaining Time**:
 The clinician-visible duration left on the **Entitlement Clock**, always shown in the console sidebar.
 _Avoid_: days remaining (as the term), time left, access remaining

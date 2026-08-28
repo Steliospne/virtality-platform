@@ -16,6 +16,7 @@ import {
   type CustomerSubscriptionSummary,
 } from './admin-customer.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
+import { hadPaidBillingHistory } from './paid-billing-history.ts'
 
 export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'change_paid_plan',
@@ -255,17 +256,16 @@ export function findLivePaidProSubscription(
   )
 }
 
-export function customerHadPaidBillingHistory(
+/**
+ * Assign Free after cancellation eligibility: prior **Paid billing history**
+ * or a live paid Pro seat (immediate cancel + Free create path).
+ */
+export function qualifiesForAssignFreeAfterCancellation(
   subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
 ): boolean {
-  return subscriptions.some(
-    (subscription) =>
-      isProSubscriptionPlan(subscription.plan) &&
-      (subscription.status === 'active' ||
-        subscription.status === 'canceled' ||
-        subscription.status === 'past_due' ||
-        subscription.endedAt != null ||
-        subscription.canceledAt != null),
+  return (
+    hadPaidBillingHistory(subscriptions) ||
+    findLivePaidProSubscription(subscriptions) != null
   )
 }
 
@@ -719,7 +719,7 @@ export async function assignFreeAfterCancellationForCustomer(
   const { user, subscriptions, beforeBillingState, livePaidPro } =
     await loadBillingContext(store, input)
 
-  if (!customerHadPaidBillingHistory(subscriptions) && !livePaidPro) {
+  if (!qualifiesForAssignFreeAfterCancellation(subscriptions)) {
     throw new AdminCustomerBillingStateError(
       'Assign Free after cancellation requires prior paid billing or a live paid subscription.',
     )

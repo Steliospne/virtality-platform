@@ -1,10 +1,10 @@
 import {
-  customerHadPaidBillingHistory,
   findLivePaidProSubscription,
   formatAdminCustomerAccessActionLabel,
   formatAdminCustomerBillingActionLabel,
   isAdminCustomerAccessAction,
   isAdminCustomerBillingAction,
+  qualifiesForAssignFreeAfterCancellation,
   type AdminCustomerBillingSnapshotState,
   type AdminCustomerProfile,
 } from '@virtality/shared/utils'
@@ -101,14 +101,7 @@ export function canAssignFreeAfterCancellation(
   profile: AdminCustomerProfile,
 ): boolean {
   if (profile.role === 'admin') return false
-  if (
-    profile.billingStatus === 'active' ||
-    profile.billingStatus === 'trialing'
-  ) {
-    return true
-  }
-  if (profile.billingStatus === 'canceled') return true
-  return customerHadPaidBillingHistory(profile.subscriptionHistory)
+  return qualifiesForAssignFreeAfterCancellation(profile.subscriptionHistory)
 }
 
 export function formatBillingMutationSuccessMessage(input: {

@@ -8,9 +8,9 @@ import {
   buildChangePaidPlanPreview,
   cancelPaidSubscriptionForCustomer,
   changePaidPlanForCustomer,
-  customerHadPaidBillingHistory,
   findLivePaidProSubscription,
   previewChangePaidPlan,
+  qualifiesForAssignFreeAfterCancellation,
   reactivatePaidSubscriptionForCustomer,
   sendPaidCheckoutLinkForCustomer,
   type AdminCustomerBillingStore,
@@ -154,16 +154,35 @@ describe('findLivePaidProSubscription', () => {
   })
 })
 
-describe('customerHadPaidBillingHistory', () => {
-  it('detects prior paid billing from ended Pro subscriptions', () => {
+describe('qualifiesForAssignFreeAfterCancellation', () => {
+  it('allows seats with a paid period past trial end', () => {
     expect(
-      customerHadPaidBillingHistory([
+      qualifiesForAssignFreeAfterCancellation([
         subscription({
           status: 'canceled',
-          endedAt: new Date('2026-07-01T12:00:00.000Z'),
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+          endedAt: new Date('2026-08-01T12:00:00.000Z'),
         }),
       ]),
     ).toBe(true)
+  })
+
+  it('rejects trial-only canceled seats', () => {
+    expect(
+      qualifiesForAssignFreeAfterCancellation([
+        subscription({
+          status: 'canceled',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+          endedAt: new Date('2026-08-01T12:00:00.000Z'),
+        }),
+      ]),
+    ).toBe(false)
+  })
+
+  it('allows live paid Pro even without prior paid history fields', () => {
+    expect(qualifiesForAssignFreeAfterCancellation([subscription()])).toBe(true)
   })
 })
 
@@ -441,6 +460,38 @@ describe('assignFreeAfterCancellationForCustomer', () => {
         action: 'assign_free_after_cancellation',
       }),
     )
+  })
+
+  it('rejects trial-only canceled seats without live paid Pro', async () => {
+    await expect(
+      assignFreeAfterCancellationForCustomer(
+        createStore({
+          user: {
+            id: 'user_trial_only',
+            name: 'Trial User',
+            email: 'trial@example.com',
+            role: 'user',
+            stripeCustomerId: 'cus_trial',
+          },
+          subscriptions: [
+            subscription({
+              status: 'canceled',
+              trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+              periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+              endedAt: new Date('2026-08-01T12:00:00.000Z'),
+              stripeSubscriptionId: 'sub_trial_canceled',
+            }),
+          ],
+        }),
+        createGateway(),
+        {
+          userId: 'user_trial_only',
+          actorUserId: ACTOR_ID,
+          reason: 'Should not qualify',
+          priceId: FREE_PLAN_PRICE_ID,
+        },
+      ),
+    ).rejects.toThrow(AdminCustomerBillingStateError)
   })
 })
 

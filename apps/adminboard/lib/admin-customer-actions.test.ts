@@ -71,7 +71,7 @@ describe('paid billing administration eligibility', () => {
     ).toBe(true)
   })
 
-  it('allows assign Free after cancellation for paid or canceled customers', () => {
+  it('allows assign Free after cancellation for paid history or live paid Pro', () => {
     expect(canAssignFreeAfterCancellation(paidProfile)).toBe(true)
     expect(
       canAssignFreeAfterCancellation({
@@ -82,11 +82,43 @@ describe('paid billing administration eligibility', () => {
           {
             plan: 'pro',
             status: 'canceled',
-            endedAt: new Date('2026-07-01T12:00:00.000Z'),
+            trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+            periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+            endedAt: new Date('2026-08-01T12:00:00.000Z'),
           },
         ],
       } as AdminCustomerProfile),
     ).toBe(true)
+  })
+
+  it('rejects assign Free after cancellation for trial-only canceled seats', () => {
+    expect(
+      canAssignFreeAfterCancellation({
+        role: 'user',
+        billingStatus: 'canceled',
+        accessStatus: 'blocked',
+        subscriptionHistory: [
+          {
+            plan: 'pro',
+            status: 'canceled',
+            trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+            periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+            endedAt: new Date('2026-08-01T12:00:00.000Z'),
+          },
+        ],
+      } as AdminCustomerProfile),
+    ).toBe(false)
+  })
+
+  it('rejects assign Free after cancellation for never-subscribed Free seats', () => {
+    expect(
+      canAssignFreeAfterCancellation({
+        role: 'user',
+        billingStatus: 'absent',
+        accessStatus: 'free',
+        subscriptionHistory: [] as AdminCustomerProfile['subscriptionHistory'],
+      } as AdminCustomerProfile),
+    ).toBe(false)
   })
 
   it('allows paid plan changes for non-admin customers without live trialing billing', () => {

@@ -20,6 +20,7 @@ import {
 import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { resolveExpiredFreeUpgradeQualifies } from './expired-free-upgrade-prompt.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
+import { hadPaidBillingHistory } from './paid-billing-history.ts'
 
 export type EntitlementBillingInterval = 'month' | 'year'
 
@@ -162,37 +163,6 @@ export function canLaunchVrPrograms(input: {
 
 /** Subscribe vs Renew Checkout CTA; null when CTA is hidden. */
 export type CheckoutCta = 'subscribe' | 'renew'
-
-const PAID_BILLING_STATUSES = new Set([
-  'active',
-  'past_due',
-  'unpaid',
-  'paused',
-])
-
-/**
- * True when one synced Subscription indicates a completed paid billing period
- * (not only trial-style entitlement that never converted).
- */
-function subscriptionImpliesPaidBilling(
-  sub: EntitlementClockSubscription,
-): boolean {
-  if (isFreeSubscriptionPlan(sub.plan)) return false
-  if (PAID_BILLING_STATUSES.has(sub.status)) return true
-  if (sub.periodEnd == null) return false
-  if (sub.trialEnd == null) return true
-  return sub.periodEnd.getTime() > sub.trialEnd.getTime()
-}
-
-/**
- * True when synced Subscription history indicates a completed paid billing
- * period (not only trial-style entitlement that never converted).
- */
-export function hadPaidBillingHistory(
-  subscriptions: readonly EntitlementClockSubscription[],
-): boolean {
-  return subscriptions.some(subscriptionImpliesPaidBilling)
-}
 
 /**
  * Checkout CTA visibility: entitled users never see Subscribe/Renew; soft-
