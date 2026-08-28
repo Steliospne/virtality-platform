@@ -35,6 +35,7 @@ import {
 } from '@virtality/react-query'
 import {
   buildStartAckPersistenceInput,
+  canPersistSessionProgress,
   resolveProgramStateAfterStartAckPersistenceFailure,
   resolveProgramStateAfterStartAckPersistenceSuccess,
   shouldCreatePatientSessionOnStartAck,
@@ -42,19 +43,17 @@ import {
 } from '@/lib/patient-dashboard-session-launch'
 import type { SessionProgressUpsertInput } from '@/lib/session-progress-persistence'
 import {
-  assembleSkipSafeProgressFlowState,
-  projectSkipSafeProgressFlowState,
-  runLiveAcknowledgeExerciseChange,
-  runLiveCompleteSession,
-  runLiveFailPendingExerciseChange,
-  runLiveHeadsetExerciseAdvance,
-  runLiveInterruptSession,
-  runLiveRepEnd,
-  runLiveRequestExerciseSkip,
-  runLiveSetEnd,
+  acknowledgeExerciseChangeInFlow,
+  applyHeadsetExerciseAdvanceInFlow,
+  applyRepEndToFlow,
+  applySetEndToFlow,
+  completeSessionInFlow,
+  failPendingExerciseChangeInFlow,
+  interruptSessionInFlow,
+  requestExerciseSkipInFlow,
   type ExerciseSkipRequest,
-} from '@/lib/skip-safe-progress-live-adapter'
-import type { SkipSafeProgressFlowState } from '@/lib/skip-safe-progress-flow'
+  type SkipSafeProgressFlowState,
+} from '@/lib/skip-safe-progress-flow'
 import {
   buildSessionWorkingCopySyncPayload,
   serializeSessionWorkingCopy,
@@ -157,29 +156,34 @@ const usePatientDashboardSocketSetup = ({
     }
   }
 
-  const readFlowState = (): SkipSafeProgressFlowState =>
-    assembleSkipSafeProgressFlowState({
-      patientSessionId: patientSessionId.current,
-      sessionExerciseRows: sessionExerciseRows.current,
-      headsetConfirmedExerciseIndex: currExercise.current,
-      pendingExerciseChange: pendingExerciseChange.current,
-      progressByExerciseId: progressData.current ?? {},
-      currentExerciseProgress: realTimeData.current,
-      currSet: currSet.current,
-      currRep: currRep.current,
-    })
+  const readFlowState = (): SkipSafeProgressFlowState => ({
+    patientSessionId: patientSessionId.current,
+    sessionExerciseRows: sessionExerciseRows.current,
+    headsetConfirmedExerciseIndex: currExercise.current,
+    pendingExerciseChange: pendingExerciseChange.current,
+    progressByExerciseId: progressData.current ?? {},
+    currentExerciseProgress: realTimeData.current,
+    currSet: currSet.current,
+    currRep: currRep.current,
+  })
 
   const writeFlowState = (next: SkipSafeProgressFlowState) => {
-    const projected = projectSkipSafeProgressFlowState(next)
-    patientSessionId.current = projected.patientSessionId
-    sessionExerciseRows.current = [...projected.sessionExerciseRows]
-    currExercise.current = projected.headsetConfirmedExerciseIndex
-    pendingExerciseChange.current = projected.pendingExerciseChange
-    progressData.current = projected.progressByExerciseId
-    realTimeData.current = projected.currentExerciseProgress
-    currSet.current = projected.currSet
-    currRep.current = projected.currRep
+    patientSessionId.current = next.patientSessionId
+    sessionExerciseRows.current = [...next.sessionExerciseRows]
+    currExercise.current = next.headsetConfirmedExerciseIndex
+    pendingExerciseChange.current = next.pendingExerciseChange
+    progressData.current = { ...next.progressByExerciseId }
+    realTimeData.current = [...next.currentExerciseProgress]
+    currSet.current = next.currSet
+    currRep.current = next.currRep
   }
+
+  const canPersistFlowState = (state: SkipSafeProgressFlowState) =>
+    canPersistSessionProgress(
+      state.patientSessionId,
+      state.sessionExerciseRows,
+      state.headsetConfirmedExerciseIndex,
+    )
 
   const persistRemoteUpserts = async (
     remoteUpserts: SessionProgressUpsertInput[],
@@ -210,7 +214,7 @@ const usePatientDashboardSocketSetup = ({
       return
     }
 
-    const result = runLiveFailPendingExerciseChange(readFlowState())
+    const result = failPendingExerciseChangeInFlow(readFlowState())
 
     if (!result.failed) {
       return
@@ -275,7 +279,10 @@ const usePatientDashboardSocketSetup = ({
       return
     }
 
-    const result = runLiveRequestExerciseSkip(readFlowState(), request)
+    const flowState = readFlowState()
+    const result = requestExerciseSkipInFlow(flowState, request, {
+      persistSucceeds: canPersistFlowState(flowState),
+    })
 
     if (!result.skipRequested || !result.state.pendingExerciseChange) {
       return
@@ -364,7 +371,7 @@ const usePatientDashboardSocketSetup = ({
     const sessionIdForCompletion = patientSessionId.current
 
     if (sessionIdForCompletion && sessionExerciseRows.current.length > 0) {
-      const result = runLiveCompleteSession(readFlowState())
+      const result = completeSessionInFlow(readFlowState())
       await persistRemoteUpserts(result.remoteUpserts)
       writeFlowState(result.state)
     }
@@ -394,7 +401,7 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleChangeExercise = (data: string) => {
-    const result = runLiveHeadsetExerciseAdvance(readFlowState(), data)
+    const result = applyHeadsetExerciseAdvanceInFlow(readFlowState(), data)
 
     if (!result.advanced) {
       return
@@ -406,7 +413,7 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleChangeExerciseAck = () => {
-    const result = runLiveAcknowledgeExerciseChange(readFlowState())
+    const result = acknowledgeExerciseChangeInFlow(readFlowState())
 
     if (!result.acknowledged) {
       return
@@ -419,14 +426,20 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleRepEnd = (payload: string) => {
-    const result = runLiveRepEnd(readFlowState(), payload)
+    const flowState = readFlowState()
 
-    if (!result.applied) {
+    if (!canPersistFlowState(flowState)) {
+      return
+    }
+
+    const result = applyRepEndToFlow(flowState, payload)
+
+    if (result.completedRep === undefined) {
       return
     }
 
     const currentExercise = exercises![currExercise.current]
-    const progress = result.progress
+    const progress = result.progress ?? 0
 
     if (stats.current.highscore < progress) {
       stats.current.highscore = progress
@@ -462,9 +475,15 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleSetEnd = async (payload: string) => {
-    const result = runLiveSetEnd(readFlowState(), payload)
+    const flowState = readFlowState()
 
-    if (!result.applied) {
+    if (!canPersistFlowState(flowState)) {
+      return
+    }
+
+    const result = applySetEndToFlow(flowState, payload)
+
+    if (result.state === flowState) {
       return
     }
 
@@ -519,7 +538,7 @@ const usePatientDashboardSocketSetup = ({
     }
 
     try {
-      const result = runLiveInterruptSession(readFlowState())
+      const result = interruptSessionInFlow(readFlowState())
       await persistRemoteUpserts(result.remoteUpserts)
       writeFlowState(result.state)
       await interruptPatientSession({ id: sessionId })

@@ -250,6 +250,7 @@ describe('skip-safe active-session progress flow regression', () => {
 
     const finalSetEnd = applySetEndToFlow(state, setEndPayload(1))
 
+    expect(finalSetEnd.advancedToNextExercise).toBe(true)
     expect(finalSetEnd.remoteUpserts[0]!.sessionExerciseId).toBe(
       'session-row-3',
     )
@@ -258,6 +259,8 @@ describe('skip-safe active-session progress flow regression', () => {
       { rep: 2, set_1: 60 },
     ])
     expect(finalSetEnd.state.headsetConfirmedExerciseIndex).toBe(0)
+    expect(finalSetEnd.state.currSet).toBe(0)
+    expect(finalSetEnd.state.currRep).toBe(0)
   })
 
   it('ignores late progress events from the skipped exercise while a change is pending', () => {
