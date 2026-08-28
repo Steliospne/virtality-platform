@@ -231,7 +231,7 @@ Synced Subscription history shows a completed paid Pro billing period (not only 
 _Avoid_: ever had a Subscription, Billing Path Established, any canceled Pro
 
 **Cycle plan change**:
-Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeScheduleId` / Better Auth `scheduleAtPeriodEnd`). Profile Billing schedules and releases through one shared module backed by Better Auth upgrade/restore. Distinct from cancel-at-period-end (same restore underneath, different clinician intent: Cancel vs Don't cancel).
+Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeScheduleId` / Better Auth `scheduleAtPeriodEnd`). Console Profile Billing schedules and releases through one Better Auth billing adapter (`console-better-auth-billing` / `useConsoleBillingAuth`) backed by the shared Cycle plan change module. Distinct from cancel-at-period-end (same restore underneath, different clinician intent: Cancel vs Don't cancel).
 _Avoid_: immediate price swap, proration upgrade, portal-only interval change
 
 **Remaining Time**:
@@ -243,7 +243,7 @@ A seat-holder renew nudge delivered by Virtality System Email and/or in-app chro
 _Avoid_: Stripe Billing reminder email, toast blast
 
 **Profile Billing**:
-The Profile → Billing tab (`?tab=billing`) where clinicians choose Monthly vs Yearly **Pro** and start Checkout, or open the Customer Portal when already entitled. Sidebar Subscribe/Renew and renew-banner CTAs deep-link here rather than opening Checkout directly. One Product (**Pro**); two Prices (`pro_monthly`, `pro_yearly`). Checkout uses `authClient.subscription.upgrade({ plan: 'pro', annual: true | false, … })`. Yearly display shows monthly equivalent primary with yearly total muted. Do not show role in Billing UI. Checkout is allowed when `stripeCustomerId` exists even without **Billing Path Established** (`resolveProfileBillingCheckoutCta`). Active seats use Manage in portal. Plan-card CTAs resolve through `resolveProfileBillingCardAction` to kinds (`checkout` | `schedule` | `cancel_schedule` | `restore_cancellation` | `none`); Console UI dispatches on `kind`, never on button copy.
+The Profile → Billing tab (`?tab=billing`) where clinicians choose Monthly vs Yearly **Pro** and start Checkout, or open the Customer Portal when already entitled. Sidebar Subscribe/Renew and renew-banner CTAs deep-link here rather than opening Checkout directly. One Product (**Pro**); two Prices (`pro_monthly`, `pro_yearly`). Checkout uses `authClient.subscription.upgrade({ plan: 'pro', annual: true | false, … })` via one Console Better Auth billing adapter; Checkout is immediate-only (period-end Pro interval switches use Cycle plan change, not Checkout). Yearly display shows monthly equivalent primary with yearly total muted. Do not show role in Billing UI. Checkout is allowed when `stripeCustomerId` exists even without **Billing Path Established** (`resolveProfileBillingCheckoutCta`). Active seats use Manage in portal. Plan-card CTAs resolve through `resolveProfileBillingCardAction` to kinds (`checkout` | `schedule` | `cancel_schedule` | `restore_cancellation` | `none`); Console UI dispatches on `kind`, never on button copy.
 _Avoid_: Checkout-from-sidebar, role badge on Billing, multi-product plan picker
 
 **Coupon**:

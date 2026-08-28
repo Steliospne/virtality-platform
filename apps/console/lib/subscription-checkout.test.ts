@@ -75,24 +75,13 @@ describe('buildProCheckoutUpgradeInput', () => {
     expect(input.annual).toBe(true)
   })
 
-  it('defaults scheduleAtPeriodEnd to false for Free → Paid', () => {
-    const input = buildProCheckoutUpgradeInput('/app')
+  it('is immediate Checkout only (no scheduleAtPeriodEnd or disableRedirect)', () => {
+    const input = buildProCheckoutUpgradeInput('/app', { annual: true })
 
-    expect(input.scheduleAtPeriodEnd).toBe(false)
-    expect(input.disableRedirect).toBe(false)
+    expect(input).not.toHaveProperty('scheduleAtPeriodEnd')
+    expect(input).not.toHaveProperty('disableRedirect')
     expect(input.returnUrl).toBe(`${consoleOrigin}/app`)
-  })
-
-  it('passes scheduleAtPeriodEnd for paid Pro interval switches', () => {
-    const input = buildProCheckoutUpgradeInput('/profile', {
-      annual: true,
-      scheduleAtPeriodEnd: true,
-    })
-
-    expect(input.scheduleAtPeriodEnd).toBe(true)
-    expect(input.disableRedirect).toBe(true)
     expect(input.annual).toBe(true)
-    expect(input.returnUrl).toBe(`${consoleOrigin}/profile`)
   })
 })
 
@@ -169,29 +158,6 @@ describe('startProSubscriptionCheckout', () => {
     expect(result).toEqual({ ok: true })
     expect(calls).toEqual([
       buildProCheckoutUpgradeInput('/profile', { annual: true }),
-    ])
-  })
-
-  it('passes scheduleAtPeriodEnd through to Better Auth upgrade', async () => {
-    const calls: unknown[] = []
-    const upgrade = async (input: unknown) => {
-      calls.push(input)
-      return { data: { url: 'https://example.test/profile' } }
-    }
-
-    const result = await startProSubscriptionCheckout({
-      upgrade,
-      returnUrl: '/profile',
-      annual: false,
-      scheduleAtPeriodEnd: true,
-    })
-
-    expect(result).toEqual({ ok: true })
-    expect(calls).toEqual([
-      buildProCheckoutUpgradeInput('/profile', {
-        annual: false,
-        scheduleAtPeriodEnd: true,
-      }),
     ])
   })
 

@@ -16,10 +16,8 @@ import {
   useSavePendingPromotionCode,
 } from '@virtality/react-query'
 import { authClient } from '@/auth-client'
+import { useConsoleBillingAuth } from '@/hooks/use-console-billing-auth'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
-import { useSubscriptionBillingPortal } from '@/hooks/use-subscription-billing-portal'
-import { useSubscriptionCheckout } from '@/hooks/use-subscription-checkout'
-import { useSubscriptionRestore } from '@/hooks/use-subscription-restore'
 import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
@@ -33,7 +31,6 @@ import {
   profileBillingPendingPlanChangeBanner,
   profileBillingPendingTargetInterval,
   profileBillingPrimaryCtaLabel,
-  profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   promoCodeLabel,
@@ -44,6 +41,11 @@ import {
   type PendingCouponTerms,
   type ProfileBillingCardAction,
 } from '@/lib/profile-billing'
+
+const CANCEL_SCHEDULE_RESTORE_TOAST =
+  'Scheduled plan change canceled. You stay on your current plan.'
+const UNDO_CANCELLATION_RESTORE_TOAST =
+  'Cancellation stopped. Your subscription will renew as usual.'
 
 function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
   if (replaced) {
@@ -68,12 +70,15 @@ export function useBillingTab() {
   const cancelPendingAsyncRef = useRef(cancelPendingMutation.mutateAsync)
   cancelPendingAsyncRef.current = cancelPendingMutation.mutateAsync
   const removeMutation = useRemovePromoDiscount()
-  const { startCheckout, isStarting: isCheckoutStarting } =
-    useSubscriptionCheckout()
-  const { startPortal, isStarting: isPortalStarting } =
-    useSubscriptionBillingPortal()
-  const { cancelPendingPlanChange, undoPendingCancellation, isRestoring } =
-    useSubscriptionRestore()
+  const {
+    startCheckout,
+    scheduleCycleChange,
+    restore,
+    openPortal,
+    isScheduling,
+    isRestoring,
+    isOpeningPortal,
+  } = useConsoleBillingAuth()
 
   const [selectedInterval, setSelectedInterval] =
     useState<BillingInterval>('month')
@@ -145,7 +150,7 @@ export function useBillingTab() {
     !cancelConfirmOpen || cancelTargetInterval == null
       ? null
       : profileBillingCardActionConfirm(planCardActionFor(cancelTargetInterval))
-  const portalPending = isPortalStarting
+  const portalPending = isOpeningPortal
   const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount, catalogMinor)
   const showPromoChrome = profileBillingShowsPromoChrome(standing)
@@ -175,12 +180,16 @@ export function useBillingTab() {
       await savePendingPromotionCode(promoCode.trim())
       setPromoCode('')
     }
-    const scheduled = profileBillingSchedulesAtPeriodEnd(standing)
-    const result = await startCheckout({
+    await startCheckout({
       annual: interval === 'year',
-      scheduleAtPeriodEnd: scheduled,
     })
-    if (result?.ok && scheduled) {
+  }
+
+  async function scheduleCycleChangeForInterval(interval: BillingInterval) {
+    const result = await scheduleCycleChange({
+      annual: interval === 'year',
+    })
+    if (result.ok) {
       // Schedule write is sync in Better Auth; refetch until Cancel can render.
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const refreshed = await standingQuery.refetch()
@@ -192,7 +201,7 @@ export function useBillingTab() {
 
   async function handlePrimaryCta() {
     if (profileBillingOpensPortal(standing)) {
-      await startPortal()
+      await openPortal()
     }
   }
 
@@ -234,13 +243,20 @@ export function useBillingTab() {
     if (updateConfirmInterval == null) return
     const interval = updateConfirmInterval
     setUpdateConfirmInterval(null)
-    await runPlanCardCheckout(interval)
+    setPlanCardCheckoutPending(interval)
+    try {
+      await scheduleCycleChangeForInterval(interval)
+    } finally {
+      setPlanCardCheckoutPending(null)
+    }
   }
 
   async function handleUndoCancellation() {
     setPlanCardCheckoutPending(standing.billingInterval)
     try {
-      const result = await undoPendingCancellation()
+      const result = await restore({
+        successMessage: UNDO_CANCELLATION_RESTORE_TOAST,
+      })
       if (result.ok) {
         for (let attempt = 0; attempt < 5; attempt += 1) {
           const refreshed = await standingQuery.refetch()
@@ -259,7 +275,9 @@ export function useBillingTab() {
       standing.billingInterval === 'month' ? 'year' : 'month',
     )
     try {
-      const result = await cancelPendingPlanChange()
+      const result = await restore({
+        successMessage: CANCEL_SCHEDULE_RESTORE_TOAST,
+      })
       if (result.ok) {
         await standingQuery.refetch()
       }
@@ -371,7 +389,7 @@ export function useBillingTab() {
     },
     updateConfirmCopy,
     handleUpdateConfirm,
-    updateConfirming: isCheckoutStarting,
+    updateConfirming: isScheduling,
     cancelConfirmOpen,
     setCancelConfirmOpen,
     cancelConfirmCopy,
