@@ -305,6 +305,17 @@ export function buildEntitlementStanding(input: {
   }
 }
 
+/**
+ * Console sidebar Remaining Time is trial-only: live trialing seats with time
+ * left on the Entitlement Clock. Paid active, expired, and Free seats hide it.
+ */
+export function showsRemainingTimeSidebar(input: {
+  entitled: boolean
+  status: string | null | undefined
+}): boolean {
+  return input.entitled && input.status === 'trialing'
+}
+
 const MS_PER_MINUTE = 60 * 1000
 const MS_PER_HOUR = 60 * MS_PER_MINUTE
 const MS_PER_DAY = 24 * MS_PER_HOUR

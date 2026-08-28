@@ -7,6 +7,7 @@ import {
   formatRemainingTimeLabel,
   remainingMsFromClockEnd,
   resolveCheckoutCta,
+  showsRemainingTimeSidebar,
 } from '@virtality/shared/utils'
 import { useEntitlementStanding } from '@virtality/react-query'
 import { authClient } from '@/auth-client'
@@ -136,5 +137,9 @@ export function useLiveEntitlementStanding() {
     checkoutCta,
     checkoutCtaLabel: formatCheckoutCtaLabel(checkoutCta),
     label: formatRemainingTimeLabel(remainingMs),
+    showRemainingTime: showsRemainingTimeSidebar({
+      entitled,
+      status: query.data?.status,
+    }),
   }
 }

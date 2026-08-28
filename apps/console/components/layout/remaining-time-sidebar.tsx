@@ -14,21 +14,23 @@ import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standin
 import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
- * Remaining Time from the Entitlement Clock, plus Subscribe / Renew CTA when
- * not entitled and Billing Path Established. Gated by PostHog `billing_feature`
- * (virtality.app only). CTA opens Profile → Billing.
+ * Remaining Time from the Entitlement Clock during an active trial, plus
+ * Subscribe / Renew CTA when not entitled and Billing Path Established.
+ * Gated by PostHog `billing_feature` (virtality.app only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
-  const { label, checkoutCtaLabel, isPending } = useLiveEntitlementStanding()
+  const { label, checkoutCtaLabel, isPending, showRemainingTime } =
+    useLiveEntitlementStanding()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
   const userId = session?.user?.id
   const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
 
   if (!billingEnabled) return null
+  if (!showCheckoutCta && !showRemainingTime) return null
 
   return (
     <SidebarMenu>
@@ -46,22 +48,24 @@ export function RemainingTimeSidebar() {
           </SidebarMenuButton>
         </SidebarMenuItem>
       ) : null}
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          className='pointer-events-none text-base'
-          tooltip={`Remaining Time: ${display}`}
-        >
-          <Clock />
-          {!collapsed && (
-            <span className='flex min-w-0 flex-col items-start leading-tight'>
-              <span className='text-muted-foreground text-xs'>
-                Remaining Time
+      {showRemainingTime ? (
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className='pointer-events-none text-base'
+            tooltip={`Remaining Time: ${display}`}
+          >
+            <Clock />
+            {!collapsed && (
+              <span className='flex min-w-0 flex-col items-start leading-tight'>
+                <span className='text-muted-foreground text-xs'>
+                  Remaining Time
+                </span>
+                <span className='truncate font-medium'>{display}</span>
               </span>
-              <span className='truncate font-medium'>{display}</span>
-            </span>
-          )}
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+            )}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ) : null}
     </SidebarMenu>
   )
 }

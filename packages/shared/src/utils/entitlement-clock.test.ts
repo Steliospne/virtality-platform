@@ -13,6 +13,7 @@ import {
   resolveCheckoutCta,
   resolveProfileBillingCheckoutCta,
   resolveEntitlementClock,
+  showsRemainingTimeSidebar,
 } from './entitlement-clock.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
@@ -204,6 +205,23 @@ describe('remainingMsFromClockEnd', () => {
     expect(
       remainingMsFromClockEnd(new Date('2026-08-11T12:00:00.000Z'), NOW),
     ).toBe(24 * 60 * 60 * 1000)
+  })
+})
+
+describe('showsRemainingTimeSidebar', () => {
+  it('is true only for a live trialing seat', () => {
+    expect(
+      showsRemainingTimeSidebar({ entitled: true, status: 'trialing' }),
+    ).toBe(true)
+    expect(
+      showsRemainingTimeSidebar({ entitled: true, status: 'active' }),
+    ).toBe(false)
+    expect(
+      showsRemainingTimeSidebar({ entitled: false, status: 'trialing' }),
+    ).toBe(false)
+    expect(showsRemainingTimeSidebar({ entitled: true, status: null })).toBe(
+      false,
+    )
   })
 })
 
