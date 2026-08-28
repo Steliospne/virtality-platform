@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { RemoveRenewTriggerDialog } from '@/components/renew-triggers/remove-renew-trigger-dialog'
 import { getErrorMessage } from '@/lib/get-error-message'
 import { formatRenewTriggerOffsetLabel } from '@/lib/renew-triggers'
@@ -10,6 +10,7 @@ import type {
   RenewTriggerListItem,
 } from '@virtality/shared/types'
 import { useUpdateRenewTrigger } from '@virtality/react-query'
+import { Label } from '@virtality/ui/components/label'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -49,18 +50,23 @@ export function RenewTriggerList({
             key={trigger.id}
             className='flex items-center gap-4 rounded-lg border p-3'
           >
-            <div className='min-w-0 flex-1'>
-              <p className='font-medium'>
-                {formatRenewTriggerOffsetLabel(trigger.daysBefore)}
-              </p>
-              <label className='text-muted-foreground mt-1 flex items-center gap-2 text-sm'>
-                <Checkbox
-                  checked={trigger.active}
-                  disabled={isUpdating}
-                  onCheckedChange={() => handleToggleActive(trigger)}
-                />
+            <p className='min-w-0 flex-1 font-medium'>
+              {formatRenewTriggerOffsetLabel(trigger.daysBefore)}
+            </p>
+            <div className='flex shrink-0 items-center gap-2'>
+              <Switch
+                id={`renew-trigger-active-${trigger.id}`}
+                checked={trigger.active}
+                disabled={isUpdating}
+                onCheckedChange={() => handleToggleActive(trigger)}
+                aria-label={`${trigger.active ? 'Deactivate' : 'Activate'} ${formatRenewTriggerOffsetLabel(trigger.daysBefore)}`}
+              />
+              <Label
+                htmlFor={`renew-trigger-active-${trigger.id}`}
+                className='text-muted-foreground text-sm font-normal'
+              >
                 {trigger.active ? 'Active' : 'Inactive'}
-              </label>
+              </Label>
             </div>
             <div className='flex shrink-0 items-center gap-1'>
               <Button

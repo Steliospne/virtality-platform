@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { getErrorMessage } from '@/lib/get-error-message'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
@@ -156,13 +156,14 @@ export function RenewTriggerFormDialog({
               onChange={(event) => setDaysBefore(event.target.value)}
             />
           </div>
-          <label className='flex items-center gap-2 text-sm'>
-            <Checkbox
+          <div className='flex items-center gap-2'>
+            <Switch
+              id='renew-trigger-form-active'
               checked={active}
-              onCheckedChange={(checked) => setActive(checked === true)}
+              onCheckedChange={setActive}
             />
-            Active
-          </label>
+            <Label htmlFor='renew-trigger-form-active'>Active</Label>
+          </div>
         </div>
 
         <DialogFooter>
