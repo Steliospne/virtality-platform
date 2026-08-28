@@ -18,7 +18,7 @@ PRs target **`dev`** (staging). Promote to production with `dev` → **`main`** 
 
 ### Issue tracker
 
-Issues live in GitHub Issues for this repo. Use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live on **`Virtality-app/virtality-platform`**, not on a personal fork. Always set `GH_REPO=Virtality-app/virtality-platform` or pass `--repo Virtality-app/virtality-platform` for `gh issue` commands. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
