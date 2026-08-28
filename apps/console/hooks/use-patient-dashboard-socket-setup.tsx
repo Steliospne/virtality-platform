@@ -47,6 +47,7 @@ import {
   runLiveAcknowledgeExerciseChange,
   runLiveCompleteSession,
   runLiveFailPendingExerciseChange,
+  runLiveHeadsetExerciseAdvance,
   runLiveInterruptSession,
   runLiveRepEnd,
   runLiveRequestExerciseSkip,
@@ -393,23 +394,15 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleChangeExercise = (data: string) => {
-    const nextExercise = exercises?.findIndex((ex) => ex.exerciseId === data)
+    const result = runLiveHeadsetExerciseAdvance(readFlowState(), data)
 
-    if (nextExercise === undefined) {
-      throw Error('Error getting next exercise')
+    if (!result.advanced) {
+      return
     }
-    const index = nextExercise + 1
 
-    setActiveExerciseData({
-      id: exercises[index].exerciseId,
-      currentRep: 0,
-      currentSet: 1,
-      totalReps: exercises[index].reps,
-      totalSets: exercises[index].sets,
-    })
-
-    currExercise.current = index
-    progressDataClear()
+    writeFlowState(result.state)
+    applyExerciseAtIndex(result.state.headsetConfirmedExerciseIndex)
+    syncPlotFromFlowState(result.state)
   }
 
   const handleChangeExerciseAck = () => {

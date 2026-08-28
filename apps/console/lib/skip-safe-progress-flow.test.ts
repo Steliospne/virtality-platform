@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CompleteExercise } from '@/types/models'
 import {
+  applyHeadsetExerciseAdvanceInFlow,
   applyRepEndToFlow,
   applySetEndToFlow,
   acknowledgeExerciseChangeInFlow,
@@ -276,6 +277,61 @@ describe('skip-safe active-session progress flow regression', () => {
         pendingExerciseChange: skipped.state.pendingExerciseChange,
       }),
     ).toBe(true)
+  })
+
+  it('advances headset-confirmed exercise from completed exercise id without upserts', () => {
+    let state = createFlowState()
+    state = applyRepEndToFlow(state, repEndPayload(0, 0.7)).state
+    state = {
+      ...state,
+      currSet: 1,
+      currRep: 2,
+    }
+
+    const advanced = applyHeadsetExerciseAdvanceInFlow(state, 'ex-1')
+
+    expect(advanced.advanced).toBe(true)
+    expect(advanced.remoteUpserts).toEqual([])
+    expect(advanced.state.headsetConfirmedExerciseIndex).toBe(1)
+    expect(advanced.state.currSet).toBe(0)
+    expect(advanced.state.currRep).toBe(0)
+    expect(advanced.state.currentExerciseProgress).toEqual([
+      { rep: 1 },
+      { rep: 2 },
+    ])
+    expect(advanced.state.progressByExerciseId).toEqual(
+      state.progressByExerciseId,
+    )
+  })
+
+  it('resolves headset advance from session row id when that is what the wire sends', () => {
+    const state = createFlowState()
+    const completedRowId = state.sessionExerciseRows[0]!.id
+
+    const advanced = applyHeadsetExerciseAdvanceInFlow(state, completedRowId)
+
+    expect(advanced.advanced).toBe(true)
+    expect(advanced.state.headsetConfirmedExerciseIndex).toBe(1)
+  })
+
+  it('refuses headset advance for unknown ids, last-item OOB, and pending skip', () => {
+    const state = createFlowState()
+    const unknown = applyHeadsetExerciseAdvanceInFlow(state, 'unknown-exercise')
+    expect(unknown.advanced).toBe(false)
+    expect(unknown.state).toBe(state)
+
+    const onLast = createFlowState(2)
+    const pastEnd = applyHeadsetExerciseAdvanceInFlow(onLast, 'ex-3')
+    expect(pastEnd.advanced).toBe(false)
+    expect(pastEnd.state).toBe(onLast)
+
+    const pending = requestExerciseSkipInFlow(state, { kind: 'forward' })
+    const whilePending = applyHeadsetExerciseAdvanceInFlow(
+      pending.state,
+      'ex-1',
+    )
+    expect(whilePending.advanced).toBe(false)
+    expect(whilePending.state).toBe(pending.state)
   })
 
   it('walks the full skip-safe flow end to end', () => {

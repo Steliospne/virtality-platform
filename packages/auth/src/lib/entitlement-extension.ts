@@ -1,17 +1,12 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  clockEndForSubscriptionStatus,
-  extendEntitlementClock,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   type EntitlementExtensionStore,
   type EntitlementExtensionStripeGateway,
-  type ExtendEntitlementClockInput,
-  type ExtendEntitlementClockResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { createRenewPromptLifecycle } from './renew-prompt-lifecycle.ts'
 
 export function createPrismaEntitlementExtensionStore(
   client: PrismaClient = prisma,
@@ -99,35 +94,4 @@ export function createStripeEntitlementExtensionGateway(
       return { stripeSubscriptionId: subscription.id }
     },
   }
-}
-
-export async function extendEntitlementClockForAdminboard(
-  input: ExtendEntitlementClockInput,
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-    now?: () => Date
-  },
-): Promise<ExtendEntitlementClockResult> {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaEntitlementExtensionStore(client)
-  const live = await store.findLiveSubscriptionByUserId(input.userId)
-  const previousClockEnd = live
-    ? clockEndForSubscriptionStatus(live.status, live.trialEnd, live.periodEnd)
-    : null
-
-  const result = await extendEntitlementClock(
-    store,
-    createStripeEntitlementExtensionGateway(deps.stripeClient),
-    input,
-    { now: deps.now },
-  )
-
-  await createRenewPromptLifecycle({ prisma: client }).rearmAfterExtension({
-    userId: input.userId,
-    previousClockEnd,
-    nextClockEnd: result.trialEnd,
-  })
-
-  return result
 }

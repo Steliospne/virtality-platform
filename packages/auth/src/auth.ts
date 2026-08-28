@@ -1,8 +1,3 @@
-import {
-  assignPermanentFreeForAdminboard,
-  grantTimedTrialForAdminboard,
-} from './lib/admin-customer-access.ts'
-import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
 import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
 import { createStripePromotionCodeGateway } from './lib/promotion-code.ts'
 import {
@@ -37,18 +32,13 @@ import {
   updateLibraryCouponName,
   type CreateLibraryCouponInput,
   type CreatePromotionCodeInput,
-  type ExtendLiveEntitlementClockInput,
   type NotifyPromotionCodeDeliveryInput,
   type PromotionCodeDeliveryStore,
   type SendPromotionCodeEmailInput,
   type SendPromotionCodeEmailRuntime,
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
-import {
-  FREE_PLAN_PRICE_ID,
-  PRO_PLAN_PRICE_ID,
-  stripeClient,
-} from './auth-instance.ts'
+import { stripeClient } from './auth-instance.ts'
 import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
 
 export {
@@ -60,10 +50,8 @@ export {
 export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
 export { asAuthSession } from './lib/auth-context.ts'
 export {
-  assignPermanentFreeForAdminboard,
   createPrismaAdminCustomerAccessStore,
   createStripeAdminCustomerAccessGateway,
-  grantTimedTrialForAdminboard,
 } from './lib/admin-customer-access.ts'
 export {
   createAdminCustomerBillingRuntime,
@@ -71,6 +59,12 @@ export {
   createStripeAdminCustomerBillingGateway,
 } from './lib/admin-customer-billing.ts'
 export type { AdminCustomerBillingRuntime } from './lib/admin-customer-billing.ts'
+export { createAdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
+export type { AdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
+export {
+  createPrismaEntitlementExtensionStore,
+  createStripeEntitlementExtensionGateway,
+} from './lib/entitlement-extension.ts'
 export {
   createPrismaRenewPromptDeliveryStore,
   createPrismaRenewTriggerStore,
@@ -271,76 +265,4 @@ export function cancelPendingPromotionCodeAction(input: { userId: string }) {
   return cancelPendingPromotionCodeForCheckout(input, {
     prisma,
   })
-}
-
-/**
- * Adminboard Extension: update live trialing|active, else create a no-card
- * Trial Subscription (closes over platform Stripe + canonical pro Price).
- */
-export function extendEntitlementClockAction(
-  client: typeof prisma,
-  input: ExtendLiveEntitlementClockInput,
-) {
-  if (!stripeClient) {
-    throw new Error(
-      'Stripe is not configured. Set STRIPE_SECRET_KEY to use entitlement extension.',
-    )
-  }
-
-  return extendEntitlementClockForAdminboard(
-    { ...input, priceId: PRO_PLAN_PRICE_ID },
-    {
-      prisma: client,
-      stripeClient,
-    },
-  )
-}
-
-/** @deprecated Prefer extendEntitlementClockAction. */
-export const extendLiveEntitlementClockAction = extendEntitlementClockAction
-
-/** Adminboard customer profile: assign permanent Free (no trial). */
-export function assignPermanentFreeAction(
-  client: typeof prisma,
-  input: { userId: string; actorUserId: string; reason: string },
-) {
-  return assignPermanentFreeForAdminboard(
-    {
-      userId: input.userId,
-      actorUserId: input.actorUserId,
-      reason: input.reason,
-      priceId: FREE_PLAN_PRICE_ID,
-    },
-    {
-      prisma: client,
-      stripeClient: requireStripeClient(),
-    },
-  )
-}
-
-/** Adminboard customer profile: grant a timed no-card Free Trial Subscription. */
-export function grantTimedTrialAction(
-  client: typeof prisma,
-  input: {
-    userId: string
-    actorUserId: string
-    reason: string
-    amount: number
-    unit: 'days' | 'weeks' | 'months'
-  },
-) {
-  return grantTimedTrialForAdminboard(
-    {
-      userId: input.userId,
-      actorUserId: input.actorUserId,
-      reason: input.reason,
-      amount: input.amount,
-      unit: input.unit,
-      priceId: FREE_PLAN_PRICE_ID,
-    },
-    {
-      prisma: client,
-      stripeClient: requireStripeClient(),
-    },
-  )
 }

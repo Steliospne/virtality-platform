@@ -1,6 +1,7 @@
 import { canPersistSessionProgress } from './patient-dashboard-session-launch'
 import {
   acknowledgeExerciseChangeInFlow,
+  applyHeadsetExerciseAdvanceInFlow,
   applyRepEndToFlow,
   applySetEndToFlow,
   completeSessionInFlow,
@@ -147,6 +148,13 @@ export function runLiveAcknowledgeExerciseChange(
   state: SkipSafeProgressFlowState,
 ): SkipSafeProgressFlowActionResult & { acknowledged: boolean } {
   return acknowledgeExerciseChangeInFlow(state)
+}
+
+export function runLiveHeadsetExerciseAdvance(
+  state: SkipSafeProgressFlowState,
+  completedExerciseId: string,
+): SkipSafeProgressFlowActionResult & { advanced: boolean } {
+  return applyHeadsetExerciseAdvanceInFlow(state, completedExerciseId)
 }
 
 export function runLiveFailPendingExerciseChange(

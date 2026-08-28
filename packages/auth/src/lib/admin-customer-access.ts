@@ -1,23 +1,16 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  assignPermanentFreeToCustomer,
   billingSnapshotFromSubscription,
   buildPermanentFreeSubscriptionStripeParams,
   buildTimedTrialSubscriptionStripeParams,
-  grantTimedTrialToCustomer,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   pickPrimaryCustomerSubscription,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   type AdminCustomerAccessStore,
   type AdminCustomerAccessStripeGateway,
-  type AssignPermanentFreeInput,
-  type AssignPermanentFreeResult,
-  type GrantTimedTrialInput,
-  type GrantTimedTrialResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { createRenewPromptLifecycle } from './renew-prompt-lifecycle.ts'
 
 export function createPrismaAdminCustomerAccessStore(
   client: PrismaClient = prisma,
@@ -177,51 +170,4 @@ export function createStripeAdminCustomerAccessGateway(
       }
     },
   }
-}
-
-function createAdminCustomerAccessDeps(
-  client: PrismaClient,
-  stripeClient: Stripe,
-) {
-  return {
-    store: createPrismaAdminCustomerAccessStore(client),
-    stripe: createStripeAdminCustomerAccessGateway(stripeClient),
-  }
-}
-
-export async function assignPermanentFreeForAdminboard(
-  input: AssignPermanentFreeInput,
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
-): Promise<AssignPermanentFreeResult> {
-  const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerAccessDeps(
-    client,
-    deps.stripeClient,
-  )
-  return assignPermanentFreeToCustomer(store, stripe, input)
-}
-
-export async function grantTimedTrialForAdminboard(
-  input: GrantTimedTrialInput,
-  deps: {
-    prisma?: PrismaClient
-    stripeClient: Stripe
-  },
-): Promise<GrantTimedTrialResult> {
-  const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerAccessDeps(
-    client,
-    deps.stripeClient,
-  )
-  const result = await grantTimedTrialToCustomer(store, stripe, input)
-
-  await createRenewPromptLifecycle({ prisma: client }).rearmForNewClock({
-    userId: input.userId,
-    clockEnd: result.trialEnd,
-  })
-
-  return result
 }

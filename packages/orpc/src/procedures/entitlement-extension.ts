@@ -1,5 +1,4 @@
 import { ORPCError } from '@orpc/server'
-import { extendEntitlementClockAction } from '@virtality/auth'
 import type { PrismaClient } from '@virtality/db'
 import {
   extendEntitlementClockInputSchema,
@@ -14,6 +13,7 @@ import {
   isLiveEntitlementSubscriptionStatus,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
+import { adminEntitlementClockRuntime } from './admin-entitlement-clock-runtime.ts'
 
 function clockEndForStatus(
   status: string,
@@ -128,7 +128,8 @@ const extend = authed
   .input(extendEntitlementClockInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await extendEntitlementClockAction(context.prisma, {
+      const clock = adminEntitlementClockRuntime(context)
+      return await clock.extendEntitlementClock({
         userId: input.userId,
         amount: input.amount,
         unit: input.unit,

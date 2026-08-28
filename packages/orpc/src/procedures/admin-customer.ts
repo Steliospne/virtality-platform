@@ -1,9 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import {
-  assignPermanentFreeAction,
   createAdminCustomerBillingRuntime,
   getRequiredStripeClient,
-  grantTimedTrialAction,
 } from '@virtality/auth'
 import { z } from 'zod'
 import {
@@ -27,6 +25,7 @@ import {
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
 import type { InitialContext } from '../context.ts'
+import { adminEntitlementClockRuntime } from './admin-entitlement-clock-runtime.ts'
 import {
   getAdminCustomerProfile,
   listAdminCustomers,
@@ -89,7 +88,8 @@ const assignPermanentFree = adminAuthed
   .input(assignPermanentFreeInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await assignPermanentFreeAction(context.prisma, {
+      const clock = adminEntitlementClockRuntime(context)
+      return await clock.assignPermanentFree({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -104,7 +104,8 @@ const grantTimedTrial = adminAuthed
   .input(grantTimedTrialInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await grantTimedTrialAction(context.prisma, {
+      const clock = adminEntitlementClockRuntime(context)
+      return await clock.grantTimedTrial({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,

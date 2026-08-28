@@ -346,6 +346,49 @@ export function acknowledgeExerciseChangeInFlow(
   return { state: nextState, remoteUpserts: [], acknowledged: true }
 }
 
+function resolveCompletedExerciseIndex(
+  state: SkipSafeProgressFlowState,
+  completedExerciseId: string,
+): number | null {
+  const index = state.sessionExerciseRows.findIndex(
+    (row) =>
+      row.exerciseId === completedExerciseId || row.id === completedExerciseId,
+  )
+
+  return index >= 0 ? index : null
+}
+
+export function applyHeadsetExerciseAdvanceInFlow(
+  state: SkipSafeProgressFlowState,
+  completedExerciseId: string,
+): SkipSafeProgressFlowActionResult & { advanced: boolean } {
+  if (state.pendingExerciseChange) {
+    return { ...unchangedResult(state), advanced: false }
+  }
+
+  const completedIndex = resolveCompletedExerciseIndex(
+    state,
+    completedExerciseId,
+  )
+
+  if (completedIndex === null) {
+    return { ...unchangedResult(state), advanced: false }
+  }
+
+  const nextIndex = completedIndex + 1
+
+  if (nextIndex >= state.sessionExerciseRows.length) {
+    return { ...unchangedResult(state), advanced: false }
+  }
+
+  const nextState = clearCurrentExerciseProgress({
+    ...state,
+    headsetConfirmedExerciseIndex: nextIndex,
+  })
+
+  return { state: nextState, remoteUpserts: [], advanced: true }
+}
+
 export function failPendingExerciseChangeInFlow(
   state: SkipSafeProgressFlowState,
 ): SkipSafeProgressFlowActionResult & { failed: boolean } {
