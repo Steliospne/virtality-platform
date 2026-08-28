@@ -11,7 +11,7 @@ import {
   type ExtendEntitlementClockResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { rearmRenewPromptsAfterExtension } from './renew-prompt-epoch.ts'
+import { createRenewPromptLifecycle } from './renew-prompt-lifecycle.ts'
 
 export function createPrismaEntitlementExtensionStore(
   client: PrismaClient = prisma,
@@ -123,7 +123,7 @@ export async function extendEntitlementClockForAdminboard(
     { now: deps.now },
   )
 
-  await rearmRenewPromptsAfterExtension(client, {
+  await createRenewPromptLifecycle({ prisma: client }).rearmAfterExtension({
     userId: input.userId,
     previousClockEnd,
     nextClockEnd: result.trialEnd,

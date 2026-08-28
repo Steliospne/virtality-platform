@@ -41,7 +41,7 @@ A **Started Session** that ended unexpectedly before normal completion. It is no
 _Avoid_: Completed session, failed launch
 
 **Session Progress Record**:
-Exercise performance data captured during a **Started Session** and persisted incrementally as treatment progresses.
+Exercise performance data captured during a **Started Session** and persisted incrementally as treatment progresses. Live progress and skip mutations go through `skip-safe-progress-flow`; the patient-dashboard socket hook is an adapter (wire + UI + persistence), not a second implementation.
 _Avoid_: End-only session data, temporary progress
 
 **Completed Rep Measurement**:
@@ -239,11 +239,11 @@ The clinician-visible duration left on the **Entitlement Clock**, always shown i
 _Avoid_: days remaining (as the term), time left, access remaining
 
 **Renew Prompt**:
-A seat-holder renew nudge delivered by Virtality System Email and/or in-app chrome at Adminboard-configured day offsets before **Entitlement Clock** end. Each channel×offset fires once per clock epoch (keyed by clock end); missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
+A seat-holder renew nudge delivered by Virtality System Email and/or in-app chrome at Adminboard-configured day offsets before **Entitlement Clock** end. Each channel×offset fires once per clock epoch (keyed by clock end); missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog. Clock-changing paths rearm via `createRenewPromptLifecycle`; evaluate and list-in-app use the same auth runtime.
 _Avoid_: Stripe Billing reminder email, toast blast
 
 **Profile Billing**:
-The Profile → Billing tab (`?tab=billing`) where clinicians choose Monthly vs Yearly **Pro** and start Checkout, or open the Customer Portal when already entitled. Sidebar Subscribe/Renew and renew-banner CTAs deep-link here rather than opening Checkout directly. One Product (**Pro**); two Prices (`pro_monthly`, `pro_yearly`). Checkout uses `authClient.subscription.upgrade({ plan: 'pro', annual: true | false, … })`. Yearly display shows monthly equivalent primary with yearly total muted. Do not show role in Billing UI. Checkout is allowed when `stripeCustomerId` exists even without **Billing Path Established** (`resolveProfileBillingCheckoutCta`). Active seats use Manage in portal.
+The Profile → Billing tab (`?tab=billing`) where clinicians choose Monthly vs Yearly **Pro** and start Checkout, or open the Customer Portal when already entitled. Sidebar Subscribe/Renew and renew-banner CTAs deep-link here rather than opening Checkout directly. One Product (**Pro**); two Prices (`pro_monthly`, `pro_yearly`). Checkout uses `authClient.subscription.upgrade({ plan: 'pro', annual: true | false, … })`. Yearly display shows monthly equivalent primary with yearly total muted. Do not show role in Billing UI. Checkout is allowed when `stripeCustomerId` exists even without **Billing Path Established** (`resolveProfileBillingCheckoutCta`). Active seats use Manage in portal. Plan-card CTAs resolve through `resolveProfileBillingCardAction` to kinds (`checkout` | `schedule` | `cancel_schedule` | `restore_cancellation` | `none`); Console UI dispatches on `kind`, never on button copy.
 _Avoid_: Checkout-from-sidebar, role badge on Billing, multi-product plan picker
 
 **Coupon**:

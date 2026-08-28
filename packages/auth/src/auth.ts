@@ -2,17 +2,7 @@ import {
   assignPermanentFreeForAdminboard,
   grantTimedTrialForAdminboard,
 } from './lib/admin-customer-access.ts'
-import {
-  assignFreeAfterCancellationForAdminboard,
-  cancelCyclePlanChangeForAdminboard,
-  cancelPaidSubscriptionForAdminboard,
-  changePaidPlanForAdminboard,
-  previewChangePaidPlanForAdminboard,
-  reactivatePaidSubscriptionForAdminboard,
-  sendPaidCheckoutLinkForAdminboard,
-} from './lib/admin-customer-billing.ts'
 import { extendEntitlementClockForAdminboard } from './lib/entitlement-extension.ts'
-import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
 import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
 import { createStripePromotionCodeGateway } from './lib/promotion-code.ts'
 import {
@@ -76,11 +66,20 @@ export {
   grantTimedTrialForAdminboard,
 } from './lib/admin-customer-access.ts'
 export {
+  createAdminCustomerBillingRuntime,
+  createPrismaAdminCustomerBillingStore,
+  createStripeAdminCustomerBillingGateway,
+} from './lib/admin-customer-billing.ts'
+export type { AdminCustomerBillingRuntime } from './lib/admin-customer-billing.ts'
+export {
   createPrismaRenewPromptDeliveryStore,
-  rearmRenewPromptsAfterCheckoutSubscription,
-  rearmRenewPromptsAfterExtension,
-  rearmRenewPromptsForNewClockEnd,
-} from './lib/renew-prompt-epoch.ts'
+  createPrismaRenewTriggerStore,
+  createRenewPromptLifecycle,
+} from './lib/renew-prompt-lifecycle.ts'
+export type {
+  RenewPromptLifecycle,
+  RenewPromptLifecycleDeps,
+} from './lib/renew-prompt-lifecycle.ts'
 export {
   createPrismaCampaignRegistry,
   createStripeSubscriptionDiscountGateway,
@@ -116,6 +115,9 @@ function requireStripeClient(): Stripe {
   }
   return stripeClient
 }
+
+/** Stripe client for request-scoped runtimes (e.g. Admin customer billing). */
+export { requireStripeClient as getRequiredStripeClient }
 
 function couponLibraryGateway() {
   return createStripeCouponLibraryGateway(requireStripeClient())
@@ -341,102 +343,4 @@ export function grantTimedTrialAction(
       stripeClient: requireStripeClient(),
     },
   )
-}
-
-/** Adminboard customer profile: preview paid-plan billing mutation timing/proration. */
-export function previewChangePaidPlanAction(
-  client: typeof prisma,
-  input: { userId: string; targetPriceId: string },
-) {
-  return previewChangePaidPlanForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-  })
-}
-
-/** Adminboard customer profile: change paid Pro interval or send Checkout fallback. */
-export function changePaidPlanAction(
-  client: typeof prisma,
-  input: {
-    userId: string
-    actorUserId: string
-    reason: string
-    targetPriceId: string
-  },
-  headers: Headers,
-) {
-  return changePaidPlanForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-    headers,
-  })
-}
-
-/** Adminboard customer profile: cancel paid Pro immediately or at period end. */
-export function cancelPaidSubscriptionAction(
-  client: typeof prisma,
-  input: {
-    userId: string
-    actorUserId: string
-    reason: string
-    mode: 'immediate' | 'period_end'
-  },
-) {
-  return cancelPaidSubscriptionForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-  })
-}
-
-/** Adminboard customer profile: reactivate a paid Pro cancellation. */
-export function reactivatePaidSubscriptionAction(
-  client: typeof prisma,
-  input: { userId: string; actorUserId: string; reason: string },
-  headers: Headers,
-) {
-  return reactivatePaidSubscriptionForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-    headers,
-  })
-}
-
-/** Adminboard customer profile: cancel a queued Cycle plan change. */
-export function cancelCyclePlanChangeAction(
-  client: typeof prisma,
-  input: { userId: string; actorUserId: string; reason: string },
-  headers: Headers,
-) {
-  return cancelCyclePlanChangeForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-    headers,
-  })
-}
-
-/** Adminboard customer profile: assign permanent Free after paid/canceled billing. */
-export function assignFreeAfterCancellationAction(
-  client: typeof prisma,
-  input: { userId: string; actorUserId: string; reason: string },
-) {
-  return assignFreeAfterCancellationForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-  })
-}
-
-/** Adminboard customer profile: send interval-specific paid Checkout link. */
-export function sendPaidCheckoutLinkAction(
-  client: typeof prisma,
-  input: {
-    userId: string
-    actorUserId: string
-    reason: string
-    targetPriceId: string
-  },
-) {
-  return sendPaidCheckoutLinkForAdminboard(input, {
-    prisma: client,
-    stripeClient: requireStripeClient(),
-  })
 }

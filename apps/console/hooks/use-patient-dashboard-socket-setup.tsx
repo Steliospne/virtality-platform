@@ -17,22 +17,7 @@ import NotifyDoctorToasty from '../components/ui/NotifyDoctorToasty'
 import { getDisplayName } from '@/lib/utils'
 import usePlotData from './use-plot-data'
 import {
-  applyCompletedRepToPlotData,
-  normalizeRepEndPayload,
-  normalizeSetEndPayload,
-} from '@/lib/progress-event-normalization'
-import {
-  buildExerciseSkipCheckpoint,
-  buildSetCompletionCheckpoint,
-  mutableProgressByExerciseId,
-  shouldResetLiveExerciseAfterSetCompletion,
-} from '@/lib/session-progress-checkpoint'
-import {
   isDirectExerciseSelectionDisabled,
-  resolveDirectExerciseSkipTarget,
-  resolveForwardBackSkipTarget,
-  shouldIgnoreProgressEventDuringPendingExerciseChange,
-  shouldPromotePendingExerciseOnAck,
   type PendingExerciseChange,
   type SkipDirection,
 } from '@/lib/session-exercise-skip'
@@ -50,13 +35,25 @@ import {
 } from '@virtality/react-query'
 import {
   buildStartAckPersistenceInput,
-  canPersistSessionProgress,
   resolveProgramStateAfterStartAckPersistenceFailure,
   resolveProgramStateAfterStartAckPersistenceSuccess,
   shouldCreatePatientSessionOnStartAck,
   type SessionExerciseRowInput,
 } from '@/lib/patient-dashboard-session-launch'
-import { buildSessionProgressUpserts } from '@/lib/session-progress-persistence'
+import type { SessionProgressUpsertInput } from '@/lib/session-progress-persistence'
+import {
+  assembleSkipSafeProgressFlowState,
+  projectSkipSafeProgressFlowState,
+  runLiveAcknowledgeExerciseChange,
+  runLiveCompleteSession,
+  runLiveFailPendingExerciseChange,
+  runLiveInterruptSession,
+  runLiveRepEnd,
+  runLiveRequestExerciseSkip,
+  runLiveSetEnd,
+  type ExerciseSkipRequest,
+} from '@/lib/skip-safe-progress-live-adapter'
+import type { SkipSafeProgressFlowState } from '@/lib/skip-safe-progress-flow'
 import {
   buildSessionWorkingCopySyncPayload,
   serializeSessionWorkingCopy,
@@ -159,10 +156,50 @@ const usePatientDashboardSocketSetup = ({
     }
   }
 
+  const readFlowState = (): SkipSafeProgressFlowState =>
+    assembleSkipSafeProgressFlowState({
+      patientSessionId: patientSessionId.current,
+      sessionExerciseRows: sessionExerciseRows.current,
+      headsetConfirmedExerciseIndex: currExercise.current,
+      pendingExerciseChange: pendingExerciseChange.current,
+      progressByExerciseId: progressData.current ?? {},
+      currentExerciseProgress: realTimeData.current,
+      currSet: currSet.current,
+      currRep: currRep.current,
+    })
+
+  const writeFlowState = (next: SkipSafeProgressFlowState) => {
+    const projected = projectSkipSafeProgressFlowState(next)
+    patientSessionId.current = projected.patientSessionId
+    sessionExerciseRows.current = [...projected.sessionExerciseRows]
+    currExercise.current = projected.headsetConfirmedExerciseIndex
+    pendingExerciseChange.current = projected.pendingExerciseChange
+    progressData.current = projected.progressByExerciseId
+    realTimeData.current = projected.currentExerciseProgress
+    currSet.current = projected.currSet
+    currRep.current = projected.currRep
+  }
+
+  const persistRemoteUpserts = async (
+    remoteUpserts: SessionProgressUpsertInput[],
+  ) => {
+    if (remoteUpserts.length === 0) {
+      return
+    }
+
+    await upsertPatientSessionData(remoteUpserts)
+  }
+
+  const syncPendingExerciseChangeUi = (
+    change: PendingExerciseChange | null,
+  ) => {
+    updatePatientDashboardState({ pendingExerciseChange: change })
+  }
+
   const clearPendingExerciseChange = () => {
     clearPendingExerciseChangeTimeout()
     pendingExerciseChange.current = null
-    updatePatientDashboardState({ pendingExerciseChange: null })
+    syncPendingExerciseChangeUi(null)
   }
 
   const handlePendingExerciseChangeFailure = () => {
@@ -172,18 +209,23 @@ const usePatientDashboardSocketSetup = ({
       return
     }
 
+    const result = runLiveFailPendingExerciseChange(readFlowState())
+
+    if (!result.failed) {
+      return
+    }
+
     const sourceExercise = exercises?.[pending.sourceExerciseIndex]
     const confirmedExerciseName =
       getDisplayName(sourceExercise?.exercise) ?? 'Current exercise'
 
+    writeFlowState(result.state)
     clearPendingExerciseChange()
     ErrorToasty(resolveExerciseChangeFailureMessage(confirmedExerciseName))
   }
 
-  const setPendingExerciseChange = (change: PendingExerciseChange) => {
+  const setPendingExerciseChangeTimeout = () => {
     clearPendingExerciseChangeTimeout()
-    pendingExerciseChange.current = change
-    updatePatientDashboardState({ pendingExerciseChange: change })
     pendingExerciseChangeTimeout.current = setTimeout(() => {
       handlePendingExerciseChangeFailure()
     }, EXERCISE_CHANGE_ACK_TIMEOUT_MS)
@@ -206,20 +248,8 @@ const usePatientDashboardSocketSetup = ({
     })
   }
 
-  const handleSessionDataCreation = async () => {
-    if (!patientSessionId.current || sessionExerciseRows.current.length === 0) {
-      return
-    }
-
-    await upsertPatientSessionData(
-      buildSessionProgressUpserts({
-        patientSessionId: patientSessionId.current,
-        sessionExerciseRows: sessionExerciseRows.current,
-        progressByExerciseId: progressData.current ?? {},
-        currentExerciseIndex: currExercise.current,
-        currentExerciseProgress: realTimeData.current,
-      }),
-    )
+  const syncPlotFromFlowState = (next: SkipSafeProgressFlowState) => {
+    setPlotData([...next.currentExerciseProgress])
   }
 
   const progressDataClear = () => {
@@ -232,20 +262,6 @@ const usePatientDashboardSocketSetup = ({
     setPlotData(realTimeData.current)
   }
 
-  const shouldIgnoreProgressEvent = () => {
-    const currentExercise = exercises?.[currExercise.current]
-
-    if (!currentExercise) {
-      return false
-    }
-
-    return shouldIgnoreProgressEventDuringPendingExerciseChange({
-      pendingExerciseChange: pendingExerciseChange.current,
-      eventExerciseIndex: currExercise.current,
-      eventExerciseId: currentExercise.exerciseId,
-    })
-  }
-
   const canRequestExerciseSkip = () =>
     programState === 'started' &&
     Boolean(exercises?.length) &&
@@ -253,89 +269,42 @@ const usePatientDashboardSocketSetup = ({
       pendingExerciseChange: pendingExerciseChange.current,
     })
 
-  const requestExerciseSkipToIndex = async (targetIndex: number) => {
+  const requestExerciseSkip = async (request: ExerciseSkipRequest) => {
     if (!canRequestExerciseSkip()) {
       return
     }
 
-    const sourceIndex = currExercise.current
-    const sourceExercise = exercises[sourceIndex]
-    const targetExercise = exercises[targetIndex]
+    const result = runLiveRequestExerciseSkip(readFlowState(), request)
 
-    if (!sourceExercise || !targetExercise || targetIndex === sourceIndex) {
+    if (!result.skipRequested || !result.state.pendingExerciseChange) {
       return
     }
 
-    setPendingExerciseChange({
-      targetExerciseIndex: targetIndex,
-      sourceExerciseIndex: sourceIndex,
-      sourceExerciseId: sourceExercise.exerciseId,
-    })
-
-    if (
-      canPersistSessionProgress(
-        patientSessionId.current,
-        sessionExerciseRows.current,
-        sourceIndex,
-      )
-    ) {
-      const checkpoint = buildExerciseSkipCheckpoint({
-        patientSessionId: patientSessionId.current,
-        sessionExerciseRows: sessionExerciseRows.current,
-        currentExerciseIndex: sourceIndex,
-        progressByExerciseId: progressData.current ?? {},
-        currentExerciseProgress: realTimeData.current,
-      })
-
-      progressData.current = mutableProgressByExerciseId(
-        checkpoint.progressByExerciseId,
-      )
-
-      if (checkpoint.upsert) {
-        try {
-          await upsertPatientSessionData([checkpoint.upsert])
-        } catch (error) {
-          console.error(error)
-        }
-      }
+    writeFlowState(result.state)
+    syncPendingExerciseChangeUi(result.state.pendingExerciseChange)
+    setPendingExerciseChangeTimeout()
+    try {
+      await persistRemoteUpserts(result.remoteUpserts)
+    } catch (error) {
+      console.error(error)
     }
 
-    selectedDevice?.events.program.ChangeExercise(targetExercise.exerciseId)
+    const targetExercise =
+      exercises[result.state.pendingExerciseChange.targetExerciseIndex]
+    if (targetExercise) {
+      selectedDevice?.events.program.ChangeExercise(targetExercise.exerciseId)
+    }
   }
 
   const requestForwardBackSkip = async (direction: SkipDirection) => {
-    if (!canRequestExerciseSkip()) {
-      return
-    }
-
-    const targetIndex = resolveForwardBackSkipTarget({
-      currentExerciseIndex: currExercise.current,
-      exerciseCount: exercises.length,
-      direction,
-    })
-
-    if (targetIndex === null) {
-      return
-    }
-
-    await requestExerciseSkipToIndex(targetIndex)
+    await requestExerciseSkip({ kind: direction })
   }
 
   const requestDirectExerciseSelection = async (targetIndex: number) => {
-    if (!canRequestExerciseSkip()) {
-      return
-    }
-
-    const resolvedTarget = resolveDirectExerciseSkipTarget({
-      currentExerciseIndex: currExercise.current,
+    await requestExerciseSkip({
+      kind: 'direct',
       targetExerciseIndex: targetIndex,
     })
-
-    if (resolvedTarget === null) {
-      return
-    }
-
-    await requestExerciseSkipToIndex(resolvedTarget)
   }
 
   const handlePersistenceFailureAfterStartAck = () => {
@@ -393,7 +362,11 @@ const usePatientDashboardSocketSetup = ({
   const openCompletionDialog = async () => {
     const sessionIdForCompletion = patientSessionId.current
 
-    await handleSessionDataCreation()
+    if (sessionIdForCompletion && sessionExerciseRows.current.length > 0) {
+      const result = runLiveCompleteSession(readFlowState())
+      await persistRemoteUpserts(result.remoteUpserts)
+      writeFlowState(result.state)
+    }
 
     resetSessionState()
     updatePatientDashboardState({
@@ -412,12 +385,10 @@ const usePatientDashboardSocketSetup = ({
 
   const handleEnd = async () => {
     socket?.emit(PROGRAM_EVENT.EndAck)
-    currExercise.current = 0
     await openCompletionDialog()
   }
 
   const handleEndAck = async () => {
-    currExercise.current = 0
     await openCompletionDialog()
   }
 
@@ -442,44 +413,27 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleChangeExerciseAck = () => {
-    const pending = pendingExerciseChange.current
-    if (
-      shouldPromotePendingExerciseOnAck({
-        pendingExerciseChange: pending,
-      }) &&
-      pending
-    ) {
-      applyExerciseAtIndex(pending.targetExerciseIndex)
-      clearPendingExerciseChange()
+    const result = runLiveAcknowledgeExerciseChange(readFlowState())
+
+    if (!result.acknowledged) {
+      return
     }
 
-    progressDataClear()
+    writeFlowState(result.state)
+    clearPendingExerciseChange()
+    applyExerciseAtIndex(result.state.headsetConfirmedExerciseIndex)
+    syncPlotFromFlowState(result.state)
   }
 
   const handleRepEnd = (payload: string) => {
-    if (
-      !canPersistSessionProgress(
-        patientSessionId.current,
-        sessionExerciseRows.current,
-        currExercise.current,
-      )
-    ) {
+    const result = runLiveRepEnd(readFlowState(), payload)
+
+    if (!result.applied) {
       return
     }
 
-    if (shouldIgnoreProgressEvent()) {
-      return
-    }
-
-    const normalized = normalizeRepEndPayload(payload)
-
-    if (!normalized.ok) {
-      console.log('Ignoring malformed RepEnd payload')
-      return
-    }
-
-    const { completedRep, progress } = normalized.event
     const currentExercise = exercises![currExercise.current]
+    const progress = result.progress
 
     if (stats.current.highscore < progress) {
       stats.current.highscore = progress
@@ -487,18 +441,13 @@ const usePatientDashboardSocketSetup = ({
         getDisplayName(currentExercise.exercise) ?? ''
     }
 
-    const activeSet = currSet.current + 1
-    const updatedPlotData = applyCompletedRepToPlotData(realTimeData.current, {
-      completedRep,
-      activeSet,
-      progressPercent: progress * 100,
+    writeFlowState(result.state)
+    syncPlotFromFlowState(result.state)
+    setActiveExerciseData({
+      ...activeExerciseData,
+      currentRep: result.completedRep,
     })
 
-    currRep.current = completedRep - 1
-    realTimeData.current = updatedPlotData
-
-    setPlotData(updatedPlotData)
-    setActiveExerciseData({ ...activeExerciseData, currentRep: completedRep })
     const prevData = progressData.current
     store?.setCell(
       'patients',
@@ -506,7 +455,7 @@ const usePatientDashboardSocketSetup = ({
       'progress',
       JSON.stringify({
         ...prevData,
-        [currentExercise.exerciseId]: updatedPlotData,
+        [currentExercise.exerciseId]: result.state.currentExerciseProgress,
       }),
     )
 
@@ -520,66 +469,25 @@ const usePatientDashboardSocketSetup = ({
   }
 
   const handleSetEnd = async (payload: string) => {
-    if (
-      !canPersistSessionProgress(
-        patientSessionId.current,
-        sessionExerciseRows.current,
-        currExercise.current,
-      )
-    ) {
+    const result = runLiveSetEnd(readFlowState(), payload)
+
+    if (!result.applied) {
       return
     }
 
-    if (shouldIgnoreProgressEvent()) {
-      return
-    }
-
-    const normalized = normalizeSetEndPayload(payload)
-
-    if (!normalized.ok) {
-      console.log('Ignoring malformed SetEnd payload')
-      return
-    }
-
-    const { completedSet } = normalized.event
-    const currentExerciseIndex = currExercise.current
-
-    currSet.current = completedSet
-
+    writeFlowState(result.state)
     setActiveExerciseData({
       ...activeExerciseData,
-      currentSet: completedSet + 1,
+      currentSet: result.state.currSet + 1,
     })
 
-    const checkpoint = buildSetCompletionCheckpoint({
-      patientSessionId: patientSessionId.current,
-      sessionExerciseRows: sessionExerciseRows.current,
-      currentExerciseIndex,
-      progressByExerciseId: progressData.current ?? {},
-      currentExerciseProgress: realTimeData.current,
-      completedSet,
-      lastCompletedRepIndex: currRep.current,
-      isLastExercise: currentExerciseIndex === exercises!.length - 1,
-    })
-
-    progressData.current = mutableProgressByExerciseId(
-      checkpoint.progressByExerciseId,
-    )
-    currExercise.current = checkpoint.nextCurrentExerciseIndex
-
-    if (
-      shouldResetLiveExerciseAfterSetCompletion({
-        currentExerciseIndex,
-        nextCurrentExerciseIndex: checkpoint.nextCurrentExerciseIndex,
-        exerciseCount: exercises!.length,
-      })
-    ) {
-      applyExerciseAtIndex(checkpoint.nextCurrentExerciseIndex)
-      progressDataClear()
+    if (result.advancedToNextExercise) {
+      applyExerciseAtIndex(result.state.headsetConfirmedExerciseIndex)
+      syncPlotFromFlowState(result.state)
     }
 
     try {
-      await upsertPatientSessionData([checkpoint.upsert])
+      await persistRemoteUpserts(result.remoteUpserts)
     } catch (error) {
       console.error(error)
     }
@@ -618,7 +526,9 @@ const usePatientDashboardSocketSetup = ({
     }
 
     try {
-      await handleSessionDataCreation()
+      const result = runLiveInterruptSession(readFlowState())
+      await persistRemoteUpserts(result.remoteUpserts)
+      writeFlowState(result.state)
       await interruptPatientSession({ id: sessionId })
       ErrorToasty('Session was interrupted before completion.')
     } catch (error) {

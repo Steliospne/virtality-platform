@@ -1,14 +1,9 @@
 import { ORPCError } from '@orpc/server'
 import {
-  assignFreeAfterCancellationAction,
   assignPermanentFreeAction,
-  cancelCyclePlanChangeAction,
-  cancelPaidSubscriptionAction,
-  changePaidPlanAction,
+  createAdminCustomerBillingRuntime,
+  getRequiredStripeClient,
   grantTimedTrialAction,
-  previewChangePaidPlanAction,
-  reactivatePaidSubscriptionAction,
-  sendPaidCheckoutLinkAction,
 } from '@virtality/auth'
 import { z } from 'zod'
 import {
@@ -31,6 +26,7 @@ import {
   AdminCustomerBillingValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
+import type { InitialContext } from '../context.ts'
 import {
   getAdminCustomerProfile,
   listAdminCustomers,
@@ -40,6 +36,14 @@ import {
 const profileInputSchema = z.object({
   userId: z.string().trim().min(1),
 })
+
+function adminCustomerBillingRuntime(context: InitialContext) {
+  return createAdminCustomerBillingRuntime({
+    prisma: context.prisma,
+    stripeClient: getRequiredStripeClient(),
+    headers: context.headers,
+  })
+}
 
 function throwAdminCustomerOrpcError(error: unknown): never {
   if (
@@ -117,7 +121,8 @@ const previewChangePaidPlan = adminAuthed
   .input(previewChangePaidPlanInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await previewChangePaidPlanAction(context.prisma, {
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.previewChangePaidPlan({
         userId: input.userId,
         targetPriceId: input.targetPriceId,
       })
@@ -131,16 +136,13 @@ const changePaidPlan = adminAuthed
   .input(changePaidPlanInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await changePaidPlanAction(
-        context.prisma,
-        {
-          userId: input.userId,
-          actorUserId: context.user.id,
-          reason: input.reason,
-          targetPriceId: input.targetPriceId,
-        },
-        context.headers,
-      )
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.changePaidPlan({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        targetPriceId: input.targetPriceId,
+      })
     } catch (error) {
       throwAdminCustomerOrpcError(error)
     }
@@ -151,7 +153,8 @@ const cancelPaidSubscription = adminAuthed
   .input(cancelPaidSubscriptionInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await cancelPaidSubscriptionAction(context.prisma, {
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.cancelPaidSubscription({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -170,15 +173,12 @@ const reactivatePaidSubscription = adminAuthed
   .input(reactivatePaidSubscriptionInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await reactivatePaidSubscriptionAction(
-        context.prisma,
-        {
-          userId: input.userId,
-          actorUserId: context.user.id,
-          reason: input.reason,
-        },
-        context.headers,
-      )
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.reactivatePaidSubscription({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+      })
     } catch (error) {
       throwAdminCustomerOrpcError(error)
     }
@@ -192,15 +192,12 @@ const cancelCyclePlanChange = adminAuthed
   .input(cancelCyclePlanChangeInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await cancelCyclePlanChangeAction(
-        context.prisma,
-        {
-          userId: input.userId,
-          actorUserId: context.user.id,
-          reason: input.reason,
-        },
-        context.headers,
-      )
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.cancelCyclePlanChange({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+      })
     } catch (error) {
       throwAdminCustomerOrpcError(error)
     }
@@ -214,7 +211,8 @@ const assignFreeAfterCancellation = adminAuthed
   .input(assignFreeAfterCancellationInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await assignFreeAfterCancellationAction(context.prisma, {
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.assignFreeAfterCancellation({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -229,7 +227,8 @@ const sendPaidCheckoutLink = adminAuthed
   .input(sendPaidCheckoutLinkInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await sendPaidCheckoutLinkAction(context.prisma, {
+      const billing = adminCustomerBillingRuntime(context)
+      return await billing.sendPaidCheckoutLink({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,

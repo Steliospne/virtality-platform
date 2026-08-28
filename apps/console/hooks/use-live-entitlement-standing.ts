@@ -1,14 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  canLaunchVrPrograms,
-  formatCheckoutCtaLabel,
-  formatRemainingTimeLabel,
-  remainingMsFromClockEnd,
-  resolveCheckoutCta,
-  showsRemainingTimeSidebar,
-} from '@virtality/shared/utils'
+import { projectLiveEntitlementStanding } from '@virtality/shared/utils'
 import { useEntitlementStanding } from '@virtality/react-query'
 import { authClient } from '@/auth-client'
 import {
@@ -66,16 +59,18 @@ export function useLiveEntitlementStanding() {
     }
   }, [])
 
-  const remainingMs = remainingMsFromClockEnd(query.data?.clockEnd, nowMs)
-  const entitled = remainingMs > 0
-  const canLaunchVr = canLaunchVrPrograms({
+  const {
+    remainingMs,
     entitled,
+    canLaunchVr,
+    checkoutCta,
+    checkoutCtaLabel,
+    label,
+    showRemainingTime,
+  } = projectLiveEntitlementStanding({
+    standing: query.data,
+    now: nowMs,
     role: session?.user?.role,
-  })
-  const checkoutCta = resolveCheckoutCta({
-    entitled,
-    billingPathEstablished: query.data?.billingPathEstablished ?? false,
-    hadPaidBilling: query.data?.hadPaidBilling ?? false,
   })
 
   useEffect(() => {
@@ -135,11 +130,8 @@ export function useLiveEntitlementStanding() {
     entitled,
     canLaunchVr,
     checkoutCta,
-    checkoutCtaLabel: formatCheckoutCtaLabel(checkoutCta),
-    label: formatRemainingTimeLabel(remainingMs),
-    showRemainingTime: showsRemainingTimeSidebar({
-      entitled,
-      status: query.data?.status,
-    }),
+    checkoutCtaLabel,
+    label,
+    showRemainingTime,
   }
 }

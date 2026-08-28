@@ -149,10 +149,19 @@ export function createSkipSafeProgressFlowState(input: {
   }
 }
 
+export type ApplyRepEndToFlowResult = SkipSafeProgressFlowActionResult & {
+  completedRep?: number
+  progress?: number
+}
+
+export type ApplySetEndToFlowResult = SkipSafeProgressFlowActionResult & {
+  advancedToNextExercise?: boolean
+}
+
 export function applyRepEndToFlow(
   state: SkipSafeProgressFlowState,
   payload: string,
-): SkipSafeProgressFlowActionResult {
+): ApplyRepEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {
     return unchangedResult(state)
   }
@@ -181,6 +190,8 @@ export function applyRepEndToFlow(
       currentExerciseProgress,
     },
     remoteUpserts: [],
+    completedRep,
+    progress,
   }
 }
 
@@ -188,7 +199,7 @@ export function applySetEndToFlow(
   state: SkipSafeProgressFlowState,
   payload: string,
   options?: PersistOptions,
-): SkipSafeProgressFlowActionResult {
+): ApplySetEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {
     return unchangedResult(state)
   }
@@ -209,6 +220,12 @@ export function applySetEndToFlow(
       currentExerciseIndex === state.sessionExerciseRows.length - 1,
   })
 
+  const advancedToNextExercise = shouldResetLiveExerciseAfterSetCompletion({
+    currentExerciseIndex,
+    nextCurrentExerciseIndex: checkpoint.nextCurrentExerciseIndex,
+    exerciseCount: state.sessionExerciseRows.length,
+  })
+
   let nextState: SkipSafeProgressFlowState = {
     ...state,
     currSet: completedSet,
@@ -218,21 +235,18 @@ export function applySetEndToFlow(
     headsetConfirmedExerciseIndex: checkpoint.nextCurrentExerciseIndex,
   }
 
-  if (
-    shouldResetLiveExerciseAfterSetCompletion({
-      currentExerciseIndex,
-      nextCurrentExerciseIndex: checkpoint.nextCurrentExerciseIndex,
-      exerciseCount: state.sessionExerciseRows.length,
-    })
-  ) {
+  if (advancedToNextExercise) {
     nextState = clearCurrentExerciseProgress(nextState)
   }
 
-  return recordRemoteUpsert(
-    { state: nextState, remoteUpserts: [] },
-    checkpoint.upsert,
-    options,
-  )
+  return {
+    ...recordRemoteUpsert(
+      { state: nextState, remoteUpserts: [] },
+      checkpoint.upsert,
+      options,
+    ),
+    advancedToNextExercise,
+  }
 }
 
 export function requestExerciseSkipInFlow(

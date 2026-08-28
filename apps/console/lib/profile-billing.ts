@@ -44,6 +44,72 @@ export const PAID_INTERVAL_CANCEL_LABEL = 'Cancel' as const
 /** Plan-card CTA to undo cancel-at-period-end on the current Pro interval. */
 export const PAID_CANCELLATION_UNDO_LABEL = "Don't cancel" as const
 
+export type ProfileBillingCardActionConfirm = {
+  title: string
+  body: string
+  confirmLabel: string
+}
+
+export type ProfileBillingCardAction =
+  | { kind: 'none'; label: null; pendingLabel: null }
+  | {
+      kind: 'checkout'
+      label: string
+      pendingLabel: string
+    }
+  | {
+      kind: 'schedule'
+      label: string
+      pendingLabel: string
+      confirm: ProfileBillingCardActionConfirm
+    }
+  | {
+      kind: 'cancel_schedule'
+      label: string
+      pendingLabel: string
+      confirm: ProfileBillingCardActionConfirm
+    }
+  | {
+      kind: 'restore_cancellation'
+      label: string
+      pendingLabel: string
+    }
+
+/** Structured plan-card action kinds; UI dispatches on these, never on label copy. */
+export type ProfileBillingCardActionKind = ProfileBillingCardAction['kind']
+
+/** Plan-card action that renders a CTA (excludes inert `none`). */
+export type ProfileBillingCardActiveAction = Exclude<
+  ProfileBillingCardAction,
+  { kind: 'none' }
+>
+
+const NONE_ACTION: ProfileBillingCardAction = {
+  kind: 'none',
+  label: null,
+  pendingLabel: null,
+}
+
+/** Drop inert `none` actions before wiring plan-card CTAs. */
+export function profileBillingCardActiveAction(
+  action: ProfileBillingCardAction,
+): ProfileBillingCardActiveAction | null {
+  return action.kind === 'none' ? null : action
+}
+
+/** Confirm dialog copy when the action requires a confirmation step. */
+export function profileBillingCardActionConfirm(
+  action: ProfileBillingCardAction,
+): ProfileBillingCardActionConfirm | null {
+  switch (action.kind) {
+    case 'schedule':
+    case 'cancel_schedule':
+      return action.confirm
+    default:
+      return null
+  }
+}
+
 export {
   BILLING_DISCOUNT_TIMING_COPY,
   BILLING_SOFT_UNAVAILABLE_COPY,
@@ -135,42 +201,70 @@ export function profileBillingShowsPlanCardCheckout(
 }
 
 /**
- * Interval-specific plan-card action label. Free / Renew seats share one
- * Subscribe/Renew label on both cards. Live paid Pro shows "Update" on the
- * other interval, or "Cancel" when that switch is already scheduled. While
- * cancel-at-period-end is set, the current interval offers "Don't cancel" and
- * the other interval still offers "Update" (Checkout to pay for that plan).
+ * Interval-specific plan-card action. Free / Renew seats share one
+ * Subscribe/Renew checkout on both cards. Live paid Pro schedules "Update" on
+ * the other interval, or "Cancel" when that switch is already scheduled. While
+ * cancel-at-period-end is set, the current interval restores ("Don't cancel")
+ * and the other interval checkouts "Update" (pay now, not period-end schedule).
  */
-export function profileBillingPlanCardCheckoutLabel(
+export function resolveProfileBillingCardAction(
   standing: BillingStandingView,
   hasStripeCustomer: boolean,
-  interval?: BillingInterval,
-): string | null {
+  interval: BillingInterval,
+): ProfileBillingCardAction {
   if (profileBillingOpensPortal(standing)) {
-    if (interval == null) return null
     if (standing.cancelAtPeriodEnd) {
-      return standing.billingInterval === interval
-        ? PAID_CANCELLATION_UNDO_LABEL
-        : PAID_INTERVAL_UPDATE_LABEL
+      if (standing.billingInterval === interval) {
+        return {
+          kind: 'restore_cancellation',
+          label: PAID_CANCELLATION_UNDO_LABEL,
+          pendingLabel: 'Restoring…',
+        }
+      }
+      return {
+        kind: 'checkout',
+        label: PAID_INTERVAL_UPDATE_LABEL,
+        pendingLabel: 'Updating…',
+      }
     }
-    if (standing.billingInterval === interval) return null
+    if (standing.billingInterval === interval) return NONE_ACTION
     const pendingTarget = profileBillingPendingTargetInterval(standing)
     if (pendingTarget != null) {
-      return pendingTarget === interval ? PAID_INTERVAL_CANCEL_LABEL : null
+      if (pendingTarget !== interval) return NONE_ACTION
+      const confirm = profileBillingIntervalCancelConfirmCopy(standing)
+      if (confirm == null) return NONE_ACTION
+      return {
+        kind: 'cancel_schedule',
+        label: PAID_INTERVAL_CANCEL_LABEL,
+        pendingLabel: 'Canceling…',
+        confirm,
+      }
     }
-    return PAID_INTERVAL_UPDATE_LABEL
+    return {
+      kind: 'schedule',
+      label: PAID_INTERVAL_UPDATE_LABEL,
+      pendingLabel: 'Updating…',
+      confirm: profileBillingIntervalUpdateConfirmCopy(standing, interval),
+    }
   }
 
   const cta = resolveProfileBillingPlanCardCheckoutCta(
     standing,
     hasStripeCustomer,
   )
-  if (cta == null) return null
+  if (cta == null) return NONE_ACTION
 
-  if (!standing.billingPathEstablished && hasStripeCustomer) {
-    return 'Become a paying customer'
+  const label =
+    !standing.billingPathEstablished && hasStripeCustomer
+      ? 'Become a paying customer'
+      : formatCheckoutCtaLabel(cta)
+  if (label == null) return NONE_ACTION
+
+  return {
+    kind: 'checkout',
+    label,
+    pendingLabel: 'Starting Checkout…',
   }
-  return formatCheckoutCtaLabel(cta)
 }
 
 /** Whether an upgrade from this standing should schedule at period end. */
@@ -215,10 +309,10 @@ export function profileBillingPendingCancellationBanner(
 }
 
 /** Confirm-dialog body for scheduling an interval switch. */
-export function profileBillingIntervalUpdateConfirmCopy(
+function profileBillingIntervalUpdateConfirmCopy(
   standing: BillingStandingView,
   targetInterval: BillingInterval,
-): { title: string; body: string; confirmLabel: string } {
+): ProfileBillingCardActionConfirm {
   const targetTitle = profileBillingIntervalTitle(targetInterval)
   const currentTitle =
     standing.billingInterval != null
@@ -238,9 +332,9 @@ export function profileBillingIntervalUpdateConfirmCopy(
 }
 
 /** Confirm-dialog body for releasing a scheduled interval switch. */
-export function profileBillingIntervalCancelConfirmCopy(
+function profileBillingIntervalCancelConfirmCopy(
   standing: BillingStandingView,
-): { title: string; body: string; confirmLabel: string } | null {
+): ProfileBillingCardActionConfirm | null {
   const target = profileBillingPendingTargetInterval(standing)
   if (target == null) return null
   const targetTitle = profileBillingIntervalTitle(target)

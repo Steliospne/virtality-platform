@@ -17,7 +17,7 @@ import {
   type GrantTimedTrialResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { rearmRenewPromptsForNewClockEnd } from './renew-prompt-epoch.ts'
+import { createRenewPromptLifecycle } from './renew-prompt-lifecycle.ts'
 
 export function createPrismaAdminCustomerAccessStore(
   client: PrismaClient = prisma,
@@ -218,7 +218,7 @@ export async function grantTimedTrialForAdminboard(
   )
   const result = await grantTimedTrialToCustomer(store, stripe, input)
 
-  await rearmRenewPromptsForNewClockEnd(client, {
+  await createRenewPromptLifecycle({ prisma: client }).rearmForNewClock({
     userId: input.userId,
     clockEnd: result.trialEnd,
   })

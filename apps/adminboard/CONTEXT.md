@@ -118,6 +118,10 @@ _Avoid_: ever had a Subscription, Billing Path Established, any canceled Pro
 Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeScheduleId` / Better Auth `scheduleAtPeriodEnd`). Adminboard Change paid plan schedules through the same Better Auth path as Console (not raw Stripe subscription schedules). Staff release with Cancel Cycle plan change (audit `cancel_cycle_plan_change`); Reactivate keeps its own audit label for cancel-at-period-end undo. Both release/reactivate call Better Auth restore.
 _Avoid_: immediate admin price swap, Stripe schedule writer, conflating with Reactivate
 
+**Admin customer paid billing runtime**:
+Paid customer mutations (preview/change plan, cancel, reactivate, cancel Cycle plan change, assign Free after cancellation, send Checkout link) enter via `createAdminCustomerBillingRuntime` in `@virtality/auth` (Prisma / Stripe / Cycle plan ports), not a pass-through Action per verb. Access grants, promo, catalog, campaign, and extension keep their Action façades.
+_Avoid_: per-verb paid-billing Action, `@virtality/billing` package (deferred)
+
 **Extension**:
 A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months. For a live seat, the chosen duration is added onto the current clock end (not measured from "now", which would overwrite Remaining Time). Expired, canceled, or never-entitled seats get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration.
 _Avoid_: renewal, top-up, trial extension (as a separate entity name), replace clock with now+N
@@ -131,7 +135,7 @@ An Adminboard-configured row `{ daysBefore, active }` that schedules an in-app r
 _Avoid_: toast blast, global notification toggle
 
 **Renew Prompt Delivery**:
-A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog.
+A once-per-channel-per-offset record for the current **Entitlement Clock** epoch (keyed by clock end). Powers System Email and in-app renew chrome; missed offsets catch up once on next evaluation; none after expiry. Extension or successful Subscribe/Renew Checkout that changes the clock end starts a new epoch and drops prior-epoch backlog. Clock-changing paths rearm via `createRenewPromptLifecycle`; evaluate and list-in-app use the same auth runtime.
 _Avoid_: Stripe Billing reminder, renew master switch
 
 **Coupon**:

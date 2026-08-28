@@ -7,7 +7,10 @@
 import { Check } from 'lucide-react'
 import { Badge } from '@virtality/ui/components/badge'
 import { cn } from '@/lib/utils'
-import { splitCatalogPriceLabel } from '@/lib/profile-billing'
+import {
+  splitCatalogPriceLabel,
+  type ProfileBillingCardActiveAction,
+} from '@/lib/profile-billing'
 import { BillingPlanCardCheckoutButton } from './billing-plan-card-checkout-button'
 
 type PlanPriceRewrite = {
@@ -113,7 +116,7 @@ export function PlanCard({
   badge,
   accent = false,
   rewrite,
-  checkoutLabel,
+  checkoutAction,
   checkoutPending,
   onCheckout,
 }: {
@@ -126,11 +129,11 @@ export function PlanCard({
   badge?: string
   accent?: boolean
   rewrite: PlanPriceRewrite | null
-  checkoutLabel?: string | null
+  checkoutAction?: ProfileBillingCardActiveAction | null
   checkoutPending?: boolean
   onCheckout?: () => void
 }) {
-  const hasCheckout = checkoutLabel != null && onCheckout != null
+  const hasCheckout = checkoutAction != null && onCheckout != null
   // Active interval (`disabled`): not selectable and not "Selected"; just inert.
   const interactive = !hasCheckout && !disabled
   const showSelected = selected && !disabled
@@ -187,7 +190,9 @@ export function PlanCard({
       {hasCheckout ? (
         <div className='mt-auto pt-5'>
           <BillingPlanCardCheckoutButton
-            label={checkoutLabel}
+            kind={checkoutAction.kind}
+            label={checkoutAction.label}
+            pendingLabel={checkoutAction.pendingLabel}
             pending={checkoutPending ?? false}
             onCheckout={onCheckout}
           />

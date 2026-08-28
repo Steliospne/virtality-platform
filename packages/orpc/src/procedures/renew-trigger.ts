@@ -1,4 +1,5 @@
 import { ORPCError } from '@orpc/server'
+import { createPrismaRenewTriggerStore } from '@virtality/auth'
 import type { PrismaClient } from '@virtality/db'
 import {
   createRenewTriggerInputSchema,
@@ -19,38 +20,6 @@ import {
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 import { base } from '../context.ts'
-
-export function createPrismaRenewTriggerStore(
-  prisma: PrismaClient,
-): RenewTriggerStore {
-  return {
-    findById: (id) =>
-      prisma.renewTrigger.findUnique({
-        where: { id },
-      }),
-    findByChannelAndDaysBefore: (channel, daysBefore) =>
-      prisma.renewTrigger.findUnique({
-        where: {
-          channel_daysBefore: { channel, daysBefore },
-        },
-      }),
-    create: (data) => prisma.renewTrigger.create({ data }),
-    update: (id, data) =>
-      prisma.renewTrigger.update({
-        where: { id },
-        data,
-      }),
-    deleteById: async (id) => {
-      await prisma.renewTrigger.delete({
-        where: { id },
-      })
-    },
-    listByChannel: (channel) =>
-      prisma.renewTrigger.findMany({
-        where: { channel },
-      }),
-  }
-}
 
 function throwRenewTriggerOrpcError(error: unknown): never {
   if (error instanceof RenewTriggerValidationError) {

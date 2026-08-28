@@ -1,29 +1,23 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  assignFreeAfterCancellationForCustomer,
   billingSnapshotFromPrimarySubscription,
   buildPaidProSubscriptionCreateParams,
   buildPermanentFreeAfterCancellationStripeParams,
-  cancelCyclePlanChangeForCustomer,
-  cancelPaidSubscriptionForCustomer,
-  changePaidPlanForCustomer,
-  previewChangePaidPlan,
-  reactivatePaidSubscriptionForCustomer,
-  sendPaidCheckoutLinkForCustomer,
   withCheckoutReturnIntent,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
-  type AssignFreeAfterCancellationInput,
-  type CancelCyclePlanChangeInput,
-  type CancelPaidSubscriptionInput,
-  type ChangePaidPlanInput,
-  type ReactivatePaidSubscriptionInput,
-  type SendPaidCheckoutLinkInput,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { FREE_PLAN_PRICE_ID } from '../auth-instance.ts'
+import {
+  createAdminCustomerBillingRuntimeFromPorts,
+  type AdminCustomerBillingCheckoutReturnUrls,
+  type AdminCustomerBillingRuntime,
+} from './admin-customer-billing-runtime.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
+
+export type { AdminCustomerBillingRuntime }
 
 function readStripeSubscriptionPeriodEnd(
   subscription: Stripe.Subscription,
@@ -36,10 +30,9 @@ function readStripeSubscriptionPeriodEnd(
   return periodEndUnix ? new Date(periodEndUnix * 1000) : null
 }
 
-function buildAdminCheckoutReturnUrls(userId: string): {
-  successUrl: string
-  cancelUrl: string
-} {
+function buildAdminCheckoutReturnUrls(
+  userId: string,
+): AdminCustomerBillingCheckoutReturnUrls {
   const returnUrl = `/user/${userId}/profile?tab=billing`
   return {
     successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
@@ -269,119 +262,18 @@ export function createStripeAdminCustomerBillingGateway(
   }
 }
 
-function createAdminCustomerBillingDeps(
-  client: PrismaClient,
-  stripeClient: Stripe,
-  headers: Headers,
-) {
-  return {
+/** Request-scoped Adminboard paid-billing runtime (Prisma, Stripe, Cycle plan). */
+export function createAdminCustomerBillingRuntime(deps: {
+  prisma?: PrismaClient
+  stripeClient: Stripe
+  headers: Headers
+}): AdminCustomerBillingRuntime {
+  const client = deps.prisma ?? prisma
+  return createAdminCustomerBillingRuntimeFromPorts({
     store: createPrismaAdminCustomerBillingStore(client),
-    stripe: createStripeAdminCustomerBillingGateway(stripeClient),
-    cyclePlan: createBetterAuthCyclePlanChangePort(headers, client),
-  }
-}
-
-export type ChangePaidPlanResult = Awaited<
-  ReturnType<typeof changePaidPlanForCustomer>
->
-export type AssignFreeAfterCancellationResult = Awaited<
-  ReturnType<typeof assignFreeAfterCancellationForCustomer>
->
-
-export async function previewChangePaidPlanForAdminboard(
-  input: { userId: string; targetPriceId: string },
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
-) {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaAdminCustomerBillingStore(client)
-  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
-  return previewChangePaidPlan(store, stripe, input)
-}
-
-export async function changePaidPlanForAdminboard(
-  input: Omit<ChangePaidPlanInput, 'successUrl' | 'cancelUrl'> & {
-    successUrl?: string
-    cancelUrl?: string
-  },
-  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
-): Promise<ChangePaidPlanResult> {
-  const client = deps.prisma ?? prisma
-  const { store, stripe, cyclePlan } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-    deps.headers,
-  )
-  const urls = buildAdminCheckoutReturnUrls(input.userId)
-  return changePaidPlanForCustomer(store, stripe, cyclePlan, {
-    ...input,
-    successUrl: input.successUrl ?? urls.successUrl,
-    cancelUrl: input.cancelUrl ?? urls.cancelUrl,
-  })
-}
-
-export async function cancelPaidSubscriptionForAdminboard(
-  input: CancelPaidSubscriptionInput,
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
-) {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaAdminCustomerBillingStore(client)
-  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
-  return cancelPaidSubscriptionForCustomer(store, stripe, input)
-}
-
-export async function reactivatePaidSubscriptionForAdminboard(
-  input: ReactivatePaidSubscriptionInput,
-  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
-) {
-  const client = deps.prisma ?? prisma
-  const { store, cyclePlan } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-    deps.headers,
-  )
-  return reactivatePaidSubscriptionForCustomer(store, cyclePlan, input)
-}
-
-export async function cancelCyclePlanChangeForAdminboard(
-  input: CancelCyclePlanChangeInput,
-  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
-) {
-  const client = deps.prisma ?? prisma
-  const { store, cyclePlan } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-    deps.headers,
-  )
-  return cancelCyclePlanChangeForCustomer(store, cyclePlan, input)
-}
-
-export async function assignFreeAfterCancellationForAdminboard(
-  input: Omit<AssignFreeAfterCancellationInput, 'priceId'>,
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
-): Promise<AssignFreeAfterCancellationResult> {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaAdminCustomerBillingStore(client)
-  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
-  return assignFreeAfterCancellationForCustomer(store, stripe, {
-    ...input,
-    priceId: FREE_PLAN_PRICE_ID,
-  })
-}
-
-export async function sendPaidCheckoutLinkForAdminboard(
-  input: Omit<SendPaidCheckoutLinkInput, 'successUrl' | 'cancelUrl'> & {
-    successUrl?: string
-    cancelUrl?: string
-  },
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
-) {
-  const client = deps.prisma ?? prisma
-  const store = createPrismaAdminCustomerBillingStore(client)
-  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
-  const urls = buildAdminCheckoutReturnUrls(input.userId)
-  return sendPaidCheckoutLinkForCustomer(store, stripe, {
-    ...input,
-    successUrl: input.successUrl ?? urls.successUrl,
-    cancelUrl: input.cancelUrl ?? urls.cancelUrl,
+    stripe: createStripeAdminCustomerBillingGateway(deps.stripeClient),
+    cyclePlan: createBetterAuthCyclePlanChangePort(deps.headers, client),
+    freePlanPriceId: FREE_PLAN_PRICE_ID,
+    checkoutReturnUrls: buildAdminCheckoutReturnUrls,
   })
 }

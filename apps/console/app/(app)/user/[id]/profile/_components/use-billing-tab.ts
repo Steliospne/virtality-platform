@@ -27,24 +27,22 @@ import {
   billingCatalogPrices,
   buildPendingCouponRewrite,
   isStaffRedeemBlocked,
-  PAID_CANCELLATION_UNDO_LABEL,
-  PAID_INTERVAL_CANCEL_LABEL,
-  PAID_INTERVAL_UPDATE_LABEL,
   profileBillingDiscountDisplay,
-  profileBillingIntervalCancelConfirmCopy,
-  profileBillingIntervalUpdateConfirmCopy,
   profileBillingOpensPortal,
   profileBillingPendingCancellationBanner,
   profileBillingPendingPlanChangeBanner,
-  profileBillingPlanCardCheckoutLabel,
+  profileBillingPendingTargetInterval,
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   promoCodeLabel,
+  profileBillingCardActionConfirm,
+  resolveProfileBillingCardAction,
   type BillingInterval,
   type BillingStandingView,
   type PendingCouponTerms,
+  type ProfileBillingCardAction,
 } from '@/lib/profile-billing'
 
 function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
@@ -129,18 +127,24 @@ export function useBillingTab() {
     standing,
     hasStripeCustomer,
   )
-  const planCardCheckoutLabelFor = (interval: BillingInterval) =>
-    profileBillingPlanCardCheckoutLabel(standing, hasStripeCustomer, interval)
+  const planCardActionFor = (interval: BillingInterval) =>
+    resolveProfileBillingCardAction(standing, hasStripeCustomer, interval)
   const pendingCancellationBanner =
     profileBillingPendingCancellationBanner(standing)
   const pendingPlanChangeBanner = pendingCancellationBanner
     ? null
     : profileBillingPendingPlanChangeBanner(standing)
   const updateConfirmCopy =
-    updateConfirmInterval != null
-      ? profileBillingIntervalUpdateConfirmCopy(standing, updateConfirmInterval)
-      : null
-  const cancelConfirmCopy = profileBillingIntervalCancelConfirmCopy(standing)
+    updateConfirmInterval == null
+      ? null
+      : profileBillingCardActionConfirm(
+          planCardActionFor(updateConfirmInterval),
+        )
+  const cancelTargetInterval = profileBillingPendingTargetInterval(standing)
+  const cancelConfirmCopy =
+    !cancelConfirmOpen || cancelTargetInterval == null
+      ? null
+      : profileBillingCardActionConfirm(planCardActionFor(cancelTargetInterval))
   const portalPending = isPortalStarting
   const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount, catalogMinor)
@@ -194,29 +198,27 @@ export function useBillingTab() {
 
   function handlePlanCardCheckout(interval: BillingInterval) {
     setSelectedInterval(interval)
-    const label = profileBillingPlanCardCheckoutLabel(
+    const action: ProfileBillingCardAction = resolveProfileBillingCardAction(
       standing,
       hasStripeCustomer,
       interval,
     )
-    if (label === PAID_CANCELLATION_UNDO_LABEL) {
-      void handleUndoCancellation()
-      return
-    }
-    if (label === PAID_INTERVAL_CANCEL_LABEL) {
-      setCancelConfirmOpen(true)
-      return
-    }
-    if (label === PAID_INTERVAL_UPDATE_LABEL) {
-      // Cancel-at-period-end: switch via Checkout/pay now, not period-end schedule.
-      if (standing.cancelAtPeriodEnd) {
+    switch (action.kind) {
+      case 'restore_cancellation':
+        void handleUndoCancellation()
+        return
+      case 'cancel_schedule':
+        setCancelConfirmOpen(true)
+        return
+      case 'schedule':
+        setUpdateConfirmInterval(interval)
+        return
+      case 'checkout':
         void runPlanCardCheckout(interval)
         return
-      }
-      setUpdateConfirmInterval(interval)
-      return
+      case 'none':
+        return
     }
-    void runPlanCardCheckout(interval)
   }
 
   async function runPlanCardCheckout(interval: BillingInterval) {
@@ -344,7 +346,7 @@ export function useBillingTab() {
     pendingPlanChangeBanner,
     cta,
     showPlanCardCheckout,
-    planCardCheckoutLabelFor,
+    planCardActionFor,
     planCardCheckoutPending,
     portalPending,
     showPromoChrome,

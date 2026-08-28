@@ -9,13 +9,13 @@ import {
   buildPendingCouponRewrite,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
-  profileBillingPlanCardCheckoutLabel,
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
   profileBillingShowsPromoChrome,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
+  resolveProfileBillingCardAction,
   splitCatalogPriceLabel,
   type BillingStandingView,
   PAID_CANCELLATION_UNDO_LABEL,
@@ -132,56 +132,85 @@ describe('profileBillingShowsPlanCardCheckout', () => {
   })
 })
 
-describe('profileBillingPlanCardCheckoutLabel', () => {
-  it('uses Become a paying customer when a Customer exists without Billing Path', () => {
-    expect(profileBillingPlanCardCheckoutLabel(base, true)).toBe(
-      'Become a paying customer',
-    )
+describe('resolveProfileBillingCardAction', () => {
+  it('uses Become a paying customer checkout when a Customer exists without Billing Path', () => {
+    expect(resolveProfileBillingCardAction(base, true, 'month')).toEqual({
+      kind: 'checkout',
+      label: 'Become a paying customer',
+      pendingLabel: 'Starting Checkout…',
+    })
   })
 
-  it('uses Subscribe after Billing Path without paid history', () => {
+  it('uses Subscribe checkout after Billing Path without paid history', () => {
     expect(
-      profileBillingPlanCardCheckoutLabel(
+      resolveProfileBillingCardAction(
         { ...base, billingPathEstablished: true },
         true,
+        'year',
       ),
-    ).toBe('Subscribe')
+    ).toEqual({
+      kind: 'checkout',
+      label: 'Subscribe',
+      pendingLabel: 'Starting Checkout…',
+    })
   })
 
-  it('uses Renew after paid history', () => {
+  it('uses Renew checkout after paid history', () => {
     expect(
-      profileBillingPlanCardCheckoutLabel(
+      resolveProfileBillingCardAction(
         {
           ...base,
           billingPathEstablished: true,
           hadPaidBilling: true,
         },
         true,
+        'month',
       ),
-    ).toBe('Renew')
+    ).toEqual({
+      kind: 'checkout',
+      label: 'Renew',
+      pendingLabel: 'Starting Checkout…',
+    })
   })
 
-  it('uses Subscribe when no Stripe Customer is linked', () => {
-    expect(profileBillingPlanCardCheckoutLabel(base, false)).toBe('Subscribe')
+  it('uses Subscribe checkout when no Stripe Customer is linked', () => {
+    expect(resolveProfileBillingCardAction(base, false, 'month')).toEqual({
+      kind: 'checkout',
+      label: 'Subscribe',
+      pendingLabel: 'Starting Checkout…',
+    })
   })
 
-  it('offers Update only on the other paid Pro interval', () => {
+  it('schedules Update on the other paid Pro interval with confirm copy', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
       status: 'active',
       plan: PRO_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
+      clockEnd: '2026-09-10T12:00:00.000Z',
     }
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
-      null,
-    )
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
-      PAID_INTERVAL_UPDATE_LABEL,
+    expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
+      kind: 'none',
+      label: null,
+      pendingLabel: null,
+    })
+    const year = resolveProfileBillingCardAction(standing, true, 'year')
+    expect(year.kind).toBe('schedule')
+    expect(year.label).toBe(PAID_INTERVAL_UPDATE_LABEL)
+    expect(year.pendingLabel).toBe('Updating…')
+    expect(year).toMatchObject({
+      confirm: {
+        title: 'Switch to Yearly?',
+        confirmLabel: PAID_INTERVAL_UPDATE_LABEL,
+      },
+    })
+    expect(year.kind === 'schedule' && year.confirm.body).toMatch(
+      /Payment starts at your next billing cycle/,
     )
   })
 
-  it('offers Cancel on the target interval when a switch is scheduled', () => {
+  it('cancels the scheduled switch on the target interval with confirm copy', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
@@ -191,15 +220,24 @@ describe('profileBillingPlanCardCheckoutLabel', () => {
       hasPendingPlanChange: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
     }
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
-      null,
-    )
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
-      PAID_INTERVAL_CANCEL_LABEL,
-    )
+    expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
+      kind: 'none',
+      label: null,
+      pendingLabel: null,
+    })
+    expect(resolveProfileBillingCardAction(standing, true, 'year')).toEqual({
+      kind: 'cancel_schedule',
+      label: PAID_INTERVAL_CANCEL_LABEL,
+      pendingLabel: 'Canceling…',
+      confirm: {
+        title: 'Cancel switch to Yearly?',
+        body: "You'll stay on your current plan and renew as usual.",
+        confirmLabel: PAID_INTERVAL_CANCEL_LABEL,
+      },
+    })
   })
 
-  it("offers Don't cancel on the active interval and Update on the other when cancel-at-period-end", () => {
+  it('restores cancellation on the active interval and checkouts Update on the other when cancel-at-period-end', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
@@ -209,12 +247,16 @@ describe('profileBillingPlanCardCheckoutLabel', () => {
       cancelAtPeriodEnd: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
     }
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'month')).toBe(
-      PAID_CANCELLATION_UNDO_LABEL,
-    )
-    expect(profileBillingPlanCardCheckoutLabel(standing, true, 'year')).toBe(
-      PAID_INTERVAL_UPDATE_LABEL,
-    )
+    expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
+      kind: 'restore_cancellation',
+      label: PAID_CANCELLATION_UNDO_LABEL,
+      pendingLabel: 'Restoring…',
+    })
+    expect(resolveProfileBillingCardAction(standing, true, 'year')).toEqual({
+      kind: 'checkout',
+      label: PAID_INTERVAL_UPDATE_LABEL,
+      pendingLabel: 'Updating…',
+    })
   })
 })
 

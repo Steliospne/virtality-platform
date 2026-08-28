@@ -11,7 +11,7 @@ import {
   readSignUpCodeFromUnknown,
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
-import { rearmRenewPromptsAfterCheckoutSubscription } from './lib/renew-prompt-epoch.ts'
+import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
 import { updateUserRole } from './data/user.ts'
@@ -30,6 +30,7 @@ import {
   authorizeAdminCyclePlanReference,
   isPasswordValid,
   routeSignUpCode,
+  type RenewPromptSubscriptionClock,
 } from '@virtality/shared/utils'
 
 const runtimeEnv =
@@ -102,6 +103,13 @@ async function resolveSignUpCodeForCustomerCreate(
   }
 
   return undefined
+}
+
+/** Checkout complete and live subscription sync: re-arm to the new clock epoch. */
+async function rearmRenewPromptsAfterCheckout(
+  subscription: RenewPromptSubscriptionClock,
+) {
+  await createRenewPromptLifecycle({ prisma }).rearmAfterCheckout(subscription)
 }
 
 export const auth = betterAuth({
@@ -244,19 +252,11 @@ export const auth = betterAuth({
                   },
                 }
               },
-              // Successful Subscribe/Renew Checkout starts a new renew epoch.
               onSubscriptionComplete: async ({ subscription }) => {
-                await rearmRenewPromptsAfterCheckoutSubscription(
-                  prisma,
-                  subscription,
-                )
+                await rearmRenewPromptsAfterCheckout(subscription)
               },
-              // Extension (and other live clock-end changes) sync via webhook update.
               onSubscriptionUpdate: async ({ subscription }) => {
-                await rearmRenewPromptsAfterCheckoutSubscription(
-                  prisma,
-                  subscription,
-                )
+                await rearmRenewPromptsAfterCheckout(subscription)
               },
             },
           }),

@@ -6,9 +6,11 @@ import {
 import {
   buildEntitlementStanding,
   canLaunchVrPrograms,
+  formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
   formatRemainingTimeLabel,
   pickEntitlementSubscription,
+  projectLiveEntitlementStanding,
   remainingMsFromClockEnd,
   resolveCheckoutCta,
   resolveProfileBillingCheckoutCta,
@@ -520,6 +522,175 @@ describe('buildEntitlementStanding', () => {
     expect(standing.remainingMs).toBe(0)
     expect(standing.clockEnd).toBeNull()
     expect(standing.canLaunchVr).toBe(false)
+  })
+})
+
+describe('projectLiveEntitlementStanding', () => {
+  it('flips entitled, CTA, and sidebar visibility when the client now crosses clock end', () => {
+    const trialEnd = new Date('2026-08-17T12:00:00.000Z')
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          plan: FREE_SUBSCRIPTION_PLAN,
+          status: 'trialing',
+          trialEnd,
+        },
+      ],
+    })
+
+    const beforeEnd = projectLiveEntitlementStanding({
+      standing,
+      now: new Date('2026-08-17T11:59:00.000Z'),
+      role: 'user',
+    })
+    expect(beforeEnd.entitled).toBe(true)
+    expect(beforeEnd.remainingMs).toBe(60 * 1000)
+    expect(beforeEnd.checkoutCta).toBeNull()
+    expect(beforeEnd.showRemainingTime).toBe(true)
+    expect(beforeEnd.label).toBe(formatRemainingTimeLabel(60 * 1000))
+    expect(beforeEnd.checkoutCtaLabel).toBeNull()
+
+    const afterEnd = projectLiveEntitlementStanding({
+      standing,
+      now: new Date('2026-08-17T12:00:00.000Z'),
+      role: 'user',
+    })
+    expect(afterEnd.entitled).toBe(false)
+    expect(afterEnd.remainingMs).toBe(0)
+    expect(afterEnd.checkoutCta).toBe('subscribe')
+    expect(afterEnd.showRemainingTime).toBe(false)
+    expect(afterEnd.label).toBe('Expired')
+    expect(afterEnd.checkoutCtaLabel).toBe('Subscribe')
+  })
+
+  it('allows admin and tester VR launch when the live clock is expired', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ],
+    })
+
+    expect(
+      projectLiveEntitlementStanding({
+        standing,
+        now: NOW,
+        role: 'admin',
+      }).canLaunchVr,
+    ).toBe(true)
+    expect(
+      projectLiveEntitlementStanding({
+        standing,
+        now: NOW,
+        role: 'tester',
+      }).canLaunchVr,
+    ).toBe(true)
+    expect(
+      projectLiveEntitlementStanding({
+        standing,
+        now: NOW,
+        role: 'user',
+      }).canLaunchVr,
+    ).toBe(false)
+  })
+
+  it('defaults safely when standing is nullish and still honors admin VR bypass', () => {
+    const empty = projectLiveEntitlementStanding({
+      standing: null,
+      now: NOW,
+      role: 'user',
+    })
+    expect(empty.remainingMs).toBe(0)
+    expect(empty.entitled).toBe(false)
+    expect(empty.checkoutCta).toBeNull()
+    expect(empty.showRemainingTime).toBe(false)
+    expect(empty.label).toBe('Expired')
+    expect(empty.checkoutCtaLabel).toBeNull()
+    expect(empty.canLaunchVr).toBe(false)
+
+    expect(
+      projectLiveEntitlementStanding({
+        standing: undefined,
+        now: NOW,
+        role: 'admin',
+      }).canLaunchVr,
+    ).toBe(true)
+  })
+
+  it('matches Remaining Time and Checkout CTA labels from the existing formatters', () => {
+    const periodEnd = new Date('2026-08-12T12:00:00.000Z')
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: PRO_SUBSCRIPTION_PLAN,
+          periodEnd,
+        },
+      ],
+    })
+
+    const live = projectLiveEntitlementStanding({
+      standing,
+      now: NOW,
+      role: 'user',
+    })
+    expect(live.label).toBe(formatRemainingTimeLabel(live.remainingMs))
+    expect(live.checkoutCtaLabel).toBe(formatCheckoutCtaLabel(live.checkoutCta))
+    expect(live.showRemainingTime).toBe(false)
+
+    const expired = projectLiveEntitlementStanding({
+      standing,
+      now: periodEnd,
+      role: 'user',
+    })
+    expect(expired.checkoutCta).toBe('renew')
+    expect(expired.checkoutCtaLabel).toBe(
+      formatCheckoutCtaLabel(expired.checkoutCta),
+    )
+    expect(expired.label).toBe(formatRemainingTimeLabel(0))
+  })
+
+  it('passes through synced flags while overwriting stale time-sensitive fields', () => {
+    const periodEnd = new Date('2026-08-20T12:00:00.000Z')
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: PRO_SUBSCRIPTION_PLAN,
+          periodEnd,
+          billingInterval: 'year',
+          cancelAtPeriodEnd: true,
+          stripeScheduleId: 'sub_sched_1',
+        },
+      ],
+    })
+
+    const live = projectLiveEntitlementStanding({
+      standing,
+      now: NOW,
+      role: 'user',
+    })
+    expect(live.billingPathEstablished).toBe(true)
+    expect(live.hadPaidBilling).toBe(true)
+    expect(live.billingInterval).toBe('year')
+    expect(live.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(live.cancelAtPeriodEnd).toBe(true)
+    expect(live.hasPendingPlanChange).toBe(true)
+    expect(live.clockEnd).toEqual(periodEnd)
+    expect(live.status).toBe('active')
+    expect(live.entitled).toBe(true)
+    expect(live.checkoutCta).toBeNull()
   })
 })
 

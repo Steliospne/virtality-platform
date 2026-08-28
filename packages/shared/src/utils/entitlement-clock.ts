@@ -316,6 +316,74 @@ export function showsRemainingTimeSidebar(input: {
   return input.entitled && input.status === 'trialing'
 }
 
+/**
+ * Live Entitlement Standing: synced Entitlement Standing plus display fields
+ * re-evaluated at a client `now` (Remaining Time label, Checkout CTA label,
+ * sidebar visibility).
+ */
+export type LiveEntitlementStanding = EntitlementStanding & {
+  /** Clinician-facing Remaining Time label. */
+  label: string
+  /** Clinician-facing Checkout CTA label; null when hidden. */
+  checkoutCtaLabel: string | null
+  /** Whether the Remaining Time sidebar chrome should render. */
+  showRemainingTime: boolean
+}
+
+/** Safe defaults when no synced standing is available yet. */
+function emptyEntitlementStanding(): EntitlementStanding {
+  return {
+    entitled: false,
+    clockEnd: null,
+    remainingMs: 0,
+    status: null,
+    canLaunchVr: false,
+    billingPathEstablished: false,
+    hadPaidBilling: false,
+    checkoutCta: null,
+    billingInterval: null,
+    plan: null,
+    hasPendingPlanChange: false,
+    cancelAtPeriodEnd: false,
+    expiredFreeUpgradeQualifies: false,
+  }
+}
+
+/**
+ * Project Live Entitlement Standing from a synced standing + client `now`.
+ * Synced flags pass through; remainingMs / entitled / canLaunchVr /
+ * checkoutCta and display labels overwrite server-`now` values. Nullish
+ * standing yields safe defaults; admin/tester still bypass the VR soft gate.
+ */
+export function projectLiveEntitlementStanding(input: {
+  standing: EntitlementStanding | null | undefined
+  now: Date | number
+  role?: string | null
+}): LiveEntitlementStanding {
+  const standing = input.standing ?? emptyEntitlementStanding()
+  const remainingMs = remainingMsFromClockEnd(standing.clockEnd, input.now)
+  const entitled = remainingMs > 0
+  const checkoutCta = resolveCheckoutCta({
+    entitled,
+    billingPathEstablished: standing.billingPathEstablished,
+    hadPaidBilling: standing.hadPaidBilling,
+  })
+
+  return {
+    ...standing,
+    remainingMs,
+    entitled,
+    canLaunchVr: canLaunchVrPrograms({ entitled, role: input.role }),
+    checkoutCta,
+    label: formatRemainingTimeLabel(remainingMs),
+    checkoutCtaLabel: formatCheckoutCtaLabel(checkoutCta),
+    showRemainingTime: showsRemainingTimeSidebar({
+      entitled,
+      status: standing.status,
+    }),
+  }
+}
+
 const MS_PER_MINUTE = 60 * 1000
 const MS_PER_HOUR = 60 * MS_PER_MINUTE
 const MS_PER_DAY = 24 * MS_PER_HOUR

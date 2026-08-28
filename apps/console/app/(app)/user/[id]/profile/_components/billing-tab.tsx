@@ -8,6 +8,7 @@
 import { Button } from '@virtality/ui/components/button'
 import {
   BILLING_SOFT_UNAVAILABLE_COPY,
+  profileBillingCardActiveAction,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
 } from '@/lib/profile-billing'
@@ -48,7 +49,7 @@ export function BillingTab() {
     pendingPlanChangeBanner,
     cta,
     showPlanCardCheckout,
-    planCardCheckoutLabelFor,
+    planCardActionFor,
     planCardCheckoutPending,
     portalPending,
     showPromoChrome,
@@ -96,11 +97,11 @@ export function BillingTab() {
   }
 
   const showPortalCta = cta != null
-  const monthlyCheckoutLabel = showPlanCardCheckout
-    ? planCardCheckoutLabelFor('month')
+  const monthlyCheckout = showPlanCardCheckout
+    ? profileBillingCardActiveAction(planCardActionFor('month'))
     : null
-  const yearlyCheckoutLabel = showPlanCardCheckout
-    ? planCardCheckoutLabelFor('year')
+  const yearlyCheckout = showPlanCardCheckout
+    ? profileBillingCardActiveAction(planCardActionFor('year'))
     : null
 
   return (
@@ -136,10 +137,10 @@ export function BillingTab() {
             onSelect={() => setSelectedInterval('month')}
             listPrimary={prices.monthlyLabel}
             rewrite={rewrite?.monthly ?? null}
-            checkoutLabel={monthlyCheckoutLabel}
+            checkoutAction={monthlyCheckout}
             checkoutPending={planCardCheckoutPending === 'month'}
             onCheckout={
-              monthlyCheckoutLabel
+              monthlyCheckout
                 ? () => {
                     handlePlanCardCheckout('month')
                   }
@@ -156,10 +157,10 @@ export function BillingTab() {
             badge={prices.yearlySavingsLabel ?? undefined}
             accent
             rewrite={rewrite?.yearly ?? null}
-            checkoutLabel={yearlyCheckoutLabel}
+            checkoutAction={yearlyCheckout}
             checkoutPending={planCardCheckoutPending === 'year'}
             onCheckout={
-              yearlyCheckoutLabel
+              yearlyCheckout
                 ? () => {
                     handlePlanCardCheckout('year')
                   }

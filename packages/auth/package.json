@@ -16,7 +16,8 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "dev": "tsc --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@better-auth/stripe": "1.5.5",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@virtality/typescript-config": "workspace:*",
     "tsx": "4.20.6",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "3.2.4"
   }
 }
