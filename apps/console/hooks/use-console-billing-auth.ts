@@ -14,6 +14,38 @@ function currentConsoleReturnUrl(): string {
   return `${window.location.origin}${window.location.pathname}${window.location.search}`
 }
 
+type ToastNotifyOptions = {
+  successToast?: string
+}
+
+/**
+ * Runs a billing action once: rejects re-entry while pending, then applies
+ * shared error / optional success toasts.
+ */
+async function runBillingAction(
+  isPending: boolean,
+  setPending: (pending: boolean) => void,
+  busyMessage: string,
+  action: () => Promise<ConsoleBetterAuthBillingResult>,
+  notify?: ToastNotifyOptions,
+): Promise<ConsoleBetterAuthBillingResult> {
+  if (isPending) {
+    return { ok: false, message: busyMessage }
+  }
+
+  setPending(true)
+  try {
+    const result = await action()
+    return notifyConsoleBillingAuthResult(result, {
+      successToast: notify?.successToast,
+      toastError: toast.error,
+      toastSuccess: toast.success,
+    })
+  } finally {
+    setPending(false)
+  }
+}
+
 /**
  * Console Profile Billing → Better Auth via one adapter. Owns toasts and
  * pending flags for Checkout, Cycle schedule, restore, and Customer Portal.
@@ -34,90 +66,52 @@ export function useConsoleBillingAuth() {
   const [isRestoring, setIsRestoring] = useState(false)
   const [isOpeningPortal, setIsOpeningPortal] = useState(false)
 
-  const startCheckout = async (options?: { annual?: boolean }) => {
-    if (isStartingCheckout) {
-      return {
-        ok: false as const,
-        message: 'Checkout already starting',
-      }
-    }
+  const startCheckout = async (options?: { annual?: boolean }) =>
+    runBillingAction(
+      isStartingCheckout,
+      setIsStartingCheckout,
+      'Checkout already starting',
+      () =>
+        billing.startCheckout({
+          returnUrl: currentConsoleReturnUrl(),
+          annual: options?.annual,
+        }),
+    )
 
-    setIsStartingCheckout(true)
-    try {
-      const result = await billing.startCheckout({
-        returnUrl: currentConsoleReturnUrl(),
-        annual: options?.annual,
-      })
-      return notifyConsoleBillingAuthResult(result, {
-        toastError: toast.error,
-        toastSuccess: toast.success,
-      })
-    } finally {
-      setIsStartingCheckout(false)
-    }
-  }
-
-  const scheduleCycleChange = async (options: { annual: boolean }) => {
-    if (isScheduling) {
-      return {
-        ok: false as const,
-        message: 'Plan change already scheduling',
-      }
-    }
-
-    setIsScheduling(true)
-    try {
-      const result = await billing.scheduleCycleChange({
-        returnUrl: currentConsoleReturnUrl(),
-        annual: options.annual,
-      })
-      return notifyConsoleBillingAuthResult(result, {
-        successToast: CYCLE_PLAN_CHANGE_SCHEDULED_TOAST,
-        toastError: toast.error,
-        toastSuccess: toast.success,
-      })
-    } finally {
-      setIsScheduling(false)
-    }
-  }
+  const scheduleCycleChange = async (options: { annual: boolean }) =>
+    runBillingAction(
+      isScheduling,
+      setIsScheduling,
+      'Plan change already scheduling',
+      () =>
+        billing.scheduleCycleChange({
+          returnUrl: currentConsoleReturnUrl(),
+          annual: options.annual,
+        }),
+      { successToast: CYCLE_PLAN_CHANGE_SCHEDULED_TOAST },
+    )
 
   const restore = async (options?: {
-    successMessage?: string
-  }): Promise<ConsoleBetterAuthBillingResult> => {
-    if (isRestoring)
-      return { ok: false, message: 'Restore already in progress' }
+    successToast?: string
+  }): Promise<ConsoleBetterAuthBillingResult> =>
+    runBillingAction(
+      isRestoring,
+      setIsRestoring,
+      'Restore already in progress',
+      () => billing.restore(),
+      { successToast: options?.successToast },
+    )
 
-    setIsRestoring(true)
-    try {
-      const result = await billing.restore()
-      return notifyConsoleBillingAuthResult(result, {
-        successToast: options?.successMessage,
-        toastError: toast.error,
-        toastSuccess: toast.success,
-      })
-    } finally {
-      setIsRestoring(false)
-    }
-  }
-
-  const openPortal = async () => {
-    if (isOpeningPortal) {
-      return { ok: false as const, message: 'Portal already opening' }
-    }
-
-    setIsOpeningPortal(true)
-    try {
-      const result = await billing.openPortal({
-        returnUrl: currentConsoleReturnUrl(),
-      })
-      return notifyConsoleBillingAuthResult(result, {
-        toastError: toast.error,
-        toastSuccess: toast.success,
-      })
-    } finally {
-      setIsOpeningPortal(false)
-    }
-  }
+  const openPortal = async () =>
+    runBillingAction(
+      isOpeningPortal,
+      setIsOpeningPortal,
+      'Portal already opening',
+      () =>
+        billing.openPortal({
+          returnUrl: currentConsoleReturnUrl(),
+        }),
+    )
 
   return {
     startCheckout,

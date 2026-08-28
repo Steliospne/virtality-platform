@@ -18,6 +18,10 @@ import {
 import { authClient } from '@/auth-client'
 import { useConsoleBillingAuth } from '@/hooks/use-console-billing-auth'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
+import {
+  CANCEL_SCHEDULE_RESTORE_TOAST,
+  UNDO_CANCELLATION_RESTORE_TOAST,
+} from '@/lib/console-better-auth-billing'
 import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
@@ -42,10 +46,8 @@ import {
   type ProfileBillingCardAction,
 } from '@/lib/profile-billing'
 
-const CANCEL_SCHEDULE_RESTORE_TOAST =
-  'Scheduled plan change canceled. You stay on your current plan.'
-const UNDO_CANCELLATION_RESTORE_TOAST =
-  'Cancellation stopped. Your subscription will renew as usual.'
+const STANDING_REFETCH_ATTEMPTS = 5
+const STANDING_REFETCH_DELAY_MS = 250
 
 function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
   if (replaced) {
@@ -185,17 +187,25 @@ export function useBillingTab() {
     })
   }
 
+  async function refetchStandingUntil(
+    isReady: (data: typeof standingQuery.data) => boolean,
+  ) {
+    for (let attempt = 0; attempt < STANDING_REFETCH_ATTEMPTS; attempt += 1) {
+      const refreshed = await standingQuery.refetch()
+      if (isReady(refreshed.data)) break
+      await new Promise((resolve) =>
+        setTimeout(resolve, STANDING_REFETCH_DELAY_MS),
+      )
+    }
+  }
+
   async function scheduleCycleChangeForInterval(interval: BillingInterval) {
     const result = await scheduleCycleChange({
       annual: interval === 'year',
     })
     if (result.ok) {
       // Schedule write is sync in Better Auth; refetch until Cancel can render.
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const refreshed = await standingQuery.refetch()
-        if (refreshed.data?.hasPendingPlanChange) break
-        await new Promise((resolve) => setTimeout(resolve, 250))
-      }
+      await refetchStandingUntil((data) => Boolean(data?.hasPendingPlanChange))
     }
   }
 
@@ -255,14 +265,10 @@ export function useBillingTab() {
     setPlanCardCheckoutPending(standing.billingInterval)
     try {
       const result = await restore({
-        successMessage: UNDO_CANCELLATION_RESTORE_TOAST,
+        successToast: UNDO_CANCELLATION_RESTORE_TOAST,
       })
       if (result.ok) {
-        for (let attempt = 0; attempt < 5; attempt += 1) {
-          const refreshed = await standingQuery.refetch()
-          if (!refreshed.data?.cancelAtPeriodEnd) break
-          await new Promise((resolve) => setTimeout(resolve, 250))
-        }
+        await refetchStandingUntil((data) => !data?.cancelAtPeriodEnd)
       }
     } finally {
       setPlanCardCheckoutPending(null)
@@ -276,7 +282,7 @@ export function useBillingTab() {
     )
     try {
       const result = await restore({
-        successMessage: CANCEL_SCHEDULE_RESTORE_TOAST,
+        successToast: CANCEL_SCHEDULE_RESTORE_TOAST,
       })
       if (result.ok) {
         await standingQuery.refetch()

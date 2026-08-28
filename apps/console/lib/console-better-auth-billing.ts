@@ -59,6 +59,27 @@ export type ConsoleBetterAuthBilling = {
 export const CYCLE_PLAN_CHANGE_SCHEDULED_TOAST =
   'Plan change scheduled. It starts at your next billing cycle.'
 
+/** Clinician toast after releasing a scheduled period-end plan change. */
+export const CANCEL_SCHEDULE_RESTORE_TOAST =
+  'Scheduled plan change canceled. You stay on your current plan.'
+
+/** Clinician toast after undoing cancel-at-period-end. */
+export const UNDO_CANCELLATION_RESTORE_TOAST =
+  'Cancellation stopped. Your subscription will renew as usual.'
+
+/**
+ * Maps shared Cycle plan change / restore results onto the Console billing
+ * result shape (drops schedule / subscription ids callers do not use).
+ */
+function toConsoleBillingResult(
+  result: { ok: true } | { ok: false; message: string },
+): ConsoleBetterAuthBillingResult {
+  if (!result.ok) {
+    return { ok: false, message: result.message }
+  }
+  return { ok: true }
+}
+
 /**
  * Applies Console billing auth toast side effects: errors always; optional
  * success copy (schedule / restore). Checkout and portal success redirect.
@@ -104,10 +125,7 @@ export function createConsoleBetterAuthBilling(
         returnUrl: input.returnUrl,
         referenceId: input.referenceId,
       })
-      if (!result.ok) {
-        return { ok: false, message: result.message }
-      }
-      return { ok: true }
+      return toConsoleBillingResult(result)
     },
 
     async restore(input) {
@@ -115,10 +133,7 @@ export function createConsoleBetterAuthBilling(
         port: { restore: port.restore },
         referenceId: input?.referenceId,
       })
-      if (!result.ok) {
-        return { ok: false, message: result.message }
-      }
-      return { ok: true }
+      return toConsoleBillingResult(result)
     },
 
     async openPortal(input) {
