@@ -6,6 +6,7 @@ import {
   assignFreeAfterCancellationForCustomer,
   buildCancelPaidSubscriptionPreview,
   buildChangePaidPlanPreview,
+  cancelCyclePlanChangeForCustomer,
   cancelPaidSubscriptionForCustomer,
   changePaidPlanForCustomer,
   findLivePaidProSubscription,
@@ -16,6 +17,7 @@ import {
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AdminCustomerBillingSubscriptionRow,
+  type AdminCustomerCyclePlanPort,
 } from './admin-customer-billing.ts'
 import {
   FREE_PLAN_PRICE_ID,
@@ -58,6 +60,7 @@ function subscription(
     billingInterval: 'month',
     periodStart: new Date('2026-08-10T12:00:00.000Z'),
     cancelAtPeriodEnd: false,
+    stripeScheduleId: null,
     ...overrides,
   }
 }
@@ -112,10 +115,6 @@ function createGateway(
       prorationAmountCents: 2500,
       currency: 'eur',
     })),
-    schedulePaidPlanPriceAtPeriodEnd: vi.fn(async () => ({
-      stripeSubscriptionId: 'sub_pro_monthly',
-      stripeScheduleId: 'sub_sched_1',
-    })),
     createPaidProSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_new',
     })),
@@ -125,15 +124,28 @@ function createGateway(
     scheduleCancelAtPeriodEnd: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_monthly',
     })),
-    reactivateSubscription: vi.fn(async () => ({
-      stripeSubscriptionId: 'sub_pro_monthly',
-    })),
     createPermanentFreeSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_free_active',
     })),
     createPaidCheckoutSession: vi.fn(async () => ({
       checkoutSessionId: 'cs_test_1',
       checkoutUrl: 'https://checkout.stripe.test/cs_test_1',
+    })),
+    ...overrides,
+  }
+}
+
+function createCyclePlanPort(
+  overrides: Partial<AdminCustomerCyclePlanPort> = {},
+): AdminCustomerCyclePlanPort {
+  return {
+    upgrade: vi.fn(async () => ({
+      data: {},
+      stripeScheduleId: 'sub_sched_1',
+    })),
+    restore: vi.fn(async () => ({
+      data: {},
+      stripeSubscriptionId: 'sub_pro_monthly',
     })),
     ...overrides,
   }
@@ -280,8 +292,9 @@ describe('changePaidPlanForCustomer', () => {
       ],
     })
     const gateway = createGateway()
+    const cyclePlan = createCyclePlanPort()
 
-    const result = await changePaidPlanForCustomer(store, gateway, {
+    const result = await changePaidPlanForCustomer(store, gateway, cyclePlan, {
       userId: 'user_paid',
       actorUserId: ACTOR_ID,
       reason: 'Requested yearly billing',
@@ -290,11 +303,13 @@ describe('changePaidPlanForCustomer', () => {
       cancelUrl: CANCEL_URL,
     })
 
-    expect(gateway.schedulePaidPlanPriceAtPeriodEnd).toHaveBeenCalledWith(
+    expect(cyclePlan.upgrade).toHaveBeenCalledWith(
       expect.objectContaining({
-        stripeSubscriptionId: 'sub_pro_monthly',
-        currentPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
-        newPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+        plan: 'pro',
+        annual: true,
+        referenceId: 'user_paid',
+        scheduleAtPeriodEnd: true,
+        disableRedirect: true,
       }),
     )
     expect(result.pendingWebhookSync).toBe(true)
@@ -322,14 +337,19 @@ describe('changePaidPlanForCustomer', () => {
       customerHasDefaultPaymentMethod: async () => false,
     })
 
-    const result = await changePaidPlanForCustomer(store, gateway, {
-      userId: 'user_free',
-      actorUserId: ACTOR_ID,
-      reason: 'Needs paid plan',
-      targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
-      successUrl: SUCCESS_URL,
-      cancelUrl: CANCEL_URL,
-    })
+    const result = await changePaidPlanForCustomer(
+      store,
+      gateway,
+      createCyclePlanPort(),
+      {
+        userId: 'user_free',
+        actorUserId: ACTOR_ID,
+        reason: 'Needs paid plan',
+        targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+        successUrl: SUCCESS_URL,
+        cancelUrl: CANCEL_URL,
+      },
+    )
 
     expect(gateway.createPaidCheckoutSession).toHaveBeenCalled()
     expect(result.checkoutUrl).toContain('checkout.stripe.test')
@@ -409,10 +429,11 @@ describe('reactivatePaidSubscriptionForCustomer', () => {
       },
       subscriptions: [subscription({ cancelAtPeriodEnd: true })],
     })
+    const cyclePlan = createCyclePlanPort()
 
     const result = await reactivatePaidSubscriptionForCustomer(
       store,
-      createGateway(),
+      cyclePlan,
       {
         userId: 'user_paid',
         actorUserId: ACTOR_ID,
@@ -420,10 +441,66 @@ describe('reactivatePaidSubscriptionForCustomer', () => {
       },
     )
 
+    expect(cyclePlan.restore).toHaveBeenCalledWith({
+      referenceId: 'user_paid',
+    })
     expect(result.stripeOperationId).toBe('sub_pro_monthly')
     expect(store.recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'reactivate_subscription' }),
     )
+  })
+})
+
+describe('cancelCyclePlanChangeForCustomer', () => {
+  it('releases a pending Cycle plan change via Better Auth restore', async () => {
+    const store = createStore({
+      user: {
+        id: 'user_paid',
+        name: 'Paid User',
+        email: 'paid@example.com',
+        role: 'user',
+        stripeCustomerId: 'cus_1',
+      },
+      subscriptions: [subscription({ stripeScheduleId: 'sub_sched_pending' })],
+    })
+    const cyclePlan = createCyclePlanPort()
+
+    const result = await cancelCyclePlanChangeForCustomer(store, cyclePlan, {
+      userId: 'user_paid',
+      actorUserId: ACTOR_ID,
+      reason: 'Customer keeps monthly',
+    })
+
+    expect(cyclePlan.restore).toHaveBeenCalledWith({
+      referenceId: 'user_paid',
+    })
+    expect(store.recordAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'cancel_cycle_plan_change' }),
+    )
+    expect(result.pendingWebhookSync).toBe(true)
+  })
+
+  it('rejects when no Cycle plan change is pending', async () => {
+    await expect(
+      cancelCyclePlanChangeForCustomer(
+        createStore({
+          user: {
+            id: 'user_paid',
+            name: 'Paid User',
+            email: 'paid@example.com',
+            role: 'user',
+            stripeCustomerId: 'cus_1',
+          },
+          subscriptions: [subscription()],
+        }),
+        createCyclePlanPort(),
+        {
+          userId: 'user_paid',
+          actorUserId: ACTOR_ID,
+          reason: 'Nothing pending',
+        },
+      ),
+    ).rejects.toThrow(AdminCustomerBillingStateError)
   })
 })
 

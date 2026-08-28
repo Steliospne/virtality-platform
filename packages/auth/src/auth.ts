@@ -4,6 +4,7 @@ import {
 } from './lib/admin-customer-access.ts'
 import {
   assignFreeAfterCancellationForAdminboard,
+  cancelCyclePlanChangeForAdminboard,
   cancelPaidSubscriptionForAdminboard,
   changePaidPlanForAdminboard,
   previewChangePaidPlanForAdminboard,
@@ -362,10 +363,12 @@ export function changePaidPlanAction(
     reason: string
     targetPriceId: string
   },
+  headers: Headers,
 ) {
   return changePaidPlanForAdminboard(input, {
     prisma: client,
     stripeClient: requireStripeClient(),
+    headers,
   })
 }
 
@@ -389,10 +392,25 @@ export function cancelPaidSubscriptionAction(
 export function reactivatePaidSubscriptionAction(
   client: typeof prisma,
   input: { userId: string; actorUserId: string; reason: string },
+  headers: Headers,
 ) {
   return reactivatePaidSubscriptionForAdminboard(input, {
     prisma: client,
     stripeClient: requireStripeClient(),
+    headers,
+  })
+}
+
+/** Adminboard customer profile: cancel a queued Cycle plan change. */
+export function cancelCyclePlanChangeAction(
+  client: typeof prisma,
+  input: { userId: string; actorUserId: string; reason: string },
+  headers: Headers,
+) {
+  return cancelCyclePlanChangeForAdminboard(input, {
+    prisma: client,
+    stripeClient: requireStripeClient(),
+    headers,
   })
 }
 

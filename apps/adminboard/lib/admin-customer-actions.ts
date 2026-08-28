@@ -81,6 +81,13 @@ export function canReactivatePaidBilling(
   return livePaidPro?.cancelAtPeriodEnd === true
 }
 
+export function canCancelCyclePlanChange(
+  profile: AdminCustomerProfile,
+): boolean {
+  if (profile.role === 'admin') return false
+  return profile.hasPendingCyclePlanChange === true
+}
+
 export function getCancelPaidSubscriptionPreviewPeriodEnd(
   profile: AdminCustomerProfile,
 ): Date | null {
@@ -95,6 +102,15 @@ export function getReactivatePaidSubscriptionPreviewPeriodEnd(
   const livePaidPro = findLivePaidProSubscription(profile.subscriptionHistory)
   if (!livePaidPro?.cancelAtPeriodEnd) return null
   return livePaidPro.periodEnd ?? null
+}
+
+export function getCancelCyclePlanChangePreviewPeriodEnd(
+  profile: AdminCustomerProfile,
+): Date | null {
+  if (!profile.hasPendingCyclePlanChange) return null
+  return (
+    findLivePaidProSubscription(profile.subscriptionHistory)?.periodEnd ?? null
+  )
 }
 
 export function canAssignFreeAfterCancellation(

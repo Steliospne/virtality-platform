@@ -6,8 +6,8 @@ import { authClient } from '@/auth-client'
 import { restoreSubscription } from '@/lib/subscription-restore'
 
 /**
- * Better Auth `subscription.restore` for period-end plan change cancel and
- * cancel-at-period-end undo ("Don't cancel").
+ * Better Auth `subscription.restore` via the shared Cycle plan change module
+ * for period-end plan change cancel and cancel-at-period-end undo.
  */
 export function useSubscriptionRestore() {
   const [isRestoring, setIsRestoring] = useState(false)

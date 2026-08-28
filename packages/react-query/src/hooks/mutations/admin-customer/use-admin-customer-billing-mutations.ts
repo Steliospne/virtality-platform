@@ -67,6 +67,17 @@ export function useReactivatePaidSubscription() {
   )
 }
 
+export function useCancelCyclePlanChange() {
+  const orpc = useORPC()
+  const invalidate = useInvalidateAdminCustomerQueries()
+
+  return useMutation(
+    orpc.adminCustomer.cancelCyclePlanChange.mutationOptions({
+      onSuccess: invalidate,
+    }),
+  )
+}
+
 export function useAssignFreeAfterCancellation() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()

@@ -6,6 +6,7 @@ import {
   billingSnapshotFromPrimarySubscription,
   buildPaidProSubscriptionCreateParams,
   buildPermanentFreeAfterCancellationStripeParams,
+  cancelCyclePlanChangeForCustomer,
   cancelPaidSubscriptionForCustomer,
   changePaidPlanForCustomer,
   previewChangePaidPlan,
@@ -14,6 +15,7 @@ import {
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AssignFreeAfterCancellationInput,
+  type CancelCyclePlanChangeInput,
   type CancelPaidSubscriptionInput,
   type ChangePaidPlanInput,
   type ReactivatePaidSubscriptionInput,
@@ -21,6 +23,7 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { FREE_PLAN_PRICE_ID } from '../auth-instance.ts'
+import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
 
 const CHECKOUT_RETURN_PARAM = 'checkoutReturn'
 
@@ -95,6 +98,7 @@ export function createPrismaAdminCustomerBillingStore(
           billingInterval: true,
           periodStart: true,
           cancelAtPeriodEnd: true,
+          stripeScheduleId: true,
         },
       })
       return rows
@@ -221,62 +225,6 @@ export function createStripeAdminCustomerBillingGateway(
         currency: preview.currency ?? 'eur',
       }
     },
-    schedulePaidPlanPriceAtPeriodEnd: async (input) => {
-      const schedule = await stripeClient.subscriptionSchedules.create({
-        from_subscription: input.stripeSubscriptionId,
-      })
-      const currentPhase = schedule.phases[0]
-      if (!currentPhase) {
-        throw new Error('Subscription schedule has no current phase.')
-      }
-
-      const newPhaseItems = currentPhase.items.map((item) => {
-        const itemPriceId =
-          typeof item.price === 'string' ? item.price : item.price.id
-        if (itemPriceId === input.currentPriceId) {
-          return {
-            price: input.newPriceId,
-            quantity: item.quantity ?? 1,
-          }
-        }
-        return {
-          price: itemPriceId,
-          quantity: item.quantity ?? 1,
-        }
-      })
-
-      const updated = await stripeClient.subscriptionSchedules.update(
-        schedule.id,
-        {
-          end_behavior: 'release',
-          metadata: {
-            ...input.metadata,
-            source: 'admin-customer-billing',
-          },
-          phases: [
-            {
-              items: currentPhase.items.map((item) => ({
-                price:
-                  typeof item.price === 'string' ? item.price : item.price.id,
-                quantity: item.quantity ?? 1,
-              })),
-              start_date: currentPhase.start_date,
-              end_date: currentPhase.end_date,
-            },
-            {
-              items: newPhaseItems,
-              start_date: currentPhase.end_date,
-              proration_behavior: 'none',
-            },
-          ],
-        },
-      )
-
-      return {
-        stripeSubscriptionId: input.stripeSubscriptionId,
-        stripeScheduleId: updated.id,
-      }
-    },
     createPaidProSubscription: async (input) => {
       const subscription = await stripeClient.subscriptions.create(
         buildPaidProSubscriptionCreateParams(input),
@@ -293,15 +241,6 @@ export function createStripeAdminCustomerBillingGateway(
         stripeSubscriptionId,
         {
           cancel_at_period_end: true,
-        },
-      )
-      return { stripeSubscriptionId: updated.id }
-    },
-    reactivateSubscription: async (stripeSubscriptionId) => {
-      const updated = await stripeClient.subscriptions.update(
-        stripeSubscriptionId,
-        {
-          cancel_at_period_end: false,
         },
       )
       return { stripeSubscriptionId: updated.id }
@@ -345,10 +284,12 @@ export function createStripeAdminCustomerBillingGateway(
 function createAdminCustomerBillingDeps(
   client: PrismaClient,
   stripeClient: Stripe,
+  headers: Headers,
 ) {
   return {
     store: createPrismaAdminCustomerBillingStore(client),
     stripe: createStripeAdminCustomerBillingGateway(stripeClient),
+    cyclePlan: createBetterAuthCyclePlanChangePort(headers, client),
   }
 }
 
@@ -364,10 +305,8 @@ export async function previewChangePaidPlanForAdminboard(
   deps: { prisma?: PrismaClient; stripeClient: Stripe },
 ) {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-  )
+  const store = createPrismaAdminCustomerBillingStore(client)
+  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
   return previewChangePaidPlan(store, stripe, input)
 }
 
@@ -376,15 +315,16 @@ export async function changePaidPlanForAdminboard(
     successUrl?: string
     cancelUrl?: string
   },
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
+  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
 ): Promise<ChangePaidPlanResult> {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
+  const { store, stripe, cyclePlan } = createAdminCustomerBillingDeps(
     client,
     deps.stripeClient,
+    deps.headers,
   )
   const urls = buildAdminCheckoutReturnUrls(input.userId)
-  return changePaidPlanForCustomer(store, stripe, {
+  return changePaidPlanForCustomer(store, stripe, cyclePlan, {
     ...input,
     successUrl: input.successUrl ?? urls.successUrl,
     cancelUrl: input.cancelUrl ?? urls.cancelUrl,
@@ -396,23 +336,35 @@ export async function cancelPaidSubscriptionForAdminboard(
   deps: { prisma?: PrismaClient; stripeClient: Stripe },
 ) {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-  )
+  const store = createPrismaAdminCustomerBillingStore(client)
+  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
   return cancelPaidSubscriptionForCustomer(store, stripe, input)
 }
 
 export async function reactivatePaidSubscriptionForAdminboard(
   input: ReactivatePaidSubscriptionInput,
-  deps: { prisma?: PrismaClient; stripeClient: Stripe },
+  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
 ) {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
+  const { store, cyclePlan } = createAdminCustomerBillingDeps(
     client,
     deps.stripeClient,
+    deps.headers,
   )
-  return reactivatePaidSubscriptionForCustomer(store, stripe, input)
+  return reactivatePaidSubscriptionForCustomer(store, cyclePlan, input)
+}
+
+export async function cancelCyclePlanChangeForAdminboard(
+  input: CancelCyclePlanChangeInput,
+  deps: { prisma?: PrismaClient; stripeClient: Stripe; headers: Headers },
+) {
+  const client = deps.prisma ?? prisma
+  const { store, cyclePlan } = createAdminCustomerBillingDeps(
+    client,
+    deps.stripeClient,
+    deps.headers,
+  )
+  return cancelCyclePlanChangeForCustomer(store, cyclePlan, input)
 }
 
 export async function assignFreeAfterCancellationForAdminboard(
@@ -420,10 +372,8 @@ export async function assignFreeAfterCancellationForAdminboard(
   deps: { prisma?: PrismaClient; stripeClient: Stripe },
 ): Promise<AssignFreeAfterCancellationResult> {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-  )
+  const store = createPrismaAdminCustomerBillingStore(client)
+  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
   return assignFreeAfterCancellationForCustomer(store, stripe, {
     ...input,
     priceId: FREE_PLAN_PRICE_ID,
@@ -438,10 +388,8 @@ export async function sendPaidCheckoutLinkForAdminboard(
   deps: { prisma?: PrismaClient; stripeClient: Stripe },
 ) {
   const client = deps.prisma ?? prisma
-  const { store, stripe } = createAdminCustomerBillingDeps(
-    client,
-    deps.stripeClient,
-  )
+  const store = createPrismaAdminCustomerBillingStore(client)
+  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
   const urls = buildAdminCheckoutReturnUrls(input.userId)
   return sendPaidCheckoutLinkForCustomer(store, stripe, {
     ...input,

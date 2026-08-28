@@ -3,6 +3,7 @@ import type { AdminCustomerProfile } from '@virtality/shared/utils'
 import {
   canAssignCustomerAccessGrant,
   canAssignFreeAfterCancellation,
+  canCancelCyclePlanChange,
   canCancelPaidBilling,
   canChangePaidPlan,
   canReactivatePaidBilling,
@@ -69,6 +70,21 @@ describe('paid billing administration eligibility', () => {
         ],
       } as AdminCustomerProfile),
     ).toBe(true)
+  })
+
+  it('allows Cancel Cycle plan change when a schedule is pending', () => {
+    expect(
+      canCancelCyclePlanChange({
+        ...paidProfile,
+        hasPendingCyclePlanChange: true,
+      } as AdminCustomerProfile),
+    ).toBe(true)
+    expect(
+      canCancelCyclePlanChange({
+        ...paidProfile,
+        hasPendingCyclePlanChange: false,
+      } as AdminCustomerProfile),
+    ).toBe(false)
   })
 
   it('allows assign Free after cancellation for paid history or live paid Pro', () => {

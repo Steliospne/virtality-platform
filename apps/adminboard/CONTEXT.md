@@ -106,6 +106,10 @@ _Avoid_: has Stripe customer, ever paid, currently entitled
 Synced Subscription history shows a completed paid Pro billing period (not only trial-style entitlement that never converted). Free rows never count. Canceled seats count only when the paid period continued past trial end (`periodEnd > trialEnd`). Shared rule for Console Subscribe/Renew and Campaign Window, and for Adminboard Assign Free after cancellation (allowed when this is true or the seat is live paid Pro). Never-subscribed Free still uses Assign permanent Free via Access grants.
 _Avoid_: ever had a Subscription, Billing Path Established, any canceled Pro
 
+**Cycle plan change**:
+Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeScheduleId` / Better Auth `scheduleAtPeriodEnd`). Adminboard Change paid plan schedules through the same Better Auth path as Console (not raw Stripe subscription schedules). Staff release with Cancel Cycle plan change (audit `cancel_cycle_plan_change`); Reactivate keeps its own audit label for cancel-at-period-end undo. Both release/reactivate call Better Auth restore.
+_Avoid_: immediate admin price swap, Stripe schedule writer, conflating with Reactivate
+
 **Extension**:
 A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months. For a live seat, the chosen duration is added onto the current clock end (not measured from "now", which would overwrite Remaining Time). Expired, canceled, or never-entitled seats get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration.
 _Avoid_: renewal, top-up, trial extension (as a separate entity name), replace clock with now+N

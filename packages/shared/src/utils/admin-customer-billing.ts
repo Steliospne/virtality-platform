@@ -10,11 +10,19 @@ import {
   formatProPlanPriceLabel,
   isProPlanPriceId,
   isProSubscriptionPlan,
+  shouldScheduleSubscriptionChangeAtPeriodEnd,
 } from './billing-plans.ts'
 import {
   pickPrimaryCustomerSubscription,
   type CustomerSubscriptionSummary,
 } from './admin-customer.ts'
+import {
+  annualFlagForProPlanPriceId,
+  hasPendingCyclePlanChange,
+  restoreSubscription,
+  scheduleCyclePlanChange,
+  type CyclePlanChangePort,
+} from './cycle-plan-change.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
 
@@ -23,6 +31,7 @@ export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'cancel_immediately',
   'cancel_at_period_end',
   'reactivate_subscription',
+  'cancel_cycle_plan_change',
   'assign_free_after_cancellation',
   'send_paid_checkout_link',
 ] as const
@@ -99,12 +108,6 @@ export type AdminCustomerBillingStripeGateway = {
     subscriptionItemId: string
     newPriceId: string
   }) => Promise<{ prorationAmountCents: number; currency: string }>
-  schedulePaidPlanPriceAtPeriodEnd: (input: {
-    stripeSubscriptionId: string
-    currentPriceId: string
-    newPriceId: string
-    metadata: Record<string, string>
-  }) => Promise<{ stripeSubscriptionId: string; stripeScheduleId: string }>
   createPaidProSubscription: (input: {
     customerId: string
     priceId: string
@@ -114,9 +117,6 @@ export type AdminCustomerBillingStripeGateway = {
     stripeSubscriptionId: string,
   ) => Promise<{ stripeSubscriptionId: string }>
   scheduleCancelAtPeriodEnd: (
-    stripeSubscriptionId: string,
-  ) => Promise<{ stripeSubscriptionId: string }>
-  reactivateSubscription: (
     stripeSubscriptionId: string,
   ) => Promise<{ stripeSubscriptionId: string }>
   createPermanentFreeSubscription: (input: {
@@ -132,6 +132,9 @@ export type AdminCustomerBillingStripeGateway = {
     metadata: Record<string, string>
   }) => Promise<{ checkoutSessionId: string; checkoutUrl: string }>
 }
+
+/** Better Auth Cycle plan change / restore port for admin mutations. */
+export type AdminCustomerCyclePlanPort = CyclePlanChangePort
 
 export type AdminCustomerBillingPreview = {
   action: AdminCustomerBillingAction
@@ -158,6 +161,12 @@ export type CancelPaidSubscriptionInput = {
 }
 
 export type ReactivatePaidSubscriptionInput = {
+  userId: string
+  actorUserId: string
+  reason: string
+}
+
+export type CancelCyclePlanChangeInput = {
   userId: string
   actorUserId: string
   reason: string
@@ -410,6 +419,18 @@ export function buildReactivatePaidSubscriptionPreview(
   }
 }
 
+export function buildCancelCyclePlanChangePreview(
+  periodEnd: Date | null,
+): AdminCustomerBillingPreview {
+  return {
+    action: 'cancel_cycle_plan_change',
+    effectiveTiming: 'immediate',
+    prorationSummary: null,
+    confirmationMessage: `Cancel the queued Cycle plan change. The customer stays on the current Pro interval through ${formatPeriodEndLabel(periodEnd)}.`,
+    requiresConfirmation: true,
+  }
+}
+
 export function buildAssignFreeAfterCancellationPreview(): AdminCustomerBillingPreview {
   return {
     action: 'assign_free_after_cancellation',
@@ -477,13 +498,16 @@ export async function previewChangePaidPlan(
     prorationAmountCents: null,
     currency: null,
     usesCheckout: false,
-    schedulesAtPeriodEnd: true,
+    schedulesAtPeriodEnd: shouldScheduleSubscriptionChangeAtPeriodEnd(
+      livePaidPro.plan,
+    ),
   })
 }
 
 export async function changePaidPlanForCustomer(
   store: AdminCustomerBillingStore,
   stripe: AdminCustomerBillingStripeGateway,
+  cyclePlan: AdminCustomerCyclePlanPort,
   input: ChangePaidPlanInput,
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
@@ -519,16 +543,22 @@ export async function changePaidPlanForCustomer(
       )
     }
 
-    const updated = await stripe.schedulePaidPlanPriceAtPeriodEnd({
-      stripeSubscriptionId: live.stripeSubscriptionId,
-      currentPriceId: live.currentPriceId,
-      newPriceId: input.targetPriceId,
-      metadata: stripeBillingMetadata({
-        actorUserId: input.actorUserId,
-        action: 'change_paid_plan',
-      }),
+    if (!shouldScheduleSubscriptionChangeAtPeriodEnd(livePaidPro.plan)) {
+      throw new AdminCustomerBillingStateError(
+        'Cycle plan change requires a live paid Pro subscription.',
+      )
+    }
+
+    const scheduled = await scheduleCyclePlanChange({
+      port: cyclePlan,
+      referenceId: user.id,
+      annual: annualFlagForProPlanPriceId(input.targetPriceId),
+      returnUrl: input.successUrl,
     })
-    stripeOperationId = updated.stripeScheduleId
+    if (!scheduled.ok) {
+      throw new AdminCustomerBillingStateError(scheduled.message)
+    }
+    stripeOperationId = scheduled.stripeScheduleId ?? live.stripeSubscriptionId
   } else {
     const created = await stripe.createPaidProSubscription({
       customerId: stripeCustomerId,
@@ -663,7 +693,7 @@ export async function cancelPaidSubscriptionForCustomer(
 
 export async function reactivatePaidSubscriptionForCustomer(
   store: AdminCustomerBillingStore,
-  stripe: AdminCustomerBillingStripeGateway,
+  cyclePlan: AdminCustomerCyclePlanPort,
   input: ReactivatePaidSubscriptionInput,
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
@@ -684,9 +714,16 @@ export async function reactivatePaidSubscriptionForCustomer(
     )
   }
 
-  const result = await stripe.reactivateSubscription(
-    livePaidPro.stripeSubscriptionId,
-  )
+  const restored = await restoreSubscription({
+    port: cyclePlan,
+    referenceId: user.id,
+  })
+  if (!restored.ok) {
+    throw new AdminCustomerBillingStateError(restored.message)
+  }
+
+  const stripeOperationId =
+    restored.stripeSubscriptionId ?? livePaidPro.stripeSubscriptionId
   const afterBillingState = await store.summarizeBillingState(user.id)
   const audit = await store.recordAudit({
     targetUserId: user.id,
@@ -694,14 +731,66 @@ export async function reactivatePaidSubscriptionForCustomer(
     action: 'reactivate_subscription',
     reason: input.reason.trim(),
     outcome: 'pending',
-    stripeOperationId: result.stripeSubscriptionId,
+    stripeOperationId,
     beforeBillingState,
     afterBillingState,
   })
 
   return {
     auditId: audit.id,
-    stripeOperationId: result.stripeSubscriptionId,
+    stripeOperationId,
+    pendingWebhookSync: true,
+  }
+}
+
+export async function cancelCyclePlanChangeForCustomer(
+  store: AdminCustomerBillingStore,
+  cyclePlan: AdminCustomerCyclePlanPort,
+  input: CancelCyclePlanChangeInput,
+): Promise<AdminCustomerBillingMutationResult> {
+  assertActors(input)
+  assertReason(input.reason)
+
+  const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
+    store,
+    input,
+  )
+  if (!livePaidPro?.stripeSubscriptionId) {
+    throw new AdminCustomerBillingStateError(
+      'Customer does not have a live paid Pro subscription.',
+    )
+  }
+  if (!hasPendingCyclePlanChange(livePaidPro)) {
+    throw new AdminCustomerBillingStateError(
+      'Customer does not have a pending Cycle plan change to cancel.',
+    )
+  }
+
+  const restored = await restoreSubscription({
+    port: cyclePlan,
+    referenceId: user.id,
+  })
+  if (!restored.ok) {
+    throw new AdminCustomerBillingStateError(restored.message)
+  }
+
+  const stripeOperationId =
+    restored.stripeSubscriptionId ?? livePaidPro.stripeSubscriptionId
+  const afterBillingState = await store.summarizeBillingState(user.id)
+  const audit = await store.recordAudit({
+    targetUserId: user.id,
+    actorUserId: input.actorUserId,
+    action: 'cancel_cycle_plan_change',
+    reason: input.reason.trim(),
+    outcome: 'pending',
+    stripeOperationId,
+    beforeBillingState,
+    afterBillingState,
+  })
+
+  return {
+    auditId: audit.id,
+    stripeOperationId,
     pendingWebhookSync: true,
   }
 }
@@ -781,6 +870,8 @@ export function formatAdminCustomerBillingActionLabel(
       return 'Cancel at period end'
     case 'reactivate_subscription':
       return 'Reactivate subscription'
+    case 'cancel_cycle_plan_change':
+      return 'Cancel Cycle plan change'
     case 'assign_free_after_cancellation':
       return 'Assign Free after cancellation'
     case 'send_paid_checkout_link':

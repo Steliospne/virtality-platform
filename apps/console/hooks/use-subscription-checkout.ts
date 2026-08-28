@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { authClient } from '@/auth-client'
+import { scheduleCyclePlanChange } from '@/lib/subscription-cycle-plan-change'
 import { startProSubscriptionCheckout } from '@/lib/subscription-checkout'
 
 /**
@@ -10,7 +11,7 @@ import { startProSubscriptionCheckout } from '@/lib/subscription-checkout'
  * Renew / Update CTAs. Redirects to Stripe on success; toasts on failure.
  *
  * `annual` selects yearly vs monthly Price on the same `pro` plan.
- * `scheduleAtPeriodEnd` defers paid Pro interval switches to the next cycle.
+ * `scheduleAtPeriodEnd` routes through the shared Cycle plan change module.
  */
 export function useSubscriptionCheckout() {
   const [isStarting, setIsStarting] = useState(false)
@@ -26,12 +27,18 @@ export function useSubscriptionCheckout() {
     try {
       const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`
 
-      const result = await startProSubscriptionCheckout({
-        upgrade: (input) => authClient.subscription.upgrade(input),
-        returnUrl,
-        annual: options?.annual,
-        scheduleAtPeriodEnd: options?.scheduleAtPeriodEnd,
-      })
+      const result = options?.scheduleAtPeriodEnd
+        ? await scheduleCyclePlanChange({
+            upgrade: (input) => authClient.subscription.upgrade(input),
+            returnUrl,
+            annual: options.annual ?? false,
+          })
+        : await startProSubscriptionCheckout({
+            upgrade: (input) => authClient.subscription.upgrade(input),
+            returnUrl,
+            annual: options?.annual,
+            scheduleAtPeriodEnd: false,
+          })
 
       if (!result.ok) {
         toast.error(result.message)

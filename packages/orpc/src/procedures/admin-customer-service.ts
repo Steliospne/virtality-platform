@@ -5,6 +5,8 @@ import {
   buildStripeSubscriptionDashboardUrl,
   deriveCustomerAccessStatus,
   deriveCustomerBillingStatus,
+  findLivePaidProSubscription,
+  hasPendingCyclePlanChange,
   pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
   sortCustomerSubscriptionHistory,
@@ -41,6 +43,7 @@ type CustomerSubscriptionRow = {
   trialStart: Date | null
   trialEnd: Date | null
   billingInterval: string | null
+  stripeScheduleId: string | null
 }
 
 async function listAdminCustomerAuditHistory(
@@ -89,6 +92,7 @@ function mapSubscriptionHistoryItem(
     billingInterval: subscription.billingInterval,
     periodStart: subscription.periodStart,
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    stripeScheduleId: subscription.stripeScheduleId ?? null,
     stripeCustomerId: subscription.stripeCustomerId,
   }
 }
@@ -215,6 +219,7 @@ export async function getAdminCustomerProfile(
     subscriptions.map(mapSubscriptionHistoryItem),
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
+  const livePaidPro = findLivePaidProSubscription(subscriptionHistory)
   const standing = buildEntitlementStanding({
     now,
     role: user.role,
@@ -236,6 +241,9 @@ export async function getAdminCustomerProfile(
       subscriptions: subscriptionHistory,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
+    hasPendingCyclePlanChange: livePaidPro
+      ? hasPendingCyclePlanChange(livePaidPro)
+      : false,
     entitlement: {
       entitled: standing.entitled,
       canLaunchVr: standing.canLaunchVr,

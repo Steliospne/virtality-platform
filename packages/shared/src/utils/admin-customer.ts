@@ -18,6 +18,8 @@ export type CustomerSubscriptionSummary = {
   billingInterval?: string | null
   periodStart?: Date | null
   cancelAtPeriodEnd?: boolean | null
+  /** Better Auth / Stripe schedule id for a pending Cycle plan change. */
+  stripeScheduleId?: string | null
 }
 
 export const CUSTOMER_ACCESS_STATUSES = [
@@ -262,6 +264,11 @@ export type AdminCustomerProfile = {
   createdAt: Date
   accessStatus: CustomerAccessStatus
   billingStatus: CustomerBillingStatus
+  /**
+   * True when the live paid Pro seat has a queued Cycle plan change
+   * (`stripeScheduleId`).
+   */
+  hasPendingCyclePlanChange: boolean
   entitlement: {
     entitled: boolean
     canLaunchVr: boolean

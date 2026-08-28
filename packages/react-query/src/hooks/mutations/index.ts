@@ -84,6 +84,7 @@ export {
 } from './admin-customer/use-admin-customer-access-mutations.js'
 export {
   useAssignFreeAfterCancellation,
+  useCancelCyclePlanChange,
   useCancelPaidSubscription,
   useChangePaidPlan,
   usePreviewChangePaidPlan,

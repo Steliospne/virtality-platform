@@ -31,6 +31,7 @@ function createPrismaMock(input: {
     billingInterval?: string | null
     periodStart?: Date | null
     cancelAtPeriodEnd?: boolean | null
+    stripeScheduleId?: string | null
   }>
 }) {
   const users = input.users ?? []
@@ -216,6 +217,46 @@ describe('getAdminCustomerProfile', () => {
       'sub_live',
       'sub_old',
     ])
+    expect(profile?.hasPendingCyclePlanChange).toBe(false)
     expect(profile?.auditHistory).toEqual([])
+  })
+
+  it('flags hasPendingCyclePlanChange when live Pro has a Stripe schedule', async () => {
+    const prisma = createPrismaMock({
+      users: [
+        {
+          id: 'user_paid',
+          name: 'Paid User',
+          email: 'paid@example.com',
+          stripeCustomerId: 'cus_paid',
+          createdAt: NOW,
+        },
+      ],
+      subscriptions: [
+        {
+          id: 'sub_pro',
+          plan: 'pro',
+          referenceId: 'user_paid',
+          status: 'active',
+          stripeCustomerId: 'cus_paid',
+          stripeSubscriptionId: 'sub_pro',
+          billingInterval: 'month',
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          cancelAtPeriodEnd: false,
+          stripeScheduleId: 'sub_sched_1',
+        },
+      ],
+    })
+
+    const profile = await getAdminCustomerProfile(prisma as never, {
+      userId: 'user_paid',
+      stripeMode: 'test',
+      now: NOW,
+    })
+
+    expect(profile?.hasPendingCyclePlanChange).toBe(true)
+    expect(profile?.subscriptionHistory[0]?.stripeScheduleId).toBe(
+      'sub_sched_1',
+    )
   })
 })

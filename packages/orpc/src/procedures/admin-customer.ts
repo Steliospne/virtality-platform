@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import {
   assignFreeAfterCancellationAction,
   assignPermanentFreeAction,
+  cancelCyclePlanChangeAction,
   cancelPaidSubscriptionAction,
   changePaidPlanAction,
   grantTimedTrialAction,
@@ -13,6 +14,7 @@ import { z } from 'zod'
 import {
   assignFreeAfterCancellationInputSchema,
   assignPermanentFreeInputSchema,
+  cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
   grantTimedTrialInputSchema,
@@ -129,12 +131,16 @@ const changePaidPlan = adminAuthed
   .input(changePaidPlanInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await changePaidPlanAction(context.prisma, {
-        userId: input.userId,
-        actorUserId: context.user.id,
-        reason: input.reason,
-        targetPriceId: input.targetPriceId,
-      })
+      return await changePaidPlanAction(
+        context.prisma,
+        {
+          userId: input.userId,
+          actorUserId: context.user.id,
+          reason: input.reason,
+          targetPriceId: input.targetPriceId,
+        },
+        context.headers,
+      )
     } catch (error) {
       throwAdminCustomerOrpcError(error)
     }
@@ -164,11 +170,37 @@ const reactivatePaidSubscription = adminAuthed
   .input(reactivatePaidSubscriptionInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await reactivatePaidSubscriptionAction(context.prisma, {
-        userId: input.userId,
-        actorUserId: context.user.id,
-        reason: input.reason,
-      })
+      return await reactivatePaidSubscriptionAction(
+        context.prisma,
+        {
+          userId: input.userId,
+          actorUserId: context.user.id,
+          reason: input.reason,
+        },
+        context.headers,
+      )
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const cancelCyclePlanChange = adminAuthed
+  .route({
+    path: '/admin-customer/cancel-cycle-plan-change',
+    method: 'POST',
+  })
+  .input(cancelCyclePlanChangeInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await cancelCyclePlanChangeAction(
+        context.prisma,
+        {
+          userId: input.userId,
+          actorUserId: context.user.id,
+          reason: input.reason,
+        },
+        context.headers,
+      )
     } catch (error) {
       throwAdminCustomerOrpcError(error)
     }
@@ -217,6 +249,7 @@ export const adminCustomer = {
   changePaidPlan,
   cancelPaidSubscription,
   reactivatePaidSubscription,
+  cancelCyclePlanChange,
   assignFreeAfterCancellation,
   sendPaidCheckoutLink,
 }

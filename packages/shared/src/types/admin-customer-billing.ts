@@ -35,6 +35,11 @@ export const reactivatePaidSubscriptionInputSchema = z.object({
   reason: adminCustomerAccessReasonSchema,
 })
 
+export const cancelCyclePlanChangeInputSchema = z.object({
+  userId: z.string().trim().min(1),
+  reason: adminCustomerAccessReasonSchema,
+})
+
 export const assignFreeAfterCancellationInputSchema = z.object({
   userId: z.string().trim().min(1),
   reason: adminCustomerAccessReasonSchema,
@@ -51,6 +56,9 @@ export type CancelPaidSubscriptionInput = z.infer<
 >
 export type ReactivatePaidSubscriptionInput = z.infer<
   typeof reactivatePaidSubscriptionInputSchema
+>
+export type CancelCyclePlanChangeInput = z.infer<
+  typeof cancelCyclePlanChangeInputSchema
 >
 export type AssignFreeAfterCancellationInput = z.infer<
   typeof assignFreeAfterCancellationInputSchema

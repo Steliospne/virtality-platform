@@ -1,16 +1,15 @@
 /**
- * Console Profile Billing → Better Auth `subscription.restore`.
- * Releases a scheduled period-end plan change (`stripeScheduleId`) or undoes
- * cancel-at-period-end so the seat renews as usual.
+ * Console Profile Billing → shared Cycle plan restore (Better Auth
+ * `subscription.restore`). Releases a scheduled period-end plan change or
+ * undoes cancel-at-period-end.
  */
 
-export type ProSubscriptionRestoreFn = (input?: {
-  subscriptionId?: string
-  referenceId?: string
-}) => Promise<{
-  data?: unknown
-  error?: { message?: string | null } | null
-}>
+import {
+  restoreSubscription as restoreSubscriptionShared,
+  type CyclePlanChangePort,
+} from '@virtality/shared/utils'
+
+export type ProSubscriptionRestoreFn = CyclePlanChangePort['restore']
 
 export type RestoreSubscriptionResult =
   | { ok: true }
@@ -23,15 +22,15 @@ export type RestoreSubscriptionResult =
  */
 export async function restoreSubscription(input: {
   restore: ProSubscriptionRestoreFn
+  referenceId?: string
 }): Promise<RestoreSubscriptionResult> {
-  const { error } = await input.restore({})
+  const result = await restoreSubscriptionShared({
+    port: { restore: input.restore },
+    referenceId: input.referenceId,
+  })
 
-  if (error) {
-    return {
-      ok: false,
-      message: error.message?.trim() || 'Failed to restore the subscription',
-    }
+  if (!result.ok) {
+    return { ok: false, message: result.message }
   }
-
   return { ok: true }
 }

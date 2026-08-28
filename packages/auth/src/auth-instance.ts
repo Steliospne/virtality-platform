@@ -27,6 +27,7 @@ import {
   FREE_SUBSCRIPTION_PLAN,
   PRO_PLAN_MONTHLY_PRICE_ID,
   PRO_SUBSCRIPTION_PLAN,
+  authorizeAdminCyclePlanReference,
   isPasswordValid,
   routeSignUpCode,
 } from '@virtality/shared/utils'
@@ -193,6 +194,16 @@ export const auth = betterAuth({
                   annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
                 },
               ],
+              /**
+               * Admins may schedule / restore Cycle plan changes for a customer
+               * `referenceId`. Self-serve (referenceId === session user) skips
+               * this callback. Other actions stay forbidden for cross-user ids.
+               */
+              authorizeReference: async ({ user, action }) =>
+                authorizeAdminCyclePlanReference({
+                  role: typeof user.role === 'string' ? user.role : null,
+                  action,
+                }),
               // Paid Subscribe/Renew Checkout always collects a card. No-card trials
               // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
               // Campaign Window may attach discounts[{coupon}] for Subscribe only
