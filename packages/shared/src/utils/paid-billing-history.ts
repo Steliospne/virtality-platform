@@ -16,6 +16,7 @@ export type PaidBillingHistorySubscription = {
   periodEnd?: Date | null
 }
 
+/** Statuses that already imply an ongoing paid billing relationship. */
 const PAID_BILLING_STATUSES = new Set([
   'active',
   'past_due',
@@ -24,23 +25,27 @@ const PAID_BILLING_STATUSES = new Set([
 ])
 
 /**
- * True when one synced Subscription indicates a completed paid billing period
- * (not only trial-style entitlement that never converted).
+ * Canceled (and other non-live) seats count only when a paid period continued
+ * past trial end (`periodEnd > trialEnd`). Missing trialEnd with a periodEnd
+ * counts as paid; missing periodEnd does not.
  */
-function subscriptionImpliesPaidBilling(
+function paidPeriodContinuedPastTrial(
   sub: PaidBillingHistorySubscription,
 ): boolean {
-  if (isFreeSubscriptionPlan(sub.plan)) return false
-  if (PAID_BILLING_STATUSES.has(sub.status)) return true
   if (sub.periodEnd == null) return false
   if (sub.trialEnd == null) return true
   return sub.periodEnd.getTime() > sub.trialEnd.getTime()
 }
 
-/**
- * True when synced Subscription history indicates a completed paid billing
- * period (not only trial-style entitlement that never converted).
- */
+function subscriptionImpliesPaidBilling(
+  sub: PaidBillingHistorySubscription,
+): boolean {
+  if (isFreeSubscriptionPlan(sub.plan)) return false
+  if (PAID_BILLING_STATUSES.has(sub.status)) return true
+  return paidPeriodContinuedPastTrial(sub)
+}
+
+/** True when any synced Subscription row implies Paid billing history. */
 export function hadPaidBillingHistory(
   subscriptions: readonly PaidBillingHistorySubscription[],
 ): boolean {

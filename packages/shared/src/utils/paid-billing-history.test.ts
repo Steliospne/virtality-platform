@@ -50,6 +50,18 @@ describe('hadPaidBillingHistory', () => {
     expect(hadPaidBillingHistory([{ status: 'active' }])).toBe(true)
   })
 
+  it('is false for trialing seats that never converted', () => {
+    expect(
+      hadPaidBillingHistory([
+        {
+          status: 'trialing',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ]),
+    ).toBe(false)
+  })
+
   it('is false when canceled with no period end', () => {
     expect(hadPaidBillingHistory([{ status: 'canceled' }])).toBe(false)
   })

@@ -181,8 +181,16 @@ describe('qualifiesForAssignFreeAfterCancellation', () => {
     ).toBe(false)
   })
 
-  it('allows live paid Pro even without prior paid history fields', () => {
-    expect(qualifiesForAssignFreeAfterCancellation([subscription()])).toBe(true)
+  it('allows live trialing Pro even without Paid billing history', () => {
+    expect(
+      qualifiesForAssignFreeAfterCancellation([
+        subscription({
+          status: 'trialing',
+          trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        }),
+      ]),
+    ).toBe(true)
   })
 })
 

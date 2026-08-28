@@ -257,8 +257,9 @@ export function findLivePaidProSubscription(
 }
 
 /**
- * Assign Free after cancellation eligibility: prior **Paid billing history**
- * or a live paid Pro seat (immediate cancel + Free create path).
+ * Assign Free after cancellation: Paid billing history, or a live Pro seat
+ * (`active`/`trialing`) so staff can cancel immediately and create Free.
+ * Trialing Pro alone is not Paid billing history; the live-seat arm covers it.
  */
 export function qualifiesForAssignFreeAfterCancellation(
   subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
