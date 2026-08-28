@@ -41,8 +41,8 @@ A **Started Session** that ended unexpectedly before normal completion. It is no
 _Avoid_: Completed session, failed launch
 
 **Session Progress Record**:
-Exercise performance data captured during a **Started Session** and persisted incrementally as treatment progresses. Live progress and skip mutations go through `skip-safe-progress-flow`; the patient-dashboard socket hook is an adapter (wire + UI + persistence), not a second implementation.
-_Avoid_: End-only session data, temporary progress
+Exercise performance data captured during a **Started Session** and persisted incrementally as treatment progresses. Live progress, skip, and headset auto-advance mutations go through `skip-safe-progress-flow`; the patient-dashboard socket hook is the sole adapter (wire + UI + persistence gating), not a second implementation and not a pass-through live-adapter module.
+_Avoid_: End-only session data, temporary progress, headset ChangeExercise mutating confirmed index only in the hook, `skip-safe-progress-live-adapter` as a public seam
 
 **Completed Rep Measurement**:
 Performance data for a repetition that has actually finished during a **Started Session**. Completed repetition numbers are one-based ordinals in console domain language.
@@ -61,8 +61,8 @@ A clinician-requested exercise change during a **Started Session** that has crea
 _Avoid_: Current exercise, completed skip
 
 **Headset-Confirmed Current Exercise**:
-The exercise the headset has acknowledged as active during a **Started Session**.
-_Avoid_: Requested exercise, selected list row, optimistic current exercise
+The exercise the headset has acknowledged as active during a **Started Session**. Index updates enter only through `skip-safe-progress-flow` (clinician skip ack, final-exercise SetEnd wrap, and headset auto-advance via `applyHeadsetExerciseAdvanceInFlow`). Mid-list last-set SetEnd checkpoints progress but does not advance this index; VR `ChangeExercise` carries the completed/current exercise id and the flow advances to the next row. Advance is refused while a **Pending Exercise Change** is in flight. Headset advance does not create remote progress upserts.
+_Avoid_: Requested exercise, selected list row, optimistic current exercise, hook-only index bump on ChangeExercise
 
 **Session Exercise Completion**:
 The normal closure of an exercise attempt after the prescribed repetitions and sets have been completed during a **Started Session**. It is a **Progress Save Checkpoint** but not a **Session Exercise Skip**.

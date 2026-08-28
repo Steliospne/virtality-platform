@@ -119,8 +119,12 @@ Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeSche
 _Avoid_: immediate admin price swap, Stripe schedule writer, conflating with Reactivate
 
 **Admin customer paid billing runtime**:
-Paid customer mutations (preview/change plan, cancel, reactivate, cancel Cycle plan change, assign Free after cancellation, send Checkout link) enter via `createAdminCustomerBillingRuntime` in `@virtality/auth` (Prisma / Stripe / Cycle plan ports), not a pass-through Action per verb. Access grants, promo, catalog, campaign, and extension keep their Action façades.
+Paid customer mutations (preview/change plan, cancel, reactivate, cancel Cycle plan change, assign Free after cancellation, send Checkout link) enter via `createAdminCustomerBillingRuntime` in `@virtality/auth` (Prisma / Stripe / Cycle plan ports), not a pass-through Action per verb. Promo, catalog, and campaign keep their Action façades until deepened separately. Access grants and Extension enter via **Admin Entitlement Clock runtime**.
 _Avoid_: per-verb paid-billing Action, `@virtality/billing` package (deferred)
+
+**Admin Entitlement Clock runtime**:
+Staff mutations that assign permanent Free, grant a timed trial, or apply an Extension enter via `createAdminEntitlementClockRuntime` in `@virtality/auth` (separate Access and Extension Prisma/Stripe ports, plus Renew Prompt rearm). Orpc calls the runtime; do not keep per-verb Action façades. Permanent Free does not rearm Renew Prompt; timed trial uses `rearmForNewClock`; Extension uses `rearmAfterExtension` when the clock end changes.
+_Avoid_: per-verb Access/Extension Action, merging Access and Extension into one store as a prerequisite, folding Renew Prompt evaluate into this runtime
 
 **Extension**:
 A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months. For a live seat, the chosen duration is added onto the current clock end (not measured from "now", which would overwrite Remaining Time). Expired, canceled, or never-entitled seats get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration.
