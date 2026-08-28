@@ -100,6 +100,9 @@ describe('skip-safe active-session progress flow regression', () => {
 
     const setEnd = applySetEndToFlow(state, setEndPayload(1))
 
+    expect(setEnd.applied).toBe(true)
+    expect(setEnd.advancedToNextExercise).toBe(false)
+    expect(setEnd.state.currSet).toBe(1)
     expect(parseUpsertValue(setEnd, 0)).toEqual([
       { rep: 1, set_1: 80 },
       { rep: 2, set_1: 80 },
@@ -250,6 +253,7 @@ describe('skip-safe active-session progress flow regression', () => {
 
     const finalSetEnd = applySetEndToFlow(state, setEndPayload(1))
 
+    expect(finalSetEnd.applied).toBe(true)
     expect(finalSetEnd.advancedToNextExercise).toBe(true)
     expect(finalSetEnd.remoteUpserts[0]!.sessionExerciseId).toBe(
       'session-row-3',

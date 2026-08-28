@@ -434,12 +434,12 @@ const usePatientDashboardSocketSetup = ({
 
     const result = applyRepEndToFlow(flowState, payload)
 
-    if (result.completedRep === undefined) {
+    if (!result.applied) {
       return
     }
 
     const currentExercise = exercises![currExercise.current]
-    const progress = result.progress ?? 0
+    const progress = result.progress
 
     if (stats.current.highscore < progress) {
       stats.current.highscore = progress
@@ -483,7 +483,7 @@ const usePatientDashboardSocketSetup = ({
 
     const result = applySetEndToFlow(flowState, payload)
 
-    if (result.state === flowState) {
+    if (!result.applied) {
       return
     }
 

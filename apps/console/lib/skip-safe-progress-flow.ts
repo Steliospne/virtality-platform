@@ -149,13 +149,40 @@ export function createSkipSafeProgressFlowState(input: {
   }
 }
 
-export type ApplyRepEndToFlowResult = SkipSafeProgressFlowActionResult & {
-  completedRep?: number
-  progress?: number
+export type ApplyRepEndToFlowResult =
+  | (SkipSafeProgressFlowActionResult & {
+      applied: false
+    })
+  | (SkipSafeProgressFlowActionResult & {
+      applied: true
+      completedRep: number
+      progress: number
+    })
+
+export type ApplySetEndToFlowResult =
+  | (SkipSafeProgressFlowActionResult & {
+      applied: false
+      advancedToNextExercise: false
+    })
+  | (SkipSafeProgressFlowActionResult & {
+      applied: true
+      advancedToNextExercise: boolean
+    })
+
+function unchangedRepEndResult(
+  state: SkipSafeProgressFlowState,
+): ApplyRepEndToFlowResult {
+  return { ...unchangedResult(state), applied: false }
 }
 
-export type ApplySetEndToFlowResult = SkipSafeProgressFlowActionResult & {
-  advancedToNextExercise?: boolean
+function unchangedSetEndResult(
+  state: SkipSafeProgressFlowState,
+): ApplySetEndToFlowResult {
+  return {
+    ...unchangedResult(state),
+    applied: false,
+    advancedToNextExercise: false,
+  }
 }
 
 export function applyRepEndToFlow(
@@ -163,13 +190,13 @@ export function applyRepEndToFlow(
   payload: string,
 ): ApplyRepEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {
-    return unchangedResult(state)
+    return unchangedRepEndResult(state)
   }
 
   const normalized = normalizeRepEndPayload(payload)
 
   if (!normalized.ok) {
-    return unchangedResult(state)
+    return unchangedRepEndResult(state)
   }
 
   const { completedRep, progress } = normalized.event
@@ -190,6 +217,7 @@ export function applyRepEndToFlow(
       currentExerciseProgress,
     },
     remoteUpserts: [],
+    applied: true,
     completedRep,
     progress,
   }
@@ -201,13 +229,13 @@ export function applySetEndToFlow(
   options?: PersistOptions,
 ): ApplySetEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {
-    return unchangedResult(state)
+    return unchangedSetEndResult(state)
   }
 
   const normalized = normalizeSetEndPayload(payload)
 
   if (!normalized.ok) {
-    return unchangedResult(state)
+    return unchangedSetEndResult(state)
   }
 
   const { completedSet } = normalized.event
@@ -245,6 +273,7 @@ export function applySetEndToFlow(
       checkpoint.upsert,
       options,
     ),
+    applied: true,
     advancedToNextExercise,
   }
 }
