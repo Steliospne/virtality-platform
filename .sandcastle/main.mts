@@ -28,17 +28,24 @@ import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
 
 // const AGENT_MODEL = 'cursor-grok-4.5-medium'
-const AGENT_MODEL = 'composer-2.5'
+// const AGENT_MODEL = 'composer-2.5'
 
 // Sandcastle also injects `.sandcastle/.env` into sandboxes. Prefer running via
 // `pnpm sandcastle` so `--env-file` populates process.env for this check.
-for (const key of ['GH_REPO', 'GH_TOKEN', 'CURSOR_API_KEY'] as const) {
+for (const key of [
+  'GH_REPO',
+  'GH_TOKEN',
+  'CURSOR_API_KEY',
+  'AGENT_MODEL',
+] as const) {
   if (!process.env[key]) {
     throw new Error(
       `${key} is undefined. Set it in .sandcastle/.env (see .env.example) or export it in your shell.`,
     )
   }
 }
+
+const AGENT_MODEL = process.env.AGENT_MODEL!
 
 // The planner emits its plan as JSON inside <plan> tags; Output.object extracts
 // and validates it against this schema. We use Zod here, but any Standard
