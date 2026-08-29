@@ -14,7 +14,10 @@ import {
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
-import { resolveAssignedProVariantChargePrice } from './lib/pro-variant-catalog.ts'
+import {
+  readProVariantCatalogOrSandbox,
+  resolveAssignedProVariantChargePrice,
+} from './lib/pro-variant-catalog.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -25,10 +28,9 @@ import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
 import {
   FREE_PLAN_PRICE_ID,
-  FREE_SUBSCRIPTION_PLAN,
   PRO_PLAN_MONTHLY_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
   authorizeAdminCyclePlanReference,
+  buildBetterAuthStripePlansFromProVariantCatalog,
   isPasswordValid,
   routeSignUpCode,
   type RenewPromptSubscriptionClock,
@@ -192,17 +194,13 @@ export const auth = betterAuth({
             },
             subscription: {
               enabled: true,
-              plans: [
-                {
-                  name: FREE_SUBSCRIPTION_PLAN,
-                  priceId: FREE_PLAN_PRICE_ID,
-                },
-                {
-                  name: PRO_SUBSCRIPTION_PLAN,
-                  priceId: PRO_PLAN_PRICE_ID,
-                  annualDiscountPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
-                },
-              ],
+              // One `pro` row per Assigned Variant Price pair so webhooks match
+              // early-bird (etc.) Price ids; Checkout still asks for plan `pro`
+              // (first row = basic) and overrides line_items to the assigned pair.
+              plans: async () =>
+                buildBetterAuthStripePlansFromProVariantCatalog(
+                  await readProVariantCatalogOrSandbox(stripeClient),
+                ),
               /**
                * Admins may schedule / restore Cycle plan changes for a customer
                * `referenceId`. Self-serve (referenceId === session user) skips
@@ -217,8 +215,8 @@ export const auth = betterAuth({
               // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
               // Campaign Window may attach discounts[{coupon}] for Subscribe only
               // (!hadPaidBilling); never allow_promotion_codes on the same Session.
-              // Assigned Variant: override line_items to the clinician's Price pair
-              // while Better Auth plan name stays `pro` on basic_* ids.
+              // Assigned Variant: override line_items to the clinician's Price pair.
+              // plans() registers every catalog pair as `pro` so webhooks match.
               getCheckoutSessionParams: async ({ user }, _req, ctx) => {
                 const annual =
                   typeof ctx?.body === 'object' &&

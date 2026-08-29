@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  FREE_PLAN_PRICE_ID,
+  FREE_SUBSCRIPTION_PLAN,
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,
+  PRO_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 import {
   DEFAULT_ASSIGNED_PRO_VARIANT,
+  betterAuthStripePlansMatchPrice,
+  buildBetterAuthStripePlansFromProVariantCatalog,
   buildBillingCatalogForUser,
   buildProVariantCatalogFromStripePrices,
   effectiveAssignedProVariant,
@@ -261,5 +266,72 @@ describe('humanizeProVariantName', () => {
   it('humanizes kebab-case for Adminboard labels', () => {
     expect(humanizeProVariantName('early-bird')).toBe('Early Bird')
     expect(humanizeProVariantName('basic')).toBe('Basic')
+  })
+})
+
+describe('buildBetterAuthStripePlansFromProVariantCatalog', () => {
+  const catalog = buildProVariantCatalogFromStripePrices([
+    price({
+      id: PRO_PLAN_MONTHLY_PRICE_ID,
+      lookup_key: 'basic_monthly',
+    }),
+    price({
+      id: PRO_PLAN_ANNUAL_PRICE_ID,
+      lookup_key: 'basic_yearly',
+      unit_amount: 150_000,
+      recurring: { interval: 'year' },
+    }),
+    price({
+      id: 'price_early_m',
+      lookup_key: 'early-bird_monthly',
+      unit_amount: 9_900,
+    }),
+    price({
+      id: 'price_early_y',
+      lookup_key: 'early-bird_yearly',
+      unit_amount: 99_000,
+      recurring: { interval: 'year' },
+    }),
+  ])
+
+  it('registers free and every Assigned Variant Price as plan pro', () => {
+    const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
+    expect(plans[0]).toEqual(
+      expect.objectContaining({
+        name: FREE_SUBSCRIPTION_PLAN,
+        priceId: FREE_PLAN_PRICE_ID,
+      }),
+    )
+    const proPriceIds = plans
+      .filter((plan) => plan.name === PRO_SUBSCRIPTION_PLAN)
+      .flatMap((plan) => [plan.priceId, plan.annualDiscountPriceId])
+    expect(proPriceIds).toEqual(
+      expect.arrayContaining([
+        PRO_PLAN_MONTHLY_PRICE_ID,
+        PRO_PLAN_ANNUAL_PRICE_ID,
+        'price_early_m',
+        'price_early_y',
+      ]),
+    )
+  })
+
+  it('matches early-bird Checkout Prices so webhook sync can set plan pro', () => {
+    const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
+    expect(
+      betterAuthStripePlansMatchPrice(plans, { id: 'price_early_m' })?.name,
+    ).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(
+      betterAuthStripePlansMatchPrice(plans, {
+        id: 'price_other',
+        lookup_key: 'early-bird_yearly',
+      })?.name,
+    ).toBe(PRO_SUBSCRIPTION_PLAN)
+  })
+
+  it('keeps getPlanByName(pro) on basic for Checkout plan selection', () => {
+    const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
+    const firstPro = plans.find((plan) => plan.name === PRO_SUBSCRIPTION_PLAN)
+    expect(firstPro?.priceId).toBe(PRO_PLAN_MONTHLY_PRICE_ID)
+    expect(firstPro?.annualDiscountPriceId).toBe(PRO_PLAN_ANNUAL_PRICE_ID)
   })
 })

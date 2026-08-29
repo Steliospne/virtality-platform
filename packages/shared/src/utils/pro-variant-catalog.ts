@@ -11,8 +11,11 @@ import {
   type BillingPlanPriceLabels,
 } from './billing-catalog.ts'
 import {
+  FREE_PLAN_PRICE_ID,
+  FREE_SUBSCRIPTION_PLAN,
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,
+  PRO_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 
 /** Default Assigned Variant when User.assignedProVariant is null. */
@@ -425,5 +428,81 @@ export function catalogSliceFromPair(pair: ProVariantPair) {
   return buildBillingCatalogFromMinor(
     pair.minor,
     pair.labels.yearlySavingsLabel,
+  )
+}
+
+/**
+ * Better Auth Stripe plugin plan row. Several entries may share name `pro`
+ * (one per Assigned Variant pair) so webhook Price matching covers every
+ * catalog Price id while Checkout still selects plan name `pro`.
+ */
+export type BetterAuthStripePlanConfig = {
+  name: string
+  priceId: string
+  annualDiscountPriceId?: string
+  lookupKey?: string
+  annualDiscountLookupKey?: string
+}
+
+/**
+ * Expand the Assigned Variant catalog into Better Auth `subscription.plans`.
+ * Free first; then one `pro` row per complete pair (basic first). Basic also
+ * gets a legacy `pro_*` lookup_key alias until Stripe rename completes.
+ * Empty catalog falls back to the canonical sandbox basic Price ids.
+ */
+export function buildBetterAuthStripePlansFromProVariantCatalog(
+  catalog: ProVariantCatalog,
+  freePriceId: string = FREE_PLAN_PRICE_ID,
+): BetterAuthStripePlanConfig[] {
+  const pairs =
+    catalog.variants.length > 0
+      ? catalog.variants
+      : buildSandboxProVariantCatalog().variants
+
+  const proPlans: BetterAuthStripePlanConfig[] = []
+  for (const pair of pairs) {
+    const row: BetterAuthStripePlanConfig = {
+      name: PRO_SUBSCRIPTION_PLAN,
+      priceId: pair.monthlyPriceId,
+      annualDiscountPriceId: pair.yearlyPriceId,
+      lookupKey: `${pair.name}_monthly`,
+      annualDiscountLookupKey: `${pair.name}_yearly`,
+    }
+    proPlans.push(row)
+    if (pair.name === DEFAULT_ASSIGNED_PRO_VARIANT) {
+      proPlans.push({
+        ...row,
+        lookupKey: 'pro_monthly',
+        annualDiscountLookupKey: 'pro_yearly',
+      })
+    }
+  }
+
+  return [
+    {
+      name: FREE_SUBSCRIPTION_PLAN,
+      priceId: freePriceId,
+      lookupKey: 'free_monthly',
+    },
+    ...proPlans,
+  ]
+}
+
+/**
+ * Whether Better Auth's plan matcher would accept this Price id (or lookup_key)
+ * against plans built from the catalog. Mirrors `@better-auth/stripe` resolvePlanItem.
+ */
+export function betterAuthStripePlansMatchPrice(
+  plans: readonly BetterAuthStripePlanConfig[],
+  price: { id: string; lookup_key?: string | null },
+): BetterAuthStripePlanConfig | undefined {
+  return plans.find(
+    (plan) =>
+      plan.priceId === price.id ||
+      plan.annualDiscountPriceId === price.id ||
+      (price.lookup_key != null &&
+        price.lookup_key !== '' &&
+        (plan.lookupKey === price.lookup_key ||
+          plan.annualDiscountLookupKey === price.lookup_key)),
   )
 }
