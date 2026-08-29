@@ -12,5 +12,8 @@ export function invalidateConsolePromoQueries(
     queryClient.invalidateQueries({
       queryKey: orpc.consolePromo.redeemPreflight.key(),
     }),
+    queryClient.invalidateQueries({
+      queryKey: orpc.consolePromo.readPending.key(),
+    }),
   ])
 }

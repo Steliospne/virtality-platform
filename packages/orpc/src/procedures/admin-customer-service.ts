@@ -3,8 +3,10 @@ import {
   buildEntitlementStanding,
   buildStripeCustomerDashboardUrl,
   buildStripeSubscriptionDashboardUrl,
+  canChangeAssignedProVariant,
   deriveCustomerAccessStatus,
   deriveCustomerBillingStatus,
+  effectiveAssignedProVariant,
   findLivePaidProSubscription,
   hasPendingCyclePlanChange,
   pickPrimaryCustomerSubscription,
@@ -205,6 +207,7 @@ export async function getAdminCustomerProfile(
       email: true,
       role: true,
       stripeCustomerId: true,
+      assignedProVariant: true,
       createdAt: true,
     },
   })
@@ -234,6 +237,9 @@ export async function getAdminCustomerProfile(
     email: user.email,
     role: user.role,
     stripeCustomerId: user.stripeCustomerId,
+    assignedProVariant: effectiveAssignedProVariant(user.assignedProVariant),
+    canChangeAssignedProVariant:
+      canChangeAssignedProVariant(subscriptionHistory),
     createdAt: user.createdAt,
     accessStatus: deriveCustomerAccessStatus({
       now,

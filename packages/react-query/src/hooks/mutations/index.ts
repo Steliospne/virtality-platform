@@ -73,6 +73,7 @@ export { useRedeemPromotionCode } from './console-promo/use-redeem-promotion-cod
 export { useSavePendingPromotionCode } from './console-promo/use-save-pending-promotion-code.js'
 export { useCancelPendingPromotionCode } from './console-promo/use-cancel-pending-promotion-code.js'
 export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discount.js'
+export { useScheduleConsoleCyclePlanChange } from './console-billing/use-schedule-console-cycle-plan-change.js'
 
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
@@ -82,6 +83,10 @@ export {
   useAssignPermanentFree,
   useGrantTimedTrial,
 } from './admin-customer/use-admin-customer-access-mutations.js'
+export {
+  useAssignableProVariants,
+  useAssignProVariant,
+} from './admin-customer/use-admin-customer-assigned-variant.js'
 export {
   useAssignFreeAfterCancellation,
   useCancelCyclePlanChange,

@@ -1,16 +1,21 @@
 import { ORPCError } from '@orpc/server'
 import {
+  assignProVariantAction,
   createAdminCustomerBillingRuntime,
   getRequiredStripeClient,
+  listAssignableProVariantsAction,
+  stripeClient,
 } from '@virtality/auth'
 import { z } from 'zod'
 import {
   assignFreeAfterCancellationInputSchema,
   assignPermanentFreeInputSchema,
+  assignProVariantInputSchema,
   cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
   grantTimedTrialInputSchema,
+  listAssignableProVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
   sendPaidCheckoutLinkInputSchema,
@@ -22,6 +27,9 @@ import {
   AdminCustomerBillingNotFoundError,
   AdminCustomerBillingStateError,
   AdminCustomerBillingValidationError,
+  AssignProVariantNotFoundError,
+  AssignProVariantStateError,
+  AssignProVariantValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
 import type { InitialContext } from '../context.ts'
@@ -51,7 +59,10 @@ function throwAdminCustomerOrpcError(error: unknown): never {
     error instanceof AdminCustomerAccessAlreadyEntitledError ||
     error instanceof AdminCustomerBillingValidationError ||
     error instanceof AdminCustomerBillingNotFoundError ||
-    error instanceof AdminCustomerBillingStateError
+    error instanceof AdminCustomerBillingStateError ||
+    error instanceof AssignProVariantValidationError ||
+    error instanceof AssignProVariantNotFoundError ||
+    error instanceof AssignProVariantStateError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -81,6 +92,32 @@ const getProfile = adminAuthed
     }
 
     return profile
+  })
+
+const listAssignableProVariants = adminAuthed
+  .route({
+    path: '/admin-customer/list-assignable-pro-variants',
+    method: 'GET',
+  })
+  .input(listAssignableProVariantsInputSchema)
+  .handler(async () => listAssignableProVariantsAction(stripeClient))
+
+const assignProVariant = adminAuthed
+  .route({ path: '/admin-customer/assign-pro-variant', method: 'POST' })
+  .input(assignProVariantInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      return await assignProVariantAction({
+        stripeClient,
+        prisma: context.prisma,
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        variantName: input.variantName,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
   })
 
 const assignPermanentFree = adminAuthed
@@ -243,6 +280,8 @@ const sendPaidCheckoutLink = adminAuthed
 export const adminCustomer = {
   list,
   getProfile,
+  listAssignableProVariants,
+  assignProVariant,
   assignPermanentFree,
   grantTimedTrial,
   previewChangePaidPlan,

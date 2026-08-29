@@ -90,6 +90,7 @@ export { useCampaignPickerCoupons } from './campaign-window/use-campaign-picker-
 // Console promo / Billing Discount queries
 export { useConsoleSubscriptionDiscount } from './console-promo/use-console-subscription-discount.js'
 export { useConsolePromoRedeemPreflight } from './console-promo/use-console-promo-redeem-preflight.js'
+export { useConsolePendingPromotionCode } from './console-promo/use-console-pending-promotion-code.js'
 export { useConsoleBillingCatalog } from './console-billing/use-console-billing-catalog.js'
 
 // Entitlement Extension queries

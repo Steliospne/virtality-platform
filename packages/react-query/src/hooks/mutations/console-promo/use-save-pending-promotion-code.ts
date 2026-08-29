@@ -7,7 +7,14 @@ export function useSavePendingPromotionCode() {
   const queryClient = useQueryClient()
   return useMutation(
     orpc.consolePromo.savePending.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
+        queryClient.setQueryData(orpc.consolePromo.readPending.key(), {
+          code: data.code,
+          promotionCodeId: data.promotionCodeId,
+          couponId: data.couponId,
+          expiresAt: data.expiresAt,
+          couponTerms: data.couponTerms,
+        })
         await invalidateConsolePromoQueries(queryClient, orpc)
       },
     }),

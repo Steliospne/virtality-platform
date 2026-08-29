@@ -3,6 +3,7 @@ import {
   cancelPendingPromotionCodeAction,
   loadConsolePromoRedeemPreflightAction,
   readConsoleSubscriptionDiscountAction,
+  readOpenPendingPromotionCodeAction,
   redeemPromotionCodeAction,
   removePromoDiscountAction,
   savePendingPromotionCodeAction,
@@ -10,6 +11,7 @@ import {
 import {
   redeemPromotionCodeInputSchema,
   savePendingPromotionCodeInputSchema,
+  type OpenPendingPromotionCodeHold,
 } from '@virtality/shared/types'
 import {
   ConsolePromoConfirmRequiredError,
@@ -97,6 +99,15 @@ const savePending = authed
     ),
   )
 
+const readPending = authed
+  .route({ path: '/console-promo/pending', method: 'GET' })
+  .handler(
+    async ({ context }): Promise<OpenPendingPromotionCodeHold | null> =>
+      runConsolePromoHandler(() =>
+        readOpenPendingPromotionCodeAction({ userId: context.user.id }),
+      ),
+  )
+
 const cancelPending = authed
   .route({ path: '/console-promo/pending/cancel', method: 'POST' })
   .handler(async ({ context }) =>
@@ -117,6 +128,7 @@ export const consolePromo = {
   readDiscount,
   redeemPreflight,
   redeem,
+  readPending,
   savePending,
   cancelPending,
   remove,

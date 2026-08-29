@@ -8,6 +8,7 @@ export function useCancelPendingPromotionCode() {
   return useMutation(
     orpc.consolePromo.cancelPending.mutationOptions({
       onSuccess: async () => {
+        queryClient.setQueryData(orpc.consolePromo.readPending.key(), null)
         await invalidateConsolePromoQueries(queryClient, orpc)
       },
     }),
