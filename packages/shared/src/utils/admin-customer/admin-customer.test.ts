@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   FREE_SUBSCRIPTION_PLAN,
   PRO_SUBSCRIPTION_PLAN,
-} from './billing/billing-plans.ts'
+} from '../billing/billing-plans.ts'
 import {
   buildStripeCustomerDashboardUrl,
   buildStripeSubscriptionDashboardUrl,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { EmailBodyBlock } from '../types/admin-email.js'
-import type { RenderedEmailSnapshot } from '../types/admin-email-persistence.js'
+import type { EmailBodyBlock } from '../../types/admin-email.js'
+import type { RenderedEmailSnapshot } from '../../types/admin-email-persistence.js'
 import {
   parseEmailBodyBlocksJson,
   parseRenderedEmailSnapshotJson,

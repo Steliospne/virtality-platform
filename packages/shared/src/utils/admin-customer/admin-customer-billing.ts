@@ -11,7 +11,7 @@ import {
   isProPlanPriceId,
   isProSubscriptionPlan,
   shouldScheduleSubscriptionChangeAtPeriodEnd,
-} from './billing/billing-plans.ts'
+} from '../billing/billing-plans.ts'
 import {
   pickPrimaryCustomerSubscription,
   type CustomerSubscriptionSummary,
@@ -22,15 +22,15 @@ import {
   restoreSubscription,
   scheduleCyclePlanChange,
   type CyclePlanChangePort,
-} from './billing/cycle-plan-change.ts'
-import { isLiveEntitlementSubscriptionStatus } from './billing/entitlement-extension.ts'
-import { hadPaidBillingHistory } from './billing/paid-billing-history.ts'
+} from '../billing/cycle-plan-change.ts'
+import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
+import { hadPaidBillingHistory } from '../billing/paid-billing-history.ts'
 import {
   annualFlagForProVariantPriceId,
   formatProVariantPriceLabel,
   isKnownProVariantPriceId,
   type ProVariantCatalog,
-} from './billing/pro-variant-catalog.ts'
+} from '../billing/pro-variant-catalog.ts'
 
 export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'change_paid_plan',

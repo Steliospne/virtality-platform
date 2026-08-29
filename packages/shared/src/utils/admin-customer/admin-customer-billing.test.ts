@@ -24,9 +24,9 @@ import {
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,
   PRO_SUBSCRIPTION_PLAN,
-} from './billing/billing-plans.ts'
+} from '../billing/billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
-import { buildProVariantCatalogFromStripePrices } from './billing/pro-variant-catalog.ts'
+import { buildProVariantCatalogFromStripePrices } from '../billing/pro-variant-catalog.ts'
 
 const ACTOR_ID = 'admin_1'
 const SUCCESS_URL = 'https://console.test/profile?checkoutReturn=success'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { EmailBodyBlock } from '../types/admin-email.ts'
+import type { EmailBodyBlock } from '../../types/admin-email.ts'
 import {
   buildDraftUpdateData,
   draftHasFinalSend,

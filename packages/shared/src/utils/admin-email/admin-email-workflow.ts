@@ -1,4 +1,4 @@
-import type { EmailBodyBlock } from '../types/admin-email.ts'
+import type { EmailBodyBlock } from '../../types/admin-email.ts'
 import {
   parseEmailBodyBlocksJson,
   serializeEmailBodyBlocksJson,

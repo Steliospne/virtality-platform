@@ -1,9 +1,9 @@
-import type { EmailBodyBlock } from '../types/admin-email.js'
+import type { EmailBodyBlock } from '../../types/admin-email.js'
 import {
   renderedEmailSnapshotSchema,
   storedEmailBodyBlocksSchema,
   type RenderedEmailSnapshot,
-} from '../types/admin-email-persistence.js'
+} from '../../types/admin-email-persistence.js'
 
 const parseJson = (value: string, label: string): unknown => {
   try {

@@ -2,9 +2,9 @@ import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import {
   isFreeSubscriptionPlan,
   isProSubscriptionPlan,
-} from './billing/billing-plans.ts'
-import { buildEntitlementStanding } from './billing/entitlement-clock.ts'
-import { isLiveEntitlementSubscriptionStatus } from './billing/entitlement-extension.ts'
+} from '../billing/billing-plans.ts'
+import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
+import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 
 export type CustomerSubscriptionSummary = {
   id: string
