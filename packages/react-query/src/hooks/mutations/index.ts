@@ -74,6 +74,7 @@ export { useSavePendingPromotionCode } from './console-promo/use-save-pending-pr
 export { useCancelPendingPromotionCode } from './console-promo/use-cancel-pending-promotion-code.js'
 export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discount.js'
 export { useScheduleConsoleCyclePlanChange } from './console-billing/use-schedule-console-cycle-plan-change.js'
+export { useStartConsoleSubscribeCheckout } from './console-billing/use-start-console-subscribe-checkout.js'
 
 // Entitlement Extension mutations
 export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'

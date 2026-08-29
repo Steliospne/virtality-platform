@@ -82,7 +82,10 @@ export function useBillingTab() {
     isScheduling,
     isRestoring,
     isOpeningPortal,
-  } = useConsoleBillingAuth()
+  } = useConsoleBillingAuth({
+    plan: standingQuery.data?.plan,
+    status: standingQuery.data?.status,
+  })
 
   const [selectedInterval, setSelectedInterval] =
     useState<BillingInterval>('month')

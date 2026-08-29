@@ -9,7 +9,11 @@ import {
   notifyConsoleBillingAuthResult,
   type ConsoleBetterAuthBillingResult,
 } from '@/lib/console-better-auth-billing'
-import { useScheduleConsoleCyclePlanChange } from '@virtality/react-query'
+import {
+  useScheduleConsoleCyclePlanChange,
+  useStartConsoleSubscribeCheckout,
+} from '@virtality/react-query'
+import { shouldRouteSubscribeCheckoutViaAssignedVariant } from '@virtality/shared/utils'
 
 function currentConsoleReturnUrl(): string {
   return `${window.location.origin}${window.location.pathname}${window.location.search}`
@@ -17,6 +21,11 @@ function currentConsoleReturnUrl(): string {
 
 type ToastNotifyOptions = {
   successToast?: string
+}
+
+type SubscribeCheckoutStanding = {
+  plan: string | null | undefined
+  status: string | null | undefined
 }
 
 /**
@@ -49,10 +58,12 @@ async function runBillingAction(
 
 /**
  * Console Profile Billing → Better Auth via one adapter for Checkout / restore /
- * portal. Cycle plan change uses orpc so Assigned Variant Price ids are charged.
+ * portal. Cycle plan change and live Free Subscribe use orpc so Assigned
+ * Variant Price ids are charged.
  */
-export function useConsoleBillingAuth() {
+export function useConsoleBillingAuth(standing?: SubscribeCheckoutStanding) {
   const scheduleCycleMutation = useScheduleConsoleCyclePlanChange()
+  const startSubscribeCheckoutMutation = useStartConsoleSubscribeCheckout()
 
   const billing = useMemo(
     () =>
@@ -74,11 +85,34 @@ export function useConsoleBillingAuth() {
       isStartingCheckout,
       setIsStartingCheckout,
       'Checkout already starting',
-      () =>
-        billing.startCheckout({
+      async () => {
+        if (
+          standing &&
+          shouldRouteSubscribeCheckoutViaAssignedVariant(standing)
+        ) {
+          try {
+            const result = await startSubscribeCheckoutMutation.mutateAsync({
+              annual: options?.annual ?? false,
+              returnUrl: currentConsoleReturnUrl(),
+            })
+            window.location.assign(result.checkoutUrl)
+            return { ok: true }
+          } catch (error) {
+            return {
+              ok: false as const,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to start Checkout',
+            }
+          }
+        }
+
+        return billing.startCheckout({
           returnUrl: currentConsoleReturnUrl(),
           annual: options?.annual,
-        }),
+        })
+      },
     )
 
   const scheduleCycleChange = async (options: { annual: boolean }) =>
