@@ -7,6 +7,7 @@ import {
 } from '@virtality/shared/utils'
 import {
   buildPendingCouponRewrite,
+  buildBillingCompareAtCardDisplay,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
   profileBillingPrimaryCtaLabel,
@@ -500,6 +501,73 @@ describe('splitCatalogPriceLabel', () => {
     expect(splitCatalogPriceLabel('€150 / month')).toEqual({
       amount: '€150',
       interval: '/ month',
+    })
+  })
+})
+
+describe('buildBillingCompareAtCardDisplay', () => {
+  const basic = buildBillingPlanPriceLabels(PRO_BILLING_CATALOG_SANDBOX)
+  const assigned = buildBillingPlanPriceLabels({
+    monthly: 9_900,
+    yearly: 99_000,
+  })
+
+  it('shows a single clean catalog row for basic seats', () => {
+    const card = buildBillingCompareAtCardDisplay({
+      assigned: basic,
+      basic,
+      showCompareAt: false,
+    })
+    expect(card.monthlyRows).toEqual([
+      { kind: 'catalog', price: basic.monthlyLabel },
+    ])
+    expect(card.yearlyRows).toHaveLength(1)
+    expect(card.yearlyRows[0]?.kind).toBe('catalog')
+  })
+
+  it('stacks assigned then struck basic when showCompareAt', () => {
+    const card = buildBillingCompareAtCardDisplay({
+      assigned,
+      basic,
+      showCompareAt: true,
+    })
+    expect(card.monthlyRows).toEqual([
+      { kind: 'catalog', price: assigned.monthlyLabel },
+      { kind: 'struck', price: basic.monthlyLabel },
+    ])
+    expect(card.yearlyRows[0]).toMatchObject({ kind: 'catalog' })
+    expect(card.yearlyRows[1]).toMatchObject({
+      kind: 'struck',
+      lines: {
+        primary: basic.yearlyAsMonthlyLabel,
+        secondary: basic.yearlyTotalMutedLabel,
+      },
+    })
+  })
+
+  it('applies discount to assigned only and leaves basic struck unchanged', () => {
+    const discountPrices = {
+      monthlyAmount: '€79.20',
+      yearlyAsMonthlyAmount: '€66',
+      yearlyTotalAmount: '€792',
+    }
+    const card = buildBillingCompareAtCardDisplay({
+      assigned,
+      basic,
+      showCompareAt: true,
+      discountPrices,
+    })
+    expect(card.monthlyRows[0]?.kind).toBe('discount-inline')
+    expect(card.monthlyRows[1]).toEqual({
+      kind: 'struck',
+      price: basic.monthlyLabel,
+    })
+    expect(card.yearlyRows[1]).toMatchObject({
+      kind: 'struck',
+      lines: {
+        primary: basic.yearlyAsMonthlyLabel,
+        secondary: basic.yearlyTotalMutedLabel,
+      },
     })
   })
 })

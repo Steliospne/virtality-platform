@@ -9,6 +9,7 @@ import {
   notifyConsoleBillingAuthResult,
   type ConsoleBetterAuthBillingResult,
 } from '@/lib/console-better-auth-billing'
+import { useScheduleConsoleCyclePlanChange } from '@virtality/react-query'
 
 function currentConsoleReturnUrl(): string {
   return `${window.location.origin}${window.location.pathname}${window.location.search}`
@@ -47,10 +48,12 @@ async function runBillingAction(
 }
 
 /**
- * Console Profile Billing → Better Auth via one adapter. Owns toasts and
- * pending flags for Checkout, Cycle schedule, restore, and Customer Portal.
+ * Console Profile Billing → Better Auth via one adapter for Checkout / restore /
+ * portal. Cycle plan change uses orpc so Assigned Variant Price ids are charged.
  */
 export function useConsoleBillingAuth() {
+  const scheduleCycleMutation = useScheduleConsoleCyclePlanChange()
+
   const billing = useMemo(
     () =>
       createConsoleBetterAuthBilling({
@@ -83,11 +86,20 @@ export function useConsoleBillingAuth() {
       isScheduling,
       setIsScheduling,
       'Plan change already scheduling',
-      () =>
-        billing.scheduleCycleChange({
-          returnUrl: currentConsoleReturnUrl(),
-          annual: options.annual,
-        }),
+      async () => {
+        try {
+          await scheduleCycleMutation.mutateAsync({ annual: options.annual })
+          return { ok: true }
+        } catch (error) {
+          return {
+            ok: false as const,
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Failed to schedule plan change',
+          }
+        }
+      },
       { successToast: CYCLE_PLAN_CHANGE_SCHEDULED_TOAST },
     )
 

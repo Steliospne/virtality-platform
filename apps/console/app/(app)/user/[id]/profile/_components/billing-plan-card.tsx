@@ -1,121 +1,30 @@
 'use client'
 
 /**
- * Monthly/Yearly Pro plan card with optional Discount price rewrite.
+ * Monthly/Yearly Pro plan card with Assigned Variant compare-at rows.
  */
 
 import { Check } from 'lucide-react'
 import { Badge } from '@virtality/ui/components/badge'
 import { cn } from '@/lib/utils'
-import {
-  splitCatalogPriceLabel,
-  type ProfileBillingCardActiveAction,
+import type {
+  BillingCompareAtMonthlyRow,
+  BillingCompareAtYearlyRow,
+  ProfileBillingCardActiveAction,
 } from '@/lib/profile-billing'
 import { BillingPlanCardCheckoutButton } from './billing-plan-card-checkout-button'
-
-type PlanPriceRewrite = {
-  discountedPrimary: string
-  listStrike: string
-  discountedMuted?: string
-  listStrikeMuted?: string
-}
-
-function PriceLine({
-  primary,
-  strike,
-  primaryClassName = 'text-xl font-semibold sm:text-2xl',
-  catalogClassName = 'text-xl font-semibold sm:text-2xl',
-}: {
-  primary: string
-  strike?: string
-  primaryClassName?: string
-  catalogClassName?: string
-}) {
-  if (!strike) {
-    return <p className={cn('tabular-nums', primaryClassName)}>{primary}</p>
-  }
-  const { amount, interval } = splitCatalogPriceLabel(strike)
-  return (
-    <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0.5'>
-      <p className={cn('tabular-nums', primaryClassName)}>{primary}</p>
-      <p className={cn('tabular-nums', catalogClassName)}>
-        <span className='text-zinc-400 line-through'>{amount}</span>
-        {interval ? ` ${interval}` : null}
-      </p>
-    </div>
-  )
-}
-
-function PlanCardPrices({
-  listPrimary,
-  listMuted,
-  rewrite,
-}: {
-  listPrimary: string
-  listMuted?: string
-  rewrite: PlanPriceRewrite | null
-}) {
-  const secondaryLine = (
-    <p
-      className={cn(
-        'min-h-5 text-sm tabular-nums',
-        listMuted || rewrite?.discountedMuted ? 'text-zinc-400' : 'invisible',
-      )}
-      aria-hidden={!listMuted && !rewrite?.discountedMuted}
-    >
-      {listMuted ?? rewrite?.discountedMuted ?? '\u00a0'}
-    </p>
-  )
-
-  if (rewrite) {
-    return (
-      <div className='space-y-1'>
-        <PriceLine
-          primary={rewrite.discountedPrimary}
-          strike={rewrite.listStrike}
-        />
-        {rewrite.discountedMuted ? (
-          <div>
-            <PriceLine
-              primary={rewrite.discountedMuted}
-              strike={rewrite.listStrikeMuted}
-              primaryClassName='text-sm font-medium'
-              catalogClassName='text-sm font-medium'
-            />
-          </div>
-        ) : (
-          secondaryLine
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div className='space-y-1'>
-      <p className='text-xl font-semibold tabular-nums sm:text-2xl'>
-        {listPrimary}
-      </p>
-      {listMuted ? (
-        <p className='min-h-5 text-sm text-zinc-400 tabular-nums'>
-          {listMuted}
-        </p>
-      ) : (
-        secondaryLine
-      )}
-    </div>
-  )
-}
+import { BillingCompareAtMonthlyPrice } from './billing-compare-at-monthly-price'
+import { BillingCompareAtYearlyPrice } from './billing-compare-at-yearly-price'
 
 export function PlanCard({
   title,
   selected,
   disabled,
   onSelect,
-  listPrimary,
-  listMuted,
+  monthlyRows,
+  yearlyRows,
   badge,
   accent = false,
-  rewrite,
   checkoutAction,
   checkoutPending,
   onCheckout,
@@ -124,11 +33,10 @@ export function PlanCard({
   selected: boolean
   disabled: boolean
   onSelect: () => void
-  listPrimary: string
-  listMuted?: string
+  monthlyRows?: BillingCompareAtMonthlyRow[]
+  yearlyRows?: BillingCompareAtYearlyRow[]
   badge?: string
   accent?: boolean
-  rewrite: PlanPriceRewrite | null
   checkoutAction?: ProfileBillingCardActiveAction | null
   checkoutPending?: boolean
   onCheckout?: () => void
@@ -165,11 +73,11 @@ export function PlanCard({
       </div>
 
       <div className='mt-6 min-h-16'>
-        <PlanCardPrices
-          listPrimary={listPrimary}
-          listMuted={listMuted}
-          rewrite={rewrite}
-        />
+        {monthlyRows ? (
+          <BillingCompareAtMonthlyPrice rows={monthlyRows} />
+        ) : yearlyRows ? (
+          <BillingCompareAtYearlyPrice rows={yearlyRows} />
+        ) : null}
       </div>
       {showSelected && !hasCheckout ? (
         <p

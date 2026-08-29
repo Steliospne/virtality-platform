@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
+  useConsolePendingPromotionCode,
   useConsolePromoRedeemPreflight,
   useConsoleSubscriptionDiscount,
   useRedeemPromotionCode,
@@ -27,7 +28,8 @@ import {
   BILLING_DISCOUNT_TIMING_COPY,
   billingCatalogMinor,
   billingCatalogPrices,
-  buildPendingCouponRewrite,
+  buildBillingCompareAtCardDisplay,
+  buildDiscountedBillingPriceLabels,
   isStaffRedeemBlocked,
   profileBillingDiscountDisplay,
   profileBillingOpensPortal,
@@ -42,7 +44,6 @@ import {
   resolveProfileBillingCardAction,
   type BillingInterval,
   type BillingStandingView,
-  type PendingCouponTerms,
   type ProfileBillingCardAction,
 } from '@/lib/profile-billing'
 
@@ -65,6 +66,7 @@ export function useBillingTab() {
   const standingQuery = useLiveEntitlementStanding()
   const catalogQuery = useConsoleBillingCatalog()
   const discountQuery = useConsoleSubscriptionDiscount()
+  const pendingHoldQuery = useConsolePendingPromotionCode()
   const preflightQuery = useConsolePromoRedeemPreflight()
   const redeemMutation = useRedeemPromotionCode()
   const savePendingMutation = useSavePendingPromotionCode()
@@ -91,8 +93,6 @@ export function useBillingTab() {
   const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<
     string | null
   >(null)
-  const [pendingCouponTerms, setPendingCouponTerms] =
-    useState<PendingCouponTerms | null>(null)
   const [planCardCheckoutPending, setPlanCardCheckoutPending] =
     useState<BillingInterval | null>(null)
   const [updateConfirmInterval, setUpdateConfirmInterval] =
@@ -159,22 +159,27 @@ export function useBillingTab() {
   const hasEligibleSubscription = preflightQuery.data?.ok === true
   const staffBlocked = discount ? isStaffRedeemBlocked(discount) : false
   const appliedPromoCode = discount ? promoCodeLabel(discount) : null
+  const pendingHold = pendingHoldQuery.data ?? null
+  const pendingHoldCode = pendingHold?.code ?? null
+  const pendingHoldExpiresAt = pendingHold?.expiresAt ?? null
+  const pendingHoldSuccessMessage = pendingHold
+    ? `Promotion Code ${pendingHold.code} saved for Checkout. Finish subscribing within 2 minutes.`
+    : null
+  const promoSuccessBanner = redeemSuccessMessage ?? pendingHoldSuccessMessage
 
   useEffect(() => {
     if (initialCheckoutIntent !== 'cancel') return
     if (clearedCheckoutCancelRef.current) return
     clearedCheckoutCancelRef.current = true
-    setPendingCouponTerms(null)
+    setRedeemSuccessMessage(null)
     void cancelPendingAsyncRef.current(undefined)
   }, [initialCheckoutIntent])
 
   async function savePendingPromotionCode(code: string) {
-    const result = await savePendingMutation.mutateAsync({ code })
-    setPendingCouponTerms(result.couponTerms)
+    await savePendingMutation.mutateAsync({ code })
     setRemoveSuccess(false)
-    setRedeemSuccessMessage(
-      `Promotion Code ${code} saved for Checkout. Finish subscribing within 2 minutes.`,
-    )
+    // Banner copy comes from the rehydrated open hold (and optimistic query seed).
+    setRedeemSuccessMessage(null)
   }
 
   async function startCheckoutForInterval(interval: BillingInterval) {
@@ -332,26 +337,41 @@ export function useBillingTab() {
     }
   }
 
-  const pendingRewrite =
-    pendingCouponTerms && catalogMinor && prices
-      ? buildPendingCouponRewrite(pendingCouponTerms, catalogMinor, prices)
+  async function handleCancelPendingHold() {
+    setRedeemError(null)
+    try {
+      await cancelPendingMutation.mutateAsync(undefined)
+      setRedeemSuccessMessage(null)
+    } catch (error) {
+      setRedeemError(
+        errorMessage(error, 'Could not cancel that Promotion Code.'),
+      )
+    }
+  }
+
+  function handlePendingHoldExpired() {
+    setRedeemSuccessMessage(null)
+    void pendingHoldQuery.refetch()
+  }
+
+  const pendingDiscountPrices =
+    pendingHold?.couponTerms && catalogMinor
+      ? buildDiscountedBillingPriceLabels(pendingHold.couponTerms, catalogMinor)
       : null
 
-  const rewrite =
-    display.kind === 'rewrite' && prices
-      ? {
-          monthly: {
-            discountedPrimary: display.prices.monthlyAmount,
-            listStrike: prices.monthlyLabel,
-          },
-          yearly: {
-            discountedPrimary: display.prices.yearlyAsMonthlyAmount,
-            listStrike: prices.yearlyAsMonthlyLabel,
-            discountedMuted: display.prices.yearlyTotalAmount,
-            listStrikeMuted: prices.yearlyTotalMutedLabel,
-          },
-        }
-      : pendingRewrite
+  const liveDiscountPrices = display.kind === 'rewrite' ? display.prices : null
+
+  const discountPrices = liveDiscountPrices ?? pendingDiscountPrices
+
+  const cardDisplay =
+    catalogQuery.data?.ok === true
+      ? buildBillingCompareAtCardDisplay({
+          assigned: catalogQuery.data.assigned.labels,
+          basic: catalogQuery.data.basic.labels,
+          showCompareAt: catalogQuery.data.showCompareAt,
+          discountPrices,
+        })
+      : null
 
   return {
     isStandingPending: standingQuery.isPending,
@@ -361,11 +381,11 @@ export function useBillingTab() {
     selectedInterval,
     setSelectedInterval,
     prices,
+    cardDisplay,
     display,
-    rewrite,
     removeSuccess,
     setRemoveSuccess,
-    redeemSuccessMessage,
+    redeemSuccessMessage: promoSuccessBanner,
     pendingCancellationBanner,
     pendingPlanChangeBanner,
     cta,
@@ -376,6 +396,8 @@ export function useBillingTab() {
     showPromoChrome,
     discount,
     hasEligibleSubscription,
+    pendingHoldCode,
+    pendingHoldExpiresAt,
     staffBlocked,
     redeemError,
     promoCode,
@@ -385,6 +407,9 @@ export function useBillingTab() {
     handlePlanCardCheckout,
     handleRedeem,
     handleRemoveConfirm,
+    handleCancelPendingHold,
+    handlePendingHoldExpired,
+    cancelPendingPending: cancelPendingMutation.isPending,
     removeOpen,
     setRemoveOpen,
     appliedPromoCode,

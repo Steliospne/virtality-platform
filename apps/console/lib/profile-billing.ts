@@ -23,10 +23,11 @@ import {
   resolveBillingDiscountDisplay,
   resolveProfileBillingCheckoutCta,
   shouldScheduleSubscriptionChangeAtPeriodEnd,
+  type BillingCatalogForUserRead,
   type BillingCatalogMinor,
-  type BillingCatalogRead,
   type BillingDiscountDisplay,
   type BillingPlanPriceLabels,
+  type DiscountedBillingPriceLabels,
   type EntitlementBillingInterval,
   type SubscriptionDiscountRead,
 } from '@virtality/shared/utils'
@@ -116,6 +117,7 @@ export {
   PROMO_REMOVE_NO_RESTORE_COPY,
   PROMO_REMOVE_SUCCESS_COPY,
   STAFF_REDEEM_BLOCK_COPY,
+  buildDiscountedBillingPriceLabels,
   canRemovePromoDiscount,
   isStaffRedeemBlocked,
   promoCodeLabel,
@@ -453,16 +455,156 @@ export function buildPendingCouponRewrite(
   }
 }
 
+/** Assigned-variant list prices for plan cards (never expose variant names). */
 export function billingCatalogPrices(
-  catalog: BillingCatalogRead | undefined,
+  catalog: BillingCatalogForUserRead | undefined,
 ): BillingPlanPrices | null {
   if (!catalog?.ok) return null
-  return catalog.labels
+  return catalog.assigned.labels
 }
 
+/** Assigned-variant minor units for Discount rewrite math. */
 export function billingCatalogMinor(
-  catalog: BillingCatalogRead | undefined,
+  catalog: BillingCatalogForUserRead | undefined,
 ): BillingCatalogMinor | undefined {
   if (!catalog?.ok) return undefined
-  return catalog.minor
+  return catalog.assigned.minor
+}
+
+export function billingCatalogShowCompareAt(
+  catalog: BillingCatalogForUserRead | undefined,
+): boolean {
+  return catalog?.ok === true && catalog.showCompareAt
+}
+
+export function billingCatalogBasicLabels(
+  catalog: BillingCatalogForUserRead | undefined,
+): BillingPlanPrices | null {
+  if (!catalog?.ok) return null
+  return catalog.basic.labels
+}
+
+export type BillingCompareAtPriceGroup = {
+  primary: string
+  secondary: string
+}
+
+export type BillingCompareAtMonthlyDiscountLine = {
+  discounted: string
+  current: string
+  interval: string
+}
+
+export type BillingCompareAtMonthlyRow =
+  | { kind: 'catalog'; price: string }
+  | { kind: 'discount-inline'; line: BillingCompareAtMonthlyDiscountLine }
+  | { kind: 'struck'; price: string }
+
+export type BillingCompareAtYearlyDiscountLine = {
+  discounted: string
+  current: string
+  interval: string
+}
+
+export type BillingCompareAtYearlyRow =
+  | { kind: 'catalog'; lines: BillingCompareAtPriceGroup }
+  | {
+      kind: 'discount-inline'
+      primary: BillingCompareAtYearlyDiscountLine
+      secondary: BillingCompareAtYearlyDiscountLine
+    }
+  | { kind: 'struck'; lines: BillingCompareAtPriceGroup }
+
+export type BillingCompareAtCardDisplay = {
+  monthlyRows: BillingCompareAtMonthlyRow[]
+  yearlyRows: BillingCompareAtYearlyRow[]
+}
+
+function yearlyGroupLines(
+  labels: BillingPlanPriceLabels,
+): BillingCompareAtPriceGroup {
+  return {
+    primary: labels.yearlyAsMonthlyLabel,
+    secondary: labels.yearlyTotalMutedLabel,
+  }
+}
+
+function buildMonthlyDiscountLine(
+  discounted: DiscountedBillingPriceLabels,
+  current: BillingPlanPriceLabels,
+): BillingCompareAtMonthlyDiscountLine {
+  const { amount, interval } = splitCatalogPriceLabel(current.monthlyLabel)
+  return {
+    discounted: discounted.monthlyAmount,
+    current: amount,
+    interval,
+  }
+}
+
+/**
+ * Variant A stacked groups: assigned (optionally discounted) then struck basic
+ * when `showCompareAt`. Pass `discountPrices` already computed on assigned minor.
+ */
+export function buildBillingCompareAtCardDisplay(input: {
+  assigned: BillingPlanPriceLabels
+  basic: BillingPlanPriceLabels
+  showCompareAt: boolean
+  discountPrices?: DiscountedBillingPriceLabels | null
+}): BillingCompareAtCardDisplay {
+  const { assigned, basic, showCompareAt, discountPrices } = input
+
+  if (discountPrices) {
+    const monthlyRows: BillingCompareAtMonthlyRow[] = [
+      {
+        kind: 'discount-inline',
+        line: buildMonthlyDiscountLine(discountPrices, assigned),
+      },
+    ]
+    if (showCompareAt) {
+      monthlyRows.push({ kind: 'struck', price: basic.monthlyLabel })
+    }
+
+    const yearlyAsMonthly = splitCatalogPriceLabel(
+      assigned.yearlyAsMonthlyLabel,
+    )
+    const yearlyTotal = splitCatalogPriceLabel(assigned.yearlyTotalMutedLabel)
+    const yearlyRows: BillingCompareAtYearlyRow[] = [
+      {
+        kind: 'discount-inline',
+        primary: {
+          discounted: discountPrices.yearlyAsMonthlyAmount,
+          current: yearlyAsMonthly.amount,
+          interval: yearlyAsMonthly.interval,
+        },
+        secondary: {
+          discounted: discountPrices.yearlyTotalAmount,
+          current: yearlyTotal.amount,
+          interval: yearlyTotal.interval,
+        },
+      },
+    ]
+    if (showCompareAt) {
+      yearlyRows.push({ kind: 'struck', lines: yearlyGroupLines(basic) })
+    }
+
+    return { monthlyRows, yearlyRows }
+  }
+
+  if (!showCompareAt) {
+    return {
+      monthlyRows: [{ kind: 'catalog', price: assigned.monthlyLabel }],
+      yearlyRows: [{ kind: 'catalog', lines: yearlyGroupLines(assigned) }],
+    }
+  }
+
+  return {
+    monthlyRows: [
+      { kind: 'catalog', price: assigned.monthlyLabel },
+      { kind: 'struck', price: basic.monthlyLabel },
+    ],
+    yearlyRows: [
+      { kind: 'catalog', lines: yearlyGroupLines(assigned) },
+      { kind: 'struck', lines: yearlyGroupLines(basic) },
+    ],
+  }
 }

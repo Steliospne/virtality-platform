@@ -8,20 +8,25 @@ import { useState, type ReactNode } from 'react'
 import type { SubscriptionDiscountRead } from '@virtality/shared/utils'
 import {
   STAFF_REDEEM_BLOCK_COPY,
-  canRemovePromoDiscount,
-  promoCodeLabel,
   replaceConfirmDiscountLabel,
   requiresReplaceConfirm,
 } from '@/lib/profile-billing'
+import {
+  resolvePromoRedeemChrome,
+  type PromoRedeemChrome,
+} from '@/lib/promo-redeem-chrome'
 import { AppliedPromoRow } from './applied-promo-row'
+import { PendingPromoHoldRow } from './pending-promo-hold-row'
 import { PromoCodeEntryForm } from './promo-code-entry-form'
 import { RedeemReplaceConfirmDialog } from './redeem-replace-confirm-dialog'
 
 function promoRedeemBody({
-  discount,
-  hasEligibleSubscription,
-  staffBlocked,
-  onRemove,
+  chrome,
+  pendingHoldExpiresAt,
+  onRemoveLive,
+  onCancelPending,
+  onPendingExpired,
+  cancelPendingPending,
   successFlash,
   redeemError,
   redeeming,
@@ -29,10 +34,12 @@ function promoRedeemBody({
   onCodeChange,
   onApply,
 }: {
-  discount: SubscriptionDiscountRead | undefined
-  hasEligibleSubscription: boolean
-  staffBlocked: boolean
-  onRemove: () => void
+  chrome: PromoRedeemChrome
+  pendingHoldExpiresAt: Date | string | null
+  onRemoveLive: () => void
+  onCancelPending: () => void
+  onPendingExpired: () => void
+  cancelPendingPending: boolean
   successFlash: boolean
   redeemError: string | null
   redeeming: boolean
@@ -40,63 +47,57 @@ function promoRedeemBody({
   onCodeChange: (value: string) => void
   onApply: () => void
 }): ReactNode {
-  if (!hasEligibleSubscription) {
-    return (
-      <PromoCodeEntryForm
-        code={code}
-        onCodeChange={onCodeChange}
-        redeeming={redeeming}
-        redeemError={redeemError}
-        successFlash={successFlash}
-        onApply={onApply}
-        applyLabel='Apply Code'
-      />
-    )
+  switch (chrome.kind) {
+    case 'pending_hold':
+      return pendingHoldExpiresAt == null ? null : (
+        <PendingPromoHoldRow
+          code={chrome.code}
+          expiresAt={pendingHoldExpiresAt}
+          canceling={cancelPendingPending}
+          onCancel={onCancelPending}
+          onExpired={onPendingExpired}
+        />
+      )
+    case 'checking_discount':
+      return <p className='text-sm text-zinc-500'>Checking current discount…</p>
+    case 'redeem_unavailable':
+      return (
+        <p className='text-sm text-zinc-500'>
+          Promotion Code redeem is unavailable until discount details load. Try
+          again shortly.
+        </p>
+      )
+    case 'staff_blocked':
+      return <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
+    case 'applied_live':
+      return (
+        <AppliedPromoRow appliedCode={chrome.code} onRemove={onRemoveLive} />
+      )
+    case 'entry':
+      return (
+        <PromoCodeEntryForm
+          code={code}
+          onCodeChange={onCodeChange}
+          redeeming={redeeming}
+          redeemError={redeemError}
+          successFlash={successFlash}
+          onApply={onApply}
+          applyLabel='Apply Code'
+        />
+      )
   }
-
-  if (discount == null) {
-    return <p className='text-sm text-zinc-500'>Checking current discount…</p>
-  }
-
-  if (!discount.ok) {
-    return (
-      <p className='text-sm text-zinc-500'>
-        Promotion Code redeem is unavailable until discount details load. Try
-        again shortly.
-      </p>
-    )
-  }
-
-  if (staffBlocked) {
-    return <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
-  }
-
-  if (canRemovePromoDiscount(discount)) {
-    return (
-      <AppliedPromoRow
-        appliedCode={promoCodeLabel(discount)}
-        onRemove={onRemove}
-      />
-    )
-  }
-
-  return (
-    <PromoCodeEntryForm
-      code={code}
-      onCodeChange={onCodeChange}
-      redeeming={redeeming}
-      redeemError={redeemError}
-      successFlash={successFlash}
-      onApply={onApply}
-    />
-  )
 }
 
 export function PromoRedeemSection({
   discount,
   hasEligibleSubscription,
+  pendingHoldCode,
+  pendingHoldExpiresAt,
   staffBlocked,
   onRemove,
+  onCancelPending,
+  onPendingExpired,
+  cancelPendingPending,
   successFlash,
   redeemError,
   onRedeem,
@@ -106,8 +107,13 @@ export function PromoRedeemSection({
 }: {
   discount: SubscriptionDiscountRead | undefined
   hasEligibleSubscription: boolean
+  pendingHoldCode: string | null
+  pendingHoldExpiresAt: Date | string | null
   staffBlocked: boolean
   onRemove: () => void
+  onCancelPending: () => void
+  onPendingExpired: () => void
+  cancelPendingPending: boolean
   successFlash: boolean
   redeemError: string | null
   onRedeem: (code: string, confirmReplace: boolean) => Promise<boolean>
@@ -117,6 +123,12 @@ export function PromoRedeemSection({
 }) {
   const [replaceOpen, setReplaceOpen] = useState(false)
   const [pendingCode, setPendingCode] = useState<string | null>(null)
+  const chrome = resolvePromoRedeemChrome({
+    hasEligibleSubscription,
+    pendingHoldCode,
+    discount,
+    staffBlocked,
+  })
   const currentLabel = hasEligibleSubscription
     ? replaceConfirmDiscountLabel(discount)
     : null
@@ -154,10 +166,12 @@ export function PromoRedeemSection({
     <div className='space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800'>
       <p className='text-sm font-medium'>Have a Promotion Code?</p>
       {promoRedeemBody({
-        discount,
-        hasEligibleSubscription,
-        staffBlocked,
-        onRemove,
+        chrome,
+        pendingHoldExpiresAt,
+        onRemoveLive: onRemove,
+        onCancelPending,
+        onPendingExpired,
+        cancelPendingPending,
         successFlash,
         redeemError,
         redeeming,
