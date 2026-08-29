@@ -5,7 +5,10 @@
  * during a continuous Console session until paid entitlement is active.
  */
 
-import { isFreeSubscriptionPlan } from './billing-plans.ts'
+import {
+  isFreeSubscriptionPlan,
+  isProSubscriptionPlan,
+} from './billing-plans.ts'
 import {
   pickEntitlementSubscription,
   resolveEntitlementClock,
@@ -30,14 +33,35 @@ export function isCanceledUpgradeSeat(
   return subscription.status === 'canceled'
 }
 
+/** Pro cancel-at-period-end with paid access still remaining before period end. */
+function hasPendingCancellationAccess(input: {
+  now: Date
+  subscriptions: readonly EntitlementClockSubscription[]
+}): boolean {
+  const nowMs = input.now.getTime()
+  return input.subscriptions.some((subscription) => {
+    if (
+      !subscription.cancelAtPeriodEnd ||
+      !isProSubscriptionPlan(subscription.plan)
+    ) {
+      return false
+    }
+    const periodEndMs = subscription.periodEnd?.getTime()
+    return periodEndMs != null && periodEndMs > nowMs
+  })
+}
+
 /**
- * Whether the seat should receive the upgrade prompt. Trialing and paid
- * clinicians are excluded; expired Free and canceled seats qualify.
+ * Whether the seat should receive the upgrade prompt. Trialing, paid, and
+ * cancel-at-period-end clinicians are excluded; expired Free and canceled
+ * seats qualify once paid access has ended.
  */
 export function resolveExpiredFreeUpgradeQualifies(input: {
   now: Date
   subscriptions: readonly EntitlementClockSubscription[]
 }): boolean {
+  if (hasPendingCancellationAccess(input)) return false
+
   const picked = pickEntitlementSubscription(input.subscriptions)
   const standing = resolveEntitlementClock({
     now: input.now,

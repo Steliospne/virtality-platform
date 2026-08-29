@@ -95,20 +95,38 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     ).toBe(true)
   })
 
-  it('does not qualify cancel-at-period-end while still entitled', () => {
+  it('does not qualify while cancel-at-period-end access remains', () => {
+    for (const status of ['active', 'canceled'] as const) {
+      expect(
+        resolveExpiredFreeUpgradeQualifies({
+          now: NOW,
+          subscriptions: [
+            {
+              plan: 'pro',
+              status,
+              periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+              cancelAtPeriodEnd: true,
+            },
+          ],
+        }),
+      ).toBe(false)
+    }
+  })
+
+  it('still qualifies after cancel-at-period-end access has ended', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         subscriptions: [
           {
             plan: 'pro',
-            status: 'active',
-            periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+            status: 'canceled',
+            periodEnd: new Date('2026-08-01T12:00:00.000Z'),
             cancelAtPeriodEnd: true,
           },
         ],
       }),
-    ).toBe(false)
+    ).toBe(true)
   })
 })
 

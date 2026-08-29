@@ -306,14 +306,20 @@ export function buildEntitlementStanding(input: {
 }
 
 /**
- * Console sidebar Remaining Time is trial-only: live trialing seats with time
- * left on the Entitlement Clock. Paid active, expired, and Free seats hide it.
+ * Console sidebar Remaining Time: live trialing seats and entitled seats
+ * scheduled to cancel at period end (paid active still inside the period).
+ * Renewing paid active, expired, and Free seats hide it.
  */
 export function showsRemainingTimeSidebar(input: {
   entitled: boolean
   status: string | null | undefined
+  cancelAtPeriodEnd?: boolean | null
 }): boolean {
-  return input.entitled && input.status === 'trialing'
+  if (!input.entitled) return false
+
+  const isTrialing = input.status === 'trialing'
+  const isScheduledToCancel = Boolean(input.cancelAtPeriodEnd)
+  return isTrialing || isScheduledToCancel
 }
 
 /**
@@ -380,6 +386,7 @@ export function projectLiveEntitlementStanding(input: {
     showRemainingTime: showsRemainingTimeSidebar({
       entitled,
       status: standing.status,
+      cancelAtPeriodEnd: standing.cancelAtPeriodEnd,
     }),
   }
 }

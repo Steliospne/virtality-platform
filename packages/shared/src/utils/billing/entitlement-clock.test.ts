@@ -211,12 +211,32 @@ describe('remainingMsFromClockEnd', () => {
 })
 
 describe('showsRemainingTimeSidebar', () => {
-  it('is true only for a live trialing seat', () => {
+  it('shows for entitled trialing seats', () => {
     expect(
       showsRemainingTimeSidebar({ entitled: true, status: 'trialing' }),
     ).toBe(true)
+  })
+
+  it('shows for entitled active seats scheduled to cancel at period end', () => {
+    expect(
+      showsRemainingTimeSidebar({
+        entitled: true,
+        status: 'active',
+        cancelAtPeriodEnd: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('hides for entitled renewing active seats and when not entitled', () => {
     expect(
       showsRemainingTimeSidebar({ entitled: true, status: 'active' }),
+    ).toBe(false)
+    expect(
+      showsRemainingTimeSidebar({
+        entitled: true,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+      }),
     ).toBe(false)
     expect(
       showsRemainingTimeSidebar({ entitled: false, status: 'trialing' }),
@@ -691,6 +711,7 @@ describe('projectLiveEntitlementStanding', () => {
     expect(live.status).toBe('active')
     expect(live.entitled).toBe(true)
     expect(live.checkoutCta).toBeNull()
+    expect(live.showRemainingTime).toBe(true)
   })
 })
 
