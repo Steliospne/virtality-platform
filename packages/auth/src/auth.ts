@@ -14,8 +14,8 @@ import {
 } from './lib/console-promo-redeem.ts'
 import {
   cancelPendingPromotionCodeForCheckout,
+  readOpenPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
-  type PendingPromotionCodeCouponTerms,
 } from './lib/pending-promotion-code.ts'
 import { prisma } from '@virtality/db'
 import Stripe from 'stripe'
@@ -40,12 +40,14 @@ import {
 } from '@virtality/shared/utils'
 import { stripeClient } from './auth-instance.ts'
 import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
+import { readBillingCatalogForUser } from './lib/pro-variant-catalog.ts'
 
 export {
   auth,
   FREE_PLAN_PRICE_ID,
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_PRICE_ID,
+  stripeClient,
 } from './auth-instance.ts'
 export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
 export { asAuthSession } from './lib/auth-context.ts'
@@ -99,7 +101,10 @@ export {
 } from './lib/console-promo-redeem.ts'
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
-export type { PendingPromotionCodeCouponTerms }
+export type {
+  PendingPromotionCodeCouponTerms,
+  OpenPendingPromotionCodeHold,
+} from '@virtality/shared/types'
 
 function requireStripeClient(): Stripe {
   if (!stripeClient) {
@@ -218,6 +223,31 @@ export function readConsoleBillingCatalogAction() {
   return readConsoleBillingCatalogOrSandbox(stripeClient)
 }
 
+/** Console Billing: user-scoped Assigned Variant catalog (+ basic compare-at). */
+export async function readBillingCatalogForUserAction(userId: string) {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { assignedProVariant: true },
+  })
+  return readBillingCatalogForUser(
+    stripeClient,
+    user?.assignedProVariant ?? null,
+  )
+}
+
+export {
+  assignProVariantAction,
+  listAssignableProVariantsAction,
+} from './lib/assign-pro-variant.ts'
+export {
+  clearProVariantCatalogCache,
+  readBillingCatalogForUser,
+  readProVariantCatalogOrSandbox,
+  resolveAssignedProVariantChargePrice,
+  type AssignableProVariantOption,
+} from './lib/pro-variant-catalog.ts'
+export { scheduleAssignedVariantCyclePlanChange } from './lib/assigned-variant-cycle-plan-change.ts'
+
 /** Console Billing: redeem preflight (staff-block / replace-confirm). */
 export function loadConsolePromoRedeemPreflightAction(userId: string) {
   return loadConsolePromoRedeemPreflightForUser(
@@ -255,6 +285,14 @@ export function savePendingPromotionCodeAction(input: {
   code: string
 }) {
   return savePendingPromotionCodeForCheckout(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: read open Checkout hold for plan-card + cancel chrome. */
+export function readOpenPendingPromotionCodeAction(input: { userId: string }) {
+  return readOpenPendingPromotionCodeForCheckout(input, {
     prisma,
     stripeClient: requireStripeForConsolePromo(),
   })

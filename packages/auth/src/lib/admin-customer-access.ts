@@ -4,6 +4,7 @@ import {
   billingSnapshotFromSubscription,
   buildPermanentFreeSubscriptionStripeParams,
   buildTimedTrialSubscriptionStripeParams,
+  effectiveAssignedProVariant,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   pickPrimaryCustomerSubscription,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
@@ -66,6 +67,7 @@ export function createPrismaAdminCustomerAccessStore(
         select: {
           role: true,
           stripeCustomerId: true,
+          assignedProVariant: true,
         },
       })
       if (!user) {
@@ -75,6 +77,7 @@ export function createPrismaAdminCustomerAccessStore(
           primaryPlan: null,
           primaryStatus: null,
           stripeSubscriptionId: null,
+          assignedProVariant: null,
         }
       }
 
@@ -96,6 +99,9 @@ export function createPrismaAdminCustomerAccessStore(
       return billingSnapshotFromSubscription({
         role: user.role,
         stripeCustomerId: user.stripeCustomerId,
+        assignedProVariant: effectiveAssignedProVariant(
+          user.assignedProVariant,
+        ),
         subscription: primary,
       })
     },

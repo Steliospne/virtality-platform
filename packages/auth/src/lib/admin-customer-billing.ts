@@ -1,12 +1,16 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
+  AdminCustomerBillingValidationError,
+  annualFlagForProPlanPriceId,
   billingSnapshotFromPrimarySubscription,
   buildPaidProSubscriptionCreateParams,
   buildPermanentFreeAfterCancellationStripeParams,
+  effectiveAssignedProVariant,
   withCheckoutReturnIntent,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
+  type AdminCustomerCyclePlanPort,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { FREE_PLAN_PRICE_ID } from '../auth-instance.ts'
@@ -15,7 +19,9 @@ import {
   type AdminCustomerBillingCheckoutReturnUrls,
   type AdminCustomerBillingRuntime,
 } from './admin-customer-billing-runtime.ts'
+import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle-plan-change.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
+import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
 
 export type { AdminCustomerBillingRuntime }
 
@@ -90,6 +96,7 @@ export function createPrismaAdminCustomerBillingStore(
         select: {
           role: true,
           stripeCustomerId: true,
+          assignedProVariant: true,
         },
       })
       if (!user) {
@@ -99,6 +106,7 @@ export function createPrismaAdminCustomerBillingStore(
           primaryPlan: null,
           primaryStatus: null,
           stripeSubscriptionId: null,
+          assignedProVariant: null,
         }
       }
 
@@ -119,6 +127,9 @@ export function createPrismaAdminCustomerBillingStore(
       return billingSnapshotFromPrimarySubscription({
         role: user.role,
         stripeCustomerId: user.stripeCustomerId,
+        assignedProVariant: effectiveAssignedProVariant(
+          user.assignedProVariant,
+        ),
         subscriptions,
       })
     },
@@ -269,11 +280,89 @@ export function createAdminCustomerBillingRuntime(deps: {
   headers: Headers
 }): AdminCustomerBillingRuntime {
   const client = deps.prisma ?? prisma
-  return createAdminCustomerBillingRuntimeFromPorts({
-    store: createPrismaAdminCustomerBillingStore(client),
-    stripe: createStripeAdminCustomerBillingGateway(deps.stripeClient),
-    cyclePlan: createBetterAuthCyclePlanChangePort(deps.headers, client),
+  const betterAuthCycle = createBetterAuthCyclePlanChangePort(
+    deps.headers,
+    client,
+  )
+
+  const cyclePlan: AdminCustomerCyclePlanPort = {
+    upgrade: async (input) => {
+      if (!input.referenceId) {
+        return {
+          error: { message: 'referenceId is required for Cycle plan change.' },
+        }
+      }
+      const scheduled = await scheduleAssignedVariantCyclePlanChange({
+        stripeClient: deps.stripeClient,
+        prisma: client,
+        referenceId: input.referenceId,
+        annual: input.annual,
+      })
+      if (!scheduled.ok) {
+        return { error: { message: scheduled.message } }
+      }
+      return {
+        data: {},
+        stripeScheduleId: scheduled.stripeScheduleId,
+      }
+    },
+    restore: betterAuthCycle.restore,
+  }
+
+  const store = createPrismaAdminCustomerBillingStore(client)
+  const stripe = createStripeAdminCustomerBillingGateway(deps.stripeClient)
+  const base = createAdminCustomerBillingRuntimeFromPorts({
+    store,
+    stripe,
+    cyclePlan,
     freePlanPriceId: FREE_PLAN_PRICE_ID,
     checkoutReturnUrls: buildAdminCheckoutReturnUrls,
   })
+
+  async function remapTargetPriceId(
+    userId: string,
+    targetPriceId: string,
+  ): Promise<string> {
+    const annual = annualFlagForProPlanPriceId(targetPriceId)
+    const user = await client.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { assignedProVariant: true },
+    })
+    const resolved = await resolveAssignedProVariantChargePrice({
+      stripeClient: deps.stripeClient,
+      assignedProVariant: user?.assignedProVariant ?? null,
+      annual,
+    })
+    if (!resolved.ok) {
+      throw new AdminCustomerBillingValidationError(
+        'Assigned Variant price pair is incomplete or unavailable. Fix the catalog before changing paid plan.',
+      )
+    }
+    return resolved.priceId
+  }
+
+  return {
+    ...base,
+    async previewChangePaidPlan(input) {
+      const targetPriceId = await remapTargetPriceId(
+        input.userId,
+        input.targetPriceId,
+      )
+      return base.previewChangePaidPlan({ ...input, targetPriceId })
+    },
+    async changePaidPlan(input) {
+      const targetPriceId = await remapTargetPriceId(
+        input.userId,
+        input.targetPriceId,
+      )
+      return base.changePaidPlan({ ...input, targetPriceId })
+    },
+    async sendPaidCheckoutLink(input) {
+      const targetPriceId = await remapTargetPriceId(
+        input.userId,
+        input.targetPriceId,
+      )
+      return base.sendPaidCheckoutLink({ ...input, targetPriceId })
+    },
+  }
 }

@@ -14,6 +14,7 @@ import {
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
+import { resolveAssignedProVariantChargePrice } from './lib/pro-variant-catalog.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -216,34 +217,83 @@ export const auth = betterAuth({
               // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
               // Campaign Window may attach discounts[{coupon}] for Subscribe only
               // (!hadPaidBilling); never allow_promotion_codes on the same Session.
-              getCheckoutSessionParams: async ({ user }) => {
+              // Assigned Variant: override line_items to the clinician's Price pair
+              // while Better Auth plan name stays `pro` on basic_* ids.
+              getCheckoutSessionParams: async ({ user }, _req, ctx) => {
+                const annual =
+                  typeof ctx?.body === 'object' &&
+                  ctx.body != null &&
+                  'annual' in ctx.body &&
+                  Boolean((ctx.body as { annual?: boolean }).annual)
+
+                const baseParams = !stripeClient
+                  ? {
+                      params: {
+                        payment_method_collection: 'always' as const,
+                      },
+                    }
+                  : await buildCampaignAwareCheckoutSessionParams({
+                      userId: user.id,
+                      stripeCustomerId:
+                        typeof user.stripeCustomerId === 'string'
+                          ? user.stripeCustomerId
+                          : null,
+                      stripeClient,
+                    })
+
+                const assignedProVariant =
+                  typeof user.assignedProVariant === 'string'
+                    ? user.assignedProVariant
+                    : await prisma.user
+                        .findFirst({
+                          where: { id: user.id },
+                          select: { assignedProVariant: true },
+                        })
+                        .then((row) => row?.assignedProVariant ?? null)
+
+                const chargePrice = await resolveAssignedProVariantChargePrice({
+                  stripeClient,
+                  assignedProVariant,
+                  annual,
+                })
+
+                if (!chargePrice.ok) {
+                  throw new APIError('BAD_REQUEST', {
+                    message:
+                      'Assigned Variant price pair is incomplete or unavailable. Contact support before Checkout.',
+                  })
+                }
+
+                const lineItemsOverride = {
+                  line_items: [{ price: chargePrice.priceId, quantity: 1 }],
+                }
+
                 if (!stripeClient) {
                   return {
                     params: {
-                      payment_method_collection: 'always' as const,
+                      ...baseParams.params,
+                      ...lineItemsOverride,
                     },
                   }
                 }
-                const checkoutParams =
-                  await buildCampaignAwareCheckoutSessionParams({
-                    userId: user.id,
-                    stripeCustomerId:
-                      typeof user.stripeCustomerId === 'string'
-                        ? user.stripeCustomerId
-                        : null,
-                    stripeClient,
-                  })
+
                 const pendingPromotionCode =
                   await getOpenPendingPromotionCodeForCheckout(
                     { userId: user.id },
                     { prisma, stripeClient },
                   )
                 if (!pendingPromotionCode) {
-                  return checkoutParams
+                  return {
+                    params: {
+                      ...baseParams.params,
+                      ...lineItemsOverride,
+                    },
+                  }
                 }
                 return {
                   params: {
-                    ...checkoutParams.params,
+                    ...baseParams.params,
+                    ...lineItemsOverride,
                     discounts: [
                       {
                         promotion_code: pendingPromotionCode.promotionCodeId,

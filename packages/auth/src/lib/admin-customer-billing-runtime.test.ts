@@ -38,6 +38,7 @@ function snapshot(
     primaryPlan: PRO_SUBSCRIPTION_PLAN,
     primaryStatus: 'active',
     stripeSubscriptionId: 'sub_pro_monthly',
+    assignedProVariant: null,
     ...overrides,
   }
 }
