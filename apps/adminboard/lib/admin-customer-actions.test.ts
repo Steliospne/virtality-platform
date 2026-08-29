@@ -7,6 +7,7 @@ import {
   canCancelPaidBilling,
   canChangePaidPlan,
   canReactivatePaidBilling,
+  formatAuditActionLabel,
   formatBillingSnapshotSummary,
 } from './admin-customer-actions.ts'
 
@@ -164,8 +165,19 @@ describe('formatBillingSnapshotSummary', () => {
         primaryPlan: 'free',
         primaryStatus: 'active',
         stripeSubscriptionId: 'sub_1',
+        assignedProVariant: 'basic',
       }),
     ).toContain('Free')
+    expect(
+      formatBillingSnapshotSummary({
+        role: 'tester',
+        stripeCustomerId: 'cus_1',
+        primaryPlan: 'free',
+        primaryStatus: 'active',
+        stripeSubscriptionId: 'sub_1',
+        assignedProVariant: 'early-bird',
+      }),
+    ).toContain('variant early-bird')
     expect(
       formatBillingSnapshotSummary({
         role: 'user',
@@ -173,7 +185,16 @@ describe('formatBillingSnapshotSummary', () => {
         primaryPlan: null,
         primaryStatus: null,
         stripeSubscriptionId: null,
+        assignedProVariant: null,
       }),
     ).toContain('no primary subscription')
+  })
+})
+
+describe('formatAuditActionLabel', () => {
+  it('labels assign_pro_variant', () => {
+    expect(formatAuditActionLabel('assign_pro_variant')).toBe(
+      'Assign Pro variant',
+    )
   })
 })

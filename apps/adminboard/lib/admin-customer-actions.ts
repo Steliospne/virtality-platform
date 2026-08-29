@@ -27,6 +27,9 @@ export function formatBillingSnapshotSummary(
   const parts: string[] = []
   if (snapshot.role) parts.push(`role ${snapshot.role}`)
   if (snapshot.stripeCustomerId) parts.push('Stripe customer present')
+  if (snapshot.assignedProVariant) {
+    parts.push(`variant ${snapshot.assignedProVariant}`)
+  }
   if (snapshot.primaryPlan && snapshot.primaryStatus) {
     parts.push(
       `${formatCustomerPlanLabel(snapshot.primaryPlan)} ${snapshot.primaryStatus}`,
@@ -39,6 +42,7 @@ export function formatBillingSnapshotSummary(
 }
 
 export function formatAuditActionLabel(action: string): string {
+  if (action === 'assign_pro_variant') return 'Assign Pro variant'
   if (isAdminCustomerAccessAction(action)) {
     return formatAdminCustomerAccessActionLabel(action)
   }

@@ -7,7 +7,10 @@ import {
   formatCustomerEntitlementSummary,
   formatCustomerInitials,
 } from '@/lib/admin-customer-display'
-import type { AdminCustomerProfile } from '@virtality/shared/utils'
+import {
+  humanizeProVariantName,
+  type AdminCustomerProfile,
+} from '@virtality/shared/utils'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
@@ -63,6 +66,15 @@ export function CustomerProfileRail({ profile }: CustomerProfileRailProps) {
             <dt className='text-muted-foreground'>VR launch</dt>
             <dd className='font-medium'>
               {profile.entitlement.canLaunchVr ? 'Allowed' : 'Blocked'}
+            </dd>
+          </div>
+          <div>
+            <dt className='text-muted-foreground'>Assigned Variant</dt>
+            <dd className='font-medium'>
+              {humanizeProVariantName(profile.assignedProVariant)}{' '}
+              <span className='text-muted-foreground font-normal'>
+                ({profile.assignedProVariant})
+              </span>
             </dd>
           </div>
           <div>

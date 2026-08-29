@@ -99,9 +99,12 @@ export function CustomerProfileChangePaidPlanDialog({
           <DialogHeader>
             <DialogTitle>Change paid plan</DialogTitle>
             <DialogDescription>
-              Select a supported Pro interval. Live paid interval changes apply
-              at the next billing cycle. Customers without a payment method
-              receive a Checkout link and stay on Free until purchase completes.
+              Select Monthly or Yearly using the supported Pro interval tokens.
+              The server remaps those tokens to this customer&apos;s Assigned
+              Variant Price ids when applying the change. Live paid interval
+              changes apply at the next billing cycle. Customers without a
+              payment method receive a Checkout link and stay on Free until
+              purchase completes.
             </DialogDescription>
           </DialogHeader>
 

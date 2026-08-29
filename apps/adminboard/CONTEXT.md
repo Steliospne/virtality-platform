@@ -118,8 +118,12 @@ _Avoid_: ever had a Subscription, Billing Path Established, any canceled Pro
 Queued paid Pro monthly ↔ yearly switch at the next billing cycle (`stripeScheduleId` / Better Auth `scheduleAtPeriodEnd`). Adminboard Change paid plan schedules through the same Better Auth path as Console (not raw Stripe subscription schedules). Staff release with Cancel Cycle plan change (audit `cancel_cycle_plan_change`); Reactivate keeps its own audit label for cancel-at-period-end undo. Both release/reactivate call Better Auth restore.
 _Avoid_: immediate admin price swap, Stripe schedule writer, conflating with Reactivate
 
+**Assigned Variant**:
+The clinician's app-owned Pro pricing option (for example `basic` or `early-bird`). Each option is a monthly plus yearly Stripe Price pair on the Pro Product, discovered from Stripe via Price `lookup_key` `{kebab-name}_{interval}` (for example `basic_monthly`, `early-bird_yearly`); the catalog always includes at least `basic`. Stored sparsely when staff assign from Adminboard; missing assignment reads as `basic`. Staff must not change Assigned Variant while the seat is live paid Pro. Catalog Prices are authored in Stripe Dashboard for now; Adminboard assigns only. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
+_Avoid_: price tier, custom price, Assigned Price, list-price override (as the term)
+
 **Admin customer paid billing runtime**:
-Paid customer mutations (preview/change plan, cancel, reactivate, cancel Cycle plan change, assign Free after cancellation, send Checkout link) enter via `createAdminCustomerBillingRuntime` in `@virtality/auth` (Prisma / Stripe / Cycle plan ports), not a pass-through Action per verb. Promo, catalog, and campaign keep their Action façades until deepened separately. Access grants and Extension enter via **Admin Entitlement Clock runtime**.
+Paid customer mutations (preview/change plan, cancel, reactivate, cancel Cycle plan change, assign Free after cancellation, send Checkout link) enter via `createAdminCustomerBillingRuntime` in `@virtality/auth` (Prisma / Stripe / Cycle plan ports), not a pass-through Action per verb. Promo, catalog, campaign, and **Assigned Variant** keep their Action façades until deepened separately. Access grants and Extension enter via **Admin Entitlement Clock runtime**.
 _Avoid_: per-verb paid-billing Action, `@virtality/billing` package (deferred)
 
 **Admin Entitlement Clock runtime**:
@@ -143,7 +147,7 @@ A once-per-channel-per-offset record for the current **Entitlement Clock** epoch
 _Avoid_: Stripe Billing reminder, renew master switch
 
 **Coupon**:
-Stripe discount definition (percent or amount off, duration set at creation). Staff and campaigns apply Coupons; clinicians do not type a Coupon id. Distinct from **Trial Redeem Code** and **Tester Code**.
+Stripe discount definition (percent or amount off, duration set at creation). Staff and campaigns apply Coupons; clinicians do not type a Coupon id. Distinct from **Trial Redeem Code**, **Tester Code**, and **Assigned Variant**.
 _Avoid_: Trial Redeem Code, Tester Code, deal, offer code
 
 **Coupon library**:
