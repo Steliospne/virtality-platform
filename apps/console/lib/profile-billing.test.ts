@@ -21,7 +21,7 @@ import {
   type BillingStandingView,
   PAID_CANCELLATION_UNDO_LABEL,
   PAID_INTERVAL_CANCEL_LABEL,
-  PAID_INTERVAL_UPDATE_LABEL,
+  PAID_INTERVAL_UPGRADE_LABEL,
   profileBillingPendingCancellationBanner,
   profileBillingPendingPlanChangeBanner,
 } from './profile-billing.js'
@@ -182,7 +182,7 @@ describe('resolveProfileBillingCardAction', () => {
     })
   })
 
-  it('schedules Update on the other paid Pro interval with confirm copy', () => {
+  it('schedules Upgrade on the other paid Pro interval with confirm copy', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
@@ -198,12 +198,12 @@ describe('resolveProfileBillingCardAction', () => {
     })
     const year = resolveProfileBillingCardAction(standing, true, 'year')
     expect(year.kind).toBe('schedule')
-    expect(year.label).toBe(PAID_INTERVAL_UPDATE_LABEL)
-    expect(year.pendingLabel).toBe('Updating…')
+    expect(year.label).toBe(PAID_INTERVAL_UPGRADE_LABEL)
+    expect(year.pendingLabel).toBe('Upgrading…')
     expect(year).toMatchObject({
       confirm: {
         title: 'Switch to Yearly?',
-        confirmLabel: PAID_INTERVAL_UPDATE_LABEL,
+        confirmLabel: PAID_INTERVAL_UPGRADE_LABEL,
       },
     })
     expect(year.kind === 'schedule' && year.confirm.body).toMatch(
@@ -238,7 +238,7 @@ describe('resolveProfileBillingCardAction', () => {
     })
   })
 
-  it('restores cancellation on the active interval and checkouts Update on the other when cancel-at-period-end', () => {
+  it('restores cancellation on the active interval and checkouts Upgrade on the other when cancel-at-period-end', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
@@ -255,8 +255,8 @@ describe('resolveProfileBillingCardAction', () => {
     })
     expect(resolveProfileBillingCardAction(standing, true, 'year')).toEqual({
       kind: 'checkout',
-      label: PAID_INTERVAL_UPDATE_LABEL,
-      pendingLabel: 'Updating…',
+      label: PAID_INTERVAL_UPGRADE_LABEL,
+      pendingLabel: 'Upgrading…',
     })
   })
 })

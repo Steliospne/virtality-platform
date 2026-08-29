@@ -18,7 +18,7 @@ import { PromoRedeemSection } from './promo-redeem-section'
 import { RemovePromoConfirmDialog } from './remove-promo-confirm-dialog'
 import { RemoveSuccessBanner } from './remove-success-banner'
 import { BillingTabSkeleton } from './billing-tab-skeleton'
-import { IntervalUpdateConfirmDialog } from './interval-update-confirm-dialog'
+import { IntervalUpgradeConfirmDialog } from './interval-upgrade-confirm-dialog'
 import { IntervalCancelConfirmDialog } from './interval-cancel-confirm-dialog'
 import { PendingCancellationBanner } from './pending-cancellation-banner'
 import { PendingPlanChangeBanner } from './pending-plan-change-banner'
@@ -66,11 +66,11 @@ export function BillingTab() {
     setRemoveOpen,
     appliedPromoCode,
     removePending,
-    updateConfirmOpen,
-    setUpdateConfirmOpen,
-    updateConfirmCopy,
-    handleUpdateConfirm,
-    updateConfirming,
+    upgradeConfirmOpen,
+    setUpgradeConfirmOpen,
+    upgradeConfirmCopy,
+    handleUpgradeConfirm,
+    upgradeConfirming,
     cancelConfirmOpen,
     setCancelConfirmOpen,
     cancelConfirmCopy,
@@ -224,16 +224,16 @@ export function BillingTab() {
         }}
       />
 
-      {updateConfirmCopy ? (
-        <IntervalUpdateConfirmDialog
-          open={updateConfirmOpen}
-          onOpenChange={setUpdateConfirmOpen}
-          title={updateConfirmCopy.title}
-          body={updateConfirmCopy.body}
-          confirmLabel={updateConfirmCopy.confirmLabel}
-          confirming={updateConfirming}
+      {upgradeConfirmCopy ? (
+        <IntervalUpgradeConfirmDialog
+          open={upgradeConfirmOpen}
+          onOpenChange={setUpgradeConfirmOpen}
+          title={upgradeConfirmCopy.title}
+          body={upgradeConfirmCopy.body}
+          confirmLabel={upgradeConfirmCopy.confirmLabel}
+          confirming={upgradeConfirming}
           onConfirm={() => {
-            void handleUpdateConfirm()
+            void handleUpgradeConfirm()
           }}
         />
       ) : null}

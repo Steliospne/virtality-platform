@@ -6,8 +6,9 @@
  * clock (including Checkout `incomplete` before webhook/success sync). Entitled
  * for VR: status ∈ {active, trialing} AND now < clockEnd.
  *
- * Checkout CTA: none while entitled; Subscribe vs Renew when not entitled and
- * Billing Path Established (Renew if subscription history shows a paid period).
+ * Checkout CTA: none while entitled paid Pro (portal seats); Subscribe vs Renew
+ * for soft-expired clinicians and live Free trials when Billing Path Established
+ * (Renew if subscription history shows a paid period).
  * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
  * alone is enough). Abandon leaves soft-expired + CTA; only synced live
  * Subscriptions restore.
@@ -165,17 +166,26 @@ export function canLaunchVrPrograms(input: {
 export type CheckoutCta = 'subscribe' | 'renew'
 
 /**
- * Checkout CTA visibility: entitled users never see Subscribe/Renew; soft-
- * expired clinicians with Billing Path Established see Subscribe or Renew.
- * Sidebar Subscribe/Renew uses this (Billing Path required).
+ * Checkout CTA visibility for the sidebar: requires Billing Path Established,
+ * hides the CTA for entitled non-trial seats, then defers Subscribe/Renew to
+ * {@link resolveProfileBillingCheckoutCta}.
  */
 export function resolveCheckoutCta(input: {
   entitled: boolean
   billingPathEstablished: boolean
   hadPaidBilling: boolean
+  plan?: string | null
+  status?: string | null
 }): CheckoutCta | null {
-  if (input.entitled || !input.billingPathEstablished) return null
-  return input.hadPaidBilling ? 'renew' : 'subscribe'
+  if (!input.billingPathEstablished) return null
+  if (input.entitled && input.status !== 'trialing') return null
+  return resolveProfileBillingCheckoutCta({
+    entitled: input.entitled,
+    hasStripeCustomer: true,
+    hadPaidBilling: input.hadPaidBilling,
+    plan: input.plan,
+    status: input.status,
+  })
 }
 
 /**
@@ -235,8 +245,9 @@ export type EntitlementStanding = EntitlementClockStanding & {
   /** Prior paid billing period in synced Subscription history. */
   hadPaidBilling: boolean
   /**
-   * Subscribe/Renew Checkout CTA. Null while entitled or without Billing Path.
-   * Console wires click to Better Auth Stripe Checkout (canonical pro plan).
+   * Subscribe/Renew Checkout CTA. Null for entitled paid Pro, without Billing
+   * Path, or while renewing paid active. Live Free trials and soft-expired seats
+   * show Subscribe/Renew. Console wires click to Better Auth Stripe Checkout.
    */
   checkoutCta: CheckoutCta | null
   /** Interval on the picked Subscription when known. */
@@ -293,6 +304,8 @@ export function buildEntitlementStanding(input: {
       entitled: clock.entitled,
       billingPathEstablished,
       hadPaidBilling,
+      plan: subscription?.plan,
+      status: clock.status,
     }),
     billingInterval: normalizeBillingInterval(subscription?.billingInterval),
     plan: subscription?.plan ?? null,
@@ -373,6 +386,8 @@ export function projectLiveEntitlementStanding(input: {
     entitled,
     billingPathEstablished: standing.billingPathEstablished,
     hadPaidBilling: standing.hadPaidBilling,
+    plan: standing.plan,
+    status: standing.status,
   })
 
   return {

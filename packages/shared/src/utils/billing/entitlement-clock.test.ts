@@ -319,7 +319,7 @@ describe('buildEntitlementStanding', () => {
     expect(standing.canLaunchVr).toBe(true)
   })
 
-  it('hides Subscribe/Renew CTA while entitled', () => {
+  it('hides Subscribe/Renew CTA while entitled on a paid Pro seat', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -334,6 +334,23 @@ describe('buildEntitlementStanding', () => {
     expect(standing.checkoutCta).toBeNull()
     expect(standing.billingPathEstablished).toBe(true)
     expect(standing.hadPaidBilling).toBe(true)
+  })
+
+  it('shows Subscribe for entitled Free trial seats', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          plan: FREE_SUBSCRIPTION_PLAN,
+          status: 'trialing',
+          trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+        },
+      ],
+    })
+    expect(standing.entitled).toBe(true)
+    expect(standing.checkoutCta).toBe('subscribe')
+    expect(standing.billingPathEstablished).toBe(true)
   })
 
   it('shows Subscribe after trial-style history with no paid path', () => {
@@ -567,10 +584,10 @@ describe('projectLiveEntitlementStanding', () => {
     })
     expect(beforeEnd.entitled).toBe(true)
     expect(beforeEnd.remainingMs).toBe(60 * 1000)
-    expect(beforeEnd.checkoutCta).toBeNull()
+    expect(beforeEnd.checkoutCta).toBe('subscribe')
     expect(beforeEnd.showRemainingTime).toBe(true)
     expect(beforeEnd.label).toBe(formatRemainingTimeLabel(60 * 1000))
-    expect(beforeEnd.checkoutCtaLabel).toBeNull()
+    expect(beforeEnd.checkoutCtaLabel).toBe('Subscribe')
 
     const afterEnd = projectLiveEntitlementStanding({
       standing,
@@ -716,14 +733,28 @@ describe('projectLiveEntitlementStanding', () => {
 })
 
 describe('resolveCheckoutCta', () => {
-  it('returns null while entitled even with paid history', () => {
+  it('returns null while entitled on a paid Pro seat even with paid history', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,
         billingPathEstablished: true,
         hadPaidBilling: true,
+        plan: PRO_SUBSCRIPTION_PLAN,
+        status: 'active',
       }),
     ).toBeNull()
+  })
+
+  it('returns subscribe for entitled Free trial seats', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: true,
+        billingPathEstablished: true,
+        hadPaidBilling: false,
+        plan: FREE_SUBSCRIPTION_PLAN,
+        status: 'trialing',
+      }),
+    ).toBe('subscribe')
   })
 
   it('returns null when Billing Path is not established', () => {

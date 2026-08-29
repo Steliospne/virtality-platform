@@ -15,9 +15,9 @@ import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
  * Remaining Time from the Entitlement Clock during trials and cancel-at-period-
- * end seats, plus Subscribe / Renew CTA when not entitled and Billing Path
- * Established. Gated by PostHog `billing_feature` (virtality.app only). CTA
- * opens Profile → Billing.
+ * end seats, plus Subscribe / Renew CTA for trialing users and when not
+ * entitled and Billing Path Established. Gated by PostHog `billing_feature`
+ * (virtality.app only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()

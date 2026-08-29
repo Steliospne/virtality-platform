@@ -82,7 +82,7 @@ const RootSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       {/* Lift footer when collapsed so lower nav tooltips clear Remaining Time */}
-      <SidebarFooter className='mt-auto border-t border-zinc-200 group-data-[collapsible=icon]:-translate-y-2'>
+      <SidebarFooter className='mt-auto mb-6 border-t border-zinc-200 group-data-[collapsible=icon]:-translate-y-2'>
         <RemainingTimeSidebar />
       </SidebarFooter>
     </Sidebar>

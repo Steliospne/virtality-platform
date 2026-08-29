@@ -37,7 +37,7 @@ export type BillingInterval = EntitlementBillingInterval
 export type BillingPlanPrices = BillingPlanPriceLabels
 
 /** Plan-card CTA when a live paid Pro seat switches monthly ↔ yearly. */
-export const PAID_INTERVAL_UPDATE_LABEL = 'Update' as const
+export const PAID_INTERVAL_UPGRADE_LABEL = 'Upgrade' as const
 
 /** Plan-card CTA when a period-end interval switch is already scheduled. */
 export const PAID_INTERVAL_CANCEL_LABEL = 'Cancel' as const
@@ -204,10 +204,10 @@ export function profileBillingShowsPlanCardCheckout(
 
 /**
  * Interval-specific plan-card action. Free / Renew seats share one
- * Subscribe/Renew checkout on both cards. Live paid Pro schedules "Update" on
+ * Subscribe/Renew checkout on both cards. Live paid Pro schedules "Upgrade" on
  * the other interval, or "Cancel" when that switch is already scheduled. While
  * cancel-at-period-end is set, the current interval restores ("Don't cancel")
- * and the other interval checkouts "Update" (pay now, not period-end schedule).
+ * and the other interval checkouts "Upgrade" (pay now, not period-end schedule).
  */
 export function resolveProfileBillingCardAction(
   standing: BillingStandingView,
@@ -225,8 +225,8 @@ export function resolveProfileBillingCardAction(
       }
       return {
         kind: 'checkout',
-        label: PAID_INTERVAL_UPDATE_LABEL,
-        pendingLabel: 'Updating…',
+        label: PAID_INTERVAL_UPGRADE_LABEL,
+        pendingLabel: 'Upgrading…',
       }
     }
     if (standing.billingInterval === interval) return NONE_ACTION
@@ -244,9 +244,9 @@ export function resolveProfileBillingCardAction(
     }
     return {
       kind: 'schedule',
-      label: PAID_INTERVAL_UPDATE_LABEL,
-      pendingLabel: 'Updating…',
-      confirm: profileBillingIntervalUpdateConfirmCopy(standing, interval),
+      label: PAID_INTERVAL_UPGRADE_LABEL,
+      pendingLabel: 'Upgrading…',
+      confirm: profileBillingIntervalUpgradeConfirmCopy(standing, interval),
     }
   }
 
@@ -311,7 +311,7 @@ export function profileBillingPendingCancellationBanner(
 }
 
 /** Confirm-dialog body for scheduling an interval switch. */
-function profileBillingIntervalUpdateConfirmCopy(
+function profileBillingIntervalUpgradeConfirmCopy(
   standing: BillingStandingView,
   targetInterval: BillingInterval,
 ): ProfileBillingCardActionConfirm {
@@ -329,7 +329,7 @@ function profileBillingIntervalUpdateConfirmCopy(
     body: when
       ? `Payment starts at your next billing cycle on ${when}. Keep using ${currentTitle} until then.`
       : `Payment starts at your next billing cycle. Keep using ${currentTitle} until then.`,
-    confirmLabel: PAID_INTERVAL_UPDATE_LABEL,
+    confirmLabel: PAID_INTERVAL_UPGRADE_LABEL,
   }
 }
 

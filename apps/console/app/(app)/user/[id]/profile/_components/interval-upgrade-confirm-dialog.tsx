@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-type IntervalUpdateConfirmDialogProps = {
+type IntervalUpgradeConfirmDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
@@ -25,7 +25,7 @@ type IntervalUpdateConfirmDialogProps = {
   onConfirm: () => void
 }
 
-export function IntervalUpdateConfirmDialog({
+export function IntervalUpgradeConfirmDialog({
   open,
   onOpenChange,
   title,
@@ -33,7 +33,7 @@ export function IntervalUpdateConfirmDialog({
   confirmLabel,
   confirming = false,
   onConfirm,
-}: IntervalUpdateConfirmDialogProps) {
+}: IntervalUpgradeConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={!confirming}>
@@ -53,7 +53,7 @@ export function IntervalUpdateConfirmDialog({
             disabled={confirming}
             onClick={onConfirm}
           >
-            {confirming ? 'Updating…' : confirmLabel}
+            {confirming ? 'Upgrading…' : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

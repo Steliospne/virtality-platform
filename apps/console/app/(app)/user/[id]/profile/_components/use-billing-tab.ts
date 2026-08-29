@@ -95,7 +95,7 @@ export function useBillingTab() {
   >(null)
   const [planCardCheckoutPending, setPlanCardCheckoutPending] =
     useState<BillingInterval | null>(null)
-  const [updateConfirmInterval, setUpdateConfirmInterval] =
+  const [upgradeConfirmInterval, setUpgradeConfirmInterval] =
     useState<BillingInterval | null>(null)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [initialCheckoutIntent] = useState(() =>
@@ -141,11 +141,11 @@ export function useBillingTab() {
   const pendingPlanChangeBanner = pendingCancellationBanner
     ? null
     : profileBillingPendingPlanChangeBanner(standing)
-  const updateConfirmCopy =
-    updateConfirmInterval == null
+  const upgradeConfirmCopy =
+    upgradeConfirmInterval == null
       ? null
       : profileBillingCardActionConfirm(
-          planCardActionFor(updateConfirmInterval),
+          planCardActionFor(upgradeConfirmInterval),
         )
   const cancelTargetInterval = profileBillingPendingTargetInterval(standing)
   const cancelConfirmCopy =
@@ -235,7 +235,7 @@ export function useBillingTab() {
         setCancelConfirmOpen(true)
         return
       case 'schedule':
-        setUpdateConfirmInterval(interval)
+        setUpgradeConfirmInterval(interval)
         return
       case 'checkout':
         void runPlanCardCheckout(interval)
@@ -254,10 +254,10 @@ export function useBillingTab() {
     }
   }
 
-  async function handleUpdateConfirm() {
-    if (updateConfirmInterval == null) return
-    const interval = updateConfirmInterval
-    setUpdateConfirmInterval(null)
+  async function handleUpgradeConfirm() {
+    if (upgradeConfirmInterval == null) return
+    const interval = upgradeConfirmInterval
+    setUpgradeConfirmInterval(null)
     setPlanCardCheckoutPending(interval)
     try {
       await scheduleCycleChangeForInterval(interval)
@@ -414,13 +414,13 @@ export function useBillingTab() {
     setRemoveOpen,
     appliedPromoCode,
     removePending: removeMutation.isPending,
-    updateConfirmOpen: updateConfirmInterval != null,
-    setUpdateConfirmOpen: (open: boolean) => {
-      if (!open) setUpdateConfirmInterval(null)
+    upgradeConfirmOpen: upgradeConfirmInterval != null,
+    setUpgradeConfirmOpen: (open: boolean) => {
+      if (!open) setUpgradeConfirmInterval(null)
     },
-    updateConfirmCopy,
-    handleUpdateConfirm,
-    updateConfirming: isScheduling,
+    upgradeConfirmCopy,
+    handleUpgradeConfirm,
+    upgradeConfirming: isScheduling,
     cancelConfirmOpen,
     setCancelConfirmOpen,
     cancelConfirmCopy,
