@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BlogPostContent } from '../types/blog.ts'
+import type { BlogPostContent } from '../../types/blog.ts'
 import {
   autosaveBlogPost,
   BlogConflictError,

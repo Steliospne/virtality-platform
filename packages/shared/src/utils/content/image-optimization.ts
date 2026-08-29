@@ -1,4 +1,4 @@
-import { CDN_URL } from '../types/general.ts'
+import { CDN_URL } from '../../types/general.ts'
 
 const CDN_URL_PREFIX = `${CDN_URL}/`
 

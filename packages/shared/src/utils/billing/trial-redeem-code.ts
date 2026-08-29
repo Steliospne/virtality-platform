@@ -1,4 +1,4 @@
-import { createRandomStringGenerator } from '../random.ts'
+import { createRandomStringGenerator } from '../primitives/random.ts'
 
 export const TRIAL_REDEEM_CODE_PREFIX = 'PAY-'
 export const TRIAL_REDEEM_CODE_BODY_LENGTH = 10

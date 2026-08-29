@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PartnerLogoCategory } from '../types/partner-logo.ts'
+import type { PartnerLogoCategory } from '../../types/partner-logo.ts'
 import {
   comparePartnerLogosForList,
   createPartnerLogo,

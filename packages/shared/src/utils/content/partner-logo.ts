@@ -6,7 +6,7 @@ import {
   type ReorderPartnerLogoInput,
   type RemovePartnerLogoInput,
   type UpdatePartnerLogoInput,
-} from '../types/partner-logo.ts'
+} from '../../types/partner-logo.ts'
 import { bucketCdnUrl, validateBucketObjectKey } from './bucket.ts'
 
 export type PartnerLogoRecord = {

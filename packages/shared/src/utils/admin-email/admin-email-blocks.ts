@@ -4,7 +4,7 @@ import {
   MAX_EMAIL_RECIPIENTS,
   type EmailBodyBlock,
 } from '../../types/admin-email.ts'
-import { validateBucketObjectKey } from '../bucket.ts'
+import { validateBucketObjectKey } from '../content/bucket.ts'
 
 const emailAddressSchema = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 

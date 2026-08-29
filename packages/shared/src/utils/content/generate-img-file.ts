@@ -1,6 +1,6 @@
-import { IMAGE_TYPE, ImageType } from '../types/mime-types.ts'
+import { IMAGE_TYPE, ImageType } from '../../types/mime-types.ts'
 import { Buffer } from 'node:buffer'
-import { createRandomStringGenerator } from './random.ts'
+import { createRandomStringGenerator } from '../primitives/random.ts'
 
 export const generateImageFile = async ({
   image,

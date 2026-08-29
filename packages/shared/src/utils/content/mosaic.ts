@@ -9,10 +9,10 @@ import {
   type MosaicTilePlacement,
   type SaveMosaicInput,
   type SaveMosaicResult,
-} from '../types/mosaic.ts'
+} from '../../types/mosaic.ts'
 import { bucketCdnUrl, validateBucketObjectKey } from './bucket.ts'
 
-export { MOSAIC_EMPTY_SAVE_WARNING } from '../types/mosaic.ts'
+export { MOSAIC_EMPTY_SAVE_WARNING } from '../../types/mosaic.ts'
 
 export const ALLOWED_MOSAIC_SPANS = [
   { width: 1, height: 1 },

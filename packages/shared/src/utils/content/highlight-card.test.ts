@@ -4,7 +4,7 @@ import {
   HIGHLIGHT_CARD_MAX_PER_COLLECTION,
   HIGHLIGHT_CARD_TITLE_MAX_LENGTH,
   type HighlightCardCollection,
-} from '../types/highlight-card.ts'
+} from '../../types/highlight-card.ts'
 import {
   createHighlightCard,
   HighlightCardCollectionFullError,

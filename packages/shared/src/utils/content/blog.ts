@@ -16,7 +16,7 @@ import {
   type BlogResolvedPost,
   type BodyBlock,
   type SetBlogPostFeaturedInput,
-} from '../types/blog.ts'
+} from '../../types/blog.ts'
 
 export type BlogAuthorRecord = {
   id: string

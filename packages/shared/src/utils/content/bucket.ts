@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
-import { CDN_URL } from '../types/general.ts'
-import { createRandomStringGenerator } from './random.ts'
+import { CDN_URL } from '../../types/general.ts'
+import { createRandomStringGenerator } from '../primitives/random.ts'
 
 export type BucketFolderRow = {
   type: 'folder'

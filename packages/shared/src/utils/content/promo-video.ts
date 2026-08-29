@@ -1,7 +1,7 @@
 import type {
   AssignPromoVideoInput,
   PromoVideoItem,
-} from '../types/promo-video.ts'
+} from '../../types/promo-video.ts'
 import { bucketCdnUrl, validateBucketObjectKey } from './bucket.ts'
 
 export const DEFAULT_PROMO_VIDEO_OBJECT_KEY = 'virtality-promo-web-001.mp4'

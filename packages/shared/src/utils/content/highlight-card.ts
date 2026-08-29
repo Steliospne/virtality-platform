@@ -8,7 +8,7 @@ import {
   type RemoveHighlightCardInput,
   type ReorderHighlightCardInput,
   type UpdateHighlightCardInput,
-} from '../types/highlight-card.ts'
+} from '../../types/highlight-card.ts'
 import { isRenderableLucideIcon, type LucideModule } from './lucide-icon.ts'
 
 export type HighlightCardRecord = {

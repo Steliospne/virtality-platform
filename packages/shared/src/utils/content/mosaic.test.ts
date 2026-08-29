@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { MOSAIC_EMPTY_SAVE_WARNING } from '../types/mosaic.ts'
+import { MOSAIC_EMPTY_SAVE_WARNING } from '../../types/mosaic.ts'
 import {
   assessMosaicLiveEligibility,
   getMosaicBoard,
