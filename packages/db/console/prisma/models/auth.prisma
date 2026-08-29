@@ -12,6 +12,10 @@ model User {
   phoneNumber         String?
   phoneNumberVerified Boolean?
   stripeCustomerId    String?
+  /**
+   * Assigned Variant name (kebab-case), e.g. `early-bird`. Sparse: null reads as `basic`.
+   */
+  assignedProVariant  String?
   banExpires          DateTime?
   banReason           String?
   banned              Boolean?
