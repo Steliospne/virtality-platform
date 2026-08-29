@@ -24,6 +24,8 @@ export type AdminCustomerBillingSnapshot = {
   primaryPlan: string | null
   primaryStatus: string | null
   stripeSubscriptionId: string | null
+  /** Effective Assigned Variant name (`basic` when storage is null). */
+  assignedProVariant: string | null
 }
 
 export type AdminCustomerAuditRecord = {
@@ -387,6 +389,7 @@ export function formatAdminCustomerAccessActionLabel(
 export function billingSnapshotFromSubscription(input: {
   role: string | null
   stripeCustomerId: string | null
+  assignedProVariant?: string | null
   subscription: {
     plan: string
     status: string
@@ -399,6 +402,7 @@ export function billingSnapshotFromSubscription(input: {
     primaryPlan: input.subscription?.plan ?? null,
     primaryStatus: input.subscription?.status ?? null,
     stripeSubscriptionId: input.subscription?.stripeSubscriptionId ?? null,
+    assignedProVariant: input.assignedProVariant ?? null,
   }
 }
 

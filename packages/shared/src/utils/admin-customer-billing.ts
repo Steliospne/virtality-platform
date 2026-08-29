@@ -899,12 +899,14 @@ export function isAdminCustomerBillingAction(
 export function billingSnapshotFromPrimarySubscription(input: {
   role: string | null
   stripeCustomerId: string | null
+  assignedProVariant?: string | null
   subscriptions: readonly CustomerSubscriptionSummary[]
 }): AdminCustomerBillingSnapshot {
   const primary = pickPrimaryCustomerSubscription(input.subscriptions)
   return billingSnapshotFromSubscription({
     role: input.role,
     stripeCustomerId: input.stripeCustomerId,
+    assignedProVariant: input.assignedProVariant ?? null,
     subscription: primary
       ? {
           plan: primary.plan,

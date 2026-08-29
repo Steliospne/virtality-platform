@@ -261,6 +261,10 @@ export type AdminCustomerProfile = {
   email: string
   role: string | null
   stripeCustomerId: string | null
+  /** Effective Assigned Variant (`basic` when storage is null). */
+  assignedProVariant: string
+  /** False when live paid Pro blocks reassignment. */
+  canChangeAssignedProVariant: boolean
   createdAt: Date
   accessStatus: CustomerAccessStatus
   billingStatus: CustomerBillingStatus

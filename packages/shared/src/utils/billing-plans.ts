@@ -13,13 +13,16 @@ export const PRO_SUBSCRIPTION_PLAN = 'pro' as const
  */
 export const FREE_PLAN_PRICE_ID = 'price_1U7hSd4Fc2DAAhEf1E06qFtt' as const
 
-/** Canonical sandbox Pro monthly Price (`lookup_key: pro_monthly`). */
+/**
+ * Canonical sandbox Pro monthly Price (`lookup_key: basic_monthly`;
+ * legacy `pro_monthly` until Stripe rename).
+ */
 export const PRO_PLAN_MONTHLY_PRICE_ID =
   'price_1SeVrm4Fc2DAAhEfIWIRZ2v9' as const
 
 /**
  * Canonical sandbox Pro yearly Price on the same Product
- * (`lookup_key: pro_yearly`).
+ * (`lookup_key: basic_yearly`; legacy `pro_yearly` until Stripe rename).
  */
 export const PRO_PLAN_ANNUAL_PRICE_ID =
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const

@@ -25,6 +25,7 @@ function snapshot(
     primaryPlan: null,
     primaryStatus: null,
     stripeSubscriptionId: null,
+    assignedProVariant: null,
     ...overrides,
   }
 }
