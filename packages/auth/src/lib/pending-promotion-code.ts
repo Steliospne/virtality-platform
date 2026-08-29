@@ -1,10 +1,16 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import { PRO_PLAN_PRODUCT_ID } from '@virtality/shared/utils'
+import type {
+  OpenPendingPromotionCodeHold,
+  PendingPromotionCodeCouponTerms,
+} from '@virtality/shared/types'
 import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library.ts'
 
 export const PENDING_PROMOTION_CODE_TTL_MS = 2 * 60 * 1000
+
+export type { OpenPendingPromotionCodeHold, PendingPromotionCodeCouponTerms }
 
 type PendingPromotionCodeDeps = {
   prisma?: PrismaClient
@@ -29,11 +35,6 @@ function couponIdFromPromotionCode(
 ): string {
   const coupon = promotionCode.coupon
   return typeof coupon === 'string' ? coupon : coupon.id
-}
-
-export type PendingPromotionCodeCouponTerms = {
-  percentOff: number | null
-  amountOff: number | null
 }
 
 async function resolvePromotionCodeForProCheckout(
@@ -177,6 +178,37 @@ export async function getOpenPendingPromotionCodeForCheckout(
       expiresAt: true,
     },
   })
+}
+
+/**
+ * Open Checkout hold for Billing display (code + Coupon terms).
+ * Cancels the row when the Coupon is missing or archived so chrome cannot stick.
+ */
+export async function readOpenPendingPromotionCodeForCheckout(
+  input: { userId: string; now?: Date },
+  deps: PendingPromotionCodeDeps,
+): Promise<OpenPendingPromotionCodeHold | null> {
+  const row = await getOpenPendingPromotionCodeForCheckout(input, deps)
+  if (!row) return null
+
+  const coupon = await retrieveLibraryCoupon(deps.stripeClient, row.couponId)
+  if (!coupon || coupon.archived) {
+    await cancelPendingPromotionCodeForCheckout(input, {
+      prisma: deps.prisma,
+    })
+    return null
+  }
+
+  return {
+    code: row.code,
+    promotionCodeId: row.promotionCodeId,
+    couponId: row.couponId,
+    expiresAt: row.expiresAt,
+    couponTerms: {
+      percentOff: coupon.percentOff,
+      amountOff: coupon.amountOff,
+    },
+  }
 }
 
 export async function cancelPendingPromotionCodeForCheckout(

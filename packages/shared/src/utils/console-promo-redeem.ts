@@ -177,6 +177,23 @@ export function isConsolePromoEligibleStatus(
   return (CONSOLE_PROMO_ELIGIBLE_STATUSES as readonly string[]).includes(status)
 }
 
+/**
+ * Stripe Subscription id for Billing live-Discount display.
+ *
+ * Eligible seats only. Do not fall back to canceled/history rows: Stripe often
+ * retains Discount objects there (e.g. duration `once` with `end: null`), which
+ * would rewrite plan cards after the seat ends even though Checkout no longer
+ * applies the code.
+ */
+export function stripeSubscriptionIdForLiveDiscountDisplay(
+  eligible: Pick<
+    ConsolePromoEligibleSubscription,
+    'stripeSubscriptionId'
+  > | null,
+): string | null {
+  return eligible?.stripeSubscriptionId ?? null
+}
+
 /** Label for the live Discount when present (promo code or Coupon name/id). */
 export function currentDiscountLabel(
   read: Extract<SubscriptionDiscountRead, { ok: true }>,

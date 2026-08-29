@@ -7,6 +7,7 @@ import {
   loadConsolePromoRedeemPreflight,
   redeemPromotionCodeOnSubscription,
   removePromoDiscountFromSubscription,
+  stripeSubscriptionIdForLiveDiscountDisplay,
   type ConsolePromoEligibleStatus,
   type ConsolePromoReadGateway,
   type ConsolePromoStore,
@@ -152,18 +153,7 @@ async function resolveStripeSubscriptionIdForDiscountRead(
   runtime: ConsolePromoRuntime,
 ): Promise<string | null> {
   const eligible = await runtime.store.findEligibleSubscriptionByUserId(userId)
-  if (eligible) return eligible.stripeSubscriptionId
-
-  // No eligible seat: still try latest subscription id for soft display.
-  const row = await runtime.client.subscription.findFirst({
-    where: {
-      referenceId: userId,
-      stripeSubscriptionId: { not: null },
-    },
-    orderBy: { id: 'desc' },
-    select: { stripeSubscriptionId: true },
-  })
-  return row?.stripeSubscriptionId ?? null
+  return stripeSubscriptionIdForLiveDiscountDisplay(eligible)
 }
 
 export async function readConsoleSubscriptionDiscountForUser(

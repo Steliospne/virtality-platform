@@ -16,6 +16,7 @@ import {
   removePromoDiscountFromSubscription,
   replaceConfirmDiscountLabel,
   requiresReplaceConfirm,
+  stripeSubscriptionIdForLiveDiscountDisplay,
   type ConsolePromoEligibleSubscription,
   type ConsolePromoReadGateway,
   type ConsolePromoStore,
@@ -440,5 +441,21 @@ describe('removePromoDiscountFromSubscription', () => {
     ).rejects.toBeInstanceOf(ConsolePromoNotPromoError)
 
     expect(clear).not.toHaveBeenCalled()
+  })
+})
+
+describe('stripeSubscriptionIdForLiveDiscountDisplay', () => {
+  it('returns null when there is no eligible seat (ignore canceled history)', () => {
+    // Canceled Subscriptions can still carry Discount objects (e.g. SAVE25
+    // duration once, end null). Billing must not rewrite plan cards from them.
+    expect(stripeSubscriptionIdForLiveDiscountDisplay(null)).toBeNull()
+  })
+
+  it('returns the eligible seat Subscription id', () => {
+    expect(
+      stripeSubscriptionIdForLiveDiscountDisplay({
+        stripeSubscriptionId: 'sub_live',
+      }),
+    ).toBe('sub_live')
   })
 })
