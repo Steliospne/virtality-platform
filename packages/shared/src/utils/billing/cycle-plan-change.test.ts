@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getConsoleUrl } from '../types/index.ts'
+import { getConsoleUrl } from '../../types/index.ts'
 import {
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,

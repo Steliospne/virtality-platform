@@ -13,7 +13,7 @@ import {
   type RenewPromptDeliveryStore,
   type RenewPromptEmailPayload,
 } from './renew-prompt.ts'
-import type { RenewTriggerChannel } from '../types/renew-trigger.ts'
+import type { RenewTriggerChannel } from '../../types/renew-trigger.ts'
 import type { RenewTriggerRecord, RenewTriggerStore } from './renew-trigger.ts'
 
 const CLOCK_END = new Date('2026-08-17T12:00:00.000Z')

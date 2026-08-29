@@ -9,8 +9,8 @@ import {
   type AdminCustomerAccessStripeGateway,
   type AdminCustomerBillingSnapshot,
 } from './admin-customer-access.ts'
-import { FREE_SUBSCRIPTION_PLAN } from './billing-plans.ts'
-import { buildEntitlementStanding } from './entitlement-clock.ts'
+import { FREE_SUBSCRIPTION_PLAN } from './billing/billing-plans.ts'
+import { buildEntitlementStanding } from './billing/entitlement-clock.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
 const FREE_PRICE_ID = 'price_free'

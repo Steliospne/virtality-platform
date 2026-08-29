@@ -2,13 +2,13 @@ import {
   FREE_SUBSCRIPTION_PLAN,
   buildPermanentFreeSubscriptionCreateParams,
   buildFreeTimedTrialSubscriptionCreateParams,
-} from './billing-plans.ts'
+} from './billing/billing-plans.ts'
 import {
   computeExtensionTrialEnd,
   isEntitlementExtensionDurationUnit,
   type EntitlementExtensionDurationUnit,
   type LiveSubscriptionRecord,
-} from './entitlement-extension.ts'
+} from './billing/entitlement-extension.ts'
 
 export const ADMIN_CUSTOMER_ACCESS_ACTIONS = [
   'assign_permanent_free',

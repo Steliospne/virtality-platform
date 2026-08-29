@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getConsoleUrl } from '../types/index.ts'
+import { getConsoleUrl } from '../../types/index.ts'
 import {
   CHECKOUT_RETURN_PARAM,
   readCheckoutReturnIntent,

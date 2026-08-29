@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { RenewTriggerChannel } from '../types/renew-trigger.ts'
-import { DEFAULT_RENEW_TRIGGER_DAYS_BEFORE } from '../types/renew-trigger.ts'
+import type { RenewTriggerChannel } from '../../types/renew-trigger.ts'
+import { DEFAULT_RENEW_TRIGGER_DAYS_BEFORE } from '../../types/renew-trigger.ts'
 import {
   activeDaysBeforeForChannel,
   createRenewTrigger,

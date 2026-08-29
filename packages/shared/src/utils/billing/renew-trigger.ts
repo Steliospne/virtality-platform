@@ -5,7 +5,7 @@ import {
   type RenewTriggerChannel,
   type RenewTriggerListItem,
   type UpdateRenewTriggerInput,
-} from '../types/renew-trigger.ts'
+} from '../../types/renew-trigger.ts'
 
 export type RenewTriggerRecord = {
   id: string

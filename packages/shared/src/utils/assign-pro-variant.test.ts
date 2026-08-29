@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,
-} from './billing-plans.ts'
+} from './billing/billing-plans.ts'
 import {
   ASSIGN_PRO_VARIANT_LIVE_PAID_BLOCK_MESSAGE,
   assignProVariantForCustomer,
@@ -13,7 +13,7 @@ import {
 import {
   buildProVariantCatalogFromStripePrices,
   type StripeProVariantPriceSnapshot,
-} from './pro-variant-catalog.ts'
+} from './billing/pro-variant-catalog.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import type { AdminCustomerBillingSubscriptionRow } from './admin-customer-billing.ts'
 

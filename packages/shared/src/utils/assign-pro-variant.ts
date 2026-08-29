@@ -15,7 +15,7 @@ import {
   effectiveAssignedProVariant,
   resolveProVariantPair,
   type ProVariantCatalog,
-} from './pro-variant-catalog.ts'
+} from './billing/pro-variant-catalog.ts'
 
 export { ASSIGN_PRO_VARIANT_ACTION, ASSIGN_PRO_VARIANT_LIVE_PAID_BLOCK_MESSAGE }
 

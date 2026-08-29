@@ -4,7 +4,7 @@
  * pass absolute console URLs.
  */
 
-import { getConsoleUrl } from '../types/index.ts'
+import { getConsoleUrl } from '../../types/index.ts'
 
 /** Query param marking Checkout return intent on the console URL. */
 export const CHECKOUT_RETURN_PARAM = 'checkoutReturn' as const

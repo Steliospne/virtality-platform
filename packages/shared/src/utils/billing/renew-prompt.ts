@@ -4,7 +4,7 @@
  * for these offsets (ADR 0003).
  */
 
-import type { RenewTriggerChannel } from '../types/renew-trigger.ts'
+import type { RenewTriggerChannel } from '../../types/renew-trigger.ts'
 import {
   clockEndForSubscriptionStatus,
   type EntitlementClockStanding,
