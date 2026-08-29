@@ -21,7 +21,10 @@ import {
 } from './admin-customer-billing-runtime.ts'
 import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle-plan-change.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
-import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
+import {
+  readProVariantCatalogOrSandbox,
+  resolveAssignedProVariantChargePrice,
+} from './pro-variant-catalog.ts'
 
 export type { AdminCustomerBillingRuntime }
 
@@ -317,6 +320,8 @@ export function createAdminCustomerBillingRuntime(deps: {
     cyclePlan,
     freePlanPriceId: FREE_PLAN_PRICE_ID,
     checkoutReturnUrls: buildAdminCheckoutReturnUrls,
+    resolveProVariantCatalog: () =>
+      readProVariantCatalogOrSandbox(deps.stripeClient),
   })
 
   async function remapTargetPriceId(

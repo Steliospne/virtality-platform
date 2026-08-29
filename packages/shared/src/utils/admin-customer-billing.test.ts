@@ -26,6 +26,7 @@ import {
   PRO_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
+import { buildProVariantCatalogFromStripePrices } from './pro-variant-catalog.ts'
 
 const ACTOR_ID = 'admin_1'
 const SUCCESS_URL = 'https://console.test/profile?checkoutReturn=success'
@@ -612,5 +613,178 @@ describe('sendPaidCheckoutLinkForCustomer', () => {
         },
       ),
     ).rejects.toThrow(AdminCustomerBillingNotFoundError)
+  })
+})
+
+describe('Assigned Variant target Prices', () => {
+  const EARLY_MONTHLY = 'price_early_m'
+  const EARLY_YEARLY = 'price_early_y'
+  const earlyBirdCatalog = buildProVariantCatalogFromStripePrices([
+    {
+      id: PRO_PLAN_MONTHLY_PRICE_ID,
+      lookup_key: 'basic_monthly',
+      unit_amount: 15_000,
+      currency: 'eur',
+      recurring: { interval: 'month' },
+      active: true,
+    },
+    {
+      id: PRO_PLAN_ANNUAL_PRICE_ID,
+      lookup_key: 'basic_yearly',
+      unit_amount: 150_000,
+      currency: 'eur',
+      recurring: { interval: 'year' },
+      active: true,
+    },
+    {
+      id: EARLY_MONTHLY,
+      lookup_key: 'early-bird_monthly',
+      unit_amount: 9_900,
+      currency: 'eur',
+      recurring: { interval: 'month' },
+      active: true,
+    },
+    {
+      id: EARLY_YEARLY,
+      lookup_key: 'early-bird_yearly',
+      unit_amount: 99_000,
+      currency: 'eur',
+      recurring: { interval: 'year' },
+      active: true,
+    },
+  ])
+
+  it('rejects remapped early-bird Price without a catalog', async () => {
+    await expect(
+      sendPaidCheckoutLinkForCustomer(
+        createStore({
+          user: {
+            id: 'user_early',
+            name: 'Early',
+            email: 'early@example.com',
+            role: 'user',
+            stripeCustomerId: 'cus_early',
+          },
+        }),
+        createGateway(),
+        {
+          userId: 'user_early',
+          actorUserId: ACTOR_ID,
+          reason: 'Send early-bird Checkout',
+          targetPriceId: EARLY_MONTHLY,
+          successUrl: SUCCESS_URL,
+          cancelUrl: CANCEL_URL,
+        },
+      ),
+    ).rejects.toThrow(/supported Pro monthly or yearly Price/)
+  })
+
+  it('accepts remapped early-bird Price when catalog is provided', async () => {
+    const gateway = createGateway({
+      customerHasDefaultPaymentMethod: vi.fn(async () => false),
+    })
+    const result = await sendPaidCheckoutLinkForCustomer(
+      createStore({
+        user: {
+          id: 'user_early',
+          name: 'Early',
+          email: 'early@example.com',
+          role: 'user',
+          stripeCustomerId: 'cus_early',
+        },
+        billingSnapshots: [
+          snapshot({
+            primaryPlan: null,
+            primaryStatus: null,
+            stripeSubscriptionId: null,
+            assignedProVariant: 'early-bird',
+          }),
+        ],
+      }),
+      gateway,
+      {
+        userId: 'user_early',
+        actorUserId: ACTOR_ID,
+        reason: 'Send early-bird Checkout',
+        targetPriceId: EARLY_MONTHLY,
+        successUrl: SUCCESS_URL,
+        cancelUrl: CANCEL_URL,
+        proVariantCatalog: earlyBirdCatalog,
+      },
+    )
+
+    expect(result.checkoutUrl).toContain('checkout.stripe.test')
+    expect(gateway.createPaidCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ priceId: EARLY_MONTHLY }),
+    )
+  })
+
+  it('schedules Cycle plan change from remapped early-bird yearly Price', async () => {
+    const cyclePlan = createCyclePlanPort()
+    const gateway = createGateway({
+      retrievePaidProSubscription: vi.fn(async () => ({
+        stripeSubscriptionId: 'sub_early_m',
+        stripeCustomerId: 'cus_early',
+        subscriptionItemId: 'si_early',
+        currentPriceId: EARLY_MONTHLY,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+      })),
+    })
+
+    await changePaidPlanForCustomer(
+      createStore({
+        user: {
+          id: 'user_early',
+          name: 'Early',
+          email: 'early@example.com',
+          role: 'user',
+          stripeCustomerId: 'cus_early',
+        },
+        subscriptions: [
+          subscription({
+            stripeSubscriptionId: 'sub_early_m',
+            stripeCustomerId: 'cus_early',
+          }),
+        ],
+        billingSnapshots: [
+          snapshot({
+            stripeSubscriptionId: 'sub_early_m',
+            assignedProVariant: 'early-bird',
+          }),
+        ],
+      }),
+      gateway,
+      cyclePlan,
+      {
+        userId: 'user_early',
+        actorUserId: ACTOR_ID,
+        reason: 'Switch early-bird to yearly',
+        targetPriceId: EARLY_YEARLY,
+        successUrl: SUCCESS_URL,
+        cancelUrl: CANCEL_URL,
+        proVariantCatalog: earlyBirdCatalog,
+      },
+    )
+
+    expect(cyclePlan.upgrade).toHaveBeenCalledWith(
+      expect.objectContaining({
+        annual: true,
+        referenceId: 'user_early',
+      }),
+    )
+  })
+
+  it('labels early-bird previews from the catalog', () => {
+    const preview = buildChangePaidPlanPreview({
+      targetPriceId: EARLY_YEARLY,
+      periodEnd: null,
+      prorationAmountCents: null,
+      currency: null,
+      usesCheckout: true,
+      proVariantCatalog: earlyBirdCatalog,
+    })
+    expect(preview.confirmationMessage).toContain('Pro yearly (Early Bird)')
   })
 })

@@ -25,6 +25,12 @@ import {
 } from './cycle-plan-change.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
+import {
+  annualFlagForProVariantPriceId,
+  formatProVariantPriceLabel,
+  isKnownProVariantPriceId,
+  type ProVariantCatalog,
+} from './pro-variant-catalog.ts'
 
 export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'change_paid_plan',
@@ -151,6 +157,11 @@ export type ChangePaidPlanInput = {
   targetPriceId: string
   successUrl: string
   cancelUrl: string
+  /**
+   * When set (Assigned Variant catalog), targetPriceId may be any complete
+   * catalog Price id, not only the canonical basic pair.
+   */
+  proVariantCatalog?: ProVariantCatalog
 }
 
 export type CancelPaidSubscriptionInput = {
@@ -186,6 +197,8 @@ export type SendPaidCheckoutLinkInput = {
   targetPriceId: string
   successUrl: string
   cancelUrl: string
+  /** See {@link ChangePaidPlanInput.proVariantCatalog}. */
+  proVariantCatalog?: ProVariantCatalog
 }
 
 export type AdminCustomerBillingMutationResult = {
@@ -234,12 +247,45 @@ function assertActors(input: { userId: string; actorUserId: string }): void {
   }
 }
 
-function assertSupportedProPriceId(priceId: string): void {
-  if (!isProPlanPriceId(priceId)) {
+function assertSupportedProPriceId(
+  priceId: string,
+  catalog?: ProVariantCatalog,
+): void {
+  const supported =
+    catalog != null
+      ? isKnownProVariantPriceId(catalog, priceId)
+      : isProPlanPriceId(priceId)
+  if (!supported) {
     throw new AdminCustomerBillingValidationError(
       'targetPriceId must be a supported Pro monthly or yearly Price.',
     )
   }
+}
+
+function annualFlagForTargetProPriceId(
+  priceId: string,
+  catalog?: ProVariantCatalog,
+): boolean {
+  if (catalog != null) {
+    const annual = annualFlagForProVariantPriceId(catalog, priceId)
+    if (annual == null) {
+      throw new AdminCustomerBillingValidationError(
+        'targetPriceId must be a supported Pro monthly or yearly Price.',
+      )
+    }
+    return annual
+  }
+  return annualFlagForProPlanPriceId(priceId)
+}
+
+function formatTargetProPriceLabel(
+  priceId: string,
+  catalog?: ProVariantCatalog,
+): string {
+  if (catalog != null) {
+    return formatProVariantPriceLabel(catalog, priceId)
+  }
+  return formatProPlanPriceLabel(priceId)
 }
 
 function stripeBillingMetadata(input: {
@@ -351,8 +397,12 @@ export function buildChangePaidPlanPreview(input: {
   usesCheckout: boolean
   /** Live paid Pro interval switch; Free → Paid create stays immediate. */
   schedulesAtPeriodEnd?: boolean
+  proVariantCatalog?: ProVariantCatalog
 }): AdminCustomerBillingPreview {
-  const planLabel = formatProPlanPriceLabel(input.targetPriceId)
+  const planLabel = formatTargetProPriceLabel(
+    input.targetPriceId,
+    input.proVariantCatalog,
+  )
   if (input.usesCheckout) {
     return {
       action: 'send_paid_checkout_link',
@@ -448,9 +498,10 @@ export async function previewChangePaidPlan(
   input: {
     userId: string
     targetPriceId: string
+    proVariantCatalog?: ProVariantCatalog
   },
 ): Promise<AdminCustomerBillingPreview> {
-  assertSupportedProPriceId(input.targetPriceId)
+  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
 
   const { user, livePaidPro } = await loadBillingContext(store, {
     userId: input.userId,
@@ -469,6 +520,7 @@ export async function previewChangePaidPlan(
       prorationAmountCents: null,
       currency: null,
       usesCheckout: true,
+      proVariantCatalog: input.proVariantCatalog,
     })
   }
 
@@ -480,6 +532,7 @@ export async function previewChangePaidPlan(
       currency: null,
       usesCheckout: false,
       schedulesAtPeriodEnd: false,
+      proVariantCatalog: input.proVariantCatalog,
     })
   }
 
@@ -501,6 +554,7 @@ export async function previewChangePaidPlan(
     schedulesAtPeriodEnd: shouldScheduleSubscriptionChangeAtPeriodEnd(
       livePaidPro.plan,
     ),
+    proVariantCatalog: input.proVariantCatalog,
   })
 }
 
@@ -512,7 +566,7 @@ export async function changePaidPlanForCustomer(
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
   assertReason(input.reason)
-  assertSupportedProPriceId(input.targetPriceId)
+  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
 
   const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
     store,
@@ -552,7 +606,10 @@ export async function changePaidPlanForCustomer(
     const scheduled = await scheduleCyclePlanChange({
       port: cyclePlan,
       referenceId: user.id,
-      annual: annualFlagForProPlanPriceId(input.targetPriceId),
+      annual: annualFlagForTargetProPriceId(
+        input.targetPriceId,
+        input.proVariantCatalog,
+      ),
       returnUrl: input.successUrl,
     })
     if (!scheduled.ok) {
@@ -597,7 +654,7 @@ export async function sendPaidCheckoutLinkForCustomer(
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
   assertReason(input.reason)
-  assertSupportedProPriceId(input.targetPriceId)
+  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
 
   const { user, beforeBillingState } = await loadBillingContext(store, input)
   const stripeCustomerId = await ensureStripeCustomer(
