@@ -5,7 +5,11 @@ import {
   TRIAL_REDEEM_CODE_TTL_MS,
   type TrialRedeemCodeRecord,
 } from './trial-redeem-code.ts'
-import { type TrialRedeemConsumeStore } from './trial-redeem-sign-up.ts'
+import {
+  TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
+  TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
+  type TrialRedeemConsumeStore,
+} from './trial-redeem-sign-up.ts'
 import {
   CONSOLE_ACCESS_CODE_INVALID_MESSAGE,
   classifyProfileBillingSeat,
@@ -129,6 +133,13 @@ describe('classifyProfileBillingSeat', () => {
         stripeSubscriptionId: 'sub_pro',
       }),
     ).toBe('paid_pro_active')
+    expect(
+      classifyProfileBillingSeat({
+        status: 'canceled',
+        plan: 'free',
+        stripeSubscriptionId: 'sub_canceled',
+      }),
+    ).toBe('no_live_seat')
   })
 })
 
@@ -333,6 +344,63 @@ describe('redeemAccessCodeOnProfile', () => {
         priceId: FREE_PLAN_PRICE_ID,
       }),
     ).rejects.toThrow(CONSOLE_ACCESS_CODE_INVALID_MESSAGE)
+  })
+
+  it('creates a Free trial after canceled or expired seats', async () => {
+    const store = createMemoryStore([record({ id: 15 })], null)
+    const createNoCardTrialSubscription = vi.fn(async () => ({
+      stripeSubscriptionId: 'sub_after_cancel',
+    }))
+
+    const result = await redeemAccessCodeOnProfile(
+      store,
+      stripeGateway({ createNoCardTrialSubscription }),
+      {
+        userId: 'user_7',
+        code: 'GO-ABCDEFGHIJ',
+        stripeCustomerId: 'cus_7',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({
+      codeId: 15,
+      effect: 'trial_created',
+      stripeSubscriptionId: 'sub_after_cancel',
+    })
+    expect(createNoCardTrialSubscription).toHaveBeenCalledOnce()
+  })
+
+  it('shares Expired and Already used copy with sign-up', async () => {
+    const expiredStore = createMemoryStore([
+      record({
+        createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
+      }),
+    ])
+    await expect(
+      redeemAccessCodeOnProfile(
+        expiredStore,
+        stripeGateway(),
+        {
+          userId: 'user_8',
+          code: 'GO-ABCDEFGHIJ',
+          stripeCustomerId: 'cus_8',
+          priceId: FREE_PLAN_PRICE_ID,
+        },
+        { now: () => NOW },
+      ),
+    ).rejects.toThrow(TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE)
+
+    const usedStore = createMemoryStore([record({ status: 'redeemed' })])
+    await expect(
+      redeemAccessCodeOnProfile(usedStore, stripeGateway(), {
+        userId: 'user_9',
+        code: 'GO-ABCDEFGHIJ',
+        stripeCustomerId: 'cus_9',
+        priceId: FREE_PLAN_PRICE_ID,
+      }),
+    ).rejects.toThrow(TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE)
   })
 })
 

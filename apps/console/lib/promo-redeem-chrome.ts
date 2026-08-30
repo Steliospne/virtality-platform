@@ -16,6 +16,13 @@ export type PromoRedeemChrome =
   | { kind: 'staff_blocked' }
   | { kind: 'applied_live'; code: string | null }
 
+/** Unified code field stays visible except when a live promo row replaces it. */
+export function profileBillingCodeEntryVisible(
+  chrome: PromoRedeemChrome,
+): boolean {
+  return chrome.kind !== 'applied_live'
+}
+
 export function resolvePromoRedeemChrome(input: {
   hasEligibleSubscription: boolean
   pendingHoldCode: string | null | undefined

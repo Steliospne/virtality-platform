@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { SubscriptionDiscountRead } from '@virtality/shared/utils'
-import { resolvePromoRedeemChrome } from './promo-redeem-chrome.ts'
+import {
+  profileBillingCodeEntryVisible,
+  resolvePromoRedeemChrome,
+} from './promo-redeem-chrome.ts'
 
 const none: SubscriptionDiscountRead = { ok: true, presence: 'none' }
 
@@ -68,5 +71,36 @@ describe('resolvePromoRedeemChrome', () => {
         staffBlocked: false,
       }),
     ).toEqual({ kind: 'applied_live', code: 'SAVE10' })
+  })
+})
+
+describe('profileBillingCodeEntryVisible', () => {
+  it('keeps the unified field visible for staff-blocked promo chrome', () => {
+    expect(
+      profileBillingCodeEntryVisible(
+        resolvePromoRedeemChrome({
+          hasEligibleSubscription: true,
+          pendingHoldCode: null,
+          discount: {
+            ...livePromo,
+            channel: 'staff',
+          },
+          staffBlocked: true,
+        }),
+      ),
+    ).toBe(true)
+  })
+
+  it('hides the entry field only when a live promo discount is applied', () => {
+    expect(
+      profileBillingCodeEntryVisible(
+        resolvePromoRedeemChrome({
+          hasEligibleSubscription: true,
+          pendingHoldCode: null,
+          discount: livePromo,
+          staffBlocked: false,
+        }),
+      ),
+    ).toBe(false)
   })
 })
