@@ -61,7 +61,7 @@ const googleEnabled = Boolean(googleClientId && googleClientSecret)
  * Canonical sandbox `pro` monthly Price (`prod_SaYNooLgBNvYvA` default;
  * lookup_key `pro_monthly`). Checkout subscribe/renew only. Retired inactive
  * auth price: `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
- * Trial Redeem uses {@link FREE_PLAN_PRICE_ID} instead.
+ * Access Code redeem uses {@link FREE_PLAN_PRICE_ID} instead.
  * Alias for {@link PRO_PLAN_MONTHLY_PRICE_ID} in `@virtality/shared`.
  */
 export const PRO_PLAN_PRICE_ID = PRO_PLAN_MONTHLY_PRICE_ID
@@ -69,7 +69,7 @@ export const PRO_PLAN_PRICE_ID = PRO_PLAN_MONTHLY_PRICE_ID
 /**
  * Canonical sandbox `pro` yearly Price on the same Product
  * (`lookup_key: pro_yearly`). Provisional amount (€1500/year = 10× monthly
- * €150) until live amounts are locked. Trial Redeem / Extension keep monthly.
+ * €150) until live amounts are locked. Access Code / Extension keep monthly.
  */
 export const PRO_PLAN_ANNUAL_PRICE_ID =
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
@@ -213,7 +213,7 @@ export const auth = betterAuth({
                   action,
                 }),
               // Paid Subscribe/Renew Checkout always collects a card. No-card trials
-              // stay on the Trial Redeem / Extension Stripe create path, not Checkout.
+              // stay on the Access Code / Extension Stripe create path, not Checkout.
               // Campaign Window may attach discounts[{coupon}] for Subscribe only
               // (!hadPaidBilling); never allow_promotion_codes on the same Session.
               // Assigned Variant: override line_items to the clinician's Price pair.
@@ -401,7 +401,7 @@ export const auth = betterAuth({
 
       if (path.startsWith('/callback/:id')) {
         // Skip empty: returning Google sign-in has no code. Empty email
-        // sign-up waitlists via /sign-up above; PAY-/expired still gated here.
+        // sign-up waitlists via /sign-up above; GO-/expired still gated here.
         const oauthCode = await readSignUpCodeFromOAuthState()
         if (oauthCode?.trim()) {
           await assertTrialRedeemAllowedAtSignUp(oauthCode)

@@ -8,8 +8,8 @@ import {
   type CouponLibraryRecord,
 } from './coupon-library.ts'
 
-/** Reserved prefixes collide with Tester Code (TE-) and Trial Redeem (PAY-). */
-export const RESERVED_PROMOTION_CODE_PREFIXES = ['TE-', 'PAY-'] as const
+/** Reserved prefixes collide with Tester Code (TE-) and Access Code (GO-). */
+export const RESERVED_PROMOTION_CODE_PREFIXES = ['TE-', 'GO-'] as const
 
 export const PROMOTION_CODE_DELIVERY_STATUSES = ['open'] as const
 export type PromotionCodeDeliveryStatus =
@@ -108,7 +108,7 @@ export function hasReservedPromotionCodePrefix(code: string): boolean {
 export function assertPromotionCodeNotReserved(code: string): void {
   if (hasReservedPromotionCodePrefix(code)) {
     throw new PromotionCodeValidationError(
-      'Promotion Codes must not use TE- or PAY- prefixes',
+      'Promotion Codes must not use TE- or GO- prefixes',
     )
   }
 }

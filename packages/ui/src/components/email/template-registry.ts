@@ -178,12 +178,12 @@ export const EMAIL_TEMPLATES: {
   {
     meta: {
       id: 'trial-redeem-code',
-      title: 'Trial Redeem Code',
+      title: 'Access Code',
       category: 'billing',
       subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
     },
     sampleProps: {
-      code: 'PAY-ABCDEFGHIJ',
+      code: 'GO-ABCDEFGHIJ',
       trialDays: 14,
       signUpUrl: 'https://console.virtality.app/sign-up',
       recipientEmail: SAMPLE_EMAIL,

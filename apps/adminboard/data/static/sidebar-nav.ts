@@ -63,7 +63,7 @@ export const sidebarNav: SidebarNavGroup[] = [
     label: 'Billing',
     items: [
       {
-        title: 'Trial Redeem Codes',
+        title: 'Access Codes',
         href: '/trial-redeem-codes',
         icon: CreditCard,
       },

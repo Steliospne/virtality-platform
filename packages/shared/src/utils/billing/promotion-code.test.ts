@@ -51,7 +51,7 @@ function createGateway(
 }
 
 describe('createPromotionCode', () => {
-  it('rejects case-insensitive TE- and PAY- prefixes', async () => {
+  it('rejects case-insensitive TE- and GO- prefixes', async () => {
     const gateway = createGateway()
 
     await expect(
@@ -59,9 +59,9 @@ describe('createPromotionCode', () => {
     ).rejects.toBeInstanceOf(PromotionCodeValidationError)
 
     await expect(
-      createPromotionCode(gateway, { couponId: 'cou_1', code: 'PAY-SAVE20' }),
+      createPromotionCode(gateway, { couponId: 'cou_1', code: 'GO-SAVE20' }),
     ).rejects.toMatchObject({
-      message: expect.stringMatching(/TE-|PAY-/),
+      message: expect.stringMatching(/TE-|GO-/),
     })
   })
 

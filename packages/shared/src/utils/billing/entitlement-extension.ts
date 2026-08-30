@@ -55,7 +55,7 @@ export type EntitlementExtensionStripeGateway = {
   /** True when the Customer already has a trialing or active Subscription. */
   customerHasEntitledSubscription: (customerId: string) => Promise<boolean>
   /**
-   * Same create shape as Trial Redeem (canonical Price, no card,
+   * Same create shape as Access Code redeem (canonical Price, no card,
    * `missing_payment_method=cancel`), with Extension metadata and absolute
    * `trial_end`. Never resurrects a canceled `sub_` id.
    */

@@ -1,6 +1,6 @@
 import { createRandomStringGenerator } from '../primitives/random.ts'
 
-export const TRIAL_REDEEM_CODE_PREFIX = 'PAY-'
+export const TRIAL_REDEEM_CODE_PREFIX = 'GO-'
 export const TRIAL_REDEEM_CODE_BODY_LENGTH = 10
 export const DEFAULT_TRIAL_REDEEM_DAYS = 14
 /** Unused codes expire one week after creation (derived; not a stored status). */
@@ -73,7 +73,7 @@ export class TrialRedeemCodeValidationError extends Error {
 
 export class TrialRedeemCodeNotFoundError extends Error {
   constructor(id: number) {
-    super(`Trial Redeem Code ${id} was not found.`)
+    super(`Access Code ${id} was not found.`)
     this.name = 'TrialRedeemCodeNotFoundError'
   }
 }
@@ -81,7 +81,7 @@ export class TrialRedeemCodeNotFoundError extends Error {
 export class TrialRedeemCodeNotSendableError extends Error {
   constructor(id: number, displayStatus: TrialRedeemDisplayStatus) {
     super(
-      `Trial Redeem Code ${id} cannot be emailed while status is ${displayStatus}.`,
+      `Access Code ${id} cannot be emailed while status is ${displayStatus}.`,
     )
     this.name = 'TrialRedeemCodeNotSendableError'
   }
@@ -146,7 +146,7 @@ export function generateTrialRedeemCode(
   const body = generateBody().toUpperCase()
   if (body.length !== TRIAL_REDEEM_CODE_BODY_LENGTH) {
     throw new Error(
-      `Trial Redeem Code body must be ${TRIAL_REDEEM_CODE_BODY_LENGTH} characters`,
+      `Access Code body must be ${TRIAL_REDEEM_CODE_BODY_LENGTH} characters`,
     )
   }
   return `${TRIAL_REDEEM_CODE_PREFIX}${body}`
@@ -183,7 +183,7 @@ async function generateUniqueTrialRedeemCode(
     const existing = await store.findByCode(code)
     if (!existing) return code
   }
-  throw new Error('Failed to generate unique Trial Redeem Code')
+  throw new Error('Failed to generate unique Access Code')
 }
 
 export async function createTrialRedeemCode(

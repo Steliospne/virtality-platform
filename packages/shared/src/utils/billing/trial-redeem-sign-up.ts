@@ -13,7 +13,7 @@ export const TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE = 'Expired [COPY]' as const
 export const TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE =
   'Already used [COPY]' as const
 /**
- * Machine signal for well-formatted PAY- codes that are not in the store.
+ * Machine signal for well-formatted GO- codes that are not in the store.
  * Clients redirect to the website waitlist; do not show as form copy.
  */
 export const TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE =
@@ -26,7 +26,7 @@ export type SignUpCodeRoute =
 
 /**
  * Routes the shared sign-up code field by prefix/format.
- * Empty and invalid/non-matching codes are not PAY-/TE- routes.
+ * Empty and invalid/non-matching codes are not GO-/TE- routes.
  */
 export function routeSignUpCode(
   raw: string | null | undefined,
@@ -59,7 +59,7 @@ export function isTrialRedeemWaitlistRedirect(
  * Sign-up redeem check order:
  * empty → waitlist (no account);
  * invalid format / TE- → ignore (TE- consume stays elsewhere; invalid stays open);
- * well-formatted PAY- lookup miss → waitlist (no account);
+ * well-formatted GO- lookup miss → waitlist (no account);
  * terminal → Already used; derived Expired → Expired; else proceed to Stripe.
  */
 export async function evaluateTrialRedeemAtSignUp(

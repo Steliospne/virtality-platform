@@ -122,8 +122,8 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
         deleteTrialRedeemCodeMutation(
           { id: trialRedeemCode.id },
           {
-            onSuccess: () => toast.success('Trial Redeem Code deleted'),
-            onError: () => toast.error('Failed to delete Trial Redeem Code'),
+            onSuccess: () => toast.success('Access Code deleted'),
+            onError: () => toast.error('Failed to delete Access Code'),
           },
         )
 

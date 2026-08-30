@@ -58,7 +58,7 @@ export function SendTrialRedeemCodeEmailDialog({
         },
         onError: (error: unknown) => {
           toast.error(
-            getErrorMessage(error, 'Failed to send Trial Redeem Code email'),
+            getErrorMessage(error, 'Failed to send Access Code email'),
           )
         },
       },
@@ -70,7 +70,7 @@ export function SendTrialRedeemCodeEmailDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Send Trial Redeem Email</DialogTitle>
+            <DialogTitle>Send Access Code Email</DialogTitle>
             <DialogDescription>
               Delivery-only System Email for{' '}
               <span className='font-mono'>{trialRedeemCode.code}</span>. The

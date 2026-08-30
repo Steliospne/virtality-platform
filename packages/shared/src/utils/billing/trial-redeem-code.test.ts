@@ -20,7 +20,7 @@ function record(
 ): TrialRedeemCodeRecord {
   return {
     id: 1,
-    code: 'PAY-ABCDEFGHIJ',
+    code: 'GO-ABCDEFGHIJ',
     status: 'unused',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
@@ -56,10 +56,10 @@ function createMemoryStore(
 }
 
 describe('generateTrialRedeemCode', () => {
-  it('returns PAY- plus ten alphanumeric characters', () => {
+  it('returns GO- plus ten alphanumeric characters', () => {
     const code = generateTrialRedeemCode(() => 'ABCDEFGHIJ')
     expect(code).toBe(`${TRIAL_REDEEM_CODE_PREFIX}ABCDEFGHIJ`)
-    expect(code).toMatch(/^PAY-[A-Z0-9]{10}$/)
+    expect(code).toMatch(/^GO-[A-Z0-9]{10}$/)
   })
 })
 
@@ -106,19 +106,19 @@ describe('getTrialRedeemDisplayStatus', () => {
 })
 
 describe('createTrialRedeemCode', () => {
-  it('creates an unused PAY- code with default 14-day trial and optional note', async () => {
+  it('creates an unused GO- code with default 14-day trial and optional note', async () => {
     const store = createMemoryStore()
     const created = await createTrialRedeemCode(
       store,
       { note: 'pilot clinic' },
       {
         now: () => NOW,
-        generateCode: () => 'PAY-TESTCODE01',
+        generateCode: () => 'GO-TESTCODE01',
       },
     )
 
     expect(created).toMatchObject({
-      code: 'PAY-TESTCODE01',
+      code: 'GO-TESTCODE01',
       status: 'unused',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
       note: 'pilot clinic',
@@ -138,7 +138,7 @@ describe('createTrialRedeemCode', () => {
       { trialDays: 30 },
       {
         now: () => NOW,
-        generateCode: () => 'PAY-OVERRIDE01',
+        generateCode: () => 'GO-OVERRIDE01',
       },
     )
 
@@ -151,25 +151,25 @@ describe('listTrialRedeemCodes', () => {
     const store = createMemoryStore([
       record({
         id: 1,
-        code: 'PAY-UNUSED0001',
+        code: 'GO-UNUSED0001',
         status: 'unused',
         createdAt: NOW,
       }),
       record({
         id: 2,
-        code: 'PAY-EXPIRED001',
+        code: 'GO-EXPIRED001',
         status: 'unused',
         createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
       }),
       record({
         id: 3,
-        code: 'PAY-REDEEMED01',
+        code: 'GO-REDEEMED01',
         status: 'redeemed',
         createdAt: NOW,
       }),
       record({
         id: 4,
-        code: 'PAY-ENTITLED01',
+        code: 'GO-ENTITLED01',
         status: 'already_entitled',
         createdAt: NOW,
       }),
@@ -178,10 +178,10 @@ describe('listTrialRedeemCodes', () => {
     const listed = await listTrialRedeemCodes(store, { now: () => NOW })
 
     expect(listed.map((row) => [row.code, row.displayStatus])).toEqual([
-      ['PAY-ENTITLED01', 'already_entitled'],
-      ['PAY-REDEEMED01', 'redeemed'],
-      ['PAY-EXPIRED001', 'expired'],
-      ['PAY-UNUSED0001', 'unused'],
+      ['GO-ENTITLED01', 'already_entitled'],
+      ['GO-REDEEMED01', 'redeemed'],
+      ['GO-EXPIRED001', 'expired'],
+      ['GO-UNUSED0001', 'unused'],
     ])
   })
 
@@ -189,19 +189,19 @@ describe('listTrialRedeemCodes', () => {
     const store = createMemoryStore([
       record({
         id: 1,
-        code: 'PAY-UNUSED0001',
+        code: 'GO-UNUSED0001',
         status: 'unused',
         createdAt: NOW,
       }),
       record({
         id: 2,
-        code: 'PAY-EXPIRED001',
+        code: 'GO-EXPIRED001',
         status: 'unused',
         createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
       }),
       record({
         id: 3,
-        code: 'PAY-REDEEMED01',
+        code: 'GO-REDEEMED01',
         status: 'redeemed',
         createdAt: NOW,
       }),
@@ -213,15 +213,15 @@ describe('listTrialRedeemCodes', () => {
     })
 
     expect(filtered.map((row) => row.code)).toEqual([
-      'PAY-REDEEMED01',
-      'PAY-EXPIRED001',
+      'GO-REDEEMED01',
+      'GO-EXPIRED001',
     ])
   })
 })
 
 describe('deleteTrialRedeemCode', () => {
   it('deletes a code row by id', async () => {
-    const store = createMemoryStore([record({ id: 9, code: 'PAY-DELETEME01' })])
+    const store = createMemoryStore([record({ id: 9, code: 'GO-DELETEME01' })])
 
     await deleteTrialRedeemCode(store, 9)
     expect(store.rows).toEqual([])
@@ -240,7 +240,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     const store = createMemoryStore([
       record({
         id: 3,
-        code: 'PAY-SENDABLE01',
+        code: 'GO-SENDABLE01',
         status: 'unused',
         createdAt: NOW,
       }),
@@ -254,18 +254,18 @@ describe('sendTrialRedeemCodeEmail', () => {
     )
 
     expect(result).toEqual({
-      code: 'PAY-SENDABLE01',
+      code: 'GO-SENDABLE01',
       recipientEmail: 'clinician@clinic.example',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(deliver).toHaveBeenCalledWith({
       recipientEmail: 'clinician@clinic.example',
-      code: 'PAY-SENDABLE01',
+      code: 'GO-SENDABLE01',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(store.rows[0]).toMatchObject({
       id: 3,
-      code: 'PAY-SENDABLE01',
+      code: 'GO-SENDABLE01',
       status: 'unused',
       usedAt: null,
       usedBy: null,
@@ -278,7 +278,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     const store = createMemoryStore([
       record({
         id: 4,
-        code: 'PAY-RESEND0001',
+        code: 'GO-RESEND0001',
         status: 'unused',
         createdAt: NOW,
       }),
@@ -299,7 +299,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     expect(deliver).toHaveBeenCalledTimes(2)
     expect(deliver).toHaveBeenNthCalledWith(2, {
       recipientEmail: 'other@clinic.example',
-      code: 'PAY-RESEND0001',
+      code: 'GO-RESEND0001',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(store.rows[0]?.status).toBe('unused')
@@ -309,7 +309,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     const store = createMemoryStore([
       record({
         id: 5,
-        code: 'PAY-EXPIRED001',
+        code: 'GO-EXPIRED001',
         status: 'unused',
         createdAt: new Date(NOW.getTime() - TRIAL_REDEEM_CODE_TTL_MS),
       }),
@@ -330,13 +330,13 @@ describe('sendTrialRedeemCodeEmail', () => {
     const store = createMemoryStore([
       record({
         id: 6,
-        code: 'PAY-REDEEMED01',
+        code: 'GO-REDEEMED01',
         status: 'redeemed',
         createdAt: NOW,
       }),
       record({
         id: 7,
-        code: 'PAY-ENTITLED01',
+        code: 'GO-ENTITLED01',
         status: 'already_entitled',
         createdAt: NOW,
       }),
