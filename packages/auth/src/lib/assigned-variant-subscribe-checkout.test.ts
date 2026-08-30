@@ -4,18 +4,29 @@ vi.mock('@virtality/db', () => ({
   prisma: {},
 }))
 
+vi.mock('./campaign-window.ts', () => ({
+  buildCampaignAwareCheckoutSessionParams: vi.fn(async () => ({
+    params: { payment_method_collection: 'always' as const },
+  })),
+}))
+
+vi.mock('./pending-promotion-code.ts', () => ({
+  getOpenPendingPromotionCodeForCheckout: vi.fn(async () => null),
+}))
+
 import {
-  FREE_PLAN_PRICE_ID,
-  FREE_SUBSCRIPTION_PLAN,
   PRO_PLAN_MONTHLY_PRICE_ID,
-  toAbsoluteConsoleReturnUrl,
+  withCheckoutReturnIntent,
 } from '@virtality/shared/utils'
-import { startAssignedVariantSubscribeCheckout } from './assigned-variant-subscribe-checkout.ts'
+import {
+  ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,
+  startAssignedVariantSubscribeCheckout,
+} from './assigned-variant-subscribe-checkout.ts'
 
 const USER_ID = 'user_1'
 const CUSTOMER_ID = 'cus_1'
 const FREE_SUB_ID = 'sub_free'
-const FREE_ITEM_ID = 'si_free'
+const LOCAL_SUB_ID = 'local_sub'
 const EARLY_BIRD_MONTHLY = 'price_early_m'
 const RETURN_URL = 'https://console.test/user/u1/profile?tab=billing'
 
@@ -89,23 +100,10 @@ function createStripeMock(input?: {
         has_more: false,
       })),
     },
-    subscriptions: {
-      retrieve: vi.fn(async () => ({
-        id: FREE_SUB_ID,
-        items: {
-          data: [
-            {
-              id: FREE_ITEM_ID,
-              price: { id: FREE_PLAN_PRICE_ID },
-            },
-          ],
-        },
-      })),
-    },
-    billingPortal: {
+    checkout: {
       sessions: {
         create: vi.fn(async (params: unknown) => ({
-          url: 'https://billing.stripe.test/session',
+          url: 'https://checkout.stripe.test/session',
           params,
         })),
       },
@@ -114,10 +112,10 @@ function createStripeMock(input?: {
 }
 
 describe('startAssignedVariantSubscribeCheckout', () => {
-  it('opens billing portal with the Assigned Variant monthly Price', async () => {
+  it('opens Stripe Checkout with the Assigned Variant monthly Price', async () => {
     const prisma = createPrismaMock({
       subscription: {
-        id: 'local_sub',
+        id: LOCAL_SUB_ID,
         stripeSubscriptionId: FREE_SUB_ID,
         status: 'trialing',
       },
@@ -134,25 +132,26 @@ describe('startAssignedVariantSubscribeCheckout', () => {
 
     expect(result).toEqual({
       ok: true,
-      checkoutUrl: 'https://billing.stripe.test/session',
+      checkoutUrl: 'https://checkout.stripe.test/session',
     })
-    expect(stripeClient.billingPortal.sessions.create).toHaveBeenCalledWith(
+    expect(stripeClient.checkout.sessions.create).toHaveBeenCalledWith(
       expect.objectContaining({
         customer: CUSTOMER_ID,
-        return_url: toAbsoluteConsoleReturnUrl(RETURN_URL),
-        flow_data: expect.objectContaining({
-          type: 'subscription_update_confirm',
-          subscription_update_confirm: {
-            subscription: FREE_SUB_ID,
-            items: [
-              {
-                id: FREE_ITEM_ID,
-                price: EARLY_BIRD_MONTHLY,
-                quantity: 1,
-              },
-            ],
-          },
+        mode: 'subscription',
+        cancel_url: withCheckoutReturnIntent(RETURN_URL, 'cancel'),
+        line_items: [{ price: EARLY_BIRD_MONTHLY, quantity: 1 }],
+        payment_method_collection: 'always',
+        metadata: expect.objectContaining({
+          userId: USER_ID,
+          subscriptionId: LOCAL_SUB_ID,
+          referenceId: USER_ID,
+          [ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY]: FREE_SUB_ID,
         }),
+        subscription_data: {
+          metadata: expect.objectContaining({
+            [ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY]: FREE_SUB_ID,
+          }),
+        },
       }),
     )
   })
@@ -173,6 +172,6 @@ describe('startAssignedVariantSubscribeCheckout', () => {
       ok: false,
       message: 'Subscribe requires a live Free subscription.',
     })
-    expect(stripeClient.billingPortal.sessions.create).not.toHaveBeenCalled()
+    expect(stripeClient.checkout.sessions.create).not.toHaveBeenCalled()
   })
 })

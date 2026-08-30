@@ -14,6 +14,7 @@ import {
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
+import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
   readProVariantCatalogOrSandbox,
   resolveAssignedProVariantChargePrice,
@@ -300,8 +301,24 @@ export const auth = betterAuth({
                   },
                 }
               },
-              onSubscriptionComplete: async ({ subscription }) => {
+              onSubscriptionComplete: async ({
+                subscription,
+                stripeSubscription,
+              }) => {
                 await rearmRenewPromptsAfterCheckout(subscription)
+                const cancelStripeSubscriptionId =
+                  stripeSubscription.metadata?.[
+                    ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY
+                  ]
+                if (
+                  cancelStripeSubscriptionId &&
+                  stripeClient &&
+                  cancelStripeSubscriptionId !== stripeSubscription.id
+                ) {
+                  await stripeClient.subscriptions
+                    .cancel(cancelStripeSubscriptionId)
+                    .catch(() => undefined)
+                }
               },
               onSubscriptionUpdate: async ({ subscription }) => {
                 await rearmRenewPromptsAfterCheckout(subscription)

@@ -247,7 +247,10 @@ export {
   type AssignableProVariantOption,
 } from './lib/pro-variant-catalog.ts'
 export { scheduleAssignedVariantCyclePlanChange } from './lib/assigned-variant-cycle-plan-change.ts'
-export { startAssignedVariantSubscribeCheckout } from './lib/assigned-variant-subscribe-checkout.ts'
+export {
+  ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,
+  startAssignedVariantSubscribeCheckout,
+} from './lib/assigned-variant-subscribe-checkout.ts'
 
 /** Console Billing: redeem preflight (staff-block / replace-confirm). */
 export function loadConsolePromoRedeemPreflightAction(userId: string) {

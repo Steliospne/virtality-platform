@@ -1,18 +1,33 @@
 /**
- * Free / trialing Subscribe: billing portal upgrade using the clinician's
- * Assigned Variant Price ids (Better Auth upgrade only knows the basic pair).
+ * Free / trialing Subscribe: Stripe Checkout with the clinician's Assigned
+ * Variant Price ids. Billing Portal cannot list every variant Price, so this
+ * bypasses Better Auth's basic `pro` upgrade the same way never-subscribed
+ * Checkout uses `getCheckoutSessionParams` line_items overrides.
  */
 
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
+import { API_PREFIX, getServerUrl } from '@virtality/shared/types'
 import {
   FREE_SUBSCRIPTION_PLAN,
   isLiveEntitlementSubscriptionStatus,
   toAbsoluteConsoleReturnUrl,
+  withCheckoutReturnIntent,
   type AssignedVariantSubscribeCheckoutResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
+import { buildCampaignAwareCheckoutSessionParams } from './campaign-window.ts'
+import { getOpenPendingPromotionCodeForCheckout } from './pending-promotion-code.ts'
 import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
+
+/** Stripe metadata: cancel the prior Free subscription after paid Checkout. */
+export const ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY =
+  'virtalityCancelStripeSubscriptionId' as const
+
+function buildBetterAuthCheckoutSuccessUrl(successUrl: string): string {
+  const authBase = `${getServerUrl()}${API_PREFIX}/auth`
+  return `${authBase}/subscription/success?callbackURL=${encodeURIComponent(successUrl)}&checkoutSessionId={CHECKOUT_SESSION_ID}`
+}
 
 export async function startAssignedVariantSubscribeCheckout(input: {
   stripeClient: Stripe
@@ -22,7 +37,8 @@ export async function startAssignedVariantSubscribeCheckout(input: {
   returnUrl: string
 }): Promise<AssignedVariantSubscribeCheckoutResult> {
   const client = input.prisma ?? prisma
-  const absoluteReturnUrl = toAbsoluteConsoleReturnUrl(input.returnUrl)
+  const successUrl = withCheckoutReturnIntent(input.returnUrl, 'success')
+  const cancelUrl = withCheckoutReturnIntent(input.returnUrl, 'cancel')
 
   const user = await client.user.findFirst({
     where: { id: input.referenceId, deletedAt: null },
@@ -80,46 +96,65 @@ export async function startAssignedVariantSubscribeCheckout(input: {
     }
   }
 
-  const stripeSub = await input.stripeClient.subscriptions.retrieve(
-    subscription.stripeSubscriptionId,
-  )
-  const planItem = stripeSub.items.data[0]
-  if (!planItem) {
-    return { ok: false, message: 'Subscription has no Price item to change.' }
-  }
-
   try {
-    const portalSession =
-      await input.stripeClient.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
-        return_url: absoluteReturnUrl,
-        flow_data: {
-          type: 'subscription_update_confirm',
-          after_completion: {
-            type: 'redirect',
-            redirect: { return_url: absoluteReturnUrl },
-          },
-          subscription_update_confirm: {
-            subscription: stripeSub.id,
-            items: [
-              {
-                id: planItem.id,
-                price: priceResolved.priceId,
-                quantity: 1,
-              },
-            ],
-          },
-        },
+    const { params: campaignParams } =
+      await buildCampaignAwareCheckoutSessionParams({
+        userId: user.id,
+        stripeCustomerId: user.stripeCustomerId,
+        stripeClient: input.stripeClient,
+        prisma: client,
       })
 
-    if (!portalSession.url) {
+    const lineItemsOverride = {
+      line_items: [{ price: priceResolved.priceId, quantity: 1 }],
+    }
+
+    const pendingPromotionCode = await getOpenPendingPromotionCodeForCheckout(
+      { userId: user.id },
+      { prisma: client, stripeClient: input.stripeClient },
+    )
+
+    const checkoutParams = pendingPromotionCode
+      ? {
+          ...campaignParams,
+          ...lineItemsOverride,
+          discounts: [{ promotion_code: pendingPromotionCode.promotionCodeId }],
+        }
+      : {
+          ...campaignParams,
+          ...lineItemsOverride,
+        }
+
+    const metadata = {
+      userId: user.id,
+      subscriptionId: subscription.id,
+      referenceId: user.id,
+      [ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY]:
+        subscription.stripeSubscriptionId,
+    }
+
+    const session = await input.stripeClient.checkout.sessions.create({
+      customer: user.stripeCustomerId,
+      mode: 'subscription',
+      success_url: buildBetterAuthCheckoutSuccessUrl(
+        toAbsoluteConsoleReturnUrl(successUrl),
+      ),
+      cancel_url: toAbsoluteConsoleReturnUrl(cancelUrl),
+      customer_update: { name: 'auto', address: 'auto' },
+      client_reference_id: user.id,
+      ...checkoutParams,
+      subscription_data: { metadata },
+      metadata,
+    })
+
+    if (!session.url) {
       return {
         ok: false,
-        message: 'Stripe billing portal did not return a URL.',
+        message: 'Stripe Checkout session did not return a URL.',
       }
     }
 
-    return { ok: true, checkoutUrl: portalSession.url }
+    return { ok: true, checkoutUrl: session.url }
   } catch (error) {
     const message =
       error instanceof Error && error.message.trim()
