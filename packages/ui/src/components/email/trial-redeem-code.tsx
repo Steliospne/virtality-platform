@@ -23,6 +23,7 @@ import {
   text,
 } from './styles/email.js'
 
+/** Mirrors `TrialRedeemCodeMode` in `@virtality/shared` (UI package boundary). */
 export type TrialRedeemCodeEmailMode = 'permanent_free' | 'timed_trial'
 
 /** Delivery-only Access Code System Email. */
@@ -52,26 +53,27 @@ export interface TrialRedeemCodeEmailProps {
 }
 
 function emailCopy(mode: TrialRedeemCodeEmailMode, trialDays: number) {
-  if (mode === 'permanent_free') {
-    return {
-      heading: 'Your Access Code unlocks permanent Free access',
-      intro:
-        'Use the code below when you create your Virtality account. After sign-up you will have permanent Free access with no trial countdown.',
-      entitlement: 'Access type: permanent Free (no trial period)',
-      cta: 'Create account and redeem',
-      footer:
-        'This code grants permanent Free access. It does not include a paid Pro subscription.',
-    }
-  }
-
-  return {
-    heading: 'Your Access Code unlocks a Free trial',
-    intro:
-      'Use the code below when you create your Virtality account. After sign-up you will start a no-card Free trial on the Free plan.',
-    entitlement: `Trial length: ${trialDays} days`,
-    cta: 'Create account and start trial',
-    footer:
-      'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
+  switch (mode) {
+    case 'permanent_free':
+      return {
+        heading: 'Your Access Code unlocks permanent Free access',
+        intro:
+          'Use the code below when you create your Virtality account. After sign-up you will have permanent Free access with no trial countdown.',
+        entitlement: 'Access type: permanent Free (no trial period)',
+        cta: 'Create account and redeem',
+        footer:
+          'This code grants permanent Free access. It does not include a paid Pro subscription.',
+      }
+    case 'timed_trial':
+      return {
+        heading: 'Your Access Code unlocks a Free trial',
+        intro:
+          'Use the code below when you create your Virtality account. After sign-up you will start a no-card Free trial on the Free plan.',
+        entitlement: `Trial length: ${trialDays} days`,
+        cta: 'Create account and start trial',
+        footer:
+          'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
+      }
   }
 }
 

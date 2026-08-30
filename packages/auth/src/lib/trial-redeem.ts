@@ -82,9 +82,7 @@ export function createStripeTrialRedeemGateway(
         buildPermanentFreeSubscriptionCreateParams({
           customerId,
           priceId,
-          metadata: {
-            trialRedeemCodeId: metadata.trialRedeemCodeId,
-          },
+          metadata,
         }),
       )
       return { stripeSubscriptionId: subscription.id }

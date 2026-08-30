@@ -87,13 +87,11 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
   {
     accessorKey: 'trialDays',
     header: ({ column }) => <ColumnHeader column={column} title='Trial days' />,
-    cell: ({ row }) => {
-      const trialDays = row.original.trialDays
-      if (row.original.mode === 'permanent_free') {
-        return <div>-</div>
-      }
-      return <div>{trialDays}</div>
-    },
+    cell: ({ row }) => (
+      <div>
+        {row.original.mode === 'permanent_free' ? '-' : row.original.trialDays}
+      </div>
+    ),
   },
   {
     accessorKey: 'note',

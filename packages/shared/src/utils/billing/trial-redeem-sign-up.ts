@@ -156,9 +156,10 @@ export type RedeemTrialCodeResult =
 
 /**
  * Stripe-first redeem: entitled Customers consume as already_entitled without a
- * second Subscription; otherwise create a no-card Free Trial Subscription then
- * consume as redeemed. Does not write a local Subscription row (webhook-only).
- * Does not set the tester role. On Stripe failure the code stays unused.
+ * second Subscription; otherwise create the mode-appropriate Free Subscription
+ * (permanent Free or no-card timed trial) then consume as redeemed. Does not
+ * write a local Subscription row (webhook-only). Does not set the tester role.
+ * On Stripe failure the code stays unused.
  */
 export async function redeemTrialCodeAfterSignUp(
   store: TrialRedeemConsumeStore,
@@ -184,21 +185,23 @@ export async function redeemTrialCodeAfterSignUp(
     return { status: 'already_entitled', codeId }
   }
 
+  const subscriptionInput = {
+    customerId: input.stripeCustomerId,
+    priceId: input.priceId,
+    metadata: { trialRedeemCodeId: String(codeId) },
+  }
+
   let stripeSubscriptionId: string
   try {
-    const created =
-      mode === 'permanent_free'
-        ? await stripe.createPermanentFreeSubscription({
-            customerId: input.stripeCustomerId,
-            priceId: input.priceId,
-            metadata: { trialRedeemCodeId: String(codeId) },
-          })
-        : await stripe.createNoCardTrialSubscription({
-            customerId: input.stripeCustomerId,
-            priceId: input.priceId,
-            trialPeriodDays: trialDays,
-            metadata: { trialRedeemCodeId: String(codeId) },
-          })
+    let created: { stripeSubscriptionId: string }
+    if (mode === 'permanent_free') {
+      created = await stripe.createPermanentFreeSubscription(subscriptionInput)
+    } else {
+      created = await stripe.createNoCardTrialSubscription({
+        ...subscriptionInput,
+        trialPeriodDays: trialDays,
+      })
+    }
     stripeSubscriptionId = created.stripeSubscriptionId
   } catch {
     return { status: 'failed' }

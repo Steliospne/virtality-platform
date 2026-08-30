@@ -1,3 +1,4 @@
+import type { TrialRedeemCodeMode } from '@virtality/shared/utils'
 import TrialRedeemCodeEmail, {
   TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
 } from '@virtality/ui/components/email/trial-redeem-code'
@@ -10,7 +11,7 @@ import { nodemailer } from '../init.js'
 export type SendTrialRedeemCodeEmailData = {
   recipientEmail: string
   code: string
-  mode: 'permanent_free' | 'timed_trial'
+  mode: TrialRedeemCodeMode
   trialDays: number
   signUpUrl: string
 }

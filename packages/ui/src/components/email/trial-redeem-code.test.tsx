@@ -4,13 +4,14 @@ import {
   TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE,
   TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
   TrialRedeemCodeEmail,
+  type TrialRedeemCodeEmailMode,
 } from './trial-redeem-code.js'
 
 const SIGN_UP_URL = 'https://console.virtality.app/sign-up'
 const CODE = 'GO-ABCDEFGHIJ'
 
 async function renderEmail(
-  mode: 'permanent_free' | 'timed_trial',
+  mode: TrialRedeemCodeEmailMode,
   recipientEmail?: string,
 ) {
   return reactToHTML(

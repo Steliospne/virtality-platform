@@ -23,6 +23,7 @@ import {
   DEFAULT_TRIAL_REDEEM_DAYS,
   TRIAL_REDEEM_CODE_MODES,
   TRIAL_REDEEM_CODE_MODE_LABELS,
+  type CreateTrialRedeemCodeInput,
   type TrialRedeemCodeMode,
 } from '@virtality/shared/utils'
 import { useCreateTrialRedeemCode } from '@virtality/react-query'
@@ -55,11 +56,7 @@ export function CreateTrialRedeemCodeDialog({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
 
-    const payload: {
-      mode: TrialRedeemCodeMode
-      trialDays?: number
-      note?: string
-    } = { mode }
+    const payload: CreateTrialRedeemCodeInput = { mode }
 
     if (mode === 'timed_trial') {
       const trimmedDays = trialDays.trim()

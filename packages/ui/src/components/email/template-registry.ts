@@ -14,6 +14,7 @@ import PendingPasswordChangeEmail, {
 } from './pending-password-change.js'
 import TrialRedeemCodeEmail, {
   TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
+  type TrialRedeemCodeEmailMode,
 } from './trial-redeem-code.js'
 import PromotionCodeEmail, {
   PROMOTION_CODE_EMAIL_SUBJECT,
@@ -193,7 +194,7 @@ export const EMAIL_TEMPLATES: {
     render: (p) =>
       TrialRedeemCodeEmail({
         code: p.code as string,
-        mode: (p.mode as 'permanent_free' | 'timed_trial') ?? 'timed_trial',
+        mode: (p.mode as TrialRedeemCodeEmailMode | undefined) ?? 'timed_trial',
         trialDays: p.trialDays as number,
         signUpUrl: p.signUpUrl as string,
         recipientEmail: p.recipientEmail as string | undefined,
