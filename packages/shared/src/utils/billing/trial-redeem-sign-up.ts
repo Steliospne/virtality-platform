@@ -134,6 +134,11 @@ export type TrialRedeemStripeGateway = {
     trialPeriodDays: number
     metadata: { trialRedeemCodeId: string }
   }) => Promise<{ stripeSubscriptionId: string }>
+  createPermanentFreeSubscription: (input: {
+    customerId: string
+    priceId: string
+    metadata: { trialRedeemCodeId: string }
+  }) => Promise<{ stripeSubscriptionId: string }>
 }
 
 export type RedeemTrialCodeInput = {
@@ -165,7 +170,7 @@ export async function redeemTrialCodeAfterSignUp(
   const gate = await evaluateTrialRedeemAtSignUp(store, input.code, now)
   if (gate.action !== 'proceed') return { status: 'ignored' }
 
-  const { id: codeId, trialDays } = gate.record
+  const { id: codeId, trialDays, mode } = gate.record
   const alreadyEntitled = await stripe.customerHasEntitledSubscription(
     input.stripeCustomerId,
   )
@@ -181,12 +186,19 @@ export async function redeemTrialCodeAfterSignUp(
 
   let stripeSubscriptionId: string
   try {
-    const created = await stripe.createNoCardTrialSubscription({
-      customerId: input.stripeCustomerId,
-      priceId: input.priceId,
-      trialPeriodDays: trialDays,
-      metadata: { trialRedeemCodeId: String(codeId) },
-    })
+    const created =
+      mode === 'permanent_free'
+        ? await stripe.createPermanentFreeSubscription({
+            customerId: input.stripeCustomerId,
+            priceId: input.priceId,
+            metadata: { trialRedeemCodeId: String(codeId) },
+          })
+        : await stripe.createNoCardTrialSubscription({
+            customerId: input.stripeCustomerId,
+            priceId: input.priceId,
+            trialPeriodDays: trialDays,
+            metadata: { trialRedeemCodeId: String(codeId) },
+          })
     stripeSubscriptionId = created.stripeSubscriptionId
   } catch {
     return { status: 'failed' }

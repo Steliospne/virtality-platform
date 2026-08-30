@@ -47,6 +47,11 @@ enum TrialRedeemCodeStatus {
   already_entitled
 }
 
+enum TrialRedeemCodeMode {
+  permanent_free
+  timed_trial
+}
+
 enum PromotionCodeDeliveryStatus {
   open
 }

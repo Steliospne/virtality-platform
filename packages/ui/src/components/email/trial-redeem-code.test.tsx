@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { reactToHTML } from '../../lib/react-to-html.js'
 import {
-  TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
-  TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE,
+  TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
   TrialRedeemCodeEmail,
 } from './trial-redeem-code.js'
 
 const SIGN_UP_URL = 'https://console.virtality.app/sign-up'
 const CODE = 'GO-ABCDEFGHIJ'
 
-async function renderEmail(recipientEmail?: string) {
+async function renderEmail(
+  mode: 'permanent_free' | 'timed_trial',
+  recipientEmail?: string,
+) {
   return reactToHTML(
     TrialRedeemCodeEmail({
       code: CODE,
+      mode,
       trialDays: 14,
       signUpUrl: SIGN_UP_URL,
       recipientEmail,
@@ -21,24 +25,42 @@ async function renderEmail(recipientEmail?: string) {
 }
 
 describe('TrialRedeemCodeEmail', () => {
-  it('includes the redeem code, trial length, and sign-up link', async () => {
-    const html = await renderEmail('clinician@clinic.example')
+  it('includes trial copy for timed_trial mode', async () => {
+    const html = await renderEmail('timed_trial', 'clinician@clinic.example')
 
-    expect(html).toContain(TRIAL_REDEEM_CODE_EMAIL_PREVIEW)
+    expect(html).toContain(TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.timed_trial)
     expect(html).toContain(CODE)
-    expect(html).toContain('Trial length:')
-    expect(html).toContain('14')
+    expect(html).toContain('Trial length: 14 days')
     expect(html).toContain(SIGN_UP_URL)
     expect(html).toContain('clinician@clinic.example')
     expect(html).toContain('not bound to this address')
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial).toContain(
+      'trial',
+    )
   })
 
-  it('keeps marketing copy as [COPY] placeholders without em dashes', async () => {
-    const html = await renderEmail()
+  it('includes permanent Free copy for permanent_free mode', async () => {
+    const html = await renderEmail('permanent_free')
 
-    expect(html).toContain('[COPY]')
+    expect(html).toContain(
+      TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.permanent_free,
+    )
+    expect(html).toContain('permanent Free access')
+    expect(html).not.toContain('Trial length:')
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.permanent_free).toContain(
+      'permanent Free',
+    )
+  })
+
+  it('avoids em dashes in email copy', async () => {
+    const html = await renderEmail('timed_trial')
+
     expect(html).not.toContain('—')
-    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT).not.toContain('—')
-    expect(TRIAL_REDEEM_CODE_EMAIL_PREVIEW).not.toContain('—')
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial).not.toContain(
+      '—',
+    )
+    expect(
+      TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.permanent_free,
+    ).not.toContain('—')
   })
 })

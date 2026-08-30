@@ -14,6 +14,7 @@ import {
 import { useDropdownMenu } from '@/hooks/use-dropdown-menu-action'
 import { useDeleteTrialRedeemCode } from '@virtality/react-query'
 import {
+  TRIAL_REDEEM_CODE_MODE_LABELS,
   TRIAL_REDEEM_DISPLAY_STATUS_LABELS,
   type TrialRedeemCodeListItem,
 } from '@virtality/shared/utils'
@@ -64,6 +65,14 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
     ),
   },
   {
+    accessorKey: 'mode',
+    header: ({ column }) => <ColumnHeader column={column} title='Mode' />,
+    cell: ({ row }) => {
+      const mode = row.original.mode
+      return <div>{TRIAL_REDEEM_CODE_MODE_LABELS[mode]}</div>
+    },
+  },
+  {
     accessorKey: 'displayStatus',
     header: ({ column }) => <ColumnHeader column={column} title='Status' />,
     cell: ({ row }) => {
@@ -78,6 +87,13 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
   {
     accessorKey: 'trialDays',
     header: ({ column }) => <ColumnHeader column={column} title='Trial days' />,
+    cell: ({ row }) => {
+      const trialDays = row.original.trialDays
+      if (row.original.mode === 'permanent_free') {
+        return <div>-</div>
+      }
+      return <div>{trialDays}</div>
+    },
   },
   {
     accessorKey: 'note',

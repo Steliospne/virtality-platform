@@ -1,5 +1,5 @@
 import TrialRedeemCodeEmail, {
-  TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
 } from '@virtality/ui/components/email/trial-redeem-code'
 import {
   reactToHTML,
@@ -10,6 +10,7 @@ import { nodemailer } from '../init.js'
 export type SendTrialRedeemCodeEmailData = {
   recipientEmail: string
   code: string
+  mode: 'permanent_free' | 'timed_trial'
   trialDays: number
   signUpUrl: string
 }
@@ -17,11 +18,12 @@ export type SendTrialRedeemCodeEmailData = {
 export async function sendTrialRedeemCodeEmail(
   data: SendTrialRedeemCodeEmailData,
 ) {
-  const { recipientEmail, code, trialDays, signUpUrl } = data
+  const { recipientEmail, code, mode, trialDays, signUpUrl } = data
 
   const html = await reactToHTML(
     TrialRedeemCodeEmail({
       code,
+      mode,
       trialDays,
       signUpUrl,
       recipientEmail,
@@ -32,7 +34,7 @@ export async function sendTrialRedeemCodeEmail(
   await nodemailer.sendMail({
     from: 'Virtality <hey@mail.virtality.app>',
     to: recipientEmail,
-    subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+    subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE[mode],
     html,
     text,
   })

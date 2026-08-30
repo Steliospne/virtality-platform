@@ -26,6 +26,7 @@ function record(
     id: 1,
     code: 'GO-ABCDEFGHIJ',
     status: 'unused',
+    mode: 'timed_trial',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
     createdAt: NOW,
@@ -67,6 +68,9 @@ function stripeGateway(
     customerHasEntitledSubscription: async () => false,
     createNoCardTrialSubscription: async () => ({
       stripeSubscriptionId: 'sub_default',
+    }),
+    createPermanentFreeSubscription: async () => ({
+      stripeSubscriptionId: 'sub_permanent_free',
     }),
     ...overrides,
   }
@@ -270,6 +274,57 @@ describe('redeemTrialCodeAfterSignUp', () => {
     )
 
     expect(result).toMatchObject({ status: 'redeemed' })
+  })
+
+  it('creates a permanent Free subscription for permanent_free mode codes', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 99,
+        mode: 'permanent_free',
+        status: 'unused',
+        code: 'GO-PERMFREE01',
+      }),
+    ])
+    const stripeCalls: unknown[] = []
+    const createNoCardTrialSubscription = vi.fn()
+    const stripe = stripeGateway({
+      createNoCardTrialSubscription,
+      createPermanentFreeSubscription: async (input) => {
+        stripeCalls.push(input)
+        return { stripeSubscriptionId: 'sub_permanent_free' }
+      },
+    })
+
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripe,
+      {
+        code: 'GO-PERMFREE01',
+        userId: 'user_free',
+        stripeCustomerId: 'cus_free',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({
+      status: 'redeemed',
+      stripeSubscriptionId: 'sub_permanent_free',
+      codeId: 99,
+    })
+    expect(stripeCalls).toEqual([
+      {
+        customerId: 'cus_free',
+        priceId: FREE_PLAN_PRICE_ID,
+        metadata: { trialRedeemCodeId: '99' },
+      },
+    ])
+    expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
+    expect(store.rows[0]).toMatchObject({
+      status: 'redeemed',
+      usedAt: NOW,
+      usedBy: 'user_free',
+    })
   })
 
   it('consumes as already_entitled without creating a second Subscription', async () => {

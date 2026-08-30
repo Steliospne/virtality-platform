@@ -13,7 +13,7 @@ import PendingPasswordChangeEmail, {
   type PendingPasswordChangeVariant,
 } from './pending-password-change.js'
 import TrialRedeemCodeEmail, {
-  TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE,
 } from './trial-redeem-code.js'
 import PromotionCodeEmail, {
   PROMOTION_CODE_EMAIL_SUBJECT,
@@ -180,10 +180,11 @@ export const EMAIL_TEMPLATES: {
       id: 'trial-redeem-code',
       title: 'Access Code',
       category: 'billing',
-      subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+      subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial,
     },
     sampleProps: {
       code: 'GO-ABCDEFGHIJ',
+      mode: 'timed_trial',
       trialDays: 14,
       signUpUrl: 'https://console.virtality.app/sign-up',
       recipientEmail: SAMPLE_EMAIL,
@@ -192,6 +193,7 @@ export const EMAIL_TEMPLATES: {
     render: (p) =>
       TrialRedeemCodeEmail({
         code: p.code as string,
+        mode: (p.mode as 'permanent_free' | 'timed_trial') ?? 'timed_trial',
         trialDays: p.trialDays as number,
         signUpUrl: p.signUpUrl as string,
         recipientEmail: p.recipientEmail as string | undefined,

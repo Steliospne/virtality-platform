@@ -203,7 +203,7 @@ A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric chara
 _Avoid_: Referral Code, QA code, Testing Code, promo
 
 **Access Code**:
-A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, that starts a no-card **Trial Subscription** when redeemed at sign-up. Unused codes expire one week after creation. Default trial length is fourteen days with an optional per-code day override. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
+A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, with mode **Free** (`permanent_free`) or **Trial** (`timed_trial`). At sign-up, Free mode creates permanent Free access; Trial mode starts a no-card **Trial Subscription** (default fourteen days with an optional per-code day override). Unused codes expire one week after creation. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
 _Avoid_: Trial Redeem Code, Billing Code, Customer Redeem Code, `PAY-` prefix
 
 **Trial Subscription**:
