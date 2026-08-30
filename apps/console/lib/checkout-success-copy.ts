@@ -11,15 +11,13 @@ export function checkoutSuccessCopy(
   switch (intent) {
     case 'subscribe':
       return {
-        headline: 'Welcome aboard',
-        subcopy:
-          'Your subscription is on its way. We are activating your access now.',
+        headline: "You're in.",
+        subcopy: "Pro is yours now. Here's to more time with your patients.",
       }
     case 'renew':
       return {
-        headline: 'You are renewed',
-        subcopy:
-          'Thanks for staying with us. We are activating your access now.',
+        headline: 'Thanks for staying with us.',
+        subcopy: 'Your Pro access carries on, no gap, no hassle.',
       }
   }
 }
