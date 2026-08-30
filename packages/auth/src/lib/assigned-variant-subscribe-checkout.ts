@@ -10,9 +10,10 @@ import type { PrismaClient } from '@virtality/db'
 import { API_PREFIX, getServerUrl } from '@virtality/shared/types'
 import {
   FREE_SUBSCRIPTION_PLAN,
+  buildCheckoutCancelReturnUrl,
+  buildCheckoutSuccessUrl,
   isLiveEntitlementSubscriptionStatus,
   toAbsoluteConsoleReturnUrl,
-  withCheckoutReturnIntent,
   type AssignedVariantSubscribeCheckoutResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
@@ -37,8 +38,8 @@ export async function startAssignedVariantSubscribeCheckout(input: {
   returnUrl: string
 }): Promise<AssignedVariantSubscribeCheckoutResult> {
   const client = input.prisma ?? prisma
-  const successUrl = withCheckoutReturnIntent(input.returnUrl, 'success')
-  const cancelUrl = withCheckoutReturnIntent(input.returnUrl, 'cancel')
+  const successUrl = buildCheckoutSuccessUrl('subscribe')
+  const cancelUrl = buildCheckoutCancelReturnUrl(input.returnUrl)
 
   const user = await client.user.findFirst({
     where: { id: input.referenceId, deletedAt: null },

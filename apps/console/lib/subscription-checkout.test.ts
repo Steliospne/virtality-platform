@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { getConsoleUrl } from '@virtality/shared/types'
 import {
-  buildProCheckoutUpgradeInput,
   CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS,
   CHECKOUT_RETURN_PARAM,
+  CHECKOUT_SUCCESS_INTENT_PARAM,
+  CHECKOUT_SUCCESS_PATH,
   PRO_SUBSCRIPTION_PLAN,
+  buildProCheckoutUpgradeInput,
   readCheckoutReturnIntent,
   shouldPollCheckoutEntitlementRestore,
   startProSubscriptionCheckout,
@@ -13,46 +15,51 @@ import {
 const consoleOrigin = getConsoleUrl()
 
 describe('buildProCheckoutUpgradeInput', () => {
-  it('targets the canonical pro plan and marks success vs cancel return on the console URL', () => {
-    const input = buildProCheckoutUpgradeInput('/app')
-
-    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
-    expect(readCheckoutReturnIntent(new URL(input.successUrl).search)).toBe(
-      'success',
-    )
-    expect(readCheckoutReturnIntent(new URL(input.cancelUrl).search)).toBe(
-      'cancel',
-    )
-    expect(new URL(input.successUrl).origin).toBe(new URL(consoleOrigin).origin)
-    expect(new URL(input.cancelUrl).origin).toBe(new URL(consoleOrigin).origin)
-    expect(new URL(input.successUrl).pathname).toBe('/app')
-    expect(new URL(input.cancelUrl).pathname).toBe('/app')
-  })
-
-  it('preserves existing query params on the return URL', () => {
-    const input = buildProCheckoutUpgradeInput('/patients?tab=devices')
+  it('lands successful Checkout on the Checkout Success Page with intent', () => {
+    const input = buildProCheckoutUpgradeInput('/app', {
+      checkoutSuccessIntent: 'renew',
+    })
     const success = new URL(input.successUrl)
     const cancel = new URL(input.cancelUrl)
 
+    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(success.pathname).toBe(CHECKOUT_SUCCESS_PATH)
+    expect(success.searchParams.get(CHECKOUT_SUCCESS_INTENT_PARAM)).toBe(
+      'renew',
+    )
+    expect(readCheckoutReturnIntent(cancel.search)).toBe('cancel')
     expect(success.origin).toBe(new URL(consoleOrigin).origin)
-    expect(success.pathname).toBe('/patients')
-    expect(success.searchParams.get('tab')).toBe('devices')
-    expect(success.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('success')
+    expect(cancel.pathname).toBe('/app')
+  })
+
+  it('defaults Checkout Success Intent to subscribe', () => {
+    const success = new URL(buildProCheckoutUpgradeInput('/app').successUrl)
+
+    expect(success.searchParams.get(CHECKOUT_SUCCESS_INTENT_PARAM)).toBe(
+      'subscribe',
+    )
+  })
+
+  it('preserves existing query params on the cancel return URL', () => {
+    const input = buildProCheckoutUpgradeInput('/patients?tab=devices')
+    const cancel = new URL(input.cancelUrl)
+
+    expect(cancel.origin).toBe(new URL(consoleOrigin).origin)
+    expect(cancel.pathname).toBe('/patients')
     expect(cancel.searchParams.get('tab')).toBe('devices')
     expect(cancel.searchParams.get(CHECKOUT_RETURN_PARAM)).toBe('cancel')
   })
 
-  it('keeps absolute console return URLs absolute (not auth-host relative)', () => {
+  it('keeps absolute console cancel URLs absolute (not auth-host relative)', () => {
     const input = buildProCheckoutUpgradeInput(
       `${consoleOrigin}/user/abc/profile?tab=billing`,
+      { checkoutSuccessIntent: 'subscribe' },
     )
 
-    expect(input.successUrl).toBe(
-      `${consoleOrigin}/user/abc/profile?tab=billing&${CHECKOUT_RETURN_PARAM}=success`,
-    )
     expect(input.cancelUrl).toBe(
       `${consoleOrigin}/user/abc/profile?tab=billing&${CHECKOUT_RETURN_PARAM}=cancel`,
     )
+    expect(new URL(input.successUrl).pathname).toBe(CHECKOUT_SUCCESS_PATH)
   })
 
   it('does not request a trial period on the paid Checkout path', () => {
@@ -136,10 +143,15 @@ describe('startProSubscriptionCheckout', () => {
     const result = await startProSubscriptionCheckout({
       upgrade,
       returnUrl: '/patients',
+      checkoutSuccessIntent: 'renew',
     })
 
     expect(result).toEqual({ ok: true })
-    expect(calls).toEqual([buildProCheckoutUpgradeInput('/patients')])
+    expect(calls).toEqual([
+      buildProCheckoutUpgradeInput('/patients', {
+        checkoutSuccessIntent: 'renew',
+      }),
+    ])
   })
 
   it('passes annual through to Better Auth upgrade', async () => {

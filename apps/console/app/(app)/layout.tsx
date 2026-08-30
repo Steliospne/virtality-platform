@@ -4,6 +4,7 @@ import RootSidebar from '@/components/layout/sidebar'
 import Navbar from '@/components/layout/navbar'
 import { RenewPromptBanner } from '@/components/layout/renew-prompt-banner'
 import { ExpiredFreeUpgradeDialog } from '@/components/layout/expired-free-upgrade-dialog'
+import { CheckoutReturnHandler } from '@/components/checkout-return/checkout-return-handler'
 
 export default async function AppLayout({
   children,
@@ -18,6 +19,7 @@ export default async function AppLayout({
       <RootSidebar />
       <main className='w-full'>
         <Navbar />
+        <CheckoutReturnHandler />
         <RenewPromptBanner />
         <ExpiredFreeUpgradeDialog />
         {children}

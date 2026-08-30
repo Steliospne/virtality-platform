@@ -17,6 +17,7 @@ import {
   readOpenPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
 } from './lib/pending-promotion-code.ts'
+import { redeemAccessCodeForUser } from './lib/console-access-code-redeem.ts'
 import { prisma } from '@virtality/db'
 import Stripe from 'stripe'
 import {
@@ -38,7 +39,7 @@ import {
   type SendPromotionCodeEmailRuntime,
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
-import { stripeClient } from './auth-instance.ts'
+import { stripeClient, FREE_PLAN_PRICE_ID } from './auth-instance.ts'
 import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
 import { readBillingCatalogForUser } from './lib/pro-variant-catalog.ts'
 
@@ -272,6 +273,18 @@ export function redeemPromotionCodeAction(input: {
   return redeemPromotionCodeForUser(input, {
     prisma,
     stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/** Console Billing: Profile Access Code redeem (state × mode matrix). */
+export function redeemAccessCodeAction(input: {
+  userId: string
+  code: string
+}) {
+  return redeemAccessCodeForUser(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+    priceId: FREE_PLAN_PRICE_ID,
   })
 }
 

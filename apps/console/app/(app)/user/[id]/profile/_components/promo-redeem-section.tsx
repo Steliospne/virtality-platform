@@ -1,12 +1,14 @@
 'use client'
 
 /**
- * Redeem, replace, or remove a Promotion Code on the billing tab.
+ * Redeem, replace, or remove a Promotion or Access Code on the billing tab.
  */
 
 import { useState, type ReactNode } from 'react'
+import { isProfileBillingAccessCode } from '@virtality/shared/utils'
 import type { SubscriptionDiscountRead } from '@virtality/shared/utils'
 import {
+  PROFILE_BILLING_CODE_FIELD_LABEL,
   STAFF_REDEEM_BLOCK_COPY,
   replaceConfirmDiscountLabel,
   requiresReplaceConfirm,
@@ -20,19 +22,13 @@ import { PendingPromoHoldRow } from './pending-promo-hold-row'
 import { PromoCodeEntryForm } from './promo-code-entry-form'
 import { RedeemReplaceConfirmDialog } from './redeem-replace-confirm-dialog'
 
-function promoRedeemBody({
+function promoOutcomeChrome({
   chrome,
   pendingHoldExpiresAt,
   onRemoveLive,
   onCancelPending,
   onPendingExpired,
   cancelPendingPending,
-  successFlash,
-  redeemError,
-  redeeming,
-  code,
-  onCodeChange,
-  onApply,
 }: {
   chrome: PromoRedeemChrome
   pendingHoldExpiresAt: Date | string | null
@@ -40,12 +36,6 @@ function promoRedeemBody({
   onCancelPending: () => void
   onPendingExpired: () => void
   cancelPendingPending: boolean
-  successFlash: boolean
-  redeemError: string | null
-  redeeming: boolean
-  code: string
-  onCodeChange: (value: string) => void
-  onApply: () => void
 }): ReactNode {
   switch (chrome.kind) {
     case 'pending_hold':
@@ -63,8 +53,8 @@ function promoRedeemBody({
     case 'redeem_unavailable':
       return (
         <p className='text-sm text-zinc-500'>
-          Promotion Code redeem is unavailable until discount details load. Try
-          again shortly.
+          Promotion Code redeem is unavailable until discount details load. You
+          can still apply an Access Code below.
         </p>
       )
     case 'staff_blocked':
@@ -74,17 +64,8 @@ function promoRedeemBody({
         <AppliedPromoRow appliedCode={chrome.code} onRemove={onRemoveLive} />
       )
     case 'entry':
-      return (
-        <PromoCodeEntryForm
-          code={code}
-          onCodeChange={onCodeChange}
-          redeeming={redeeming}
-          redeemError={redeemError}
-          successFlash={successFlash}
-          onApply={onApply}
-          applyLabel='Apply Code'
-        />
-      )
+      // Entry form is rendered below when showEntry is true.
+      return null
   }
 }
 
@@ -132,6 +113,7 @@ export function PromoRedeemSection({
   const currentLabel = hasEligibleSubscription
     ? replaceConfirmDiscountLabel(discount)
     : null
+  const showEntry = !staffBlocked && chrome.kind !== 'applied_live'
 
   async function submitApply(confirmReplace: boolean) {
     const trimmed = code.trim()
@@ -147,7 +129,8 @@ export function PromoRedeemSection({
   async function handleApplyClick() {
     const trimmed = code.trim()
     if (!trimmed) return
-    if (!hasEligibleSubscription) {
+
+    if (isProfileBillingAccessCode(trimmed) || !hasEligibleSubscription) {
       await submitApply(false)
       return
     }
@@ -164,23 +147,29 @@ export function PromoRedeemSection({
 
   return (
     <div className='space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800'>
-      <p className='text-sm font-medium'>Have a Promotion Code?</p>
-      {promoRedeemBody({
+      <p className='text-sm font-medium'>{PROFILE_BILLING_CODE_FIELD_LABEL}</p>
+      {promoOutcomeChrome({
         chrome,
         pendingHoldExpiresAt,
         onRemoveLive: onRemove,
         onCancelPending,
         onPendingExpired,
         cancelPendingPending,
-        successFlash,
-        redeemError,
-        redeeming,
-        code,
-        onCodeChange,
-        onApply: () => {
-          void handleApplyClick()
-        },
       })}
+      {showEntry ? (
+        <PromoCodeEntryForm
+          code={code}
+          onCodeChange={onCodeChange}
+          redeeming={redeeming}
+          redeemError={redeemError}
+          successFlash={successFlash}
+          onApply={() => {
+            void handleApplyClick()
+          }}
+          applyLabel='Apply Code'
+          fieldLabel={PROFILE_BILLING_CODE_FIELD_LABEL}
+        />
+      ) : null}
 
       <RedeemReplaceConfirmDialog
         open={replaceOpen}

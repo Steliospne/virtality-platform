@@ -12,6 +12,7 @@ import {
   useConsolePendingPromotionCode,
   useConsolePromoRedeemPreflight,
   useConsoleSubscriptionDiscount,
+  useRedeemAccessCode,
   useRedeemPromotionCode,
   useRemovePromoDiscount,
   useSavePendingPromotionCode,
@@ -19,11 +20,6 @@ import {
 import { authClient } from '@/auth-client'
 import { useConsoleBillingAuth } from '@/hooks/use-console-billing-auth'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
-import {
-  CANCEL_SCHEDULE_RESTORE_TOAST,
-  UNDO_CANCELLATION_RESTORE_TOAST,
-} from '@/lib/console-better-auth-billing'
-import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
   billingCatalogMinor,
@@ -38,7 +34,6 @@ import {
   profileBillingPendingTargetInterval,
   profileBillingPrimaryCtaLabel,
   profileBillingShowsPlanCardCheckout,
-  profileBillingShowsPromoChrome,
   promoCodeLabel,
   profileBillingCardActionConfirm,
   resolveProfileBillingCardAction,
@@ -46,6 +41,15 @@ import {
   type BillingStandingView,
   type ProfileBillingCardAction,
 } from '@/lib/profile-billing'
+import {
+  CANCEL_SCHEDULE_RESTORE_TOAST,
+  UNDO_CANCELLATION_RESTORE_TOAST,
+} from '@/lib/console-better-auth-billing'
+import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
+import {
+  formatAccessCodeAppliedMessage,
+  isProfileBillingAccessCode,
+} from '@virtality/shared/utils'
 
 const STANDING_REFETCH_ATTEMPTS = 5
 const STANDING_REFETCH_DELAY_MS = 250
@@ -69,6 +73,7 @@ export function useBillingTab() {
   const pendingHoldQuery = useConsolePendingPromotionCode()
   const preflightQuery = useConsolePromoRedeemPreflight()
   const redeemMutation = useRedeemPromotionCode()
+  const accessCodeMutation = useRedeemAccessCode()
   const savePendingMutation = useSavePendingPromotionCode()
   const cancelPendingMutation = useCancelPendingPromotionCode()
   const cancelPendingAsyncRef = useRef(cancelPendingMutation.mutateAsync)
@@ -85,6 +90,7 @@ export function useBillingTab() {
   } = useConsoleBillingAuth({
     plan: standingQuery.data?.plan,
     status: standingQuery.data?.status,
+    hadPaidBilling: standingQuery.data?.hadPaidBilling,
   })
 
   const [selectedInterval, setSelectedInterval] =
@@ -158,7 +164,6 @@ export function useBillingTab() {
   const portalPending = isOpeningPortal
   const discount = discountQuery.data
   const display = profileBillingDiscountDisplay(discount, catalogMinor)
-  const showPromoChrome = profileBillingShowsPromoChrome(standing)
   const hasEligibleSubscription = preflightQuery.data?.ok === true
   const staffBlocked = discount ? isStaffRedeemBlocked(discount) : false
   const appliedPromoCode = discount ? promoCodeLabel(discount) : null
@@ -303,14 +308,31 @@ export function useBillingTab() {
   async function handleRedeem(code: string, confirmReplace: boolean) {
     setRedeemError(null)
     setRedeemSuccessMessage(null)
+    const trimmed = code.trim()
+    if (!trimmed) return false
+
+    if (isProfileBillingAccessCode(trimmed)) {
+      try {
+        const result = await accessCodeMutation.mutateAsync({ code: trimmed })
+        setRemoveSuccess(false)
+        setRedeemSuccessMessage(formatAccessCodeAppliedMessage(result))
+        await refetchStandingUntil((data) => data != null)
+        setPromoCode('')
+        return true
+      } catch (error) {
+        setRedeemError(errorMessage(error, 'Could not apply that Access Code.'))
+        return false
+      }
+    }
+
     try {
       if (!hasEligibleSubscription) {
-        await savePendingPromotionCode(code)
+        await savePendingPromotionCode(trimmed)
         setPromoCode('')
         return true
       }
       const result = await redeemMutation.mutateAsync({
-        code,
+        code: trimmed,
         confirmReplace,
       })
       setRemoveSuccess(false)
@@ -396,7 +418,6 @@ export function useBillingTab() {
     planCardActionFor,
     planCardCheckoutPending,
     portalPending,
-    showPromoChrome,
     discount,
     hasEligibleSubscription,
     pendingHoldCode,
@@ -405,7 +426,10 @@ export function useBillingTab() {
     redeemError,
     promoCode,
     setPromoCode,
-    redeeming: redeemMutation.isPending || savePendingMutation.isPending,
+    redeeming:
+      redeemMutation.isPending ||
+      accessCodeMutation.isPending ||
+      savePendingMutation.isPending,
     handlePrimaryCta,
     handlePlanCardCheckout,
     handleRedeem,

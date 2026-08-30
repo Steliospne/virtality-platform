@@ -16,7 +16,7 @@ vi.mock('./pending-promotion-code.ts', () => ({
 
 import {
   PRO_PLAN_MONTHLY_PRICE_ID,
-  withCheckoutReturnIntent,
+  buildCheckoutCancelReturnUrl,
 } from '@virtality/shared/utils'
 import {
   ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,
@@ -138,7 +138,7 @@ describe('startAssignedVariantSubscribeCheckout', () => {
       expect.objectContaining({
         customer: CUSTOMER_ID,
         mode: 'subscription',
-        cancel_url: withCheckoutReturnIntent(RETURN_URL, 'cancel'),
+        cancel_url: buildCheckoutCancelReturnUrl(RETURN_URL),
         line_items: [{ price: EARLY_BIRD_MONTHLY, quantity: 1 }],
         payment_method_collection: 'always',
         metadata: expect.objectContaining({

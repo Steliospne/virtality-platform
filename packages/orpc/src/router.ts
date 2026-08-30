@@ -26,6 +26,7 @@ import { couponLibrary } from './procedures/coupon-library.ts'
 import { promotionCode } from './procedures/promotion-code.ts'
 import { campaignWindow } from './procedures/campaign-window.ts'
 import { consolePromo } from './procedures/console-promo.ts'
+import { consoleAccessCode } from './procedures/console-access-code.ts'
 import { consoleBilling } from './procedures/console-billing.ts'
 import { renewTrigger } from './procedures/renew-trigger.ts'
 import { renewPrompt } from './procedures/renew-prompt.ts'
@@ -70,6 +71,7 @@ export const router = {
   promotionCode,
   campaignWindow,
   consolePromo,
+  consoleAccessCode,
   consoleBilling,
   renewTrigger,
   renewPrompt,

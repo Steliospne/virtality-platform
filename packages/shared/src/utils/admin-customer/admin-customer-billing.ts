@@ -23,6 +23,11 @@ import {
   scheduleCyclePlanChange,
   type CyclePlanChangePort,
 } from '../billing/cycle-plan-change.ts'
+import {
+  buildCheckoutCancelReturnUrl,
+  buildCheckoutSuccessUrl,
+} from '../billing/checkout-success-url.ts'
+import { withCheckoutReturnIntent } from '../billing/checkout-return-url.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 import { hadPaidBillingHistory } from '../billing/paid-billing-history.ts'
 import {
@@ -206,6 +211,18 @@ export type AdminCustomerBillingMutationResult = {
   stripeOperationId: string
   pendingWebhookSync: boolean
   checkoutUrl?: string
+}
+
+function profileBillingReturnUrl(userId: string): string {
+  return `/user/${userId}/profile?tab=billing`
+}
+
+function checkoutSuccessUrlForSubscriptions(
+  subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
+): string {
+  return buildCheckoutSuccessUrl(
+    hadPaidBillingHistory(subscriptions) ? 'renew' : 'subscribe',
+  )
 }
 
 export class AdminCustomerBillingValidationError extends Error {
@@ -568,10 +585,8 @@ export async function changePaidPlanForCustomer(
   assertReason(input.reason)
   assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
 
-  const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
-    store,
-    input,
-  )
+  const { user, subscriptions, beforeBillingState, livePaidPro } =
+    await loadBillingContext(store, input)
   const stripeCustomerId = await ensureStripeCustomer(
     store,
     stripe,
@@ -582,7 +597,11 @@ export async function changePaidPlanForCustomer(
     await stripe.customerHasDefaultPaymentMethod(stripeCustomerId)
 
   if (!hasPaymentMethod) {
-    return sendPaidCheckoutLinkForCustomer(store, stripe, input)
+    return sendPaidCheckoutLinkForCustomer(store, stripe, {
+      ...input,
+      successUrl: checkoutSuccessUrlForSubscriptions(subscriptions),
+      cancelUrl: buildCheckoutCancelReturnUrl(profileBillingReturnUrl(user.id)),
+    })
   }
 
   let stripeOperationId: string
@@ -610,7 +629,10 @@ export async function changePaidPlanForCustomer(
         input.targetPriceId,
         input.proVariantCatalog,
       ),
-      returnUrl: input.successUrl,
+      returnUrl: withCheckoutReturnIntent(
+        profileBillingReturnUrl(user.id),
+        'success',
+      ),
     })
     if (!scheduled.ok) {
       throw new AdminCustomerBillingStateError(scheduled.message)
@@ -656,7 +678,10 @@ export async function sendPaidCheckoutLinkForCustomer(
   assertReason(input.reason)
   assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
 
-  const { user, beforeBillingState } = await loadBillingContext(store, input)
+  const { user, subscriptions, beforeBillingState } = await loadBillingContext(
+    store,
+    input,
+  )
   const stripeCustomerId = await ensureStripeCustomer(
     store,
     stripe,
@@ -667,8 +692,8 @@ export async function sendPaidCheckoutLinkForCustomer(
   const session = await stripe.createPaidCheckoutSession({
     customerId: stripeCustomerId,
     priceId: input.targetPriceId,
-    successUrl: input.successUrl,
-    cancelUrl: input.cancelUrl,
+    successUrl: checkoutSuccessUrlForSubscriptions(subscriptions),
+    cancelUrl: buildCheckoutCancelReturnUrl(profileBillingReturnUrl(user.id)),
     metadata: stripeBillingMetadata({
       actorUserId: input.actorUserId,
       action: 'send_paid_checkout_link',

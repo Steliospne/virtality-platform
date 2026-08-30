@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { getConsoleUrl } from '@virtality/shared/types'
 import {
-  CHECKOUT_RETURN_PARAM,
+  CHECKOUT_SUCCESS_INTENT_PARAM,
+  CHECKOUT_SUCCESS_PATH,
   buildProCheckoutUpgradeInput,
 } from './subscription-checkout.js'
 import {
@@ -33,21 +34,23 @@ describe('createConsoleBetterAuthBilling', () => {
       billing.startCheckout({
         returnUrl: `${consoleOrigin}/user/u1/profile?tab=billing`,
         annual: true,
+        checkoutSuccessIntent: 'renew',
       }),
     ).resolves.toEqual({ ok: true })
 
     expect(upgrade).toHaveBeenCalledWith(
       buildProCheckoutUpgradeInput(
         `${consoleOrigin}/user/u1/profile?tab=billing`,
-        { annual: true },
+        { annual: true, checkoutSuccessIntent: 'renew' },
       ),
     )
     const input = upgrade.mock.calls[0]![0] as Record<string, unknown>
     expect(input).not.toHaveProperty('scheduleAtPeriodEnd')
     expect(input).not.toHaveProperty('disableRedirect')
     expect(input.annual).toBe(true)
+    expect(String(input.successUrl)).toContain(CHECKOUT_SUCCESS_PATH)
     expect(String(input.successUrl)).toContain(
-      `${CHECKOUT_RETURN_PARAM}=success`,
+      `${CHECKOUT_SUCCESS_INTENT_PARAM}=renew`,
     )
   })
 

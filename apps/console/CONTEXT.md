@@ -203,7 +203,7 @@ A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric chara
 _Avoid_: Referral Code, QA code, Testing Code, promo
 
 **Access Code**:
-A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, with mode **Free** (`permanent_free`) or **Trial** (`timed_trial`). At sign-up, Free mode creates permanent Free access; Trial mode starts a no-card **Trial Subscription** (default fourteen days with an optional per-code day override). Unused codes expire one week after creation. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
+A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, with mode **Free** (`permanent_free`) or **Trial** (`timed_trial`). At sign-up, Free mode creates permanent Free access; Trial mode starts a no-card **Trial Subscription** (default fourteen days with an optional per-code day override). On Profile → Billing, the unified **Promotion or Access Code** field routes `GO-` codes here (Promotion Codes use the other path); redeem follows the state × mode matrix (including attaching a trial on active Free). Unused codes expire one week after creation. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist at sign-up; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**.
 _Avoid_: Trial Redeem Code, Billing Code, Customer Redeem Code, `PAY-` prefix
 
 **Trial Subscription**:
@@ -219,8 +219,16 @@ Server read model of the clinician's Entitlement Clock and related billing flags
 _Avoid_: session entitlement blob, live countdown (that is Live Entitlement Standing)
 
 **Live Entitlement Standing**:
-Entitlement Standing re-evaluated at a client `now` for Remaining Time, VR soft gate, sidebar Checkout CTA, and related labels (`projectLiveEntitlementStanding`). Synced flags pass through; time-sensitive fields overwrite the standing values that went stale after the server `now`. Checkout restore polling after success return stays in the Console hook, not in this projection.
+Entitlement Standing re-evaluated at a client `now` for Remaining Time, VR soft gate, sidebar Checkout CTA, and related labels (`projectLiveEntitlementStanding`). Synced flags pass through; time-sensitive fields overwrite the standing values that went stale after the server `now`. Checkout entitlement restore after success runs only on the Checkout Success Page, not in this projection.
 _Avoid_: client-side entitlement invent, dual-write clock, refetch-only countdown
+
+**Checkout Success Page**:
+Console route `/billing/success` shown after a successful clinician Stripe Checkout that restores entitlement. Hosts the celebration canvas, Subscribe vs Renew feel-good copy (from Checkout Success Intent), entitlement restore polling, and the primary CTA to Console home.
+_Avoid_: Website waitlist `/thank-you`, Better Auth `/subscription/success` callback as the clinician-facing celebration, silent Profile `checkoutReturn=success` celebration
+
+**Checkout Success Intent**:
+Query value on the Checkout Success Page URL distinguishing Subscribe vs Renew wording (`subscribe` | `renew`). Set when Checkout starts; admin-sent Checkout uses whichever fits that seat. Not Customer Portal and not Cycle plan change.
+_Avoid_: `checkoutReturn=success` on Profile as the celebration surface, portal return markers, cycle schedule success markers
 
 **Billing Path Established**:
 At least one synced local Subscription row for the clinician's Stripe Customer, in any status. A Stripe Customer id alone does not establish the path. Console waitlist applies only when the user is not admin/tester and this path is not established; clock expiry never signs the user out to waitlist when the path is established.
@@ -255,7 +263,7 @@ Stripe discount definition (percent or amount off, duration set at creation). St
 _Avoid_: Trial Redeem Code, Tester Code, deal, offer code
 
 **Promotion Code**:
-Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician (including mid-cycle on Profile → Billing). Distinct from **Access Code** and **Tester Code**.
+Customer-facing redeem string that wraps a **Coupon**, created in Adminboard and entered by the clinician on Profile → Billing in the unified **Promotion or Access Code** field (non-`GO-` codes). Distinct from **Access Code** and **Tester Code**.
 _Avoid_: Trial Redeem Code, Tester Code, Coupon (as the typed string), promo code, voucher
 
 **Promotion Code Delivery**:

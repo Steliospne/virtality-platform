@@ -14,6 +14,10 @@ import {
   useStartConsoleSubscribeCheckout,
 } from '@virtality/react-query'
 import { shouldRouteSubscribeCheckoutViaAssignedVariant } from '@virtality/shared/utils'
+import {
+  resolveCheckoutSuccessIntent,
+  type CheckoutSuccessIntentStanding,
+} from '@/lib/resolve-checkout-success-intent'
 
 function currentConsoleReturnUrl(): string {
   return `${window.location.origin}${window.location.pathname}${window.location.search}`
@@ -23,10 +27,7 @@ type ToastNotifyOptions = {
   successToast?: string
 }
 
-type SubscribeCheckoutStanding = {
-  plan: string | null | undefined
-  status: string | null | undefined
-}
+type SubscribeCheckoutStanding = CheckoutSuccessIntentStanding
 
 /**
  * Runs a billing action once: rejects re-entry while pending, then applies
@@ -64,6 +65,11 @@ async function runBillingAction(
 export function useConsoleBillingAuth(standing?: SubscribeCheckoutStanding) {
   const scheduleCycleMutation = useScheduleConsoleCyclePlanChange()
   const startSubscribeCheckoutMutation = useStartConsoleSubscribeCheckout()
+
+  const checkoutSuccessIntent = useMemo(
+    () => resolveCheckoutSuccessIntent(standing),
+    [standing?.hadPaidBilling, standing?.plan, standing?.status],
+  )
 
   const billing = useMemo(
     () =>
@@ -111,6 +117,7 @@ export function useConsoleBillingAuth(standing?: SubscribeCheckoutStanding) {
         return billing.startCheckout({
           returnUrl: currentConsoleReturnUrl(),
           annual: options?.annual,
+          checkoutSuccessIntent,
         })
       },
     )

@@ -4,10 +4,11 @@ import {
   AdminCustomerBillingValidationError,
   annualFlagForProPlanPriceId,
   billingSnapshotFromPrimarySubscription,
+  buildCheckoutCancelReturnUrl,
+  buildCheckoutSuccessUrl,
   buildPaidProSubscriptionCreateParams,
   buildPermanentFreeAfterCancellationStripeParams,
   effectiveAssignedProVariant,
-  withCheckoutReturnIntent,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AdminCustomerCyclePlanPort,
@@ -44,8 +45,8 @@ function buildAdminCheckoutReturnUrls(
 ): AdminCustomerBillingCheckoutReturnUrls {
   const returnUrl = `/user/${userId}/profile?tab=billing`
   return {
-    successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
-    cancelUrl: withCheckoutReturnIntent(returnUrl, 'cancel'),
+    successUrl: buildCheckoutSuccessUrl('subscribe'),
+    cancelUrl: buildCheckoutCancelReturnUrl(returnUrl),
   }
 }
 

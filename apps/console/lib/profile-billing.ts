@@ -13,7 +13,6 @@ import {
   canRemovePromoDiscount,
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
-  isConsolePromoEligibleStatus,
   isFreeSubscriptionPlan,
   isPaidProPortalEligible,
   isStaffRedeemBlocked,
@@ -31,6 +30,10 @@ import {
   type EntitlementBillingInterval,
   type SubscriptionDiscountRead,
 } from '@virtality/shared/utils'
+
+/** Section heading and input label for the unified billing code field. */
+export const PROFILE_BILLING_CODE_FIELD_LABEL =
+  'Promotion or Access Code' as const
 
 export type BillingInterval = EntitlementBillingInterval
 
@@ -394,16 +397,6 @@ export function profileBillingStatusDetail(
   if (standing.entitled) return 'Your Pro access is active.'
 
   return 'Choose Monthly or Yearly Pro, then continue to Checkout.'
-}
-
-/** Redeem / remove chrome only on eligible Subscription statuses (#65 / #72). */
-export function profileBillingShowsPromoChrome(
-  standing: Pick<BillingStandingView, 'entitled' | 'status'>,
-): boolean {
-  if (!standing.entitled) return true
-  return (
-    standing.status != null && isConsolePromoEligibleStatus(standing.status)
-  )
 }
 
 export function profileBillingDiscountDisplay(

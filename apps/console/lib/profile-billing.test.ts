@@ -13,7 +13,6 @@ import {
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
-  profileBillingShowsPromoChrome,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   resolveProfileBillingCardAction,
@@ -397,26 +396,6 @@ describe('profileBillingStatusDetail', () => {
         clockEnd: '2026-09-10T12:00:00.000Z',
       }),
     ).toMatch(/^Ends /)
-  })
-})
-
-describe('profileBillingShowsPromoChrome', () => {
-  it('shows promo chrome on entitled eligible statuses and on all non-entitled seats', () => {
-    expect(
-      profileBillingShowsPromoChrome({ entitled: true, status: 'active' }),
-    ).toBe(true)
-    expect(
-      profileBillingShowsPromoChrome({ entitled: true, status: 'trialing' }),
-    ).toBe(true)
-    expect(
-      profileBillingShowsPromoChrome({ entitled: true, status: 'past_due' }),
-    ).toBe(true)
-    expect(
-      profileBillingShowsPromoChrome({ entitled: true, status: 'canceled' }),
-    ).toBe(false)
-    expect(
-      profileBillingShowsPromoChrome({ entitled: false, status: null }),
-    ).toBe(true)
   })
 })
 

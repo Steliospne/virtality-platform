@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Promotion Code input and apply control for the billing tab.
+ * Unified Promotion or Access Code input and apply control for the billing tab.
  */
 
 import { Button } from '@virtality/ui/components/button'
@@ -15,6 +15,7 @@ export function PromoCodeEntryForm({
   successFlash,
   onApply,
   applyLabel,
+  fieldLabel,
 }: {
   code: string
   onCodeChange: (value: string) => void
@@ -23,12 +24,13 @@ export function PromoCodeEntryForm({
   successFlash: boolean
   onApply: () => void
   applyLabel?: string
+  fieldLabel?: string
 }) {
   return (
     <>
       {successFlash ? (
         <p className='text-sm text-emerald-700 dark:text-emerald-300'>
-          You can enter a new Promotion Code below when ready.
+          You can enter a new code below when ready.
         </p>
       ) : null}
       <div className='flex gap-2'>
@@ -37,7 +39,7 @@ export function PromoCodeEntryForm({
           onChange={(event) => onCodeChange(event.target.value.toUpperCase())}
           placeholder='Enter code'
           className='font-mono'
-          aria-label='Promotion Code'
+          aria-label={fieldLabel ?? 'Promotion or Access Code'}
           disabled={redeeming}
         />
         <Button

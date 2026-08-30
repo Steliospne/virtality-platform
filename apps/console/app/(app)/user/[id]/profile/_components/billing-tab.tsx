@@ -45,7 +45,6 @@ export function BillingTab() {
     planCardActionFor,
     planCardCheckoutPending,
     portalPending,
-    showPromoChrome,
     discount,
     hasEligibleSubscription,
     pendingHoldCode,
@@ -191,27 +190,25 @@ export function BillingTab() {
           </Button>
         ) : null}
 
-        {showPromoChrome ? (
-          <PromoRedeemSection
-            discount={discount}
-            hasEligibleSubscription={hasEligibleSubscription}
-            pendingHoldCode={pendingHoldCode}
-            pendingHoldExpiresAt={pendingHoldExpiresAt}
-            staffBlocked={staffBlocked}
-            successFlash={removeSuccess}
-            redeemError={redeemError}
-            redeeming={redeeming}
-            onRemove={() => setRemoveOpen(true)}
-            onCancelPending={() => {
-              void handleCancelPendingHold()
-            }}
-            onPendingExpired={handlePendingHoldExpired}
-            cancelPendingPending={cancelPendingPending}
-            onRedeem={handleRedeem}
-            code={promoCode}
-            onCodeChange={setPromoCode}
-          />
-        ) : null}
+        <PromoRedeemSection
+          discount={discount}
+          hasEligibleSubscription={hasEligibleSubscription}
+          pendingHoldCode={pendingHoldCode}
+          pendingHoldExpiresAt={pendingHoldExpiresAt}
+          staffBlocked={staffBlocked}
+          successFlash={removeSuccess}
+          redeemError={redeemError}
+          redeeming={redeeming}
+          onRemove={() => setRemoveOpen(true)}
+          onCancelPending={() => {
+            void handleCancelPendingHold()
+          }}
+          onPendingExpired={handlePendingHoldExpired}
+          cancelPendingPending={cancelPendingPending}
+          onRedeem={handleRedeem}
+          code={promoCode}
+          onCodeChange={setPromoCode}
+        />
       </div>
 
       <RemovePromoConfirmDialog

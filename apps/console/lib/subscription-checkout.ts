@@ -13,18 +13,25 @@
  */
 
 import {
-  toAbsoluteConsoleReturnUrl,
-  withCheckoutReturnIntent,
+  buildCheckoutCancelReturnUrl,
+  buildCheckoutSuccessUrl,
+  type CheckoutSuccessIntent,
   type CheckoutReturnIntent,
+  toAbsoluteConsoleReturnUrl,
 } from '@virtality/shared/utils'
 
 export {
   CHECKOUT_RETURN_PARAM,
+  CHECKOUT_SUCCESS_INTENT_PARAM,
+  CHECKOUT_SUCCESS_PATH,
+  buildCheckoutSuccessUrl,
   readCheckoutReturnIntent,
+  readCheckoutSuccessIntent,
   stripCheckoutReturnIntent,
   toAbsoluteConsoleReturnUrl,
   withCheckoutReturnIntent,
   type CheckoutReturnIntent,
+  type CheckoutSuccessIntent,
 } from '@virtality/shared/utils'
 
 export const PRO_SUBSCRIPTION_PLAN = 'pro' as const
@@ -70,15 +77,16 @@ export type ProCheckoutUpgradeInput = {
  */
 export function buildProCheckoutUpgradeInput(
   returnUrl: string,
-  options?: { annual?: boolean },
+  options?: { annual?: boolean; checkoutSuccessIntent?: CheckoutSuccessIntent },
 ): ProCheckoutUpgradeInput {
   const absoluteReturn = toAbsoluteConsoleReturnUrl(returnUrl)
+  const checkoutSuccessIntent = options?.checkoutSuccessIntent ?? 'subscribe'
   return {
     plan: PRO_SUBSCRIPTION_PLAN,
     annual: options?.annual ?? false,
     returnUrl: absoluteReturn,
-    successUrl: withCheckoutReturnIntent(returnUrl, 'success'),
-    cancelUrl: withCheckoutReturnIntent(returnUrl, 'cancel'),
+    successUrl: buildCheckoutSuccessUrl(checkoutSuccessIntent),
+    cancelUrl: buildCheckoutCancelReturnUrl(returnUrl),
   }
 }
 
@@ -103,10 +111,12 @@ export async function startProSubscriptionCheckout(input: {
   upgrade: ProSubscriptionUpgradeFn
   returnUrl: string
   annual?: boolean
+  checkoutSuccessIntent?: CheckoutSuccessIntent
 }): Promise<StartProSubscriptionCheckoutResult> {
   const { error } = await input.upgrade(
     buildProCheckoutUpgradeInput(input.returnUrl, {
       annual: input.annual,
+      checkoutSuccessIntent: input.checkoutSuccessIntent,
     }),
   )
 

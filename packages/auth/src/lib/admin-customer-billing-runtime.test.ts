@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { getConsoleUrl } from '@virtality/shared/types'
 import {
   createAdminCustomerBillingRuntimeFromPorts,
   type AdminCustomerBillingRuntimePorts,
@@ -15,11 +16,16 @@ import {
   PRO_PLAN_ANNUAL_PRICE_ID,
   PRO_PLAN_MONTHLY_PRICE_ID,
   PRO_SUBSCRIPTION_PLAN,
+  withCheckoutReturnIntent,
 } from '@virtality/shared/utils'
 
 const ACTOR_ID = 'admin_1'
-const SUCCESS_URL = 'https://admin.test/user/u1/profile?checkoutReturn=success'
-const CANCEL_URL = 'https://admin.test/user/u1/profile?checkoutReturn=cancel'
+const PROFILE_RETURN = `${getConsoleUrl().replace(/\/$/, '')}/user/user_paid/profile?tab=billing`
+const CYCLE_PLAN_SUCCESS_URL = withCheckoutReturnIntent(
+  PROFILE_RETURN,
+  'success',
+)
+const CYCLE_PLAN_CANCEL_URL = withCheckoutReturnIntent(PROFILE_RETURN, 'cancel')
 
 const PAID_USER = {
   id: 'user_paid',
@@ -162,8 +168,8 @@ function createRuntime(
     cyclePlan: createCyclePlanPort(),
     freePlanPriceId: FREE_PLAN_PRICE_ID,
     checkoutReturnUrls: () => ({
-      successUrl: SUCCESS_URL,
-      cancelUrl: CANCEL_URL,
+      successUrl: CYCLE_PLAN_SUCCESS_URL,
+      cancelUrl: CYCLE_PLAN_CANCEL_URL,
     }),
     ...overrides,
   })
@@ -187,8 +193,10 @@ describe('createAdminCustomerBillingRuntimeFromPorts', () => {
         annual: true,
         referenceId: PAID_USER.id,
         scheduleAtPeriodEnd: true,
-        successUrl: SUCCESS_URL,
-        cancelUrl: CANCEL_URL,
+        disableRedirect: true,
+        returnUrl: CYCLE_PLAN_SUCCESS_URL,
+        successUrl: CYCLE_PLAN_SUCCESS_URL,
+        cancelUrl: CYCLE_PLAN_CANCEL_URL,
       }),
     )
     expect(result.pendingWebhookSync).toBe(true)

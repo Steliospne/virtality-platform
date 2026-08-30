@@ -7,6 +7,7 @@
 import {
   restoreSubscription as restoreSubscriptionShared,
   scheduleCyclePlanChange as scheduleCyclePlanChangeShared,
+  type CheckoutSuccessIntent,
   type CyclePlanChangePort,
   type CyclePlanChangeUpgradeInput,
 } from '@virtality/shared/utils'
@@ -41,6 +42,7 @@ export type ConsoleBetterAuthBilling = {
   startCheckout: (input: {
     returnUrl: string
     annual?: boolean
+    checkoutSuccessIntent?: CheckoutSuccessIntent
   }) => Promise<ConsoleBetterAuthBillingResult>
   scheduleCycleChange: (input: {
     returnUrl: string
@@ -115,6 +117,7 @@ export function createConsoleBetterAuthBilling(
         upgrade: port.upgrade,
         returnUrl: input.returnUrl,
         annual: input.annual,
+        checkoutSuccessIntent: input.checkoutSuccessIntent,
       })
     },
 
