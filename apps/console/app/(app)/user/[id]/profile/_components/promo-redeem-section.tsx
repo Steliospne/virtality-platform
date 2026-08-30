@@ -14,6 +14,7 @@ import {
   requiresReplaceConfirm,
 } from '@/lib/profile-billing'
 import {
+  profileBillingCodeEntryVisible,
   resolvePromoRedeemChrome,
   type PromoRedeemChrome,
 } from '@/lib/promo-redeem-chrome'
@@ -113,7 +114,7 @@ export function PromoRedeemSection({
   const currentLabel = hasEligibleSubscription
     ? replaceConfirmDiscountLabel(discount)
     : null
-  const showEntry = !staffBlocked && chrome.kind !== 'applied_live'
+  const showEntry = profileBillingCodeEntryVisible(chrome)
 
   async function submitApply(confirmReplace: boolean) {
     const trimmed = code.trim()
@@ -134,6 +135,7 @@ export function PromoRedeemSection({
       await submitApply(false)
       return
     }
+    if (chrome.kind === 'staff_blocked') return
     if (!discount?.ok) return
 
     if (requiresReplaceConfirm(discount)) {

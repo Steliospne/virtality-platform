@@ -69,4 +69,18 @@ describe('resolvePromoRedeemChrome', () => {
       }),
     ).toEqual({ kind: 'applied_live', code: 'SAVE10' })
   })
+
+  it('shows staff_blocked when staff discount blocks promo redeem', () => {
+    expect(
+      resolvePromoRedeemChrome({
+        hasEligibleSubscription: true,
+        pendingHoldCode: null,
+        discount: {
+          ...livePromo,
+          channel: 'staff',
+        },
+        staffBlocked: true,
+      }),
+    ).toEqual({ kind: 'staff_blocked' })
+  })
 })
