@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import type { CheckoutSuccessPalette } from './checkout-success-palette'
+import { useCheckoutSuccessTimer } from './checkout-success-timer'
 
 const PARTICLE_COUNT = 220
 // Kept inside the fixed mount camera's frustum (fov 45, distance 4.5 => a
@@ -34,13 +35,14 @@ export function CheckoutSuccessParticleHalo({
   palette: CheckoutSuccessPalette
 }) {
   const groupRef = useRef<Group>(null)
+  const timer = useCheckoutSuccessTimer()
   const positions = useMemo(() => buildHaloPositions(), [])
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     const group = groupRef.current
     if (!group) return
     group.rotation.y += delta * 0.22 * palette.spin
-    group.rotation.x = 0.28 + Math.sin(state.clock.elapsedTime * 0.3) * 0.1
+    group.rotation.x = 0.28 + Math.sin(timer.getElapsed() * 0.3) * 0.1
   })
 
   return (

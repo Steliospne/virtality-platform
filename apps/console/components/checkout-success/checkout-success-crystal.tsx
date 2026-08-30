@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Mesh } from 'three'
 import type { CheckoutSuccessPalette } from './checkout-success-palette'
+import { useCheckoutSuccessTimer } from './checkout-success-timer'
 
 /**
  * Faceted crystal core of the celebration: spins continuously and breathes
@@ -15,13 +16,14 @@ export function CheckoutSuccessCrystal({
   palette: CheckoutSuccessPalette
 }) {
   const meshRef = useRef<Mesh>(null)
+  const timer = useCheckoutSuccessTimer()
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     const mesh = meshRef.current
     if (!mesh) return
     mesh.rotation.x += delta * 0.35 * palette.spin
     mesh.rotation.y += delta * 0.5 * palette.spin
-    const breath = 1 + Math.sin(state.clock.elapsedTime * 1.6) * 0.06
+    const breath = 1 + Math.sin(timer.getElapsed() * 1.6) * 0.06
     mesh.scale.setScalar(breath)
   })
 

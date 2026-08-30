@@ -6,6 +6,7 @@ import { CheckoutSuccessCrystal } from './checkout-success-crystal'
 import { checkoutSuccessPalette } from './checkout-success-palette'
 import { CheckoutSuccessParticleHalo } from './checkout-success-particle-halo'
 import { CheckoutSuccessPulseRings } from './checkout-success-pulse-rings'
+import { CheckoutSuccessTimerProvider } from './checkout-success-timer'
 
 /**
  * Celebration canvas mount for the Checkout Success Page. Composes the
@@ -22,7 +23,7 @@ export function CheckoutSuccessCelebration({
   const palette = checkoutSuccessPalette(intent)
 
   return (
-    <>
+    <CheckoutSuccessTimerProvider>
       <ambientLight intensity={0.6} />
       <directionalLight position={[4, 6, 8]} intensity={1.1} />
       <pointLight
@@ -34,6 +35,6 @@ export function CheckoutSuccessCelebration({
       <CheckoutSuccessCrystal palette={palette} />
       <CheckoutSuccessPulseRings palette={palette} />
       <CheckoutSuccessParticleHalo palette={palette} />
-    </>
+    </CheckoutSuccessTimerProvider>
   )
 }

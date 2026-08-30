@@ -1,6 +1,5 @@
 'use client'
 
-import { CheckoutSuccessCelebrationLazy } from '@/components/checkout-success/checkout-success-celebration-lazy'
 import { useCheckoutEntitlementRestore } from '@/hooks/use-checkout-entitlement-restore'
 import { checkoutSuccessCopy } from '@/lib/checkout-success-copy'
 import type { CheckoutSuccessIntent } from '@virtality/shared/utils'
@@ -21,8 +20,7 @@ export function CheckoutSuccessPageContent({
   const ctaReady = entitled && !isStandingPending
 
   return (
-    <section className='mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-10'>
-      <CheckoutSuccessCelebrationLazy intent={intent} />
+    <>
       <div className='space-y-3 text-center'>
         <h1 className='text-3xl font-bold text-balance md:text-4xl'>
           {copy.headline}
@@ -34,6 +32,6 @@ export function CheckoutSuccessPageContent({
         {timedOut ? <CheckoutSuccessTimeoutMessage userId={userId} /> : null}
       </div>
       <CheckoutSuccessHomeCta enabled={ctaReady} />
-    </section>
+    </>
   )
 }

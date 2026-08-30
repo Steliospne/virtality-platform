@@ -1,0 +1,110 @@
+.stage {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--cs-glow) 28%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--cs-core) 18%, transparent) 0%,
+      transparent 72%
+    );
+  animation: checkout-success-glow-breathe 2.4s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in oklab, var(--cs-glow) 55%, transparent);
+  box-shadow: 0 0 32px color-mix(in oklab, var(--cs-halo) 35%, transparent);
+  animation: checkout-success-ring-pulse 2.6s ease-out infinite;
+}
+
+.ringA {
+  animation-delay: 0s;
+}
+
+.ringB {
+  animation-delay: 0.85s;
+}
+
+.ringC {
+  animation-delay: 1.7s;
+}
+
+.crystal {
+  position: relative;
+  z-index: 1;
+  width: 5.5rem;
+  height: 5.5rem;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  background: linear-gradient(
+    145deg,
+    var(--cs-core) 0%,
+    var(--cs-glow) 55%,
+    var(--cs-halo) 100%
+  );
+  box-shadow:
+    0 0 36px color-mix(in oklab, var(--cs-glow) 55%, transparent),
+    inset 0 0 16px color-mix(in oklab, white 25%, transparent);
+  animation:
+    checkout-success-crystal-spin 6s linear infinite var(--cs-spin-direction),
+    checkout-success-crystal-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes checkout-success-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes checkout-success-ring-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.35);
+    opacity: 0;
+  }
+}
+
+@keyframes checkout-success-crystal-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes checkout-success-crystal-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}

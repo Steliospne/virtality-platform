@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Mesh, MeshBasicMaterial } from 'three'
 import type { CheckoutSuccessPalette } from './checkout-success-palette'
+import { useCheckoutSuccessTimer } from './checkout-success-timer'
 
 const RING_COUNT = 3
 const CYCLE_SECONDS = 2.6
@@ -24,6 +25,7 @@ export function CheckoutSuccessPulseRings({
   palette: CheckoutSuccessPalette
 }) {
   const meshes = useRef<Mesh[]>([])
+  const timer = useCheckoutSuccessTimer()
   const offsets = useMemo(
     () =>
       Array.from(
@@ -33,12 +35,12 @@ export function CheckoutSuccessPulseRings({
     [],
   )
 
-  useFrame((state) => {
+  useFrame(() => {
+    const elapsed = timer.getElapsed()
     offsets.forEach((offset, index) => {
       const mesh = meshes.current[index]
       if (!mesh) return
-      const progress =
-        ((state.clock.elapsedTime + offset) % CYCLE_SECONDS) / CYCLE_SECONDS
+      const progress = ((elapsed + offset) % CYCLE_SECONDS) / CYCLE_SECONDS
       mesh.scale.setScalar(0.7 + progress * (PEAK_SCALE - 0.7))
       const material = mesh.material as MeshBasicMaterial
       material.opacity = (1 - progress) * 0.5

@@ -223,7 +223,7 @@ Entitlement Standing re-evaluated at a client `now` for Remaining Time, VR soft 
 _Avoid_: client-side entitlement invent, dual-write clock, refetch-only countdown
 
 **Checkout Success Page**:
-Console route `/billing/success` shown after a successful clinician Stripe Checkout that restores entitlement. Hosts the celebration canvas, Subscribe vs Renew feel-good copy (from Checkout Success Intent), entitlement restore polling, and the primary CTA to Console home.
+Console route `/billing/success` shown after a successful clinician Stripe Checkout that restores entitlement. Full-viewport chrome-less surface (no sidebar or navbar). Hosts the celebration canvas, Subscribe vs Renew feel-good copy (from Checkout Success Intent), entitlement restore polling, and the primary CTA to Console home.
 _Avoid_: Website waitlist `/thank-you`, Better Auth `/subscription/success` callback as the clinician-facing celebration, silent Profile `checkoutReturn=success` celebration
 
 **Checkout Success Intent**:

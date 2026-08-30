@@ -14,7 +14,7 @@ export type CheckoutSuccessPalette = {
 const PALETTES: Record<CheckoutSuccessIntent, CheckoutSuccessPalette> = {
   subscribe: {
     core: '#39dff5',
-    glow: '#a78bfa',
+    glow: '#0ab1c6',
     halo: '#65e6f7',
     spin: 1,
   },
