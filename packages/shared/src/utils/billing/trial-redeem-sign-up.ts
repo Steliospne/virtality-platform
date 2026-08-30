@@ -22,6 +22,7 @@ export const TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE =
 export type SignUpCodeRoute =
   | { kind: 'none' }
   | { kind: 'tester'; code: string }
+  /** Access Code (`GO-`) redeem at sign-up. */
   | { kind: 'trial_redeem'; code: string }
 
 /**

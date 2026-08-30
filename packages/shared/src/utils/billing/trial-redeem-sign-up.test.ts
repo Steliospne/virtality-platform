@@ -73,7 +73,7 @@ function stripeGateway(
 }
 
 describe('routeSignUpCode', () => {
-  it('routes GO- to trial redeem and TE- to tester', () => {
+  it('routes GO- to Access Code redeem and TE- to tester', () => {
     expect(routeSignUpCode('GO-ABCDEFGHIJ')).toEqual({
       kind: 'trial_redeem',
       code: 'GO-ABCDEFGHIJ',

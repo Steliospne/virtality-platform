@@ -1,3 +1,7 @@
+/**
+ * Access Code issuance and admin lifecycle (`GO-` bearer codes).
+ * Product term: Access Code. Internal types and DB model keep TrialRedeem names.
+ */
 import { createRandomStringGenerator } from '../primitives/random.ts'
 
 export const TRIAL_REDEEM_CODE_PREFIX = 'GO-'

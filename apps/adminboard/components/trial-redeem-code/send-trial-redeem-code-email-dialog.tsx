@@ -80,11 +80,11 @@ export function SendTrialRedeemCodeEmailDialog({
           </DialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='grid gap-2'>
-              <Label htmlFor='trial-redeem-recipient-email'>
+              <Label htmlFor='access-code-recipient-email'>
                 Recipient email
               </Label>
               <Input
-                id='trial-redeem-recipient-email'
+                id='access-code-recipient-email'
                 type='email'
                 autoComplete='email'
                 placeholder='clinician@clinic.example'
