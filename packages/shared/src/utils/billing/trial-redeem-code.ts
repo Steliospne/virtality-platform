@@ -15,6 +15,21 @@ export const TRIAL_REDEEM_CODE_PATTERN = new RegExp(
   'i',
 )
 
+export const TRIAL_REDEEM_CODE_MODES = [
+  'permanent_free',
+  'timed_trial',
+] as const
+
+export type TrialRedeemCodeMode = (typeof TRIAL_REDEEM_CODE_MODES)[number]
+
+export const TRIAL_REDEEM_CODE_MODE_LABELS: Record<
+  TrialRedeemCodeMode,
+  string
+> = {
+  permanent_free: 'Free',
+  timed_trial: 'Trial',
+}
+
 export type TrialRedeemStoredStatus = 'unused' | 'redeemed' | 'already_entitled'
 
 export const TRIAL_REDEEM_DISPLAY_STATUSES = [
@@ -41,6 +56,7 @@ export type TrialRedeemCodeRecord = {
   id: number
   code: string
   status: TrialRedeemStoredStatus
+  mode: TrialRedeemCodeMode
   trialDays: number
   note: string | null
   createdAt: Date
@@ -58,6 +74,7 @@ export type TrialRedeemCodeStore = {
   create: (data: {
     code: string
     status: TrialRedeemStoredStatus
+    mode: TrialRedeemCodeMode
     trialDays: number
     note: string | null
     createdAt: Date
@@ -99,6 +116,7 @@ type TrialRedeemRuntime = {
 export type TrialRedeemEmailDelivery = {
   recipientEmail: string
   code: string
+  mode: TrialRedeemCodeMode
   trialDays: number
 }
 
@@ -135,6 +153,7 @@ export async function sendTrialRedeemCodeEmail(
   const payload: TrialRedeemEmailDelivery = {
     recipientEmail,
     code: existing.code,
+    mode: existing.mode,
     trialDays: existing.trialDays,
   }
 
@@ -173,6 +192,7 @@ export function getTrialRedeemDisplayStatus(
 }
 
 export type CreateTrialRedeemCodeInput = {
+  mode?: TrialRedeemCodeMode
   trialDays?: number
   note?: string | null
 }
@@ -196,8 +216,18 @@ export async function createTrialRedeemCode(
   runtime: TrialRedeemRuntime = {},
 ): Promise<TrialRedeemCodeRecord> {
   const now = runtime.now?.() ?? new Date()
+  const mode = input.mode ?? 'timed_trial'
+  if (!TRIAL_REDEEM_CODE_MODES.includes(mode)) {
+    throw new TrialRedeemCodeValidationError(
+      'mode must be permanent_free or timed_trial',
+    )
+  }
+
   const trialDays = input.trialDays ?? DEFAULT_TRIAL_REDEEM_DAYS
-  if (!Number.isInteger(trialDays) || trialDays < 1) {
+  if (
+    mode === 'timed_trial' &&
+    (!Number.isInteger(trialDays) || trialDays < 1)
+  ) {
     throw new TrialRedeemCodeValidationError(
       'trialDays must be a positive integer',
     )
@@ -214,6 +244,7 @@ export async function createTrialRedeemCode(
   return store.create({
     code,
     status: 'unused',
+    mode,
     trialDays,
     note,
     createdAt: now,

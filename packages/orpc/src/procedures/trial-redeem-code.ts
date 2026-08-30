@@ -10,6 +10,7 @@ import {
   TrialRedeemCodeNotFoundError,
   TrialRedeemCodeNotSendableError,
   TrialRedeemCodeValidationError,
+  TRIAL_REDEEM_CODE_MODES,
   TRIAL_REDEEM_DISPLAY_STATUSES,
   type TrialRedeemCodeStore,
 } from '@virtality/shared/utils'
@@ -19,6 +20,7 @@ import { authed } from '../middleware/auth.ts'
 const trialRedeemDisplayStatusSchema = z.enum(TRIAL_REDEEM_DISPLAY_STATUSES)
 
 const createInputSchema = z.object({
+  mode: z.enum(TRIAL_REDEEM_CODE_MODES).optional(),
   trialDays: z.number().int().positive().optional(),
   note: z.string().trim().max(500).nullable().optional(),
 })
@@ -104,6 +106,7 @@ const create = authed
   .handler(async ({ context, input }) =>
     runTrialRedeemHandler(context.prisma, (store) =>
       createTrialRedeemCode(store, {
+        mode: input.mode,
         trialDays: input.trialDays,
         note: input.note,
       }),

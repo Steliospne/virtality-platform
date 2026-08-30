@@ -4,6 +4,7 @@ import { APIError } from 'better-auth/api'
 import type Stripe from 'stripe'
 import {
   buildFreeTrialSubscriptionCreateParams,
+  buildPermanentFreeSubscriptionCreateParams,
   evaluateTrialRedeemAtSignUp,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
@@ -67,6 +68,20 @@ export function createStripeTrialRedeemGateway(
           customerId,
           priceId,
           trialPeriodDays,
+          metadata,
+        }),
+      )
+      return { stripeSubscriptionId: subscription.id }
+    },
+    createPermanentFreeSubscription: async ({
+      customerId,
+      priceId,
+      metadata,
+    }) => {
+      const subscription = await stripeClient.subscriptions.create(
+        buildPermanentFreeSubscriptionCreateParams({
+          customerId,
+          priceId,
           metadata,
         }),
       )

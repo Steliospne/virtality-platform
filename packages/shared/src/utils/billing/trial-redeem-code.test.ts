@@ -22,6 +22,7 @@ function record(
     id: 1,
     code: 'GO-ABCDEFGHIJ',
     status: 'unused',
+    mode: 'timed_trial',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
     createdAt: NOW,
@@ -120,6 +121,7 @@ describe('createTrialRedeemCode', () => {
     expect(created).toMatchObject({
       code: 'GO-TESTCODE01',
       status: 'unused',
+      mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
       note: 'pilot clinic',
       createdAt: NOW,
@@ -143,6 +145,25 @@ describe('createTrialRedeemCode', () => {
     )
 
     expect(created.trialDays).toBe(30)
+  })
+
+  it('creates a permanent_free mode code without requiring trial days', async () => {
+    const store = createMemoryStore()
+    const created = await createTrialRedeemCode(
+      store,
+      { mode: 'permanent_free', note: 'partner clinic' },
+      {
+        now: () => NOW,
+        generateCode: () => 'GO-FREEMODE01',
+      },
+    )
+
+    expect(created).toMatchObject({
+      code: 'GO-FREEMODE01',
+      status: 'unused',
+      mode: 'permanent_free',
+      note: 'partner clinic',
+    })
   })
 })
 
@@ -256,11 +277,13 @@ describe('sendTrialRedeemCodeEmail', () => {
     expect(result).toEqual({
       code: 'GO-SENDABLE01',
       recipientEmail: 'clinician@clinic.example',
+      mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(deliver).toHaveBeenCalledWith({
       recipientEmail: 'clinician@clinic.example',
       code: 'GO-SENDABLE01',
+      mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(store.rows[0]).toMatchObject({
@@ -300,6 +323,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     expect(deliver).toHaveBeenNthCalledWith(2, {
       recipientEmail: 'other@clinic.example',
       code: 'GO-RESEND0001',
+      mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     })
     expect(store.rows[0]?.status).toBe('unused')
