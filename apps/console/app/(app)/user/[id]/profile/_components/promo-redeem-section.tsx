@@ -135,7 +135,7 @@ export function PromoRedeemSection({
       await submitApply(false)
       return
     }
-    if (staffBlocked) return
+    if (chrome.kind === 'staff_blocked') return
     if (!discount?.ok) return
 
     if (requiresReplaceConfirm(discount)) {

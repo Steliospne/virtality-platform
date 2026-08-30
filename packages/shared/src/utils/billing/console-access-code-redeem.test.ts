@@ -346,8 +346,12 @@ describe('redeemAccessCodeOnProfile', () => {
     ).rejects.toThrow(CONSOLE_ACCESS_CODE_INVALID_MESSAGE)
   })
 
-  it('creates a Free trial after canceled or expired seats', async () => {
-    const store = createMemoryStore([record({ id: 15 })], null)
+  it('creates a Free trial when the live seat is canceled', async () => {
+    const store = createMemoryStore([record({ id: 15 })], {
+      status: 'canceled',
+      plan: 'free',
+      stripeSubscriptionId: 'sub_canceled',
+    })
     const createNoCardTrialSubscription = vi.fn(async () => ({
       stripeSubscriptionId: 'sub_after_cancel',
     }))
