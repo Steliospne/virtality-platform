@@ -101,7 +101,7 @@ export function CreatePromotionCodeDialog({
             <DialogTitle>Create Promotion Code</DialogTitle>
             <DialogDescription>
               Nested under Coupon {couponName ?? couponId}. Leave code blank for
-              Stripe auto-generate. TE- and PAY- prefixes are rejected.
+              Stripe auto-generate. TE- and GO- prefixes are rejected.
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>

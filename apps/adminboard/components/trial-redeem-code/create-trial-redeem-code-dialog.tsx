@@ -64,7 +64,7 @@ export function CreateTrialRedeemCodeDialog({
         onOpenChange(false)
       },
       onError: () => {
-        toast.error('Failed to create Trial Redeem Code')
+        toast.error('Failed to create Access Code')
       },
     })
   }
@@ -74,9 +74,9 @@ export function CreateTrialRedeemCodeDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create Trial Redeem Code</DialogTitle>
+            <DialogTitle>Create Access Code</DialogTitle>
             <DialogDescription>
-              Generates a one-time `PAY-` bearer code. Default trial length is{' '}
+              Generates a one-time `GO-` bearer code. Default trial length is{' '}
               {DEFAULT_TRIAL_REDEEM_DAYS} days.
             </DialogDescription>
           </DialogHeader>

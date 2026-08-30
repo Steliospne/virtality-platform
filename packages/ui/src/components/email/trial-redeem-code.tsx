@@ -23,7 +23,7 @@ import {
   text,
 } from './styles/email.js'
 
-/** Delivery-only Trial Redeem System Email. Marketing strings stay [COPY]. */
+/** Delivery-only Access Code System Email. Marketing strings stay [COPY]. */
 export const TRIAL_REDEEM_CODE_EMAIL_SUBJECT = '[COPY]'
 export const TRIAL_REDEEM_CODE_EMAIL_PREVIEW = '[COPY]'
 
@@ -64,7 +64,7 @@ export const TrialRedeemCodeEmail = ({
         <Text style={text}>[COPY]</Text>
 
         <Text style={paragraph}>
-          Your Trial Redeem Code:{' '}
+          Your Access Code:{' '}
           <strong style={{ letterSpacing: '0.04em' }}>{code}</strong>
         </Text>
 

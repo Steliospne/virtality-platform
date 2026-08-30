@@ -7,7 +7,7 @@ import {
 } from './trial-redeem-code.js'
 
 const SIGN_UP_URL = 'https://console.virtality.app/sign-up'
-const CODE = 'PAY-ABCDEFGHIJ'
+const CODE = 'GO-ABCDEFGHIJ'
 
 async function renderEmail(recipientEmail?: string) {
   return reactToHTML(

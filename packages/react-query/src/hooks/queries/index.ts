@@ -74,7 +74,7 @@ export {
 // Tester Code queries
 export { useTesterCodes } from './tester-code/use-tester-codes.js'
 
-// Trial Redeem Code queries
+// Access Code queries
 export { useTrialRedeemCodes } from './trial-redeem-code/use-trial-redeem-codes.js'
 
 // Coupon library queries

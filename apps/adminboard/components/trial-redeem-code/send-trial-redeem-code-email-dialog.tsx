@@ -58,7 +58,7 @@ export function SendTrialRedeemCodeEmailDialog({
         },
         onError: (error: unknown) => {
           toast.error(
-            getErrorMessage(error, 'Failed to send Trial Redeem Code email'),
+            getErrorMessage(error, 'Failed to send Access Code email'),
           )
         },
       },
@@ -70,7 +70,7 @@ export function SendTrialRedeemCodeEmailDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Send Trial Redeem Email</DialogTitle>
+            <DialogTitle>Send Access Code Email</DialogTitle>
             <DialogDescription>
               Delivery-only System Email for{' '}
               <span className='font-mono'>{trialRedeemCode.code}</span>. The
@@ -80,11 +80,11 @@ export function SendTrialRedeemCodeEmailDialog({
           </DialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='grid gap-2'>
-              <Label htmlFor='trial-redeem-recipient-email'>
+              <Label htmlFor='access-code-recipient-email'>
                 Recipient email
               </Label>
               <Input
-                id='trial-redeem-recipient-email'
+                id='access-code-recipient-email'
                 type='email'
                 autoComplete='email'
                 placeholder='clinician@clinic.example'

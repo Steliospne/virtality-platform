@@ -10,7 +10,7 @@ export const COUPON_LIBRARY_ARCHIVE_METADATA_KEY = 'virtality_archived' as const
 
 /**
  * Canonical sandbox Pro Product (`prod_SaYNooLgBNvYvA`) for Coupon
- * `applies_to`. Same Product as Checkout / Trial Redeem Prices in auth.
+ * `applies_to`. Same Product as Checkout / Access Code Prices in auth.
  */
 export const PRO_PLAN_PRODUCT_ID = 'prod_SaYNooLgBNvYvA' as const
 

@@ -24,7 +24,7 @@ function record(
 ): TrialRedeemCodeRecord {
   return {
     id: 1,
-    code: 'PAY-ABCDEFGHIJ',
+    code: 'GO-ABCDEFGHIJ',
     status: 'unused',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
@@ -73,14 +73,14 @@ function stripeGateway(
 }
 
 describe('routeSignUpCode', () => {
-  it('routes PAY- to trial redeem and TE- to tester', () => {
-    expect(routeSignUpCode('PAY-ABCDEFGHIJ')).toEqual({
+  it('routes GO- to Access Code redeem and TE- to tester', () => {
+    expect(routeSignUpCode('GO-ABCDEFGHIJ')).toEqual({
       kind: 'trial_redeem',
-      code: 'PAY-ABCDEFGHIJ',
+      code: 'GO-ABCDEFGHIJ',
     })
-    expect(routeSignUpCode('pay-abcdefghij')).toEqual({
+    expect(routeSignUpCode('go-abcdefghij')).toEqual({
       kind: 'trial_redeem',
-      code: 'PAY-ABCDEFGHIJ',
+      code: 'GO-ABCDEFGHIJ',
     })
     expect(routeSignUpCode('TE-ABCDEFGHIJ')).toEqual({
       kind: 'tester',
@@ -96,16 +96,16 @@ describe('routeSignUpCode', () => {
     expect(routeSignUpCode('')).toEqual({ kind: 'none' })
     expect(routeSignUpCode('   ')).toEqual({ kind: 'none' })
     expect(routeSignUpCode(undefined)).toEqual({ kind: 'none' })
-    expect(routeSignUpCode('PAY-SHORT')).toEqual({ kind: 'none' })
+    expect(routeSignUpCode('GO-SHORT')).toEqual({ kind: 'none' })
     expect(routeSignUpCode('NOT-A-CODE')).toEqual({ kind: 'none' })
   })
 })
 
 describe('evaluateTrialRedeemAtSignUp', () => {
-  it('waitlists empty codes and well-formatted PAY- misses', async () => {
+  it('waitlists empty codes and well-formatted GO- misses', async () => {
     const store = createMemoryStore()
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-NOSUCHCODE', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-NOSUCHCODE', NOW),
     ).resolves.toEqual({ action: 'waitlist' })
     await expect(evaluateTrialRedeemAtSignUp(store, '', NOW)).resolves.toEqual({
       action: 'waitlist',
@@ -121,7 +121,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
   it('ignores non-matching formats and tester codes', async () => {
     const store = createMemoryStore()
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-SHORT', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-SHORT', NOW),
     ).resolves.toEqual({ action: 'ignore' })
     await expect(
       evaluateTrialRedeemAtSignUp(store, 'TE-ABCDEFGHIJ', NOW),
@@ -146,7 +146,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     ])
 
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-ABCDEFGHIJ', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-ABCDEFGHIJ', NOW),
     ).resolves.toEqual({
       action: 'block',
       message: TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
@@ -160,13 +160,13 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     ])
 
     await expect(
-      evaluateTrialRedeemAtSignUp(redeemedStore, 'PAY-ABCDEFGHIJ', NOW),
+      evaluateTrialRedeemAtSignUp(redeemedStore, 'GO-ABCDEFGHIJ', NOW),
     ).resolves.toEqual({
       action: 'block',
       message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
     })
     await expect(
-      evaluateTrialRedeemAtSignUp(entitledStore, 'pay-abcdefghij', NOW),
+      evaluateTrialRedeemAtSignUp(entitledStore, 'go-abcdefghij', NOW),
     ).resolves.toEqual({
       action: 'block',
       message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
@@ -179,12 +179,12 @@ describe('evaluateTrialRedeemAtSignUp', () => {
       record({
         status: 'already_entitled',
         createdAt: pastTtl,
-        code: 'PAY-OLDENTITLE',
+        code: 'GO-OLDENTITLE',
       }),
     ])
 
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-OLDENTITLE', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-OLDENTITLE', NOW),
     ).resolves.toEqual({
       action: 'block',
       message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
@@ -196,7 +196,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
     const store = createMemoryStore([unused])
 
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-ABCDEFGHIJ', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-ABCDEFGHIJ', NOW),
     ).resolves.toEqual({ action: 'proceed', record: unused })
   })
 })
@@ -218,7 +218,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ABCDEFGHIJ',
+        code: 'GO-ABCDEFGHIJ',
         userId: 'user_1',
         stripeCustomerId: 'cus_1',
         priceId: FREE_PLAN_PRICE_ID,
@@ -261,7 +261,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ABCDEFGHIJ',
+        code: 'GO-ABCDEFGHIJ',
         userId: 'user_2',
         stripeCustomerId: 'cus_2',
         priceId: FREE_PLAN_PRICE_ID,
@@ -274,7 +274,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
   it('consumes as already_entitled without creating a second Subscription', async () => {
     const store = createMemoryStore([
-      record({ id: 55, status: 'unused', code: 'PAY-ENTITLED01' }),
+      record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' }),
     ])
     const createNoCardTrialSubscription = vi.fn()
     const stripe = stripeGateway({
@@ -289,7 +289,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ENTITLED01',
+        code: 'GO-ENTITLED01',
         userId: 'user_entitled',
         stripeCustomerId: 'cus_entitled',
         priceId: FREE_PLAN_PRICE_ID,
@@ -311,7 +311,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
   it('blocks reuse of a bearer after already-entitled consume', async () => {
     const store = createMemoryStore([
-      record({ id: 55, status: 'unused', code: 'PAY-ENTITLED01' }),
+      record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' }),
     ])
     const stripe = stripeGateway({
       customerHasEntitledSubscription: async () => true,
@@ -321,7 +321,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ENTITLED01',
+        code: 'GO-ENTITLED01',
         userId: 'user_entitled',
         stripeCustomerId: 'cus_entitled',
         priceId: FREE_PLAN_PRICE_ID,
@@ -330,7 +330,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
     )
 
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-ENTITLED01', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-ENTITLED01', NOW),
     ).resolves.toEqual({
       action: 'block',
       message: TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
@@ -349,7 +349,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ABCDEFGHIJ',
+        code: 'GO-ABCDEFGHIJ',
         userId: 'user_3',
         stripeCustomerId: 'cus_3',
         priceId: FREE_PLAN_PRICE_ID,
@@ -377,7 +377,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       store,
       stripe,
       {
-        code: 'PAY-ABCDEFGHIJ',
+        code: 'GO-ABCDEFGHIJ',
         userId: 'user_3',
         stripeCustomerId: 'cus_3',
         priceId: FREE_PLAN_PRICE_ID,
@@ -386,7 +386,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
     )
 
     await expect(
-      evaluateTrialRedeemAtSignUp(store, 'PAY-ABCDEFGHIJ', NOW),
+      evaluateTrialRedeemAtSignUp(store, 'GO-ABCDEFGHIJ', NOW),
     ).resolves.toEqual({
       action: 'proceed',
       record: store.rows[0],
@@ -403,7 +403,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
 
     const result = await redeemTrialCodeAfterSignUp(store, stripe, {
-      code: 'PAY-ABCDEFGHIJ',
+      code: 'GO-ABCDEFGHIJ',
       userId: 'user_4',
       stripeCustomerId: 'cus_4',
       priceId: FREE_PLAN_PRICE_ID,
