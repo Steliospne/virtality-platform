@@ -2,22 +2,29 @@
 import { SiGoogle, SiGoogleHex } from '@icons-pack/react-simple-icons'
 import { authClient } from '@/auth-client'
 import { Button } from '@virtality/ui/components/button'
-import { getConsoleUrl, getWebsiteUrl } from '@virtality/shared/types'
+import { getWebsiteUrl } from '@virtality/shared/types'
 import { isTrialRedeemWaitlistRedirect } from '@virtality/shared/utils'
 import { useCallback, useState } from 'react'
 import useTimeout from '@/hooks/use-timeout'
 import { Spinner } from '@virtality/ui/components/spinner'
 import { markPendingSocketWarmUp } from '@/hooks/use-warm-up-socket-on-sign-in'
 import { warmUpSocketServer } from '@/lib/warm-up-socket-server'
+import {
+  DEFAULT_POST_LOGIN_PATH,
+  toSocialSignInCallbackUrl,
+} from '@/lib/sign-in-redirect'
 
 interface SocialSignInButtonProps {
   testerCode?: string
+  postLoginPath?: string
 }
 
-const callbackURL = getConsoleUrl()
 const websiteURL = getWebsiteUrl()
 
-const SocialSignInButton = ({ testerCode }: SocialSignInButtonProps) => {
+const SocialSignInButton = ({
+  testerCode,
+  postLoginPath = DEFAULT_POST_LOGIN_PATH,
+}: SocialSignInButtonProps) => {
   const [isRunning, setIsRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,7 +40,7 @@ const SocialSignInButton = ({ testerCode }: SocialSignInButtonProps) => {
     markPendingSocketWarmUp()
     authClient.signIn.social({
       provider: 'google',
-      callbackURL,
+      callbackURL: toSocialSignInCallbackUrl(postLoginPath),
       ...(testerCode && {
         additionalData: { testerCode },
       }),

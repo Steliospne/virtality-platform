@@ -23,6 +23,10 @@ import { Label } from '@virtality/ui/components/label'
 import { Input } from '@virtality/ui/components/input'
 import { getConsoleUrl, getWebsiteUrl } from '@virtality/shared/types'
 import { isTrialRedeemWaitlistRedirect } from '@virtality/shared/utils'
+import {
+  readAccessCodeFromSearchParams,
+  signInHref,
+} from '@/lib/auth-access-code-url'
 
 const baseURL = getConsoleUrl()
 const websiteURL = getWebsiteUrl()
@@ -30,8 +34,8 @@ const websiteURL = getWebsiteUrl()
 const SignUp = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const _testerCode = searchParams.get('testerCode')
-  const [testerCode, setTesterCode] = useState(_testerCode || '')
+  const urlAccessCode = readAccessCodeFromSearchParams(searchParams)
+  const [testerCode, setTesterCode] = useState(urlAccessCode)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const { i18n } = useClientT()
 
@@ -87,7 +91,7 @@ const SignUp = () => {
             <Input
               id='tester-code'
               type='text'
-              value={testerCode || ''}
+              value={testerCode}
               onChange={(e) => setTesterCode(e.target.value)}
               className='text-sm'
             />
@@ -117,6 +121,15 @@ const SignUp = () => {
               )}
             </Button>
           </div>
+          <p className='text-muted-foreground text-sm'>
+            Already have an account?{' '}
+            <Link
+              href={signInHref(testerCode)}
+              className='text-blue-600 hover:underline'
+            >
+              Sign in
+            </Link>
+          </p>
           <div>
             <p className='text-muted-foreground text-xs'>
               By creating an account you agree to the{' '}

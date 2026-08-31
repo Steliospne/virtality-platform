@@ -10,13 +10,20 @@ import { ChangeEvent, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Field, FieldError, FieldLabel } from '../ui/field'
 import { warmUpSocketServer } from '@/lib/warm-up-socket-server'
+import { DEFAULT_POST_LOGIN_PATH } from '@/lib/sign-in-redirect'
 
 type SignInDataType = {
   email: string
   password: string
 }
 
-const EmailSignIn = () => {
+type EmailSignInProps = {
+  postLoginPath?: string
+}
+
+const EmailSignIn = ({
+  postLoginPath = DEFAULT_POST_LOGIN_PATH,
+}: EmailSignInProps) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
@@ -48,7 +55,7 @@ const EmailSignIn = () => {
           fetchOptions: {
             onSuccess: () => {
               void warmUpSocketServer()
-              router.push('/')
+              router.push(postLoginPath)
             },
             onError: (ctx) => {
               setLoading(false)

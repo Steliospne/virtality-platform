@@ -49,6 +49,7 @@ import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   formatAccessCodeAppliedMessage,
   isProfileBillingAccessCode,
+  readAccessCodePrefill,
 } from '@virtality/shared/utils'
 
 const STANDING_REFETCH_ATTEMPTS = 5
@@ -63,6 +64,14 @@ function redeemSuccessCopy(promotionCode: string, replaced: boolean): string {
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
+}
+
+function readInitialClientSearch<T>(
+  read: (search: string) => T,
+  ssrFallback: T,
+): T {
+  if (typeof window === 'undefined') return ssrFallback
+  return read(window.location.search)
 }
 
 export function useBillingTab() {
@@ -98,7 +107,12 @@ export function useBillingTab() {
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removeSuccess, setRemoveSuccess] = useState(false)
   const [redeemError, setRedeemError] = useState<string | null>(null)
-  const [promoCode, setPromoCode] = useState('')
+  const [promoCode, setPromoCode] = useState(() =>
+    readInitialClientSearch(
+      (search) => readAccessCodePrefill(search) ?? '',
+      '',
+    ),
+  )
   const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<
     string | null
   >(null)
@@ -108,9 +122,7 @@ export function useBillingTab() {
     useState<BillingInterval | null>(null)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [initialCheckoutIntent] = useState(() =>
-    typeof window === 'undefined'
-      ? null
-      : readCheckoutReturnIntent(window.location.search),
+    readInitialClientSearch(readCheckoutReturnIntent, null),
   )
   const clearedCheckoutCancelRef = useRef(false)
 

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   Card,
   CardContent,
@@ -21,7 +22,9 @@ const SignIn = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SignInCardBody />
+          <Suspense>
+            <SignInCardBody />
+          </Suspense>
         </CardContent>
       </Card>
     </section>

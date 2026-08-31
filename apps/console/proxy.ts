@@ -5,6 +5,7 @@ import { asAuthSession, auth } from '@virtality/auth'
 import { prisma } from '@virtality/db'
 import { decideConsoleSessionGate } from '@virtality/shared/utils'
 import { getWebsiteUrl } from '@virtality/shared/types'
+import { buildSignInHref } from '@/lib/sign-in-redirect'
 
 acceptLanguage.languages(settings.languages)
 
@@ -35,7 +36,10 @@ export const config = {
 
 const sessionHandler = async (request: NextRequest) => {
   const waitlistURL = new URL(websiteURL + '/waitlist', request.url)
-  const signInURL = new URL('/sign-in', request.url)
+  const signInURL = new URL(
+    buildSignInHref(`${request.nextUrl.pathname}${request.nextUrl.search}`),
+    request.url,
+  )
 
   try {
     const data = asAuthSession(
