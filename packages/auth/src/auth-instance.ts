@@ -226,9 +226,10 @@ export const auth = betterAuth({
                   'annual' in ctx.body &&
                   Boolean((ctx.body as { annual?: boolean }).annual)
 
-                const addressCollectionParams = buildCheckoutAddressCollectionParams(
-                  { hasCustomer: typeof user.stripeCustomerId === 'string' },
-                )
+                const addressCollectionParams =
+                  buildCheckoutAddressCollectionParams({
+                    hasCustomer: typeof user.stripeCustomerId === 'string',
+                  })
 
                 const baseParams = !stripeClient
                   ? {

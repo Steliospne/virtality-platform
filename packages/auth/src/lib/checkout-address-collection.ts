@@ -9,9 +9,8 @@
 import type Stripe from 'stripe'
 
 /** Shipping is currently limited to Greece and Cyprus; extend as we expand. */
-const SHIPPING_ALLOWED_COUNTRIES: Array<
-  Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry
-> = ['GR', 'CY']
+const SHIPPING_ALLOWED_COUNTRIES: Array<Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry> =
+  ['GR', 'CY']
 
 /**
  * `hasCustomer` must be true only when the Session also passes an existing
