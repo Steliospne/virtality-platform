@@ -14,6 +14,21 @@ import {
 } from './trial-redeem-code.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
+const CONSOLE_URL = 'https://console.virtality.app'
+
+function sendEmailRuntime(
+  deliver: ReturnType<typeof vi.fn>,
+  findUserByEmail: (
+    email: string,
+  ) => Promise<{ id: string } | null> = async () => null,
+) {
+  return {
+    now: () => NOW,
+    deliver,
+    consoleUrl: CONSOLE_URL,
+    findUserByEmail,
+  }
+}
 
 function record(
   overrides: Partial<TrialRedeemCodeRecord> = {},
@@ -271,7 +286,7 @@ describe('sendTrialRedeemCodeEmail', () => {
     const result = await sendTrialRedeemCodeEmail(
       store,
       { id: 3, recipientEmail: 'clinician@clinic.example' },
-      { now: () => NOW, deliver },
+      sendEmailRuntime(deliver),
     )
 
     expect(result).toEqual({
@@ -279,12 +294,16 @@ describe('sendTrialRedeemCodeEmail', () => {
       recipientEmail: 'clinician@clinic.example',
       mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+      ctaVariant: 'no_account',
+      ctaUrl: `${CONSOLE_URL}/sign-up?access_code=GO-SENDABLE01`,
     })
     expect(deliver).toHaveBeenCalledWith({
       recipientEmail: 'clinician@clinic.example',
       code: 'GO-SENDABLE01',
       mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+      ctaVariant: 'no_account',
+      ctaUrl: `${CONSOLE_URL}/sign-up?access_code=GO-SENDABLE01`,
     })
     expect(store.rows[0]).toMatchObject({
       id: 3,
@@ -311,12 +330,12 @@ describe('sendTrialRedeemCodeEmail', () => {
     await sendTrialRedeemCodeEmail(
       store,
       { id: 4, recipientEmail: 'first@clinic.example' },
-      { now: () => NOW, deliver },
+      sendEmailRuntime(deliver),
     )
     await sendTrialRedeemCodeEmail(
       store,
       { id: 4, recipientEmail: 'other@clinic.example' },
-      { now: () => NOW, deliver },
+      sendEmailRuntime(deliver),
     )
 
     expect(deliver).toHaveBeenCalledTimes(2)
@@ -325,6 +344,8 @@ describe('sendTrialRedeemCodeEmail', () => {
       code: 'GO-RESEND0001',
       mode: 'timed_trial',
       trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+      ctaVariant: 'no_account',
+      ctaUrl: `${CONSOLE_URL}/sign-up?access_code=GO-RESEND0001`,
     })
     expect(store.rows[0]?.status).toBe('unused')
   })
@@ -344,7 +365,7 @@ describe('sendTrialRedeemCodeEmail', () => {
       sendTrialRedeemCodeEmail(
         store,
         { id: 5, recipientEmail: 'clinician@clinic.example' },
-        { now: () => NOW, deliver },
+        sendEmailRuntime(deliver),
       ),
     ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
     expect(deliver).not.toHaveBeenCalled()
@@ -371,14 +392,14 @@ describe('sendTrialRedeemCodeEmail', () => {
       sendTrialRedeemCodeEmail(
         store,
         { id: 6, recipientEmail: 'clinician@clinic.example' },
-        { now: () => NOW, deliver },
+        sendEmailRuntime(deliver),
       ),
     ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
     await expect(
       sendTrialRedeemCodeEmail(
         store,
         { id: 7, recipientEmail: 'clinician@clinic.example' },
-        { now: () => NOW, deliver },
+        sendEmailRuntime(deliver),
       ),
     ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotSendableError' })
     expect(deliver).not.toHaveBeenCalled()
@@ -392,9 +413,40 @@ describe('sendTrialRedeemCodeEmail', () => {
       sendTrialRedeemCodeEmail(
         store,
         { id: 404, recipientEmail: 'clinician@clinic.example' },
-        { now: () => NOW, deliver },
+        sendEmailRuntime(deliver),
       ),
     ).rejects.toMatchObject({ name: 'TrialRedeemCodeNotFoundError' })
     expect(deliver).not.toHaveBeenCalled()
+  })
+
+  it('delivers a billing CTA when the recipient already has an account', async () => {
+    const store = createMemoryStore([
+      record({
+        id: 8,
+        code: 'GO-EXISTING01',
+        status: 'unused',
+        createdAt: NOW,
+      }),
+    ])
+    const deliver = vi.fn().mockResolvedValue(undefined)
+    const findUserByEmail = vi.fn().mockResolvedValue({ id: 'user-existing' })
+
+    const result = await sendTrialRedeemCodeEmail(
+      store,
+      { id: 8, recipientEmail: 'existing@clinic.example' },
+      sendEmailRuntime(deliver, findUserByEmail),
+    )
+
+    expect(findUserByEmail).toHaveBeenCalledWith('existing@clinic.example')
+    expect(result).toMatchObject({
+      ctaVariant: 'existing_account',
+      ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01`,
+    })
+    expect(deliver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctaVariant: 'existing_account',
+        ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01`,
+      }),
+    )
   })
 })

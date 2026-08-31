@@ -26,6 +26,8 @@ import {
 /** Mirrors `TrialRedeemCodeMode` in `@virtality/shared` (UI package boundary). */
 export type TrialRedeemCodeEmailMode = 'permanent_free' | 'timed_trial'
 
+export type TrialRedeemCodeEmailCtaVariant = 'no_account' | 'existing_account'
+
 /** Delivery-only Access Code System Email. */
 export const TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
@@ -47,12 +49,52 @@ export interface TrialRedeemCodeEmailProps {
   code: string
   mode: TrialRedeemCodeEmailMode
   trialDays: number
-  signUpUrl: string
+  ctaUrl: string
+  ctaVariant: TrialRedeemCodeEmailCtaVariant
   recipientEmail?: string
   companyName?: string
 }
 
-function emailCopy(mode: TrialRedeemCodeEmailMode, trialDays: number) {
+function existingAccountEmailCopy(
+  mode: TrialRedeemCodeEmailMode,
+  trialDays: number,
+) {
+  const shared = {
+    heading: 'Redeem your Access Code on Billing',
+    instructions:
+      'Enter this code in the Access Code field on the Billing tab. The code is one-time use and expires one week after it was issued if unused.',
+    cta: 'Go to Billing',
+  }
+
+  switch (mode) {
+    case 'permanent_free':
+      return {
+        ...shared,
+        intro:
+          'You already have a Virtality account. Open Profile, then Billing, and apply the code below to unlock permanent Free access.',
+        entitlement: 'Access type: permanent Free (no trial period)',
+        footer:
+          'This code grants permanent Free access. It does not include a paid Pro subscription.',
+      }
+    case 'timed_trial':
+      return {
+        ...shared,
+        intro:
+          'You already have a Virtality account. Open Profile, then Billing, and apply the code below to start your no-card Free trial.',
+        entitlement: `Trial length: ${trialDays} days`,
+        footer:
+          'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
+      }
+  }
+}
+
+function newAccountEmailCopy(
+  mode: TrialRedeemCodeEmailMode,
+  trialDays: number,
+) {
+  const instructions =
+    'Enter this code in the Redeem code field on the sign-up page. The code is one-time use and expires one week after it was issued if unused.'
+
   switch (mode) {
     case 'permanent_free':
       return {
@@ -60,6 +102,7 @@ function emailCopy(mode: TrialRedeemCodeEmailMode, trialDays: number) {
         intro:
           'Use the code below when you create your Virtality account. After sign-up you will have permanent Free access with no trial countdown.',
         entitlement: 'Access type: permanent Free (no trial period)',
+        instructions,
         cta: 'Create account and redeem',
         footer:
           'This code grants permanent Free access. It does not include a paid Pro subscription.',
@@ -70,6 +113,7 @@ function emailCopy(mode: TrialRedeemCodeEmailMode, trialDays: number) {
         intro:
           'Use the code below when you create your Virtality account. After sign-up you will start a no-card Free trial on the Free plan.',
         entitlement: `Trial length: ${trialDays} days`,
+        instructions,
         cta: 'Create account and start trial',
         footer:
           'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
@@ -77,15 +121,28 @@ function emailCopy(mode: TrialRedeemCodeEmailMode, trialDays: number) {
   }
 }
 
+function emailCopy(
+  mode: TrialRedeemCodeEmailMode,
+  trialDays: number,
+  ctaVariant: TrialRedeemCodeEmailCtaVariant,
+) {
+  if (ctaVariant === 'existing_account') {
+    return existingAccountEmailCopy(mode, trialDays)
+  }
+
+  return newAccountEmailCopy(mode, trialDays)
+}
+
 export const TrialRedeemCodeEmail = ({
   code,
   mode,
   trialDays,
-  signUpUrl,
+  ctaUrl,
+  ctaVariant,
   recipientEmail,
   companyName = 'Virtality',
 }: TrialRedeemCodeEmailProps) => {
-  const copy = emailCopy(mode, trialDays)
+  const copy = emailCopy(mode, trialDays, ctaVariant)
   const preview = TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE[mode]
 
   return (
@@ -117,14 +174,10 @@ export const TrialRedeemCodeEmail = ({
 
           <Text style={paragraph}>{copy.entitlement}</Text>
 
-          <Text style={text}>
-            Enter this code in the Redeem code field on the sign-up page. The
-            code is one-time use and expires one week after it was issued if
-            unused.
-          </Text>
+          <Text style={text}>{copy.instructions}</Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={signUpUrl}>
+            <Button style={button} href={ctaUrl}>
               {copy.cta}
             </Button>
           </Section>
@@ -137,8 +190,8 @@ export const TrialRedeemCodeEmail = ({
           </Text>
 
           <Text style={linkText}>
-            <Link href={signUpUrl} style={link}>
-              {signUpUrl}
+            <Link href={ctaUrl} style={link}>
+              {ctaUrl}
             </Link>
           </Text>
 

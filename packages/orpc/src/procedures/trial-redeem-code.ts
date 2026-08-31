@@ -128,12 +128,13 @@ const sendEmail = authed
   .handler(async ({ context, input }) =>
     runTrialRedeemHandler(context.prisma, (store) =>
       sendTrialRedeemCodeEmail(store, input, {
-        deliver: async (payload) => {
-          await deliverTrialRedeemCodeEmail({
-            ...payload,
-            signUpUrl: `${getConsoleUrl()}/sign-up`,
-          })
-        },
+        consoleUrl: getConsoleUrl(),
+        findUserByEmail: async (email) =>
+          context.prisma.user.findUnique({
+            where: { email, AND: [{ deletedAt: null }] },
+            select: { id: true },
+          }),
+        deliver: deliverTrialRedeemCodeEmail,
       }),
     ),
   )

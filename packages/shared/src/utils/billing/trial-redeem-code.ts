@@ -3,6 +3,10 @@
  * Product term: Access Code. Internal types and DB model keep TrialRedeem names.
  */
 import { createRandomStringGenerator } from '../primitives/random.ts'
+import {
+  resolveTrialRedeemEmailCta,
+  type TrialRedeemEmailCtaVariant,
+} from './trial-redeem-email-url.ts'
 
 export const TRIAL_REDEEM_CODE_PREFIX = 'GO-'
 export const TRIAL_REDEEM_CODE_BODY_LENGTH = 10
@@ -118,6 +122,8 @@ export type TrialRedeemEmailDelivery = {
   code: string
   mode: TrialRedeemCodeMode
   trialDays: number
+  ctaVariant: TrialRedeemEmailCtaVariant
+  ctaUrl: string
 }
 
 export type SendTrialRedeemCodeEmailInput = {
@@ -127,6 +133,8 @@ export type SendTrialRedeemCodeEmailInput = {
 
 export type SendTrialRedeemCodeEmailRuntime = TrialRedeemRuntime & {
   deliver: (payload: TrialRedeemEmailDelivery) => Promise<void>
+  consoleUrl: string
+  findUserByEmail: (email: string) => Promise<{ id: string } | null>
 }
 
 export async function sendTrialRedeemCodeEmail(
@@ -150,11 +158,20 @@ export async function sendTrialRedeemCodeEmail(
     throw new TrialRedeemCodeValidationError('recipientEmail is required')
   }
 
+  const foundUser = await runtime.findUserByEmail(recipientEmail)
+  const { ctaVariant, ctaUrl } = resolveTrialRedeemEmailCta(
+    runtime.consoleUrl,
+    existing.code,
+    foundUser?.id ?? null,
+  )
+
   const payload: TrialRedeemEmailDelivery = {
     recipientEmail,
     code: existing.code,
     mode: existing.mode,
     trialDays: existing.trialDays,
+    ctaVariant,
+    ctaUrl,
   }
 
   await runtime.deliver(payload)
