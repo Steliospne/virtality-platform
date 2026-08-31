@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { SignUpForm } from '@/lib/definitions'
-import { UseFormReturn } from 'react-hook-form'
+import { UseFormReturn, useWatch } from 'react-hook-form'
 import { User } from '@/auth-client'
 import { getPasswordRequirementStatus } from '@virtality/shared/utils'
 
@@ -19,9 +19,29 @@ interface SignupFormProps {
   onSubmit: (values: SignUpForm | (SignUpForm & { role: User['role'] })) => void
 }
 
+const PasswordRequirement = ({
+  satisfied,
+  label,
+}: {
+  satisfied: boolean
+  label: string
+}) => (
+  <FormDescription>
+    <span
+      className={
+        satisfied
+          ? 'text-green-500 dark:text-green-500'
+          : 'text-red-500 dark:text-red-500'
+      }
+    >
+      {satisfied ? '✓' : '✗'}
+    </span>{' '}
+    {label}
+  </FormDescription>
+)
+
 const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
-  const formPwdErrorType = form.formState.errors.password?.types
-  const password = form.watch('password')
+  const password = useWatch({ control: form.control, name: 'password' }) ?? ''
   const passwordRequirementStatus = getPasswordRequirementStatus(password)
 
   return (
@@ -67,57 +87,22 @@ const SignupForm = ({ id, form, onSubmit }: SignupFormProps) => {
                 <Input type='password' {...field} value={field.value ?? ''} />
               </FormControl>
 
-              {formPwdErrorType?.['length'] ? (
-                <FormDescription className='text-red-500 dark:text-red-500'>
-                  {formPwdErrorType['length']}
-                </FormDescription>
-              ) : (
-                <FormDescription>
-                  {'• Password must be between 8 and 16 characters long. '}
-                  {password && passwordRequirementStatus.length && (
-                    <span className='text-green-500'>✓</span>
-                  )}
-                </FormDescription>
-              )}
-
-              {formPwdErrorType?.['uppercase'] ? (
-                <FormDescription className='text-red-500 dark:text-red-500'>
-                  {formPwdErrorType['uppercase']}
-                </FormDescription>
-              ) : (
-                <FormDescription>
-                  {'• Password must contain at least one uppercase letter. '}
-                  {password && passwordRequirementStatus.uppercase && (
-                    <span className='text-green-500'>✓</span>
-                  )}
-                </FormDescription>
-              )}
-
-              {formPwdErrorType?.['lowercase'] ? (
-                <FormDescription className='text-red-500 dark:text-red-500'>
-                  {formPwdErrorType['lowercase']}
-                </FormDescription>
-              ) : (
-                <FormDescription>
-                  {'• Password must contain at least one lowercase letter. '}
-                  {password && passwordRequirementStatus.lowercase && (
-                    <span className='text-green-500'>✓</span>
-                  )}
-                </FormDescription>
-              )}
-
-              {formPwdErrorType?.['digit'] ? (
-                <FormDescription className='text-red-500 dark:text-red-500'>
-                  {formPwdErrorType['digit']}
-                </FormDescription>
-              ) : (
-                <FormDescription>
-                  {'• Password must contain at least one digit. '}
-                  {password && passwordRequirementStatus.digit && (
-                    <span className='text-green-500'>✓</span>
-                  )}
-                </FormDescription>
-              )}
+              <PasswordRequirement
+                satisfied={passwordRequirementStatus.length}
+                label='Password must be between 8 and 16 characters long.'
+              />
+              <PasswordRequirement
+                satisfied={passwordRequirementStatus.uppercase}
+                label='Password must contain at least one uppercase letter.'
+              />
+              <PasswordRequirement
+                satisfied={passwordRequirementStatus.lowercase}
+                label='Password must contain at least one lowercase letter.'
+              />
+              <PasswordRequirement
+                satisfied={passwordRequirementStatus.digit}
+                label='Password must contain at least one digit.'
+              />
             </FormItem>
           )}
         />
