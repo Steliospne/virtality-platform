@@ -13,6 +13,10 @@ import {
   type NextSearchParams,
 } from '@/lib/sign-in-redirect'
 import { ACCOUNT_MISMATCH_REDIRECT } from '@/lib/account-mismatch'
+import {
+  EMAIL_LINK_SOURCE_PARAM,
+  EMAIL_LINK_SOURCE_VALUE,
+} from '@virtality/shared/utils'
 
 type ProfilePageProps = {
   params: Promise<{ id: string }>
@@ -41,7 +45,19 @@ const ProfilePage = async ({ params, searchParams }: ProfilePageProps) => {
   const { user, session } = sessionData
 
   if (user.id !== id) {
-    redirect(ACCOUNT_MISMATCH_REDIRECT)
+    const linkSourceParam = resolvedSearchParams[EMAIL_LINK_SOURCE_PARAM]
+    const linkSource = Array.isArray(linkSourceParam)
+      ? linkSourceParam[0]
+      : linkSourceParam
+    const isFromEmailLink = linkSource === EMAIL_LINK_SOURCE_VALUE
+
+    if (isFromEmailLink) {
+      redirect(ACCOUNT_MISMATCH_REDIRECT)
+    }
+
+    // Not an email deep link (e.g. a stale bookmark or hand-edited URL) —
+    // just show the signed-in user's own profile instead of bouncing them.
+    redirect(buildPathAndQuery(`/user/${user.id}/profile`, tab ? { tab } : {}))
   }
 
   const { data: sessionList } = await authClient.listSessions({

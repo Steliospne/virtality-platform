@@ -1,4 +1,8 @@
 import { ACCESS_CODE_PARAM } from './access-code-url.ts'
+import {
+  EMAIL_LINK_SOURCE_PARAM,
+  EMAIL_LINK_SOURCE_VALUE,
+} from './email-link-source.ts'
 
 export type TrialRedeemEmailCtaVariant = 'no_account' | 'existing_account'
 
@@ -31,6 +35,7 @@ export function buildTrialRedeemBillingUrl(
   const params = new URLSearchParams({
     tab: 'billing',
     [ACCESS_CODE_PARAM]: code,
+    [EMAIL_LINK_SOURCE_PARAM]: EMAIL_LINK_SOURCE_VALUE,
   })
   return `${base}/user/${userId}/profile?${params.toString()}`
 }

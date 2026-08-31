@@ -16,7 +16,7 @@ describe('resolveTrialRedeemEmailCta', () => {
   it('returns billing CTA when an account is found', () => {
     expect(resolveTrialRedeemEmailCta(CONSOLE_URL, CODE, USER_ID)).toEqual({
       ctaVariant: 'existing_account',
-      ctaUrl: `${CONSOLE_URL}/user/${USER_ID}/profile?tab=billing&access_code=${CODE}`,
+      ctaUrl: `${CONSOLE_URL}/user/${USER_ID}/profile?tab=billing&access_code=${CODE}&src=email`,
     })
   })
 })

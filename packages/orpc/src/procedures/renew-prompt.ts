@@ -4,6 +4,7 @@ import { sendRenewPromptEmail } from '@virtality/nodemailer'
 import { getConsoleUrl } from '@virtality/shared/types'
 import {
   renewPromptEpochKey,
+  withEmailLinkSource,
   type EntitlementClockStanding,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
@@ -37,7 +38,9 @@ function renewPromptLifecycleWithEmail(
   user: { id: string; email: string },
 ) {
   const consoleBase = getConsoleUrl().replace(/\/$/, '')
-  const billingUrl = `${consoleBase}/user/${user.id}/profile?tab=billing`
+  const billingUrl = withEmailLinkSource(
+    `${consoleBase}/user/${user.id}/profile?tab=billing`,
+  )
 
   return createRenewPromptLifecycle({
     prisma,
