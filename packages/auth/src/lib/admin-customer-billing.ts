@@ -21,6 +21,7 @@ import {
   type AdminCustomerBillingRuntime,
 } from './admin-customer-billing-runtime.ts'
 import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle-plan-change.ts'
+import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
 import {
   readProVariantCatalogOrSandbox,
@@ -257,6 +258,7 @@ export function createStripeAdminCustomerBillingGateway(
         mode: 'subscription',
         line_items: [{ price: input.priceId, quantity: 1 }],
         payment_method_collection: 'always',
+        ...buildCheckoutAddressCollectionParams({ hasCustomer: true }),
         success_url: input.successUrl,
         cancel_url: input.cancelUrl,
         metadata: input.metadata,

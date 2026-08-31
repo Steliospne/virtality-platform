@@ -13,6 +13,7 @@ import {
 } from './lib/trial-redeem.ts'
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
+import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
 import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
@@ -225,10 +226,15 @@ export const auth = betterAuth({
                   'annual' in ctx.body &&
                   Boolean((ctx.body as { annual?: boolean }).annual)
 
+                const addressCollectionParams = buildCheckoutAddressCollectionParams(
+                  { hasCustomer: typeof user.stripeCustomerId === 'string' },
+                )
+
                 const baseParams = !stripeClient
                   ? {
                       params: {
                         payment_method_collection: 'always' as const,
+                        ...addressCollectionParams,
                       },
                     }
                   : await buildCampaignAwareCheckoutSessionParams({
@@ -238,7 +244,9 @@ export const auth = betterAuth({
                           ? user.stripeCustomerId
                           : null,
                       stripeClient,
-                    })
+                    }).then((result) => ({
+                      params: { ...result.params, ...addressCollectionParams },
+                    }))
 
                 const assignedProVariant =
                   typeof user.assignedProVariant === 'string'

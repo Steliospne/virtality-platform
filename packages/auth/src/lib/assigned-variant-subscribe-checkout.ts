@@ -18,6 +18,7 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { buildCampaignAwareCheckoutSessionParams } from './campaign-window.ts'
+import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
 import { getOpenPendingPromotionCodeForCheckout } from './pending-promotion-code.ts'
 import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
 
@@ -115,14 +116,20 @@ export async function startAssignedVariantSubscribeCheckout(input: {
       { prisma: client, stripeClient: input.stripeClient },
     )
 
+    const addressCollectionParams = buildCheckoutAddressCollectionParams({
+      hasCustomer: true,
+    })
+
     const checkoutParams = pendingPromotionCode
       ? {
           ...campaignParams,
+          ...addressCollectionParams,
           ...lineItemsOverride,
           discounts: [{ promotion_code: pendingPromotionCode.promotionCodeId }],
         }
       : {
           ...campaignParams,
+          ...addressCollectionParams,
           ...lineItemsOverride,
         }
 
@@ -141,7 +148,6 @@ export async function startAssignedVariantSubscribeCheckout(input: {
         toAbsoluteConsoleReturnUrl(successUrl),
       ),
       cancel_url: toAbsoluteConsoleReturnUrl(cancelUrl),
-      customer_update: { name: 'auto', address: 'auto' },
       client_reference_id: user.id,
       ...checkoutParams,
       subscription_data: { metadata },
