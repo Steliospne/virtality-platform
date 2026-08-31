@@ -15,15 +15,16 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "nodemailer": "8.0.1",
+    "@virtality/db": "workspace:*",
     "@virtality/shared": "workspace:*",
     "@virtality/ui": "workspace:*",
-    "@virtality/db": "workspace:*"
+    "nodemailer": "8.0.1",
+    "open": "^11.0.2"
   },
   "devDependencies": {
-    "@virtality/typescript-config": "workspace:*",
     "@types/node": "25.3.3",
     "@types/nodemailer": "7.0.11",
+    "@virtality/typescript-config": "workspace:*",
     "typescript": "7.0.2"
   }
 }
