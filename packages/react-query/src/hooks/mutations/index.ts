@@ -9,6 +9,11 @@ export { useResendPendingPasswordChange } from './user/use-resend-pending-passwo
 export { useCancelPendingPasswordChange } from './user/use-cancel-pending-password-change.js'
 export { useInspectPendingPasswordChange } from './user/use-inspect-pending-password-change.js'
 export { useApprovePendingPasswordChange } from './user/use-approve-pending-password-change.js'
+export { useStartAccountDeletion } from './user/use-start-account-deletion.js'
+export { useResendPendingAccountDeletion } from './user/use-resend-pending-account-deletion.js'
+export { useCancelPendingAccountDeletion } from './user/use-cancel-pending-account-deletion.js'
+export { useInspectPendingAccountDeletion } from './user/use-inspect-pending-account-deletion.js'
+export { useApprovePendingAccountDeletion } from './user/use-approve-pending-account-deletion.js'
 
 // Reusable program mutations
 export { useCreateReusableProgram } from './reusable-program/use-create-reusable-program.js'

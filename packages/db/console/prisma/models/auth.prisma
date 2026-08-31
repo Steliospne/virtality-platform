@@ -38,6 +38,7 @@ model User {
   adminEmailSentRecordsCreated AdminEmailSentRecord[] @relation("AdminEmailSentRecordCreator")
   adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
   pendingPasswordChanges       PendingPasswordChange[]
+  pendingAccountDeletions      PendingAccountDeletion[]
   devicePairingAttempts        DevicePairingAttempt[]
   renewPromptDeliveries        RenewPromptDelivery[]
   promotionCodeDeliveries       PromotionCodeDelivery[]

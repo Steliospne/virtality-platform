@@ -112,3 +112,12 @@ export const invalidateActivePendingPasswordChange = async (
     queryKey: orpc.pendingPasswordChange.getActive.key(),
   })
 }
+
+export const invalidateActivePendingAccountDeletion = async (
+  queryClient: QueryClient,
+  orpc: ReturnType<typeof useORPC>,
+) => {
+  await queryClient.invalidateQueries({
+    queryKey: orpc.pendingAccountDeletion.getActive.key(),
+  })
+}

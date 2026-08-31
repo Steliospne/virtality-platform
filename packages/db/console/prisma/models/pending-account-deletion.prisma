@@ -1,0 +1,18 @@
+model PendingAccountDeletion {
+  id                  String                        @id @default(cuid())
+  userId              String
+  status              PendingAccountDeletionStatus @default(PENDING)
+  approvalTokenHash   String
+  initiatingSessionId String?
+  destinationEmail    String
+  expiresAt           DateTime                      @db.Timestamp(6)
+  createdAt           DateTime                      @default(now()) @db.Timestamp(6)
+  approvedAt          DateTime?                      @db.Timestamp(6)
+  cancelledAt         DateTime?                      @db.Timestamp(6)
+  supersededAt        DateTime?                      @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "pending_account_deletion_userId_fkey")
+
+  @@index([userId, status], map: "pending_account_deletion_userId_status_idx")
+  @@index([approvalTokenHash], map: "pending_account_deletion_approvalTokenHash_idx")
+}

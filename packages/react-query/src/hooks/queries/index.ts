@@ -9,6 +9,10 @@ export {
   useActivePendingPasswordChange,
   type ActivePendingPasswordChange,
 } from './user/use-active-pending-password-change.js'
+export {
+  useActivePendingAccountDeletion,
+  type ActivePendingAccountDeletion,
+} from './user/use-active-pending-account-deletion.js'
 
 // Account queries
 export { useListAccounts } from './account/use-list-accounts.js'

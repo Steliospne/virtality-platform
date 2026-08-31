@@ -13,12 +13,14 @@ import {
 import { FieldGroup } from '@/components/ui/field'
 import { Separator } from '@virtality/ui/components/separator'
 import {
+  useActivePendingAccountDeletion,
   useActivePendingPasswordChange,
   useHasPassword,
 } from '@virtality/react-query'
 import { ControllerField } from '@/components/ui/controller'
 import { ImageField } from './profile-image-field'
 import { PasswordCardBody } from './profile-password-card-body'
+import { PendingAccountDeletionState } from './profile-pending-account-deletion-state'
 import { SignInMethods } from './profile-sign-in-methods'
 import { useProfileInfo } from './use-profile-info'
 import {
@@ -39,13 +41,17 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
     data: activePendingPasswordChange,
     isLoading: isLoadingPendingPasswordChange,
   } = useActivePendingPasswordChange()
+  const {
+    data: activePendingAccountDeletion,
+    isLoading: isLoadingPendingAccountDeletion,
+  } = useActivePendingAccountDeletion()
 
   usePageViewTracking({
     props: { route_group: 'user', tab_view: 'user-profile' },
   })
 
   const {
-    isDeleting,
+    isStartingDeletion,
     isUpdatingEmail,
     isUpdatingUser,
     basicInfoForm,
@@ -168,22 +174,28 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
         <CardHeader>
           <CardTitle>Delete Account</CardTitle>
         </CardHeader>
-        <CardContent>
-          Permanently remove your Personal Account and all of its contents from
-          Virtality. This action is not reversible, so please continue with
-          caution.
-        </CardContent>
-        <CardFooter className='border-t'>
-          <Button
-            type='submit'
-            variant='destructive'
-            onClick={handleDeleteUser}
-            disabled={isDeleting}
-            className='ml-auto'
-          >
-            {isDeleting ? 'Deleting...' : 'Delete account'}
-          </Button>
-        </CardFooter>
+        {isLoadingPendingAccountDeletion ? null : activePendingAccountDeletion ? (
+          <PendingAccountDeletionState pending={activePendingAccountDeletion} />
+        ) : (
+          <>
+            <CardContent>
+              Permanently remove your Personal Account and all of its contents
+              from Virtality. This action is not reversible, so please
+              continue with caution.
+            </CardContent>
+            <CardFooter className='border-t'>
+              <Button
+                type='submit'
+                variant='destructive'
+                onClick={handleDeleteUser}
+                disabled={isStartingDeletion}
+                className='ml-auto'
+              >
+                {isStartingDeletion ? 'Starting...' : 'Delete account'}
+              </Button>
+            </CardFooter>
+          </>
+        )}
       </Card>
     </div>
   )

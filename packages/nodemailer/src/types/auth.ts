@@ -23,3 +23,8 @@ export type PendingPasswordChangeData = {
   url: string
   variant: 'setup' | 'change'
 }
+
+export type PendingAccountDeletionData = {
+  user: StriptedUser
+  url: string
+}

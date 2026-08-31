@@ -33,6 +33,13 @@ enum PendingPasswordChangeStatus {
   SUPERSEDED
 }
 
+enum PendingAccountDeletionStatus {
+  PENDING
+  APPROVED
+  CANCELLED
+  SUPERSEDED
+}
+
 enum DevicePairingStatus {
   PENDING
   COMPLETED

@@ -1,9 +1,5 @@
 import { betterAuth } from 'better-auth'
-import {
-  sendDeleteAccountVerification,
-  sendResetPassword,
-  sendVerificationEmail,
-} from '@virtality/nodemailer'
+import { sendResetPassword, sendVerificationEmail } from '@virtality/nodemailer'
 import { APIError, createAuthMiddleware, getOAuthState } from 'better-auth/api'
 import validateAndConsumeTesterCode from './lib/tester-code.ts'
 import {
@@ -128,8 +124,7 @@ export const auth = betterAuth({
       enabled: true,
     },
     deleteUser: {
-      enabled: true,
-      sendDeleteAccountVerification,
+      enabled: false,
     },
   },
   session: {

@@ -4,7 +4,13 @@ import { toast } from 'react-toastify'
 import { authClient } from '@/auth-client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useUpdateUserInfo } from '@virtality/react-query'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  useORPC,
+  useStartAccountDeletion,
+  useUpdateUserInfo,
+} from '@virtality/react-query'
+import { invalidateActivePendingAccountDeletion } from './profile-info-form'
 import {
   baseURL,
   BasicInfoFormSchema,
@@ -17,8 +23,9 @@ import {
 
 export const useProfileInfo = (user: SessionUser) => {
   const { refetch: refetchSession } = authClient.useSession()
+  const orpc = useORPC()
+  const queryClient = useQueryClient()
 
-  const [isDeleting, setIsDeleting] = useState(false)
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false)
 
   const basicInfoForm = useForm<UserForm>({
@@ -89,16 +96,24 @@ export const useProfileInfo = (user: SessionUser) => {
     emailForm.reset({ email: user.email ?? '' }, { keepDirty: false })
   }
 
-  const handleDeleteUser = async () => {
-    setIsDeleting(true)
-    await authClient.deleteUser({
-      callbackURL: baseURL + '/goodbye',
+  const { mutate: startAccountDeletion, isPending: isStartingDeletion } =
+    useStartAccountDeletion({
+      onSuccess: async () => {
+        await invalidateActivePendingAccountDeletion(queryClient, orpc)
+        toast.success('Check your email to approve account deletion.')
+      },
+      onError: (error) => {
+        console.error(error)
+        toast.error('Failed to start account deletion')
+      },
     })
-    setIsDeleting(false)
+
+  const handleDeleteUser = () => {
+    startAccountDeletion(undefined)
   }
 
   return {
-    isDeleting,
+    isStartingDeletion,
     isUpdatingEmail,
     isUpdatingUser,
     basicInfoForm,

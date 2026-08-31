@@ -38,12 +38,14 @@ import { dashboard } from './procedures/adminboard/dashboard.ts'
 import { adminCustomer } from './procedures/admin-customer.ts'
 import { account } from './procedures/account/index.ts'
 import { pendingPasswordChange } from './procedures/pending-password-change/index.ts'
+import { pendingAccountDeletion } from './procedures/pending-account-deletion/index.ts'
 import { devicePairing } from './procedures/device-pairing/index.ts'
 
 export const router = {
   me,
   user,
   pendingPasswordChange,
+  pendingAccountDeletion,
   devicePairing,
   patient,
   patientSession,

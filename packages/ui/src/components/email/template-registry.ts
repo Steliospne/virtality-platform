@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react'
 import EmailVerification from './email-verification.js'
 import ResetPassword from './reset-password.js'
-import DeleteUserEmail from './delete-user-email.js'
+import PendingAccountDeletionEmail, {
+  PENDING_ACCOUNT_DELETION_SUBJECT,
+} from './pending-account-deletion.js'
 import WaitingListEmail, {
   WAITING_LIST_EMAIL_SUBJECT,
 } from './waitinglist-email.js'
@@ -97,14 +99,14 @@ export const EMAIL_TEMPLATES: {
   },
   {
     meta: {
-      id: 'delete-user-email',
-      title: 'Delete Account',
+      id: 'pending-account-deletion',
+      title: 'Pending Account Deletion',
       category: 'auth',
-      subject: 'Confirm account deletion',
+      subject: PENDING_ACCOUNT_DELETION_SUBJECT,
     },
     sampleProps: { url: SAMPLE_URL, name: 'John', companyName: 'Virtality' },
     render: (p) =>
-      DeleteUserEmail({
+      PendingAccountDeletionEmail({
         url: p.url as string,
         name: p.name as string,
         companyName: p.companyName as string,

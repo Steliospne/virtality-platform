@@ -15,39 +15,46 @@ import {
 } from './styles/email.js'
 import { Button, Container, Hr, Link, Section, Text } from 'react-email'
 
-const DeleteUserEmail = ({
-  url,
-  name = 'there',
-  companyName = 'Virtality',
-}: {
+export const pendingAccountDeletionApprovalExpiryNotice =
+  'This approval link will expire in 30 minutes.'
+
+export const PENDING_ACCOUNT_DELETION_SUBJECT =
+  'Approve account deletion - Action required'
+
+interface PendingAccountDeletionEmailProps {
   url: string
   name?: string
   companyName?: string
-}) => {
+}
+
+export const PendingAccountDeletionEmail = ({
+  url,
+  name = 'there',
+  companyName = 'Virtality',
+}: PendingAccountDeletionEmailProps) => {
   return (
-    <EmailBase preview='Delete your account, this action is permanent.'>
+    <EmailBase preview='Approve deleting your Virtality account.'>
       <Container style={container}>
-        {/* Header */}
         <EmailHeader />
 
-        {/* Body Content */}
         <Section style={content}>
           <Text style={paragraph}>Hi, {name}</Text>
 
           <Text style={paragraph}>
-            We received a request to delete your account associated with{' '}
-            {companyName}. Deleting your account is permanent — all your data,
-            settings, and activity will be erased and cannot be recovered.
+            You started deleting your account associated with {companyName}.
+            Deleting your account is permanent — all your data, settings, and
+            activity will be erased and cannot be recovered.
           </Text>
 
           <Text style={paragraph}>
-            If you requested this, please confirm your deletion by clicking the
-            button below:
+            Use the button below to open the confirmation page. You must press
+            Approve there before your account is deleted. Opening this link
+            alone will not delete your account.
           </Text>
 
           <Section style={buttonContainer}>
             <Button style={destructive} href={url}>
-              Delete account
+              Approve account deletion
             </Button>
           </Section>
 
@@ -65,21 +72,20 @@ const DeleteUserEmail = ({
           </Text>
 
           <Text style={smallText}>
-            This verification link will expire in 24 hours.
+            {pendingAccountDeletionApprovalExpiryNotice}
           </Text>
 
           <Text style={warningText}>
-            If you didn't request to delete your account, please ignore this
-            email or contact support if you have concerns. Your account will
-            remain active.
+            If you didn't request to delete your account, ignore this email or
+            contact support if you have concerns. Your account will remain
+            active.
           </Text>
         </Section>
 
-        {/* Footer */}
         <EmailFooter companyName={companyName} />
       </Container>
     </EmailBase>
   )
 }
 
-export default DeleteUserEmail
+export default PendingAccountDeletionEmail
