@@ -31,7 +31,7 @@ import {
 } from '@virtality/ui/components/table'
 import { cn } from '@virtality/ui/lib/utils'
 import { AlertCircle } from 'lucide-react'
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 
 export const DATA_TABLE_LOADING_ROW_COUNT = 8
 
@@ -159,6 +159,14 @@ export function DataTableBody<TData, TValue>({
 
   const visibleColumns = table.getVisibleLeafColumns()
   const rows = table.getRowModel().rows
+
+  const pageIndex = table.getState().pagination.pageIndex
+  const pageCount = table.getPageCount()
+  useEffect(() => {
+    if (pageCount > 0 && pageIndex >= pageCount) {
+      table.setPageIndex(pageCount - 1)
+    }
+  }, [pageIndex, pageCount, table])
 
   const renderBodyContent = () => {
     if (isLoading) {
