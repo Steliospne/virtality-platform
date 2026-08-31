@@ -12,6 +12,7 @@ import {
   buildSignInHref,
   type NextSearchParams,
 } from '@/lib/sign-in-redirect'
+import { ACCOUNT_MISMATCH_REDIRECT } from '@/lib/account-mismatch'
 
 type ProfilePageProps = {
   params: Promise<{ id: string }>
@@ -37,11 +38,15 @@ const ProfilePage = async ({ params, searchParams }: ProfilePageProps) => {
     )
   }
 
+  const { user, session } = sessionData
+
+  if (user.id !== id) {
+    redirect(ACCOUNT_MISMATCH_REDIRECT)
+  }
+
   const { data: sessionList } = await authClient.listSessions({
     fetchOptions: { headers },
   })
-
-  const { user, session } = sessionData
 
   return (
     <div className='h-full dark:bg-zinc-950'>

@@ -12,6 +12,7 @@ import useIsAuthed from '@/hooks/use-is-authed'
 import AdminTool from './admin-tool'
 import useMounted from '@/hooks/use-mounted'
 import { Skeleton } from '@/components/ui/skeleton'
+import AccountMismatchDialog from './account-mismatch-dialog'
 
 const Dashboard = ({ isImpersonating }: { isImpersonating?: boolean }) => {
   const { data, isPending } = useIsAuthed()
@@ -39,6 +40,7 @@ const Dashboard = ({ isImpersonating }: { isImpersonating?: boolean }) => {
 
   return (
     <section className='h-screen-with-header relative flex flex-col justify-center p-10'>
+      <AccountMismatchDialog />
       <AdminTool isImpersonating={isImpersonating} />
 
       <div className='container'>
