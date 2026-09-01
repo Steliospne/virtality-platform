@@ -1,12 +1,8 @@
-export type ProfileTab = 'info' | 'billing' | 'organizations' | 'sessions'
+export type ProfileTab = 'info' | 'billing' | 'sessions'
 
 type NonBillingProfileTab = Exclude<ProfileTab, 'billing'>
 
-const PROFILE_TABS = new Set<NonBillingProfileTab>([
-  'info',
-  'organizations',
-  'sessions',
-])
+const PROFILE_TABS = new Set<NonBillingProfileTab>(['info', 'sessions'])
 
 function isNonBillingProfileTab(value: string): value is NonBillingProfileTab {
   return PROFILE_TABS.has(value as NonBillingProfileTab)

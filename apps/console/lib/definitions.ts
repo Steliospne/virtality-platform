@@ -1,5 +1,3 @@
-import type { User } from '@/auth-client'
-import type { Member } from '@virtality/db'
 import { z } from 'zod/v4'
 import { isValidNumber } from './utils'
 import { isValidPassword } from '@virtality/shared/utils'
@@ -169,37 +167,3 @@ export const BugReportFormSchema = z.object({
 })
 
 export type BugReportForm = z.infer<typeof BugReportFormSchema>
-
-export const OrganizationSchema = z.object({
-  id: z.string().default(''),
-  name: z.string(),
-  slug: z.string(),
-  logo: z.optional(z.optional(z.string().nullable())),
-  metadata: z.optional(
-    z
-      .union([
-        z.record(z.string(), z.string()),
-        z.string().transform((val) => val),
-      ])
-      .nullable(),
-  ),
-  createdAt: z.date(),
-})
-
-export interface Organization extends z.infer<typeof OrganizationSchema> {
-  isFrozen: boolean | null
-}
-
-export const OrganizationMemberSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().nullable().optional(),
-  role: z.string(),
-  image: z.string().nullable(),
-  createdAt: z.date().optional(),
-})
-
-export type OrganizationMember = z.infer<typeof OrganizationMemberSchema>
-
-export type OrganizationWithMembers = Organization & {
-  members: (Member & { user: User })[]
-}

@@ -1,13 +1,11 @@
 'use server'
-import { OrganizationSchema, UserSchema } from './definitions'
+import { UserSchema } from './definitions'
 import { IMAGE_TYPE, ImageType } from '@/types/models'
-import { BugReportForm, Organization } from '@/lib/definitions'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+import { BugReportForm } from '@/lib/definitions'
 import { User } from '@/auth-client'
 import { prisma } from '@virtality/db'
 import { BugReport, BugReportImage } from '@virtality/db'
-import { getUser, getUserAndSession } from './authActions'
+import { getUser } from './authActions'
 import { getUUID, randomImageName } from './utils'
 import { uploadFile } from '@/S3'
 import { serverLogger } from './server-logger'
@@ -176,151 +174,4 @@ export const updateUserAction = async (
     })
     return { data: newUser }
   }
-}
-
-// ORGANIZATION ACTIONS
-export const createOrganizationAction = async (
-  state:
-    | {
-        data: Pick<Organization, 'name' | 'slug'> | null
-      }
-    | undefined,
-  formData?: FormData,
-) => {
-  if (!formData) return state
-
-  const { name, slug } = Object.fromEntries(formData) as Pick<
-    Organization,
-    'name' | 'slug'
-  >
-
-  const organizationFields = { name, slug, logo: null, createdAt: new Date() }
-
-  const validatedData = OrganizationSchema.safeParse(organizationFields)
-
-  if (!validatedData.success)
-    return {
-      data: { name, slug },
-    }
-
-  // let redirectId = '';
-
-  if (validatedData.success) {
-    try {
-      // const data = await auth.api.createOrganization({
-      //   headers: await headers(),
-      //   body: {
-      //     name: validatedData.data.name,
-      //     slug: validatedData.data.slug,
-      //   },
-      // });
-      // if (data?.id) redirectId = data.id;
-      // return success state
-    } catch (error) {
-      logger.error(
-        'console.organization.create.failed',
-        {
-          name: validatedData.data.name,
-          slug: validatedData.data.slug,
-          error,
-        },
-        'Failed to create organization',
-      )
-      return {
-        data: null,
-      }
-    }
-    // redirect(`/organization/${redirectId}`);
-  }
-}
-
-export const updateOrganizationAction = async (formData: FormData) => {
-  if (!formData) return
-
-  const entries = Object.fromEntries(formData) as unknown as Pick<
-    Organization,
-    'id' | 'name'
-  > & { isFrozen: string }
-  const { id, name, isFrozen } = entries
-  const oldOrg = await prisma.organization.findFirst({
-    where: { id },
-  })
-
-  const newOrg = {
-    ...oldOrg,
-    name,
-    isFrozen: isFrozen === 'true' ? false : true,
-  }
-
-  await prisma.organization.update({
-    where: { id },
-    data: newOrg,
-  })
-
-  revalidatePath('/organization/[id]/page.tsx', 'page')
-}
-
-export const deleteOrganizationAction = async (formData: FormData) => {
-  const entries = Object.fromEntries(formData) as {
-    organizationId: string
-    userId: string
-  }
-
-  if (!entries.organizationId || !entries.userId) return
-
-  const organization = await prisma.organization.findFirst({
-    where: { id: entries.organizationId },
-  })
-
-  if (!organization) throw new Error('Organization not found')
-
-  if (organization.isFrozen) {
-    await prisma.organization.delete({
-      where: { id: entries.organizationId },
-    })
-    redirect(`/user/${entries.userId}/organizations/`)
-  } else {
-    throw new Error('Cannot delete an active organization')
-  }
-}
-
-export const createInvitationAction = async (
-  state: {
-    success: boolean
-    message: string
-  },
-  formData: FormData,
-) => {
-  const session = await getUserAndSession()
-
-  if (!formData || !session) return state
-
-  const entries = Object.fromEntries(formData) as {
-    email: string
-    role: 'member' | 'admin' | 'owner'
-    organizationId: string
-  }
-
-  const { organizationId, email } = entries
-
-  const self = session.user.email === email
-  if (self) return { success: false, message: 'You cannot invite your self.' }
-
-  const existingInvitation = await prisma.invitation.findFirst({
-    where: { organizationId, AND: [{ email }] },
-  })
-
-  if (existingInvitation)
-    return { success: false, message: 'Pending invitation already exists' }
-
-  // await auth.api.createInvitation({
-  //   headers: await headers(),
-  //   body: {
-  //     email,
-  //     role,
-  //     organizationId,
-  //   },
-  // });
-
-  return { success: true, message: '' }
 }

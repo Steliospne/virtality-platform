@@ -8,7 +8,7 @@ import { Separator } from '@virtality/ui/components/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function ProfileTabsSkeleton() {
-  const tabs = ['Info', 'Billing', 'Organizations', 'Sessions'] as const
+  const tabs = ['Info', 'Billing', 'Sessions'] as const
 
   return (
     <div className='flex flex-col gap-2'>

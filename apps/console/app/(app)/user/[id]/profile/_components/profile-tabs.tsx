@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Building, CreditCard, Key, UserIcon } from 'lucide-react'
+import { CreditCard, Key, UserIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBillingFeatureEnabled } from '@/hooks/use-billing-feature'
@@ -64,10 +64,6 @@ export function ProfileTabs({
             Billing
           </ProfileTabLink>
         ) : null}
-        <ProfileTabLink tab='organizations' pathname={pathname}>
-          <Building />
-          Organizations
-        </ProfileTabLink>
         <ProfileTabLink tab='sessions' pathname={pathname}>
           <Key />
           Sessions
@@ -77,7 +73,6 @@ export function ProfileTabs({
       {billingEnabled ? (
         <TabsContent value='billing'>{billing}</TabsContent>
       ) : null}
-      <TabsContent value='organizations'>Organizations</TabsContent>
       <TabsContent value='sessions'>{sessions}</TabsContent>
     </Tabs>
   )

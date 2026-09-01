@@ -19,7 +19,7 @@ import {
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { admin, organization, phoneNumber } from 'better-auth/plugins'
+import { admin, phoneNumber } from 'better-auth/plugins'
 import { stripe } from '@better-auth/stripe'
 import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
@@ -338,7 +338,6 @@ export const auth = betterAuth({
         // Implement sending OTP code via SMS
       },
     }),
-    organization(),
   ],
   advanced: {
     cookies: {

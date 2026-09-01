@@ -15,7 +15,6 @@ describe('resolveProfileTab', () => {
 
   it('accepts other canonical profile tabs', () => {
     expect(resolveProfileTab('sessions', false)).toBe('sessions')
-    expect(resolveProfileTab('organizations', false)).toBe('organizations')
   })
 })
 

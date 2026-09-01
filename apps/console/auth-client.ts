@@ -1,8 +1,4 @@
-import {
-  organizationClient,
-  adminClient,
-  phoneNumberClient,
-} from 'better-auth/client/plugins'
+import { adminClient, phoneNumberClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 import { stripeClient } from '@better-auth/stripe/client'
 import { ac, roles } from './permissions'
@@ -17,7 +13,6 @@ export const authClient = createAuthClient({
   baseURL,
   plugins: [
     adminClient({ ac, roles }),
-    organizationClient(),
     phoneNumberClient(),
     stripeClient({
       subscription: true,
