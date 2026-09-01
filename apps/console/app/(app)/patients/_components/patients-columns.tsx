@@ -11,8 +11,8 @@ import {
 import { ColumnDef } from '@tanstack/react-table'
 import { Copy, Ellipsis, Pencil, Trash2 } from 'lucide-react'
 import ColumnHeader from '@/components/tables/header-cell'
-import DateCell from '@/components/tables/date-cell'
-import { Patient } from '@virtality/db'
+import { format } from 'date-fns'
+import { PatientListItem } from '@/types/models'
 import DeleteConfirmDialog from '@/components/ui/delete-confirm-dialog'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -23,7 +23,7 @@ import {
 } from '@virtality/react-query'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
-export const columns: ColumnDef<Patient>[] = [
+export const columns: ColumnDef<PatientListItem>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -53,13 +53,6 @@ export const columns: ColumnDef<Patient>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'id',
-    cell({ row }) {
-      const id: string = row.getValue('id')
-      return <div>{id.split('-')[0]}</div>
-    },
-  },
-  {
     accessorKey: 'name',
     header: ({ column, header }) => (
       <ColumnHeader column={column} title={header.id} className='capitalize' />
@@ -72,28 +65,43 @@ export const columns: ColumnDef<Patient>[] = [
     ),
   },
   {
-    accessorKey: 'phone',
-    header: ({ column, header }) => (
-      <ColumnHeader column={column} title={header.id} className='capitalize' />
-    ),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: ({ column, header }) => (
-      <ColumnHeader column={column} title={header.id} className='capitalize' />
-    ),
-    cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
-  },
-  {
-    accessorKey: 'updatedAt',
-    header: ({ column, header }) => (
+    accessorKey: 'activeProgramName',
+    header: ({ column }) => (
       <ColumnHeader
         column={column}
-        title={header.id}
-        className='*:capitalize'
+        title='Active Program'
+        className='capitalize'
       />
     ),
-    cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
+    cell: ({ row }) => {
+      const name: string | null = row.getValue('activeProgramName')
+      return <div>{name ?? '—'}</div>
+    },
+  },
+  {
+    accessorKey: 'totalSessions',
+    header: ({ column }) => (
+      <ColumnHeader
+        column={column}
+        title='Total Sessions'
+        className='capitalize'
+      />
+    ),
+  },
+  {
+    accessorKey: 'lastSessionAt',
+    header: ({ column }) => (
+      <ColumnHeader
+        column={column}
+        title='Last Session'
+        className='capitalize'
+      />
+    ),
+    cell: ({ row }) => {
+      const date: Date | null = row.getValue('lastSessionAt')
+      if (!date) return <div>No sessions yet</div>
+      return <div>{format(date, 'PPP')}</div>
+    },
   },
   {
     id: 'actions',

@@ -2,6 +2,7 @@ import {
   Avatar,
   Exercise,
   Map,
+  Patient,
   PatientSession,
   SessionExercise,
   Device,
@@ -27,6 +28,12 @@ export interface CompleteExercise extends ExerciseWithSettings {
 
 export interface CompleteReusableProgram extends ReusableProgram {
   exercises: ReusableProgramExercise[]
+}
+
+export interface PatientListItem extends Patient {
+  totalSessions: number
+  lastSessionAt: Date | null
+  activeProgramName: string | null
 }
 
 export const ProgramStatus = {

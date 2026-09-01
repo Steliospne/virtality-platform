@@ -36,9 +36,30 @@ const listPatients = authed
       skip: input?.skip,
       cursor: input?.cursor,
       orderBy: input?.orderBy,
-      select: input?.select,
+      include: {
+        _count: { select: { patientSession: true } },
+        patientSession: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { createdAt: true },
+        },
+        patientProgram: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { name: true },
+        },
+      },
     })
-    return patients
+
+    return patients.map(
+      ({ _count, patientSession, patientProgram, ...patient }) => ({
+        ...patient,
+        totalSessions: _count.patientSession,
+        lastSessionAt: patientSession[0]?.createdAt ?? null,
+        activeProgramName: patientProgram[0]?.name ?? null,
+      }),
+    )
   })
 
 const findPatient = authed
