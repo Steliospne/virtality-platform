@@ -33,7 +33,7 @@ export const config = {
 }
 
 const sessionHandler = async (request: NextRequest) => {
-  const decision = await evaluateSessionGate(request.headers)
+  const { decision, setCookies } = await evaluateSessionGate(request.headers)
 
   if (decision === 'sign-in') {
     const signInURL = new URL(
@@ -45,7 +45,13 @@ const sessionHandler = async (request: NextRequest) => {
 
   if (decision === 'waitlist') {
     const waitlistURL = new URL(websiteURL + '/waitlist', request.url)
-    return NextResponse.redirect(waitlistURL)
+    const response = NextResponse.redirect(waitlistURL)
+    // Relay the server's sign-out Set-Cookie so the browser's session
+    // cookie actually clears, since the auth call happened over HTTP.
+    for (const cookie of setCookies) {
+      response.headers.append('set-cookie', cookie)
+    }
+    return response
   }
 
   return NextResponse.next()
