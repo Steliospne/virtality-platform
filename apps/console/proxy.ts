@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import acceptLanguage from 'accept-language'
 import { settings } from '@/i18n/settings'
-import { asAuthSession, auth } from '@virtality/auth'
-import { prisma } from '@virtality/db'
-import { decideConsoleSessionGate } from '@virtality/shared/utils'
 import { getWebsiteUrl } from '@virtality/shared/types'
 import { buildSignInHref } from '@/lib/sign-in-redirect'
+import { evaluateSessionGate } from '@/lib/session-gate'
 
 acceptLanguage.languages(settings.languages)
 
@@ -35,49 +33,19 @@ export const config = {
 }
 
 const sessionHandler = async (request: NextRequest) => {
-  const waitlistURL = new URL(websiteURL + '/waitlist', request.url)
-  const signInURL = new URL(
-    buildSignInHref(`${request.nextUrl.pathname}${request.nextUrl.search}`),
-    request.url,
-  )
+  const decision = await evaluateSessionGate(request.headers)
 
-  try {
-    const data = asAuthSession(
-      await auth.api.getSession({
-        headers: request.headers,
-      }),
+  if (decision === 'sign-in') {
+    const signInURL = new URL(
+      buildSignInHref(`${request.nextUrl.pathname}${request.nextUrl.search}`),
+      request.url,
     )
+    return NextResponse.redirect(signInURL)
+  }
 
-    if (!data) return NextResponse.redirect(signInURL)
-
-    const {
-      user: { stripeCustomerId, role },
-    } = data
-
-    // Existence only: Billing Path Established is any synced row, any status.
-    const subscription = stripeCustomerId
-      ? await prisma.subscription.findFirst({
-          where: { stripeCustomerId },
-          select: { status: true },
-        })
-      : null
-
-    const decision = decideConsoleSessionGate({
-      role,
-      subscriptions: subscription ? [subscription] : [],
-    })
-
-    if (decision === 'waitlist') {
-      // Never-established billing path only. Expiry with a synced Subscription
-      // stays in console (no sign-out solely for clock end).
-      await auth.api.signOut({
-        headers: request.headers,
-      })
-      return NextResponse.redirect(waitlistURL)
-    }
-  } catch (error) {
-    console.error('Error checking session:', error)
-    // return NextResponse.redirect(new URL('/error', request.url))
+  if (decision === 'waitlist') {
+    const waitlistURL = new URL(websiteURL + '/waitlist', request.url)
+    return NextResponse.redirect(waitlistURL)
   }
 
   return NextResponse.next()
