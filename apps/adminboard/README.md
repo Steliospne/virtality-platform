@@ -20,7 +20,7 @@ pnpm dev:apps
 Copy [`.env.example`](./.env.example) to `.env`. Minimum:
 
 - `NEXT_PUBLIC_ENV=development`
-- `CONSOLE_DATABASE_URL`
+- `DATABASE_URL`
 
 Requires a user with `role=admin`. The local seed creates one (see onboarding).
 
@@ -30,7 +30,7 @@ Requires a user with `role=admin`. The local seed creates one (see onboarding).
 | ---------------------- | ------------------ | ------------------------------- |
 | `NEXT_PUBLIC_ENV`      | yes                | `development`                   |
 | `ENV`                  | recommended        | `development`                   |
-| `CONSOLE_DATABASE_URL` | yes                | Used by the Next proxy / Prisma |
+| `DATABASE_URL`         | yes                | Used by the Next proxy / Prisma |
 
 Seeded admin:
 

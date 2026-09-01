@@ -65,7 +65,7 @@ Fallback if Doppler is not set up yet: copy each `.env.example` to `.env` in:
 - `services/server`
 - `services/socket`
 
-Examples include a working local `CONSOLE_DATABASE_URL` for Compose Postgres. Generate a real `BETTER_AUTH_SECRET` for the server.
+Examples include a working local `DATABASE_URL` for Compose Postgres. Generate a real `BETTER_AUTH_SECRET` for the server.
 
 **Stripe / Google** can stay empty in development: the auth package skips the Stripe plugin and Google provider when those keys are missing.
 
@@ -93,7 +93,7 @@ Starts the Compose Postgres from `infra/docker/compose.db.yml` in the background
 | User / pass / db | `devuser` / `devpass` / `devdb`     |
 | Volume           | `pg_data` (data survives `db:down`) |
 
-Stop the container with `pnpm db:down` (volume kept). Docker must be running; if the port is busy, free `5434` or change the Compose mapping and your `CONSOLE_DATABASE_URL`.
+Stop the container with `pnpm db:down` (volume kept). Docker must be running; if the port is busy, free `5434` or change the Compose mapping and your `DATABASE_URL`.
 
 ### Useful `db:*` scripts
 

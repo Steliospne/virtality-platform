@@ -88,12 +88,12 @@ Put values used in more than one app into `virtality-platform-shared` (same key 
 ```text
 # In virtality-platform-server / virtality-platform-website (dev)
 REVALIDATE_SECRET=${virtality-platform-shared.dev.REVALIDATE_SECRET}
-CONSOLE_DATABASE_URL=${virtality-platform-shared.dev.CONSOLE_DATABASE_URL}
+DATABASE_URL=${virtality-platform-shared.dev.DATABASE_URL}
 ```
 
 Good candidates for `shared`:
 
-- `CONSOLE_DATABASE_URL` (local Compose URL on `dev`; real URLs on `stg` / `prd`)
+- `DATABASE_URL` (local Compose URL on `dev`; real URLs on `stg` / `prd`)
 - `REVALIDATE_SECRET` (website + server)
 - Stripe / Google OAuth / SMTP / Cloudflare TURN / PostHog (when several apps need the same value)
 
@@ -109,7 +109,7 @@ Do this from a machine that already has working local `.env` files (or vault exp
 
 | Path              | Example file                         | Typical secrets                                                                  |
 | ----------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| `packages/db`     | `.env.example`                       | `CONSOLE_DATABASE_URL`                                                           |
+| `packages/db`     | `.env.example`                       | `DATABASE_URL`                                                           |
 | `apps/console`    | `.env.example`                       | DB, PostHog, AWS, Discord                                                        |
 | `apps/adminboard` | `.env.example`                       | DB                                                                               |
 | `apps/website`    | `.env.example`                       | `REVALIDATE_SECRET`, PostHog                                                     |
@@ -140,7 +140,7 @@ doppler secrets upload packages/db/.env \
   --project virtality-platform-shared --config dev
 
 # Or set shared keys explicitly:
-# doppler secrets set CONSOLE_DATABASE_URL="postgresql://..." REVALIDATE_SECRET="..." \
+# doppler secrets set DATABASE_URL="postgresql://..." REVALIDATE_SECRET="..." \
 #   -p virtality-platform-shared -c dev
 
 doppler secrets upload packages/db/.env \

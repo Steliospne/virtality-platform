@@ -20,7 +20,7 @@ pnpm dev:apps
 Copy [`.env.example`](./.env.example) to `.env`. Minimum:
 
 - `NEXT_PUBLIC_ENV=development`
-- `CONSOLE_DATABASE_URL` (same local Postgres as `packages/db`)
+- `DATABASE_URL` (same local Postgres as `packages/db`)
 
 Auth and API traffic go to `services/server` (`http://localhost:8080`).
 
@@ -30,7 +30,7 @@ Auth and API traffic go to `services/server` (`http://localhost:8080`).
 | ------------------------------- | ------------------ | ------------------------------- |
 | `NEXT_PUBLIC_ENV`               | yes                | `development`                   |
 | `ENV`                           | recommended        | `development`                   |
-| `CONSOLE_DATABASE_URL`          | yes                | Used by the Next proxy / Prisma |
+| `DATABASE_URL`                  | yes                | Used by the Next proxy / Prisma |
 | `NEXT_PUBLIC_POSTHOG_KEY`       | no                 | Analytics                       |
 | `NEXT_PUBLIC_CDN_URL` / AWS\_\* | no                 | Uploads / media                 |
 

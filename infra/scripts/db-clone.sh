@@ -46,7 +46,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
-Clone a remote database into the local console database.
+Clone a remote database into the local database.
 
 Options:
   --prod             Dump from DATABASE_URL_PROD (default)
@@ -112,7 +112,7 @@ pg_dump "$REMOTE_DATABASE_URL" -Fc -f "$DUMP_FILE"
 
 # Wipe local schema (--clean on pg_restore drops objects without CASCADE and fails on FK deps)
 echo ">>> Resetting local database schema..."
-psql "$CONSOLE_DATABASE_URL" -v ON_ERROR_STOP=1 <<-SQL
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<-SQL
 	DROP SCHEMA IF EXISTS public CASCADE;
 	CREATE SCHEMA public;
 	GRANT ALL ON SCHEMA public TO public;
@@ -120,7 +120,7 @@ SQL
 
 # Restore into local DB
 echo ">>> Restoring into local database..."
-pg_restore --dbname="$CONSOLE_DATABASE_URL" --no-owner --no-privileges "$DUMP_FILE"
+pg_restore --dbname="$DATABASE_URL" --no-owner --no-privileges "$DUMP_FILE"
 
 if [ "$SKIP_MIGRATIONS" = true ]; then
   echo ">>> Skipping pending local migrations (--skip-migrations)."

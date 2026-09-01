@@ -13,7 +13,7 @@
 !**/.env.example
 .DS_Store
 coverage
-packages/db/console/prisma/generated
+packages/db/prisma/generated
 docs
 **/*.md
 !README.md

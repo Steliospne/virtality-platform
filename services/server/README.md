@@ -23,7 +23,7 @@ Copy [`.env.example`](./.env.example) to `.env` before starting. The `dev` scrip
 
 | Variable                  | Required for local         | Notes                                        |
 | ------------------------- | -------------------------- | -------------------------------------------- |
-| `CONSOLE_DATABASE_URL`    | yes                        | Shared console Postgres                      |
+| `DATABASE_URL`            | yes                        | Shared Postgres                              |
 | `ENV` / `NEXT_PUBLIC_ENV` | yes                        | `development`                                |
 | `BETTER_AUTH_SECRET`      | yes                        | Any long random string locally               |
 | `BETTER_AUTH_URL`         | recommended                | `http://localhost:8080`                      |

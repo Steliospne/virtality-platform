@@ -26,7 +26,7 @@ COPY apps ./apps
 COPY services ./services
 
 # prisma generate reads this via prisma.config.ts; generate does not connect.
-ENV CONSOLE_DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm build:server

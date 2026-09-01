@@ -21,7 +21,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 | server     | `services/server/` | Platform API — Hono server with tRPC/oRPC, auth middleware, user/device data                                                                      |
 | socket     | `services/socket/` | Real-time communication — Socket.IO bridge between console frontend and VR headsets                                                               |
 
-Shared packages (`packages/db`, `packages/auth`, `packages/orpc`, `packages/shared`, `packages/ui`, etc.) do not have separate contexts. The Prisma schema in `packages/db/console/prisma/` is the shared data-model source of truth — domain terms defined there apply across all contexts.
+Shared packages (`packages/db`, `packages/auth`, `packages/orpc`, `packages/shared`, `packages/ui`, etc.) do not have separate contexts. The Prisma schema in `packages/db/prisma/` is the shared data-model source of truth — domain terms defined there apply across all contexts.
 
 ## File structure
 

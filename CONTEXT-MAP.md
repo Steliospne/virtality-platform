@@ -13,6 +13,6 @@ Multi-context layout for the Virtality Platform monorepo. Each context has its o
 
 System-wide architectural decisions live in `docs/adr/` at the repo root.
 
-Shared packages (`packages/db`, `packages/auth`, `packages/orpc`, `packages/ui`, etc.) are documented within the contexts that own them. The Prisma schema in `packages/db/console/prisma/` is the cross-context data-model source of truth.
+Shared packages (`packages/db`, `packages/auth`, `packages/orpc`, `packages/ui`, etc.) are documented within the contexts that own them. The Prisma schema in `packages/db/prisma/` is the cross-context data-model source of truth.
 
 The **Shared UI Bucket** (`packages/ui/`, `@virtality/ui`) is the canonical source for promoted cross-app UI primitives; see `packages/ui/CONTRACT.md`.

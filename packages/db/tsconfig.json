@@ -4,10 +4,6 @@
     "rewriteRelativeImportExtensions": true,
     "outDir": "./dist"
   },
-  "include": [
-    "index.ts",
-    "console/src/**/*.ts",
-    "console/prisma/generated/**/*.ts"
-  ],
+  "include": ["index.ts", "src/**/*.ts", "prisma/generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

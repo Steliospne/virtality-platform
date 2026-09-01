@@ -8,18 +8,18 @@
       "default": "./dist/index.js"
     },
     "./definitions": {
-      "types": "./console/prisma/generated/zod/schemas/index.ts",
-      "default": "./dist/console/prisma/generated/zod/schemas/index.js"
+      "types": "./prisma/generated/zod/schemas/index.ts",
+      "default": "./dist/prisma/generated/zod/schemas/index.js"
     }
   },
   "scripts": {
-    "generate": "prisma generate --config ./console/prisma.config.ts",
+    "generate": "prisma generate --config ./prisma.config.ts",
     "build": "pnpm generate && rimraf ./dist && tsc",
-    "reset": "prisma migrate reset --config ./console/prisma.config.ts && prisma db seed --config ./console/prisma.config.ts",
-    "migrate:dev": "prisma migrate dev --config ./console/prisma.config.ts && prisma db seed --config ./console/prisma.config.ts",
-    "migrate:deploy": "prisma migrate deploy --config ./console/prisma.config.ts",
-    "seed": "prisma db seed --config ./console/prisma.config.ts",
-    "studio": "prisma studio --config ./console/prisma.config.ts",
+    "reset": "prisma migrate reset --config ./prisma.config.ts && prisma db seed --config ./prisma.config.ts",
+    "migrate:dev": "prisma migrate dev --config ./prisma.config.ts && prisma db seed --config ./prisma.config.ts",
+    "migrate:deploy": "prisma migrate deploy --config ./prisma.config.ts",
+    "seed": "prisma db seed --config ./prisma.config.ts",
+    "studio": "prisma studio --config ./prisma.config.ts",
     "migrate:programs-presets": "tsx scripts/migrate-programs-and-presets.ts",
     "migrate:programs-presets:dry-run": "tsx scripts/migrate-programs-and-presets.ts --dry-run",
     "test": "vitest run"

@@ -7,7 +7,7 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**"],
       "env": [
-        "CONSOLE_DATABASE_URL",
+        "DATABASE_URL",
         "SENTRY_AUTH_TOKEN",
         "OTEL_DEPLOYMENT_ENVIRONMENT",
         "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -23,7 +23,7 @@
       "env": [
         "ENV",
         "NEXT_PUBLIC_ENV",
-        "CONSOLE_DATABASE_URL",
+        "DATABASE_URL",
         "X_URL",
         "LINKEDIN_URL",
         "FACEBOOK_URL",
@@ -49,7 +49,7 @@
       "env": [
         "ENV",
         "NEXT_PUBLIC_ENV",
-        "CONSOLE_DATABASE_URL",
+        "DATABASE_URL",
         "OTEL_DEPLOYMENT_ENVIRONMENT",
         "OTEL_EXPORTER_OTLP_ENDPOINT",
         "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
@@ -73,9 +73,9 @@
     "@virtality/server#build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", "console/prisma/generated/**"],
+      "outputs": ["dist/**", "prisma/generated/**"],
       "env": [
-        "CONSOLE_DATABASE_URL",
+        "DATABASE_URL",
         "SENTRY_AUTH_TOKEN",
         "NEXT_PUBLIC_ENV",
         "ENV",
@@ -103,8 +103,8 @@
     "@virtality/db#build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", "console/prisma/generated/**"],
-      "env": ["CONSOLE_DATABASE_URL"]
+      "outputs": ["dist/**", "prisma/generated/**"],
+      "env": ["DATABASE_URL"]
     },
     "@virtality/auth#build": {
       "dependsOn": ["^build"],
@@ -218,15 +218,15 @@
     },
     "test": {},
     "@virtality/db#generate": {
-      "outputs": ["console/prisma/generated/**"]
+      "outputs": ["prisma/generated/**"]
     },
     "@virtality/db#migrate:dev": {
-      "outputs": ["console/prisma/generated/**"],
+      "outputs": ["prisma/generated/**"],
       "cache": false,
       "persistent": true
     },
     "@virtality/db#migrate:deploy": {
-      "outputs": ["console/prisma/generated/**"],
+      "outputs": ["prisma/generated/**"],
       "cache": false,
       "persistent": true
     },
@@ -240,7 +240,7 @@
     },
     "@virtality/db#seed": {
       "cache": false,
-      "env": ["CONSOLE_DATABASE_URL"]
+      "env": ["DATABASE_URL"]
     }
   }
 }

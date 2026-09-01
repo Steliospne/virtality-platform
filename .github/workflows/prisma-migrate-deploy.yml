@@ -38,7 +38,7 @@ jobs:
       - name: Deploy production migrations
         working-directory: packages/db
         env:
-          CONSOLE_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
         run: pnpm run migrate:deploy
 
   deploy-staging-migrations:
@@ -65,5 +65,5 @@ jobs:
       - name: Deploy staging migrations
         working-directory: packages/db
         env:
-          CONSOLE_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
         run: pnpm run migrate:deploy

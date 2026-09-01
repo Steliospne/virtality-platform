@@ -10,7 +10,7 @@
 
 Existing Content tools share one vertical stack:
 
-1. **Prisma models** under `packages/db/console/prisma/models/marketing-*.prisma` (Marketing\* tables).
+1. **Prisma models** under `packages/db/prisma/models/marketing-*.prisma` (Marketing\* tables).
 2. **Domain logic** in `@virtality/shared` (store interfaces + Zod inputs + `bucketCdnUrl` mapping).
 3. **oRPC procedures** in `packages/orpc` — **public `base` GETs** for website/admin reads; **`authed` mutations** for Adminboard writes.
 4. **React Query hooks** in `@virtality/react-query` wrapping those procedures.
@@ -47,7 +47,7 @@ Media bytes live in the **bucket**; marketing rows store **`objectKey` only**. C
 
 ### Partner logos
 
-Source: `packages/db/console/prisma/models/marketing-partner-logo.prisma`
+Source: `packages/db/prisma/models/marketing-partner-logo.prisma`
 
 | Piece  | Detail                                                                                             |
 | ------ | -------------------------------------------------------------------------------------------------- |
@@ -56,11 +56,11 @@ Source: `packages/db/console/prisma/models/marketing-partner-logo.prisma`
 | Index  | `(category, sortOrder)`                                                                            |
 | Shape  | Ordered **collection** of many rows (not a singleton)                                              |
 
-Migration: `packages/db/console/prisma/migrations/20260717120000_add_marketing_partner_logo/migration.sql` — creates table + enum; **no seed data**.
+Migration: `packages/db/prisma/migrations/20260717120000_add_marketing_partner_logo/migration.sql` — creates table + enum; **no seed data**.
 
 ### Promo video
 
-Source: `packages/db/console/prisma/models/marketing-promo-video.prisma`
+Source: `packages/db/prisma/models/marketing-promo-video.prisma`
 
 | Piece  | Detail                                                                                                                            |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,11 +68,11 @@ Source: `packages/db/console/prisma/models/marketing-promo-video.prisma`
 | Fields | `id`, `objectKey` (unique), timestamps                                                                                            |
 | Shape  | **Singleton** — domain constant `PROMO_VIDEO_SINGLETON_ID = 'promo-video-singleton'` (`packages/shared/src/utils/promo-video.ts`) |
 
-Migration: `packages/db/console/prisma/migrations/20260720120000_add_marketing_promo_video/migration.sql` — creates table and **seeds** the prior landing MP4 (`virtality-promo-web-001.mp4`) so the section stays visible after cutover.
+Migration: `packages/db/prisma/migrations/20260720120000_add_marketing_promo_video/migration.sql` — creates table and **seeds** the prior landing MP4 (`virtality-promo-web-001.mp4`) so the section stays visible after cutover.
 
 ### Mosaic
 
-Source: `packages/db/console/prisma/models/marketing-mosaic.prisma`
+Source: `packages/db/prisma/models/marketing-mosaic.prisma`
 
 | Piece    | Detail                                                                                                          |
 | -------- | --------------------------------------------------------------------------------------------------------------- |
@@ -80,7 +80,7 @@ Source: `packages/db/console/prisma/models/marketing-mosaic.prisma`
 | Children | `MarketingMosaicTile` — `objectKey`, `mediaKind` (`image` \| `video`), `alt`, grid `row`/`col`/`width`/`height` |
 | Shape    | Singleton board + replace-all tiles (transactional deleteMany + createMany)                                     |
 
-Migration: `packages/db/console/prisma/migrations/20260720120000_add_marketing_mosaic/migration.sql` — creates tables; **no tile seed** (empty board → website hides section until a live-eligible save).
+Migration: `packages/db/prisma/migrations/20260720120000_add_marketing_mosaic/migration.sql` — creates tables; **no tile seed** (empty board → website hides section until a live-eligible save).
 
 ### Bucket references
 
@@ -226,7 +226,7 @@ Product intent for managed logos was earlier sketched in `docs/prd/0139-adminboa
 
 ## Patterns Highlight Cards should mirror
 
-1. **Prisma marketing model(s)** in `packages/db/console/prisma/models/` (e.g. collection + ordered cards, or two collections for Benefits / Features — same family as `MarketingPartnerLogo` multi-row, not a third-party CMS).
+1. **Prisma marketing model(s)** in `packages/db/prisma/models/` (e.g. collection + ordered cards, or two collections for Benefits / Features — same family as `MarketingPartnerLogo` multi-row, not a third-party CMS).
 2. **Shared Zod types + store-port domain utils** in `@virtality/shared`; map to list items at read time (Highlight Cards need no `cdnUrl` unless they gain media — still keep mapping in shared utils).
 3. **oRPC:** public `list`/`get` on `base`; create/update/reorder/remove (or replace-all save) on `authed`; register on `packages/orpc/src/router.ts`.
 4. **React Query** query + mutation hooks with invalidate-on-success — same package used by website and Adminboard.
@@ -250,8 +250,8 @@ Product intent for managed logos was earlier sketched in `docs/prd/0139-adminboa
 
 | Layer       | Paths                                                                                                                                     |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Prisma      | `packages/db/console/prisma/models/marketing-{partner-logo,promo-video,mosaic}.prisma`                                                    |
-| Migrations  | `packages/db/console/prisma/migrations/20260717*` / `20260720*`                                                                           |
+| Prisma      | `packages/db/prisma/models/marketing-{partner-logo,promo-video,mosaic}.prisma`                                                    |
+| Migrations  | `packages/db/prisma/migrations/20260717*` / `20260720*`                                                                           |
 | Shared      | `packages/shared/src/{types,utils}/{partner-logo,promo-video,mosaic}.*`                                                                   |
 | oRPC        | `packages/orpc/src/procedures/{partner-logo,promo-video,mosaic}.ts`, `router.ts`                                                          |
 | React Query | `packages/react-query/src/hooks/{queries,mutations}/{partner-logo,promo-video,mosaic}/`                                                   |
