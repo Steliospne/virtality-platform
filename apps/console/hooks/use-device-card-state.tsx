@@ -3,6 +3,7 @@
 import { useEffect, useReducer } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { getQueryClient, useORPC } from '@virtality/react-query'
+import { useStore } from 'tinybase/ui-react'
 import { VRDevice } from '@/types/models'
 
 type PairingState = {
@@ -88,6 +89,7 @@ const useDeviceCardState = ({ device }: { device: VRDevice }) => {
   const [state, dispatch] = useReducer(stateReducer, initialState)
   const orpc = useORPC()
   const queryClient = getQueryClient()
+  const store = useStore()
 
   const startMutation = useMutation(orpc.devicePairing.start.mutationOptions())
   const cancelMutation = useMutation(
@@ -143,6 +145,7 @@ const useDeviceCardState = ({ device }: { device: VRDevice }) => {
           error: '',
         },
       })
+      store?.setValue('lastPairedDeviceId', device.data.id)
       void queryClient.invalidateQueries({ queryKey: orpc.device.list.key() })
       return
     }
@@ -171,6 +174,7 @@ const useDeviceCardState = ({ device }: { device: VRDevice }) => {
     queryClient,
     state.status,
     statusQuery.data?.state,
+    store,
   ])
 
   useEffect(() => {

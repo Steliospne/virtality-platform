@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 // import { getClientT } from '@/i18n/get-client-t';
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { useDeviceContext } from '@/context/device-context'
-import { useRow, useStore } from 'tinybase/ui-react'
+import { useRow, useStore, useValue } from 'tinybase/ui-react'
 import { PatientLocalData } from '@/types/models'
 import { type ProgramStartPayload } from '@virtality/shared/types'
 import ErrorToasty from '@/components/ui/ErrorToasty'
@@ -68,11 +68,17 @@ const useControlPanel = () => {
   const missingSettings = !selectedAvatar || !selectedMap
 
   const patientLocalData = useRow('patients', patientId) as PatientLocalData
+  const lastPairedDeviceId = useValue('lastPairedDeviceId') as
+    | string
+    | undefined
   const store = useStore()
 
   useEffect(() => {
     const { selectedDevice: restoredDevice, shouldClearSavedHeadset } =
-      resolveSavedHeadsetSelection(devices, patientLocalData?.lastHeadset)
+      resolveSavedHeadsetSelection(
+        devices,
+        patientLocalData?.lastHeadset ?? lastPairedDeviceId,
+      )
 
     if (shouldClearSavedHeadset) {
       store?.delCell('patients', patientId, 'lastHeadset')
@@ -82,7 +88,7 @@ const useControlPanel = () => {
       setSelectedDevice(restoredDevice)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devices, patientLocalData, selectedDevice])
+  }, [devices, patientLocalData, lastPairedDeviceId, selectedDevice])
 
   const programStart = () => {
     if (!exercises?.length)
