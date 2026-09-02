@@ -5,6 +5,7 @@ import {
   buildPermanentFreeSubscriptionStripeParams,
   buildTimedTrialSubscriptionStripeParams,
   effectiveAssignedProVariant,
+  isProPlanPriceId,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   pickPrimaryCustomerSubscription,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
@@ -142,11 +143,20 @@ export function createStripeAdminCustomerAccessGateway(
           stripeClient.subscriptions.list({
             customer: customerId,
             status,
-            limit: 1,
+            limit: 100,
           }),
         ),
       )
-      return results.some((page) => page.data.length > 0)
+      // Free-plan subscriptions (permanent Free / no-card trial granted via
+      // access-code redemption) must not block an admin from granting a
+      // real Pro trial — only a live Pro-priced subscription is "entitled".
+      return results.some((page) =>
+        page.data.some((subscription) =>
+          subscription.items.data.some((item) =>
+            isProPlanPriceId(item.price.id),
+          ),
+        ),
+      )
     },
     createPermanentFreeSubscription: async (input) => {
       const actorUserId = input.metadata.adminCustomerActorUserId ?? ''

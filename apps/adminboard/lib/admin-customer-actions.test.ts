@@ -17,23 +17,50 @@ describe('canAssignCustomerAccessGrant', () => {
       canAssignCustomerAccessGrant({
         role: 'user',
         billingStatus: 'absent',
-      } as AdminCustomerProfile),
+        subscriptionHistory: [],
+      } as unknown as AdminCustomerProfile),
     ).toBe(true)
   })
 
-  it('blocks grants for admins and live billed customers', () => {
+  it('blocks grants for admins and customers with a live Pro subscription', () => {
     expect(
       canAssignCustomerAccessGrant({
         role: 'admin',
         billingStatus: 'absent',
-      } as AdminCustomerProfile),
+        subscriptionHistory: [],
+      } as unknown as AdminCustomerProfile),
     ).toBe(false)
     expect(
       canAssignCustomerAccessGrant({
         role: 'user',
         billingStatus: 'trialing',
-      } as AdminCustomerProfile),
+        subscriptionHistory: [
+          {
+            plan: 'pro',
+            status: 'trialing',
+            cancelAtPeriodEnd: false,
+            stripeSubscriptionId: 'sub_1',
+          },
+        ],
+      } as unknown as AdminCustomerProfile),
     ).toBe(false)
+  })
+
+  it('allows grants for customers whose only subscription is a Free access-code redemption', () => {
+    expect(
+      canAssignCustomerAccessGrant({
+        role: 'user',
+        billingStatus: 'active',
+        subscriptionHistory: [
+          {
+            plan: 'free',
+            status: 'active',
+            cancelAtPeriodEnd: false,
+            stripeSubscriptionId: 'sub_free_1',
+          },
+        ],
+      } as unknown as AdminCustomerProfile),
+    ).toBe(true)
   })
 })
 

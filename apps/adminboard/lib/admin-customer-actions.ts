@@ -14,9 +14,9 @@ export function canAssignCustomerAccessGrant(
   profile: AdminCustomerProfile,
 ): boolean {
   if (profile.role === 'admin') return false
-  return (
-    profile.billingStatus !== 'active' && profile.billingStatus !== 'trialing'
-  )
+  // A Free-plan subscription (e.g. from an access-code redemption) must not
+  // block granting a real Pro trial — only a live Pro subscription should.
+  return findLivePaidProSubscription(profile.subscriptionHistory) == null
 }
 
 export function formatBillingSnapshotSummary(
