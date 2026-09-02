@@ -14,6 +14,7 @@ import { orpcMiddleware } from './middleware/orpc.ts'
 import { findDeviceByDeviceId } from './data/device.ts'
 import { ORPC_PREFIX } from '@virtality/shared/types'
 import { devicePairingRoutes } from './routes/device-pairing.ts'
+import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
 
 const ENV =
   process.env.ENV === 'production'
@@ -179,6 +180,7 @@ if (ENV === 'development' || process.env.LISTEN === 'true') {
     env: ENV,
   })
   server = serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
+  scheduleStripeSubscriptionReconciliation(logger)
 }
 
 export default app
