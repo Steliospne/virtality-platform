@@ -1,8 +1,7 @@
 import { prisma } from '@virtality/db'
-import { stripeClient } from '@virtality/auth'
+import { readProVariantCatalogOrSandbox, stripeClient } from '@virtality/auth'
 import {
   buildBetterAuthStripePlansFromProVariantCatalog,
-  buildSandboxProVariantCatalog,
   reconcileStripeSubscriptions,
   type ReconciliationLogger,
   type ReconciliationStore,
@@ -110,9 +109,8 @@ export async function runStripeSubscriptionReconciliation(
     return null
   }
 
-  const plans = buildBetterAuthStripePlansFromProVariantCatalog(
-    buildSandboxProVariantCatalog(),
-  )
+  const catalog = await readProVariantCatalogOrSandbox(stripeClient)
+  const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
 
   return reconcileStripeSubscriptions({
     gateway: createStripeSubscriptionReconciliationGateway(stripeClient),
