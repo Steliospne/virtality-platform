@@ -8,10 +8,6 @@ const logger = serverLogger.child({
   component: 'website-actions',
 })
 
-const slackLogger = serverLogger.child({
-  component: 'website-server-utils',
-})
-
 export const submitContactMsg = async (
   state: ContactForm,
   formData: FormData,
@@ -74,7 +70,7 @@ export const submitContactMsg = async (
   }
 
   await sendSlackMessage(slackWebhookUrl, slackMessage, 'contact', {
-    logger: slackLogger,
+    logger: serverLogger.child({ component: 'website-server-utils' }),
     failureEvent: 'website.slack_send.failed',
   })
   return entries

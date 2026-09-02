@@ -1,26 +1,28 @@
 import type { AppLogger } from '../../observability/index.ts'
 
+type SlackTextObject = {
+  type: string
+  text: string
+}
+
+type SlackBlock =
+  | {
+      type: string
+      text: SlackTextObject
+      fields?: undefined
+    }
+  | {
+      type: string
+      fields: SlackTextObject[]
+      text?: undefined
+    }
+
 export type SlackMessage = {
   text: string
-  blocks: (
-    | {
-        type: string
-        text: {
-          type: string
-          text: string
-        }
-        fields?: undefined
-      }
-    | {
-        type: string
-        fields: {
-          type: string
-          text: string
-        }[]
-        text?: undefined
-      }
-  )[]
+  blocks: SlackBlock[]
 }
+
+export type SlackMessageTemplate = 'appointment' | 'contact'
 
 export type SendSlackMessageOptions = {
   fetchImpl?: typeof fetch
@@ -31,12 +33,14 @@ export type SendSlackMessageOptions = {
 export const sendSlackMessage = async (
   webhook: string,
   message: SlackMessage,
-  template: string,
-  options: SendSlackMessageOptions = {},
-) => {
-  const errorMsg = `Failed to send Slack message for ${template} template`
-  const fetchImpl = options.fetchImpl ?? fetch
-  const failureEvent = options.failureEvent ?? 'slack_send.failed'
+  template: SlackMessageTemplate,
+  {
+    fetchImpl = fetch,
+    logger,
+    failureEvent = 'slack_send.failed',
+  }: SendSlackMessageOptions = {},
+): Promise<void> => {
+  const errorMessage = `Failed to send Slack message for ${template} template`
 
   try {
     const response = await fetchImpl(webhook, {
@@ -51,7 +55,7 @@ export const sendSlackMessage = async (
       throw new Error(`Slack API error: ${response.status}`)
     }
   } catch (error) {
-    options.logger?.error(
+    logger?.error(
       failureEvent,
       {
         template,
@@ -59,6 +63,6 @@ export const sendSlackMessage = async (
       },
       'Failed to send Slack message',
     )
-    throw new Error(errorMsg)
+    throw new Error(errorMessage)
   }
 }
