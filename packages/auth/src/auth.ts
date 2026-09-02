@@ -16,6 +16,7 @@ import {
   cancelPendingPromotionCodeForCheckout,
   readOpenPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
+  sweepAllExpiredPromotionCodeHolds,
 } from './lib/pending-promotion-code.ts'
 import { redeemAccessCodeForUser } from './lib/console-access-code-redeem.ts'
 import { prisma } from '@virtality/db'
@@ -318,6 +319,19 @@ export function readOpenPendingPromotionCodeAction(input: { userId: string }) {
 /** Console Billing: cancel a pending Promotion Code after Checkout cancel. */
 export function cancelPendingPromotionCodeAction(input: { userId: string }) {
   return cancelPendingPromotionCodeForCheckout(input, {
+    prisma,
+    stripeClient: requireStripeForConsolePromo(),
+  })
+}
+
+/**
+ * Scheduled job: force-revert every user's lapsed promo-hold Discount, not
+ * just one caller's. Nothing else sweeps a hold while its owner stays
+ * signed out, so this is the only thing bounding how long a Discount can
+ * outlive its TTL.
+ */
+export function sweepAllExpiredPromotionCodeHoldsAction() {
+  return sweepAllExpiredPromotionCodeHolds({
     prisma,
     stripeClient: requireStripeForConsolePromo(),
   })

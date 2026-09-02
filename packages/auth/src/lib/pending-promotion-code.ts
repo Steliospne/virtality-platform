@@ -182,6 +182,45 @@ export async function sweepExpiredPromotionCodeHoldsForUser(
   )
 }
 
+/**
+ * Scheduled-job entry point: sweep every user's expired open holds, not just
+ * one. Nothing else revisits a hold while its owner stays signed out, so a
+ * live Discount would otherwise outlive its TTL indefinitely.
+ */
+export async function sweepAllExpiredPromotionCodeHolds(
+  deps: PendingPromotionCodeDeps,
+  now: Date = new Date(),
+): Promise<{ reverted: number; retried: number }> {
+  const client = getClient(deps.prisma)
+  const due = await client.pendingPromotionCode.findMany({
+    where: { status: 'open', expiresAt: { lte: now } },
+    select: { id: true, liveSubscriptionId: true },
+  })
+  if (due.length === 0) return { reverted: 0, retried: 0 }
+
+  const reverted: string[] = []
+  for (const row of due) {
+    if (row.liveSubscriptionId == null) {
+      reverted.push(row.id)
+      continue
+    }
+    const ok = await revertLiveDiscountForHold(
+      deps.stripeClient,
+      row.liveSubscriptionId,
+    )
+    if (ok) reverted.push(row.id)
+  }
+
+  if (reverted.length > 0) {
+    await client.pendingPromotionCode.updateMany({
+      where: { id: { in: reverted } },
+      data: { status: 'expired', updatedAt: now },
+    })
+  }
+
+  return { reverted: reverted.length, retried: due.length - reverted.length }
+}
+
 /** Cancel any open hold, canceling out a prior in-progress redeem/apply. */
 async function cancelOpenHolds(
   client: PrismaClient,

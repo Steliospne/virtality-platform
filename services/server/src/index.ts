@@ -15,6 +15,7 @@ import { findDeviceByDeviceId } from './data/device.ts'
 import { ORPC_PREFIX } from '@virtality/shared/types'
 import { devicePairingRoutes } from './routes/device-pairing.ts'
 import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
+import { schedulePromoHoldSweep } from './lib/schedule-promo-hold-sweep.ts'
 
 const ENV =
   process.env.ENV === 'production'
@@ -181,6 +182,7 @@ if (ENV === 'development' || process.env.LISTEN === 'true') {
   })
   server = serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
   scheduleStripeSubscriptionReconciliation(logger)
+  schedulePromoHoldSweep(logger)
 }
 
 export default app

@@ -91,6 +91,8 @@ model PendingPromotionCode {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status, expiresAt])
+  /// Serves the scheduled cross-user sweep (status + expiresAt, no userId).
+  @@index([status, expiresAt])
 }
 
 /// At most one scheduled-or-live Campaign Window (singleton row). Subscribe
