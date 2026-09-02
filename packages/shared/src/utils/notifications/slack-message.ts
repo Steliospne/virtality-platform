@@ -22,7 +22,10 @@ export type SlackMessage = {
   blocks: SlackBlock[]
 }
 
-export type SlackMessageTemplate = 'appointment' | 'contact'
+export type SlackMessageTemplate =
+  | 'appointment'
+  | 'contact'
+  | 'subscription-reconciliation'
 
 export type SendSlackMessageOptions = {
   fetchImpl?: typeof fetch
