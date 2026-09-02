@@ -117,6 +117,13 @@ type ResolvedPlanItem = {
   plan?: BetterAuthStripePlanConfig
 }
 
+type ReconciliationSkipReason =
+  | 'plan_unresolved'
+  | 'organization_owned'
+  | 'unresolvable_user'
+
+type StripeSubscriptionOutcome = 'matched' | 'created' | 'skipped'
+
 function unixToDate(value: number | null | undefined): Date | null {
   return value == null ? null : new Date(value * 1000)
 }
@@ -169,18 +176,35 @@ function isOrganizationOwned(metadata: {
   )
 }
 
+function logSkipped(
+  logger: ReconciliationLogger,
+  stripeSubscriptionId: string,
+  reason: ReconciliationSkipReason,
+): void {
+  logger.warn('billing.subscription.reconcile.skipped', {
+    stripeSubscriptionId,
+    reason,
+  })
+}
+
+function resolveTrialDates(subscription: ReconciliationStripeSubscription): {
+  trialStart: Date | null
+  trialEnd: Date | null
+} {
+  if (subscription.trial_start != null && subscription.trial_end != null) {
+    return {
+      trialStart: unixToDate(subscription.trial_start),
+      trialEnd: unixToDate(subscription.trial_end),
+    }
+  }
+
+  return { trialStart: null, trialEnd: null }
+}
+
 function buildStripeDerivedFields(
   subscription: ReconciliationStripeSubscription,
   resolved: ResolvedPlanItem,
 ): StripeDerivedSubscriptionFields {
-  const trial =
-    subscription.trial_start != null && subscription.trial_end != null
-      ? {
-          trialStart: unixToDate(subscription.trial_start),
-          trialEnd: unixToDate(subscription.trial_end),
-        }
-      : { trialStart: null, trialEnd: null }
-
   return {
     ...(resolved.plan ? { plan: resolved.plan.name.toLowerCase() } : {}),
     status: subscription.status,
@@ -195,7 +219,34 @@ function buildStripeDerivedFields(
     stripeScheduleId: resolveScheduleId(subscription.schedule),
     stripeCustomerId: subscription.customer,
     stripeSubscriptionId: subscription.id,
-    ...trial,
+    ...resolveTrialDates(subscription),
+  }
+}
+
+function toSubscriptionRow(
+  subscriptionId: string,
+  userId: string,
+  plan: string,
+  derived: StripeDerivedSubscriptionFields,
+): ReconciliationSubscriptionRow {
+  return {
+    id: subscriptionId,
+    referenceId: userId,
+    stripeCustomerId: derived.stripeCustomerId,
+    stripeSubscriptionId: derived.stripeSubscriptionId,
+    plan,
+    status: derived.status,
+    periodStart: derived.periodStart,
+    periodEnd: derived.periodEnd,
+    cancelAtPeriodEnd: derived.cancelAtPeriodEnd,
+    cancelAt: derived.cancelAt,
+    canceledAt: derived.canceledAt,
+    endedAt: derived.endedAt,
+    seats: derived.seats,
+    trialStart: derived.trialStart,
+    trialEnd: derived.trialEnd,
+    billingInterval: derived.billingInterval,
+    stripeScheduleId: derived.stripeScheduleId,
   }
 }
 
@@ -228,6 +279,91 @@ async function resolveUserOwnedReferenceId(
   return { ok: true, userId }
 }
 
+async function processStripeSubscription(
+  stripeSubscription: ReconciliationStripeSubscription,
+  deps: {
+    gateway: ReconciliationStripeGateway
+    store: ReconciliationStore
+    plans: readonly BetterAuthStripePlanConfig[]
+    logger: ReconciliationLogger
+    createId: () => string
+  },
+): Promise<StripeSubscriptionOutcome> {
+  const { gateway, store, plans, logger, createId } = deps
+
+  const resolved = resolvePlanItem(plans, stripeSubscription.items.data)
+  if (!resolved) {
+    logSkipped(logger, stripeSubscription.id, 'plan_unresolved')
+    return 'skipped'
+  }
+
+  const ownership = await resolveUserOwnedReferenceId(
+    stripeSubscription,
+    gateway,
+    store,
+  )
+  if (!ownership.ok) {
+    logSkipped(logger, stripeSubscription.id, ownership.reason)
+    return 'skipped'
+  }
+
+  const derived = buildStripeDerivedFields(stripeSubscription, resolved)
+  const existing = await store.findByStripeSubscriptionId(stripeSubscription.id)
+
+  if (existing) {
+    await store.updateStripeDerivedFields(existing.id, derived)
+    logger.info('billing.subscription.reconcile.matched', {
+      stripeSubscriptionId: stripeSubscription.id,
+      subscriptionId: existing.id,
+      userId: ownership.userId,
+    })
+    return 'matched'
+  }
+
+  if (!resolved.plan) {
+    logSkipped(logger, stripeSubscription.id, 'plan_unresolved')
+    return 'skipped'
+  }
+
+  const plan = resolved.plan.name.toLowerCase()
+  const subscriptionId =
+    stripeSubscription.metadata?.subscriptionId ?? createId()
+
+  await store.createSubscription(
+    toSubscriptionRow(subscriptionId, ownership.userId, plan, derived),
+  )
+  logger.info('billing.subscription.reconcile.created', {
+    stripeSubscriptionId: stripeSubscription.id,
+    subscriptionId,
+    userId: ownership.userId,
+  })
+  return 'created'
+}
+
+async function countOrphanedSubscriptions(
+  stripeIds: Set<string>,
+  store: ReconciliationStore,
+  logger: ReconciliationLogger,
+): Promise<number> {
+  const localRows = await store.listWithStripeSubscriptionId()
+  let orphaned = 0
+
+  for (const row of localRows) {
+    if (!row.stripeSubscriptionId) continue
+    if (stripeIds.has(row.stripeSubscriptionId)) continue
+    if (!(await store.userExists(row.referenceId))) continue
+
+    orphaned += 1
+    logger.warn('billing.subscription.reconcile.orphaned', {
+      subscriptionId: row.id,
+      stripeSubscriptionId: row.stripeSubscriptionId,
+      userId: row.referenceId,
+    })
+  }
+
+  return orphaned
+}
+
 export async function reconcileStripeSubscriptions(
   input: ReconcileStripeSubscriptionsInput,
 ): Promise<ReconcileStripeSubscriptionsResult> {
@@ -239,99 +375,17 @@ export async function reconcileStripeSubscriptions(
     const stripeIds = new Set(stripeSubscriptions.map((sub) => sub.id))
 
     for (const stripeSubscription of stripeSubscriptions) {
-      const resolved = resolvePlanItem(plans, stripeSubscription.items.data)
-      if (!resolved) {
-        counts.skipped += 1
-        logger.warn('billing.subscription.reconcile.skipped', {
-          stripeSubscriptionId: stripeSubscription.id,
-          reason: 'plan_unresolved',
-        })
-        continue
-      }
-
-      const ownership = await resolveUserOwnedReferenceId(
-        stripeSubscription,
+      const outcome = await processStripeSubscription(stripeSubscription, {
         gateway,
         store,
-      )
-      if (!ownership.ok) {
-        counts.skipped += 1
-        logger.warn('billing.subscription.reconcile.skipped', {
-          stripeSubscriptionId: stripeSubscription.id,
-          reason: ownership.reason,
-        })
-        continue
-      }
-
-      const derived = buildStripeDerivedFields(stripeSubscription, resolved)
-      const existing = await store.findByStripeSubscriptionId(
-        stripeSubscription.id,
-      )
-
-      if (existing) {
-        await store.updateStripeDerivedFields(existing.id, derived)
-        counts.matched += 1
-        logger.info('billing.subscription.reconcile.matched', {
-          stripeSubscriptionId: stripeSubscription.id,
-          subscriptionId: existing.id,
-          userId: ownership.userId,
-        })
-        continue
-      }
-
-      if (!resolved.plan) {
-        counts.skipped += 1
-        logger.warn('billing.subscription.reconcile.skipped', {
-          stripeSubscriptionId: stripeSubscription.id,
-          reason: 'plan_unresolved',
-        })
-        continue
-      }
-
-      const subscriptionId =
-        stripeSubscription.metadata?.subscriptionId ?? createId()
-      const row: ReconciliationSubscriptionRow = {
-        id: subscriptionId,
-        referenceId: ownership.userId,
-        stripeCustomerId: derived.stripeCustomerId,
-        stripeSubscriptionId: derived.stripeSubscriptionId,
-        plan: derived.plan!,
-        status: derived.status,
-        periodStart: derived.periodStart,
-        periodEnd: derived.periodEnd,
-        cancelAtPeriodEnd: derived.cancelAtPeriodEnd,
-        cancelAt: derived.cancelAt,
-        canceledAt: derived.canceledAt,
-        endedAt: derived.endedAt,
-        seats: derived.seats,
-        trialStart: derived.trialStart,
-        trialEnd: derived.trialEnd,
-        billingInterval: derived.billingInterval,
-        stripeScheduleId: derived.stripeScheduleId,
-      }
-
-      await store.createSubscription(row)
-      counts.created += 1
-      logger.info('billing.subscription.reconcile.created', {
-        stripeSubscriptionId: stripeSubscription.id,
-        subscriptionId,
-        userId: ownership.userId,
+        plans,
+        logger,
+        createId,
       })
+      counts[outcome] += 1
     }
 
-    const localRows = await store.listWithStripeSubscriptionId()
-    for (const localRow of localRows) {
-      if (!localRow.stripeSubscriptionId) continue
-      if (stripeIds.has(localRow.stripeSubscriptionId)) continue
-      if (!(await store.userExists(localRow.referenceId))) continue
-
-      counts.orphaned += 1
-      logger.warn('billing.subscription.reconcile.orphaned', {
-        subscriptionId: localRow.id,
-        stripeSubscriptionId: localRow.stripeSubscriptionId,
-        userId: localRow.referenceId,
-      })
-    }
+    counts.orphaned = await countOrphanedSubscriptions(stripeIds, store, logger)
 
     logger.info('billing.subscription.reconcile.completed', counts)
     return counts

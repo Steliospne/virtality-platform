@@ -30,5 +30,3 @@ export function scheduleStripeSubscriptionReconciliation(
     { timezone: 'UTC' },
   )
 }
-
-export { runStripeSubscriptionReconciliation }

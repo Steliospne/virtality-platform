@@ -19,6 +19,9 @@ import {
 const PLANS = buildBetterAuthStripePlansFromProVariantCatalog(
   buildSandboxProVariantCatalog(),
 )
+const PRO_PLAN_PRICE_ID = PLANS.find(
+  (plan) => plan.name === PRO_SUBSCRIPTION_PLAN,
+)!.priceId
 
 const USER_ID = 'user_1'
 const STRIPE_SUB_ID = 'sub_stripe_1'
@@ -36,8 +39,7 @@ function stripeSub(
       data: [
         {
           price: {
-            id: PLANS.find((plan) => plan.name === PRO_SUBSCRIPTION_PLAN)!
-              .priceId,
+            id: PRO_PLAN_PRICE_ID,
             lookup_key: 'basic_monthly',
             recurring: { interval: 'month' },
           },
