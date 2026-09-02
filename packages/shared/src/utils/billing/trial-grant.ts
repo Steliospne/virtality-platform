@@ -135,6 +135,11 @@ export type PaidStripeSubscriptionForTrialGrantConversion = {
   stripeSubscriptionId?: string | null
 }
 
+export type ConvertActiveTrialGrantInput = {
+  userId: string
+  subscription: PaidStripeSubscriptionForTrialGrantConversion
+}
+
 export function isPaidStripeSubscriptionForTrialGrantConversion(
   subscription: PaidStripeSubscriptionForTrialGrantConversion,
 ): boolean {
@@ -147,9 +152,6 @@ export function isPaidStripeSubscriptionForTrialGrantConversion(
 export type TrialGrantStore = {
   findTargetUser: (userId: string) => Promise<TrialGrantTargetUser | null>
   findOpenTrialGrantByUserId: (
-    userId: string,
-  ) => Promise<TrialGrantRecord | null>
-  findActiveTrialGrantByUserId: (
     userId: string,
   ) => Promise<TrialGrantRecord | null>
   createTrialGrant: (input: {
@@ -381,24 +383,13 @@ export async function startTrialGrantForCustomer(
 }
 
 export async function convertActiveTrialGrantOnPaidSubscription(
-  store: Pick<
-    TrialGrantStore,
-    'findActiveTrialGrantByUserId' | 'convertActiveTrialGrantByUserId'
-  >,
-  input: {
-    userId: string
-    subscription: PaidStripeSubscriptionForTrialGrantConversion
-  },
+  store: Pick<TrialGrantStore, 'convertActiveTrialGrantByUserId'>,
+  input: ConvertActiveTrialGrantInput,
 ): Promise<ConvertActiveTrialGrantResult> {
   if (!input.userId.trim()) {
     return { converted: false }
   }
   if (!isPaidStripeSubscriptionForTrialGrantConversion(input.subscription)) {
-    return { converted: false }
-  }
-
-  const active = await store.findActiveTrialGrantByUserId(input.userId)
-  if (!active) {
     return { converted: false }
   }
 

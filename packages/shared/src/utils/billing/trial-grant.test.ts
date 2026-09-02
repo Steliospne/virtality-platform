@@ -148,13 +148,6 @@ function createTrialGrantStore(input: {
       }
       return row
     },
-    findActiveTrialGrantByUserId: async (userId) => {
-      const row = grants.get(userId)
-      if (!row || row.status !== 'active') {
-        return null
-      }
-      return row
-    },
     createTrialGrant: vi.fn(async (data) => {
       const row = {
         id: 'grant_1',
@@ -366,9 +359,6 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     })
     expect(store.convertActiveTrialGrantByUserId).toHaveBeenCalledWith('user_1')
     await expect(store.findOpenTrialGrantByUserId('user_1')).resolves.toBeNull()
-    await expect(
-      store.findActiveTrialGrantByUserId('user_1'),
-    ).resolves.toBeNull()
   })
 
   it('does not convert pending grants or Free subscriptions', async () => {
