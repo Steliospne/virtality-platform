@@ -2,6 +2,7 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   billingSnapshotFromSubscription,
+  convertActiveTrialGrantOnPaidSubscription,
   effectiveAssignedProVariant,
   isProSubscriptionPlan,
   adjustTrialGrantForCustomer,
@@ -12,6 +13,8 @@ import {
   startTrialGrantForCustomer,
   TRIAL_GRANT_OPEN_STATUSES,
   type AdjustTrialGrantInput,
+  type ConvertActiveTrialGrantInput,
+  type ConvertActiveTrialGrantResult,
   type IssueTrialGrantInput,
   type RevokeTrialGrantInput,
   type StartTrialGrantInput,
@@ -144,6 +147,29 @@ export function createPrismaTrialGrantStore(
         select: trialGrantRecordSelect,
       })
     },
+    convertActiveTrialGrantByUserId: async (userId) => {
+      const active = await client.trialGrant.findFirst({
+        where: {
+          userId,
+          status: 'active',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      })
+      if (!active) {
+        return null
+      }
+
+      const now = new Date()
+      return client.trialGrant.update({
+        where: { id: active.id },
+        data: {
+          status: 'converted',
+          updatedAt: now,
+        },
+        select: trialGrantRecordSelect,
+      })
+    },
     summarizeBillingState: async (userId) => {
       const user = await client.user.findFirst({
         where: { id: userId, deletedAt: null },
@@ -231,6 +257,9 @@ export type TrialGrantRuntime = {
   revokeTrial: (
     input: RevokeTrialGrantInput,
   ) => ReturnType<typeof revokeTrialGrantForCustomer>
+  convertAfterPaidCheckout: (
+    input: ConvertActiveTrialGrantInput,
+  ) => Promise<ConvertActiveTrialGrantResult>
 }
 
 export function createTrialGrantRuntime(deps: {
@@ -274,5 +303,16 @@ export function createTrialGrantRuntime(deps: {
     revokeTrial(input) {
       return revokeTrialGrantForCustomer(store, input)
     },
+    convertAfterPaidCheckout(input) {
+      return convertActiveTrialGrantOnPaidSubscription(store, input)
+    },
   }
+}
+
+export async function convertTrialGrantAfterPaidCheckout(
+  input: ConvertActiveTrialGrantInput,
+  deps: { prisma?: PrismaClient } = {},
+): Promise<ConvertActiveTrialGrantResult> {
+  const store = createPrismaTrialGrantStore(deps.prisma ?? prisma)
+  return convertActiveTrialGrantOnPaidSubscription(store, input)
 }

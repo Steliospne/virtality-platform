@@ -12,6 +12,7 @@ import {
   resolveEntitlementClock,
   type EntitlementClockSubscription,
 } from './entitlement-clock.ts'
+import { isProSubscriptionPlan } from './billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from '../admin-customer/admin-customer-access.ts'
 
 export const TRIAL_GRANT_STATUSES = [
@@ -131,6 +132,25 @@ export type TrialGrantTargetUser = {
   role: string | null
 }
 
+export type PaidStripeSubscriptionForTrialGrantConversion = {
+  plan?: string | null
+  stripeSubscriptionId?: string | null
+}
+
+export type ConvertActiveTrialGrantInput = {
+  userId: string
+  subscription: PaidStripeSubscriptionForTrialGrantConversion
+}
+
+export function isPaidStripeSubscriptionForTrialGrantConversion(
+  subscription: PaidStripeSubscriptionForTrialGrantConversion,
+): boolean {
+  return (
+    isProSubscriptionPlan(subscription.plan) &&
+    Boolean(subscription.stripeSubscriptionId?.trim())
+  )
+}
+
 export type TrialGrantStore = {
   findTargetUser: (userId: string) => Promise<TrialGrantTargetUser | null>
   findOpenTrialGrantByUserId: (
@@ -150,6 +170,9 @@ export type TrialGrantStore = {
     trialEnd: Date
   }) => Promise<TrialGrantRecord>
   revokeTrialGrant: (input: { userId: string }) => Promise<TrialGrantRecord>
+  convertActiveTrialGrantByUserId: (
+    userId: string,
+  ) => Promise<TrialGrantRecord | null>
   summarizeBillingState: (
     userId: string,
   ) => Promise<AdminCustomerBillingSnapshot>
@@ -227,6 +250,11 @@ export type RevokeTrialGrantResult = {
   trialGrantId: string
   status: TrialGrantStatus
   auditId: string
+}
+
+export type ConvertActiveTrialGrantResult = {
+  converted: boolean
+  trialGrantId?: string
 }
 
 export class TrialGrantValidationError extends Error {
@@ -533,5 +561,27 @@ export async function revokeTrialGrantForCustomer(
     trialGrantId: revoked.id,
     status: revoked.status,
     auditId: audit.id,
+  }
+}
+
+export async function convertActiveTrialGrantOnPaidSubscription(
+  store: Pick<TrialGrantStore, 'convertActiveTrialGrantByUserId'>,
+  input: ConvertActiveTrialGrantInput,
+): Promise<ConvertActiveTrialGrantResult> {
+  if (!input.userId.trim()) {
+    return { converted: false }
+  }
+  if (!isPaidStripeSubscriptionForTrialGrantConversion(input.subscription)) {
+    return { converted: false }
+  }
+
+  const converted = await store.convertActiveTrialGrantByUserId(input.userId)
+  if (!converted) {
+    return { converted: false }
+  }
+
+  return {
+    converted: true,
+    trialGrantId: converted.id,
   }
 }
