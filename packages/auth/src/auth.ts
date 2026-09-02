@@ -65,6 +65,8 @@ export {
 export type { AdminCustomerBillingRuntime } from './lib/admin-customer-billing.ts'
 export { createAdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
 export type { AdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
+export { createTrialGrantRuntime } from './lib/trial-grant-access.ts'
+export type { TrialGrantRuntime } from './lib/trial-grant-access.ts'
 export {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,

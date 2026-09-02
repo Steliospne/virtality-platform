@@ -70,3 +70,10 @@ enum PendingPromotionCodeStatus {
   failed
   expired
 }
+
+enum TrialGrantStatus {
+  pending
+  active
+  converted
+  revoked
+}

@@ -45,6 +45,7 @@ model User {
   pendingPromotionCodes        PendingPromotionCode[]
   adminCustomerAuditsAsTarget  AdminCustomerAudit[] @relation("AdminCustomerAuditTarget")
   adminCustomerAuditsAsActor   AdminCustomerAudit[] @relation("AdminCustomerAuditActor")
+  trialGrants                  TrialGrant[]
 }
 
 model Account {

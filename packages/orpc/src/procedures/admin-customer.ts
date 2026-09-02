@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import {
   assignProVariantAction,
   createAdminCustomerBillingRuntime,
+  createTrialGrantRuntime,
   getRequiredStripeClient,
   listAssignableProVariantsAction,
   stripeClient,
@@ -15,10 +16,12 @@ import {
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
   grantTimedTrialInputSchema,
+  issueTrialGrantInputSchema,
   listAssignableProVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
   sendPaidCheckoutLinkInputSchema,
+  startTrialGrantInputSchema,
 } from '@virtality/shared/types'
 import {
   AdminCustomerAccessAlreadyEntitledError,
@@ -30,6 +33,11 @@ import {
   AssignProVariantNotFoundError,
   AssignProVariantStateError,
   AssignProVariantValidationError,
+  TrialGrantAlreadyOpenError,
+  TrialGrantCustomerAlreadyEntitledError,
+  TrialGrantCustomerNotFoundError,
+  TrialGrantNotFoundError,
+  TrialGrantValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
 import type { InitialContext } from '../context.ts'
@@ -52,6 +60,12 @@ function adminCustomerBillingRuntime(context: InitialContext) {
   })
 }
 
+function trialGrantRuntime(context: InitialContext) {
+  return createTrialGrantRuntime({
+    prisma: context.prisma,
+  })
+}
+
 function throwAdminCustomerOrpcError(error: unknown): never {
   if (
     error instanceof AdminCustomerAccessValidationError ||
@@ -62,7 +76,12 @@ function throwAdminCustomerOrpcError(error: unknown): never {
     error instanceof AdminCustomerBillingStateError ||
     error instanceof AssignProVariantValidationError ||
     error instanceof AssignProVariantNotFoundError ||
-    error instanceof AssignProVariantStateError
+    error instanceof AssignProVariantStateError ||
+    error instanceof TrialGrantValidationError ||
+    error instanceof TrialGrantCustomerNotFoundError ||
+    error instanceof TrialGrantAlreadyOpenError ||
+    error instanceof TrialGrantCustomerAlreadyEntitledError ||
+    error instanceof TrialGrantNotFoundError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -143,6 +162,41 @@ const grantTimedTrial = adminAuthed
     try {
       const clock = adminEntitlementClockRuntime(context)
       return await clock.grantTimedTrial({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        amount: input.amount,
+        unit: input.unit,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const issueTrialGrant = adminAuthed
+  .route({ path: '/admin-customer/issue-trial-grant', method: 'POST' })
+  .input(issueTrialGrantInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      const runtime = trialGrantRuntime(context)
+      return await runtime.issueGrant({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        code: input.code,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const startTrialGrant = adminAuthed
+  .route({ path: '/admin-customer/start-trial-grant', method: 'POST' })
+  .input(startTrialGrantInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      const runtime = trialGrantRuntime(context)
+      return await runtime.startTrial({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -284,6 +338,8 @@ export const adminCustomer = {
   assignProVariant,
   assignPermanentFree,
   grantTimedTrial,
+  issueTrialGrant,
+  startTrialGrant,
   previewChangePaidPlan,
   changePaidPlan,
   cancelPaidSubscription,

@@ -22,6 +22,10 @@ import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { resolveExpiredFreeUpgradeQualifies } from './expired-free-upgrade-prompt.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
+import {
+  resolveEntitlementFromSources,
+  type TrialGrantClock,
+} from './trial-grant.ts'
 
 export type EntitlementBillingInterval = 'month' | 'year'
 
@@ -284,11 +288,13 @@ export function buildEntitlementStanding(input: {
   now: Date
   role?: string | null
   subscriptions: readonly EntitlementClockSubscription[]
+  trialGrant?: TrialGrantClock | null
 }): EntitlementStanding {
   const subscription = pickEntitlementSubscription(input.subscriptions)
-  const clock = resolveEntitlementClock({
+  const clock = resolveEntitlementFromSources({
     now: input.now,
-    subscription,
+    subscriptions: input.subscriptions,
+    trialGrant: input.trialGrant,
   })
   const billingPathEstablished = hasBillingPathEstablished(input.subscriptions)
   const hadPaidBilling = hadPaidBillingHistory(input.subscriptions)
