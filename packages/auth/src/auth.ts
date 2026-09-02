@@ -67,6 +67,7 @@ export { createAdminEntitlementClockRuntime } from './lib/admin-entitlement-cloc
 export type { AdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
 export { createTrialGrantRuntime } from './lib/trial-grant-access.ts'
 export type { TrialGrantRuntime } from './lib/trial-grant-access.ts'
+export { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
 export {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,

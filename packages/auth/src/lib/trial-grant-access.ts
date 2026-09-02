@@ -2,6 +2,7 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   billingSnapshotFromSubscription,
+  convertActiveTrialGrantOnPaidSubscription,
   effectiveAssignedProVariant,
   isProSubscriptionPlan,
   issueTrialGrantToCustomer,
@@ -10,6 +11,7 @@ import {
   startTrialGrantForCustomer,
   TRIAL_GRANT_OPEN_STATUSES,
   type IssueTrialGrantInput,
+  type PaidStripeSubscriptionForTrialGrantConversion,
   type StartTrialGrantInput,
   type TrialGrantStore,
 } from '@virtality/shared/utils'
@@ -51,6 +53,17 @@ export function createPrismaTrialGrantStore(
       })
       return row
     },
+    findActiveTrialGrantByUserId: async (userId) => {
+      const row = await client.trialGrant.findFirst({
+        where: {
+          userId,
+          status: 'active',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: trialGrantRecordSelect,
+      })
+      return row
+    },
     createTrialGrant: async (input) => {
       const now = new Date()
       return client.trialGrant.create({
@@ -84,6 +97,29 @@ export function createPrismaTrialGrantStore(
           status: 'active',
           trialStart: input.trialStart,
           trialEnd: input.trialEnd,
+          updatedAt: now,
+        },
+        select: trialGrantRecordSelect,
+      })
+    },
+    convertActiveTrialGrantByUserId: async (userId) => {
+      const active = await client.trialGrant.findFirst({
+        where: {
+          userId,
+          status: 'active',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      })
+      if (!active) {
+        return null
+      }
+
+      const now = new Date()
+      return client.trialGrant.update({
+        where: { id: active.id },
+        data: {
+          status: 'converted',
           updatedAt: now,
         },
         select: trialGrantRecordSelect,
@@ -170,6 +206,10 @@ export type TrialGrantRuntime = {
   startTrial: (
     input: StartTrialGrantInput,
   ) => ReturnType<typeof startTrialGrantForCustomer>
+  convertAfterPaidCheckout: (input: {
+    userId: string
+    subscription: PaidStripeSubscriptionForTrialGrantConversion
+  }) => ReturnType<typeof convertActiveTrialGrantOnPaidSubscription>
 }
 
 export function createTrialGrantRuntime(deps: {
@@ -197,5 +237,19 @@ export function createTrialGrantRuntime(deps: {
       })
       return result
     },
+    convertAfterPaidCheckout(input) {
+      return convertActiveTrialGrantOnPaidSubscription(store, input)
+    },
   }
+}
+
+export async function convertTrialGrantAfterPaidCheckout(
+  input: {
+    userId: string
+    subscription: PaidStripeSubscriptionForTrialGrantConversion
+  },
+  deps: { prisma?: PrismaClient } = {},
+) {
+  const store = createPrismaTrialGrantStore(deps.prisma ?? prisma)
+  return convertActiveTrialGrantOnPaidSubscription(store, input)
 }

@@ -8,6 +8,7 @@ import {
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
+import { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
 import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem.ts'
@@ -311,6 +312,15 @@ export const auth = betterAuth({
                 stripeSubscription,
               }) => {
                 await rearmRenewPromptsAfterCheckout(subscription)
+                await convertTrialGrantAfterPaidCheckout({
+                  userId: subscription.referenceId,
+                  subscription: {
+                    plan: subscription.plan,
+                    stripeSubscriptionId:
+                      stripeSubscription?.id ??
+                      subscription.stripeSubscriptionId,
+                  },
+                })
                 if (stripeClient) {
                   await markPendingPromotionCodeAppliedForCheckout(
                     { userId: subscription.referenceId },

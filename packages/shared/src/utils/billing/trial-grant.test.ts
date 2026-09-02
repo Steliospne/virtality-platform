@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
+import { buildEntitlementStanding } from './entitlement-clock.ts'
+import { PRO_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   clockEndForEntitlementSource,
+  convertActiveTrialGrantOnPaidSubscription,
   issueTrialGrantToCustomer,
+  isPaidStripeSubscriptionForTrialGrantConversion,
   resolveEntitlementFromSources,
   resolveTrialGrantClock,
   startTrialGrantForCustomer,
@@ -10,10 +14,10 @@ import {
   type TrialGrantClock,
   type TrialGrantStore,
 } from './trial-grant.ts'
-import { buildEntitlementStanding } from './entitlement-clock.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
 const TRIAL_END = new Date('2026-08-17T12:00:00.000Z')
+const SUBSCRIPTION_PERIOD_END = new Date('2026-09-10T12:00:00.000Z')
 
 function activeGrant(
   overrides: Partial<TrialGrantClock> = {},
@@ -137,7 +141,20 @@ function createTrialGrantStore(input: {
   return {
     findTargetUser: async (userId) =>
       input.user && input.user.id === userId ? input.user : null,
-    findOpenTrialGrantByUserId: async (userId) => grants.get(userId) ?? null,
+    findOpenTrialGrantByUserId: async (userId) => {
+      const row = grants.get(userId)
+      if (!row || (row.status !== 'pending' && row.status !== 'active')) {
+        return null
+      }
+      return row
+    },
+    findActiveTrialGrantByUserId: async (userId) => {
+      const row = grants.get(userId)
+      if (!row || row.status !== 'active') {
+        return null
+      }
+      return row
+    },
     createTrialGrant: vi.fn(async (data) => {
       const row = {
         id: 'grant_1',
@@ -162,6 +179,18 @@ function createTrialGrantStore(input: {
         trialEnd: data.trialEnd,
       }
       grants.set(data.userId, row)
+      return row
+    }),
+    convertActiveTrialGrantByUserId: vi.fn(async (userId) => {
+      const existing = grants.get(userId)
+      if (!existing || existing.status !== 'active') {
+        return null
+      }
+      const row = {
+        ...existing,
+        status: 'converted' as const,
+      }
+      grants.set(userId, row)
       return row
     }),
     recordAudit: vi.fn(async (record) => ({ id: 'audit_1', record })),
@@ -281,5 +310,189 @@ describe('startTrialGrantForCustomer', () => {
         auditId: 'audit_1',
       })
     })
+  })
+})
+
+describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
+  it('accepts a live paid Pro Stripe subscription', () => {
+    expect(
+      isPaidStripeSubscriptionForTrialGrantConversion({
+        plan: PRO_SUBSCRIPTION_PLAN,
+        stripeSubscriptionId: 'sub_stripe_1',
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects Free subscriptions and rows without a Stripe subscription id', () => {
+    expect(
+      isPaidStripeSubscriptionForTrialGrantConversion({
+        plan: 'free',
+        stripeSubscriptionId: 'sub_stripe_1',
+      }),
+    ).toBe(false)
+    expect(
+      isPaidStripeSubscriptionForTrialGrantConversion({
+        plan: PRO_SUBSCRIPTION_PLAN,
+        stripeSubscriptionId: null,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe('convertActiveTrialGrantOnPaidSubscription', () => {
+  it('marks an active grant converted when paid checkout creates a Pro subscription', async () => {
+    const store = createTrialGrantStore({
+      openGrant: {
+        id: 'grant_1',
+        userId: 'user_1',
+        code: 'PILOT-001',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+      },
+    })
+
+    const result = await convertActiveTrialGrantOnPaidSubscription(store, {
+      userId: 'user_1',
+      subscription: {
+        plan: PRO_SUBSCRIPTION_PLAN,
+        stripeSubscriptionId: 'sub_stripe_1',
+      },
+    })
+
+    expect(result).toEqual({
+      converted: true,
+      trialGrantId: 'grant_1',
+    })
+    expect(store.convertActiveTrialGrantByUserId).toHaveBeenCalledWith('user_1')
+    await expect(store.findOpenTrialGrantByUserId('user_1')).resolves.toBeNull()
+    await expect(
+      store.findActiveTrialGrantByUserId('user_1'),
+    ).resolves.toBeNull()
+  })
+
+  it('does not convert pending grants or Free subscriptions', async () => {
+    const pendingStore = createTrialGrantStore({
+      openGrant: {
+        id: 'grant_pending',
+        userId: 'user_1',
+        code: 'PILOT-001',
+        status: 'pending',
+        trialStart: null,
+        trialEnd: null,
+      },
+    })
+
+    await expect(
+      convertActiveTrialGrantOnPaidSubscription(pendingStore, {
+        userId: 'user_1',
+        subscription: {
+          plan: PRO_SUBSCRIPTION_PLAN,
+          stripeSubscriptionId: 'sub_stripe_1',
+        },
+      }),
+    ).resolves.toEqual({ converted: false })
+
+    const activeStore = createTrialGrantStore({
+      openGrant: {
+        id: 'grant_1',
+        userId: 'user_1',
+        code: 'PILOT-001',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+      },
+    })
+
+    await expect(
+      convertActiveTrialGrantOnPaidSubscription(activeStore, {
+        userId: 'user_1',
+        subscription: {
+          plan: 'free',
+          stripeSubscriptionId: 'sub_free_1',
+        },
+      }),
+    ).resolves.toEqual({ converted: false })
+  })
+
+  it('allows issuing a new grant after conversion', async () => {
+    const store = createTrialGrantStore({
+      user: {
+        id: 'user_1',
+        name: 'Pilot',
+        email: 'pilot@example.com',
+        role: 'user',
+      },
+      openGrant: {
+        id: 'grant_1',
+        userId: 'user_1',
+        code: 'PILOT-001',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+      },
+    })
+
+    await convertActiveTrialGrantOnPaidSubscription(store, {
+      userId: 'user_1',
+      subscription: {
+        plan: PRO_SUBSCRIPTION_PLAN,
+        stripeSubscriptionId: 'sub_stripe_1',
+      },
+    })
+
+    const issued = await issueTrialGrantToCustomer(store, {
+      userId: 'user_1',
+      actorUserId: 'admin_1',
+      reason: 'Second pilot code',
+      code: 'PILOT-002',
+    })
+
+    expect(issued).toMatchObject({
+      code: 'PILOT-002',
+      status: 'pending',
+    })
+  })
+})
+
+describe('trial grant conversion entitlement handoff', () => {
+  it('uses the Stripe clock after checkout converts the grant', async () => {
+    const store = createTrialGrantStore({
+      openGrant: {
+        id: 'grant_1',
+        userId: 'user_1',
+        code: 'PILOT-001',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+      },
+    })
+
+    await convertActiveTrialGrantOnPaidSubscription(store, {
+      userId: 'user_1',
+      subscription: {
+        plan: PRO_SUBSCRIPTION_PLAN,
+        stripeSubscriptionId: 'sub_stripe_1',
+      },
+    })
+
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: PRO_SUBSCRIPTION_PLAN,
+          periodEnd: SUBSCRIPTION_PERIOD_END,
+        },
+      ],
+      trialGrant: null,
+    })
+
+    expect(standing.entitled).toBe(true)
+    expect(standing.canLaunchVr).toBe(true)
+    expect(standing.clockEnd).toEqual(SUBSCRIPTION_PERIOD_END)
+    expect(standing.clockEnd).not.toEqual(TRIAL_END)
+    expect(standing.checkoutCta).toBeNull()
   })
 })
