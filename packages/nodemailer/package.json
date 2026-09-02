@@ -12,6 +12,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "dev:ethereal": "tsx scripts/ethereal-dev.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "@types/node": "25.3.3",
     "@types/nodemailer": "7.0.11",
     "@virtality/typescript-config": "workspace:*",
+    "tsx": "4.21.0",
     "typescript": "7.0.2"
   }
 }

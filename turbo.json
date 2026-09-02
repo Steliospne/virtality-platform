@@ -137,13 +137,17 @@
         "OTEL_LOGS_ENABLED"
       ]
     },
+    "@virtality/nodemailer#dev:ethereal": {
+      "cache": false
+    },
     "dev:apps": {
       "with": [
         "@virtality/console#dev",
         "@virtality/adminboard#dev",
         "@virtality/website#dev",
         "@virtality/server#dev",
-        "@virtality/socket#dev"
+        "@virtality/socket#dev",
+        "@virtality/nodemailer#dev:ethereal"
       ],
       "cache": false,
       "persistent": true,
