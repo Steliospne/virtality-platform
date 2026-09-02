@@ -8,6 +8,8 @@ import {
 } from '@virtality/shared/utils'
 import type { AppLogger } from '@virtality/shared/observability'
 
+const CATALOG_LOAD_STAGE = 'catalog_load' as const
+
 export type StripeSubscriptionReconciliationAlertDeps = {
   getWebhookUrl: () => string | undefined
   sendSlack: typeof sendSlackMessage
@@ -20,7 +22,7 @@ function resolveFailureStage(error: unknown): string {
     return error.stage
   }
 
-  return 'catalog_load'
+  return CATALOG_LOAD_STAGE
 }
 
 function resolveFailureMessage(error: unknown): string {

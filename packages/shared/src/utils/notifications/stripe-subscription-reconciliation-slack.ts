@@ -4,11 +4,22 @@ import type {
 } from '../billing/stripe-subscription-reconciliation.ts'
 import type { SlackMessage } from './slack-message.ts'
 
-function countDriftByKind(
+type DriftKindCounts = Record<ReconciliationDriftEntry['kind'], number>
+
+function summarizeDriftByKind(
   drift: ReconciliationDriftEntry[],
-  kind: ReconciliationDriftEntry['kind'],
-): number {
-  return drift.filter((entry) => entry.kind === kind).length
+): DriftKindCounts {
+  const counts: DriftKindCounts = {
+    created: 0,
+    unresolvable_user: 0,
+    orphaned: 0,
+  }
+
+  for (const entry of drift) {
+    counts[entry.kind] += 1
+  }
+
+  return counts
 }
 
 function formatDriftDetails(drift: ReconciliationDriftEntry[]): string {
@@ -33,9 +44,11 @@ export function buildStripeSubscriptionReconciliationDriftSlackMessage(
     return null
   }
 
-  const created = countDriftByKind(result.drift, 'created')
-  const unresolvableUser = countDriftByKind(result.drift, 'unresolvable_user')
-  const orphaned = countDriftByKind(result.drift, 'orphaned')
+  const {
+    created,
+    unresolvable_user: unresolvableUser,
+    orphaned,
+  } = summarizeDriftByKind(result.drift)
 
   return {
     text: 'Stripe subscription reconciliation drift detected',

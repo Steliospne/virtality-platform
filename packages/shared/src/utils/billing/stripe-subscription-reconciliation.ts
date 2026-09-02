@@ -163,8 +163,7 @@ type ReconciliationSkipReason =
 type StripeSubscriptionOutcome =
   | { kind: 'matched' }
   | { kind: 'created'; drift: ReconciliationDriftEntry }
-  | { kind: 'skipped' }
-  | { kind: 'skipped_drift'; drift: ReconciliationDriftEntry }
+  | { kind: 'skipped'; drift?: ReconciliationDriftEntry }
 
 function unixToDate(value: number | null | undefined): Date | null {
   return value == null ? null : new Date(value * 1000)
@@ -348,7 +347,7 @@ async function processStripeSubscription(
     logSkipped(logger, stripeSubscription.id, ownership.reason)
     if (ownership.reason === 'unresolvable_user') {
       return {
-        kind: 'skipped_drift',
+        kind: 'skipped',
         drift: {
           kind: 'unresolvable_user',
           stripeSubscriptionId: stripeSubscription.id,
@@ -383,23 +382,43 @@ async function processStripeSubscription(
   await store.createSubscription(
     toSubscriptionRow(subscriptionId, ownership.userId, plan, derived),
   )
-  logger.info('billing.subscription.reconcile.created', {
+  const drift: ReconciliationDriftEntry = {
+    kind: 'created',
     stripeSubscriptionId: stripeSubscription.id,
     subscriptionId,
     userId: ownership.userId,
+  }
+  logger.info('billing.subscription.reconcile.created', {
+    stripeSubscriptionId: drift.stripeSubscriptionId,
+    subscriptionId: drift.subscriptionId,
+    userId: drift.userId,
   })
-  return {
-    kind: 'created',
-    drift: {
-      kind: 'created',
-      stripeSubscriptionId: stripeSubscription.id,
-      subscriptionId,
-      userId: ownership.userId,
-    },
+  return { kind: 'created', drift }
+}
+
+function applySubscriptionOutcome(
+  outcome: StripeSubscriptionOutcome,
+  counts: { matched: number; created: number; skipped: number },
+  drift: ReconciliationDriftEntry[],
+): void {
+  switch (outcome.kind) {
+    case 'matched':
+      counts.matched += 1
+      break
+    case 'created':
+      counts.created += 1
+      drift.push(outcome.drift)
+      break
+    case 'skipped':
+      counts.skipped += 1
+      if (outcome.drift) {
+        drift.push(outcome.drift)
+      }
+      break
   }
 }
 
-async function countOrphanedSubscriptions(
+async function findOrphanedSubscriptionDrift(
   stripeIds: Set<string>,
   store: ReconciliationStore,
   logger: ReconciliationLogger,
@@ -449,22 +468,11 @@ export async function reconcileStripeSubscriptions(
         logger,
         createId,
       })
-
-      if (outcome.kind === 'matched') {
-        counts.matched += 1
-      } else if (outcome.kind === 'created') {
-        counts.created += 1
-        drift.push(outcome.drift)
-      } else if (outcome.kind === 'skipped_drift') {
-        counts.skipped += 1
-        drift.push(outcome.drift)
-      } else {
-        counts.skipped += 1
-      }
+      applySubscriptionOutcome(outcome, counts, drift)
     }
 
     stage = 'scan_orphans'
-    const orphanedDrift = await countOrphanedSubscriptions(
+    const orphanedDrift = await findOrphanedSubscriptionDrift(
       stripeIds,
       store,
       logger,
