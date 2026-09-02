@@ -111,6 +111,8 @@ model TrialGrant {
 
   @@index([userId, status])
 }
+
+/// At most one scheduled-or-live Campaign Window (singleton row). Subscribe
 /// Checkout auto-attaches `couponId` while live and healthy; closing sets
 /// `closedAt` and stops new attaches without clearing existing Discounts.
 model CampaignWindow {

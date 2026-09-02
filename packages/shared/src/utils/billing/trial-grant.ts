@@ -49,7 +49,7 @@ function expiredTrialGrantStanding(
 }
 
 export function userHasStripeSubscriptionForEntitlement(
-  subscriptions: readonly unknown[],
+  subscriptions: readonly EntitlementClockSubscription[],
 ): boolean {
   return subscriptions.length > 0
 }
@@ -242,10 +242,6 @@ function assertActors(input: { userId: string; actorUserId: string }): void {
   }
 }
 
-function isOpenTrialGrantStatus(status: TrialGrantStatus): boolean {
-  return (TRIAL_GRANT_OPEN_STATUSES as readonly string[]).includes(status)
-}
-
 export async function issueTrialGrantToCustomer(
   store: TrialGrantStore,
   input: IssueTrialGrantInput,
@@ -265,7 +261,7 @@ export async function issueTrialGrantToCustomer(
 
   const beforeBillingState = await store.summarizeBillingState(user.id)
   const existing = await store.findOpenTrialGrantByUserId(user.id)
-  if (existing && isOpenTrialGrantStatus(existing.status)) {
+  if (existing) {
     throw new TrialGrantAlreadyOpenError(user.id)
   }
 

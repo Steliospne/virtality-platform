@@ -15,6 +15,15 @@ import {
 } from '@virtality/shared/utils'
 import { createRenewPromptLifecycle } from './renew-prompt-lifecycle.ts'
 
+const trialGrantRecordSelect = {
+  id: true,
+  userId: true,
+  code: true,
+  status: true,
+  trialStart: true,
+  trialEnd: true,
+} as const
+
 export function createPrismaTrialGrantStore(
   client: PrismaClient = prisma,
 ): TrialGrantStore {
@@ -38,14 +47,7 @@ export function createPrismaTrialGrantStore(
           status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
         },
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          userId: true,
-          code: true,
-          status: true,
-          trialStart: true,
-          trialEnd: true,
-        },
+        select: trialGrantRecordSelect,
       })
       return row
     },
@@ -59,14 +61,7 @@ export function createPrismaTrialGrantStore(
           createdAt: now,
           updatedAt: now,
         },
-        select: {
-          id: true,
-          userId: true,
-          code: true,
-          status: true,
-          trialStart: true,
-          trialEnd: true,
-        },
+        select: trialGrantRecordSelect,
       })
     },
     startTrialGrant: async (input) => {
@@ -91,14 +86,7 @@ export function createPrismaTrialGrantStore(
           trialEnd: input.trialEnd,
           updatedAt: now,
         },
-        select: {
-          id: true,
-          userId: true,
-          code: true,
-          status: true,
-          trialStart: true,
-          trialEnd: true,
-        },
+        select: trialGrantRecordSelect,
       })
     },
     summarizeBillingState: async (userId) => {

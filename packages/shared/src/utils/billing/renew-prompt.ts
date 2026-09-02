@@ -5,12 +5,10 @@
  */
 
 import type { RenewTriggerChannel } from '../../types/renew-trigger.ts'
-import type { EntitlementClockStanding } from './entitlement-clock.ts'
 import {
-  clockEndForEntitlementSource,
-  type TrialGrantClock,
-} from './trial-grant.ts'
-import type { EntitlementClockSubscription } from './entitlement-clock.ts'
+  clockEndForSubscriptionStatus,
+  type EntitlementClockStanding,
+} from './entitlement-clock.ts'
 import { listRenewTriggers, type RenewTriggerStore } from './renew-trigger.ts'
 
 export const RENEW_PROMPT_MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -170,39 +168,18 @@ export async function rearmRenewPromptEpochIfClockChanged(
 export async function rearmRenewPromptEpochForSubscription(
   deliveries: Pick<RenewPromptDeliveryStore, 'deleteOutsideEpoch'>,
   subscription: RenewPromptSubscriptionClock,
-  trialGrant?: TrialGrantClock | null,
 ): Promise<RearmRenewPromptEpochAttempt> {
-  const clockEnd = clockEndForEntitlementSource({
-    subscriptions: [subscription],
-    trialGrant,
-  })
+  const clockEnd = clockEndForSubscriptionStatus(
+    subscription.status,
+    subscription.trialEnd,
+    subscription.periodEnd,
+  )
   if (clockEnd == null) {
     return { rearmed: false, epochKey: null, dropped: 0 }
   }
 
   const result = await rearmRenewPromptEpoch(deliveries, {
     userId: subscription.referenceId,
-    clockEnd,
-  })
-  return { rearmed: true, ...result }
-}
-
-/** Re-arm from the shared entitlement resolver (Stripe first, else TrialGrant). */
-export async function rearmRenewPromptEpochForEntitlementSource(
-  deliveries: Pick<RenewPromptDeliveryStore, 'deleteOutsideEpoch'>,
-  input: {
-    userId: string
-    subscriptions: readonly EntitlementClockSubscription[]
-    trialGrant?: TrialGrantClock | null
-  },
-): Promise<RearmRenewPromptEpochAttempt> {
-  const clockEnd = clockEndForEntitlementSource(input)
-  if (clockEnd == null) {
-    return { rearmed: false, epochKey: null, dropped: 0 }
-  }
-
-  const result = await rearmRenewPromptEpoch(deliveries, {
-    userId: input.userId,
     clockEnd,
   })
   return { rearmed: true, ...result }
