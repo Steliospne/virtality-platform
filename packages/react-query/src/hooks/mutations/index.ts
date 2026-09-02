@@ -87,8 +87,12 @@ export { useExtendEntitlementClock } from './entitlement-extension/use-extend-en
 
 // Admin customer mutations
 export {
+  useAdjustTrialGrant,
   useAssignPermanentFree,
   useGrantTimedTrial,
+  useIssueTrialGrant,
+  useRevokeTrialGrant,
+  useStartTrialGrant,
 } from './admin-customer/use-admin-customer-access-mutations.js'
 export {
   useAssignableProVariants,

@@ -7,6 +7,7 @@ import {
   convertActiveTrialGrantOnPaidSubscription,
   issueTrialGrantToCustomer,
   isPaidStripeSubscriptionForTrialGrantConversion,
+  mapAdminCustomerTrialGrantSummary,
   resolveEntitlementFromSources,
   resolveTrialGrantClock,
   revokeTrialGrantForCustomer,
@@ -72,6 +73,30 @@ describe('resolveTrialGrantClock', () => {
 
     expect(standing.entitled).toBe(false)
     expect(standing.remainingMs).toBe(0)
+  })
+})
+
+describe('mapAdminCustomerTrialGrantSummary', () => {
+  it('includes remaining time for an active grant', () => {
+    const summary = mapAdminCustomerTrialGrantSummary({
+      now: NOW,
+      grant: {
+        id: 'grant_1',
+        userId: 'user_1',
+        code: 'PILOT-42',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+        createdAt: new Date('2026-08-01T12:00:00.000Z'),
+      },
+    })
+
+    expect(summary).toMatchObject({
+      code: 'PILOT-42',
+      status: 'active',
+      entitled: true,
+      remainingMs: 7 * 24 * 60 * 60 * 1000,
+    })
   })
 })
 

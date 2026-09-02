@@ -36,3 +36,47 @@ export function useGrantTimedTrial() {
     }),
   )
 }
+
+export function useIssueTrialGrant() {
+  const orpc = useORPC()
+  const invalidate = useInvalidateAdminCustomerQueries()
+
+  return useMutation(
+    orpc.adminCustomer.issueTrialGrant.mutationOptions({
+      onSuccess: invalidate,
+    }),
+  )
+}
+
+export function useStartTrialGrant() {
+  const orpc = useORPC()
+  const invalidate = useInvalidateAdminCustomerQueries()
+
+  return useMutation(
+    orpc.adminCustomer.startTrialGrant.mutationOptions({
+      onSuccess: invalidate,
+    }),
+  )
+}
+
+export function useAdjustTrialGrant() {
+  const orpc = useORPC()
+  const invalidate = useInvalidateAdminCustomerQueries()
+
+  return useMutation(
+    orpc.adminCustomer.adjustTrialGrant.mutationOptions({
+      onSuccess: invalidate,
+    }),
+  )
+}
+
+export function useRevokeTrialGrant() {
+  const orpc = useORPC()
+  const invalidate = useInvalidateAdminCustomerQueries()
+
+  return useMutation(
+    orpc.adminCustomer.revokeTrialGrant.mutationOptions({
+      onSuccess: invalidate,
+    }),
+  )
+}

@@ -6,6 +6,7 @@ import { CustomerProfileAuditTrail } from '@/components/customer/customer-profil
 import { CustomerProfileBillingActions } from '@/components/customer/customer-profile-billing-actions'
 import { CustomerProfileRail } from '@/components/customer/customer-profile-rail'
 import { CustomerProfileSubscriptions } from '@/components/customer/customer-profile-subscriptions'
+import { CustomerProfileTrialGrant } from '@/components/customer/customer-profile-trial-grant'
 import { Button } from '@/components/ui/button'
 import { useAdminCustomerProfile } from '@virtality/react-query'
 import { ArrowLeft } from 'lucide-react'
@@ -47,6 +48,7 @@ export function CustomerProfilePage({ userId }: CustomerProfilePageProps) {
       <CustomerProfileRail profile={profile} />
       <main className='min-w-0 flex-1 space-y-10 p-6 lg:p-10'>
         <CustomerProfileActions profile={profile} />
+        <CustomerProfileTrialGrant profile={profile} />
         <CustomerProfileAssignedVariant profile={profile} />
         <CustomerProfileBillingActions profile={profile} />
         <CustomerProfileSubscriptions profile={profile} />

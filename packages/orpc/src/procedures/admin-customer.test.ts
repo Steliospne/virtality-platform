@@ -33,9 +33,19 @@ function createPrismaMock(input: {
     cancelAtPeriodEnd?: boolean | null
     stripeScheduleId?: string | null
   }>
+  trialGrants?: Array<{
+    id: string
+    userId: string
+    code: string
+    status: string
+    trialStart?: Date | null
+    trialEnd?: Date | null
+    createdAt?: Date
+  }>
 }) {
   const users = input.users ?? []
   const subscriptions = input.subscriptions ?? []
+  const trialGrants = input.trialGrants ?? []
 
   return {
     user: {
@@ -78,6 +88,34 @@ function createPrismaMock(input: {
     },
     adminCustomerAudit: {
       findMany: vi.fn(async () => []),
+    },
+    trialGrant: {
+      findFirst: vi.fn(
+        async (args: {
+          where: {
+            userId: string
+            status?: { in: string[] }
+          }
+          orderBy: { createdAt: 'desc' }
+        }) => {
+          const matches = trialGrants.filter(
+            (grant) => grant.userId === args.where.userId,
+          )
+          const filtered = args.where.status?.in
+            ? matches.filter((grant) =>
+                args.where.status!.in.includes(grant.status),
+              )
+            : matches
+
+          return (
+            filtered.sort(
+              (left, right) =>
+                (right.createdAt?.getTime() ?? 0) -
+                (left.createdAt?.getTime() ?? 0),
+            )[0] ?? null
+          )
+        },
+      ),
     },
   }
 }
@@ -258,5 +296,45 @@ describe('getAdminCustomerProfile', () => {
     expect(profile?.subscriptionHistory[0]?.stripeScheduleId).toBe(
       'sub_sched_1',
     )
+  })
+
+  it('includes owned trial grant entitlement when no Stripe subscription exists', async () => {
+    const prisma = createPrismaMock({
+      users: [
+        {
+          id: 'user_grant',
+          name: 'Grant User',
+          email: 'grant@example.com',
+          createdAt: NOW,
+        },
+      ],
+      trialGrants: [
+        {
+          id: 'grant_1',
+          userId: 'user_grant',
+          code: 'PILOT-42',
+          status: 'active',
+          trialStart: NOW,
+          trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+          createdAt: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ],
+    })
+
+    const profile = await getAdminCustomerProfile(prisma as never, {
+      userId: 'user_grant',
+      stripeMode: 'test',
+      now: NOW,
+    })
+
+    expect(profile?.trialGrant).toMatchObject({
+      code: 'PILOT-42',
+      status: 'active',
+      entitled: true,
+    })
+    expect(profile?.entitlement).toMatchObject({
+      entitled: true,
+      canLaunchVr: true,
+    })
   })
 })
