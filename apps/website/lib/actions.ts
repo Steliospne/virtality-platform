@@ -1,11 +1,15 @@
 'use server'
-import { ContactForm, SlackMessage } from '@/types/models'
+import { ContactForm } from '@/types/models'
+import { sendSlackMessage, type SlackMessage } from '@virtality/shared/utils'
 
-import { sendSlackMessage } from './server-utils'
 import { serverLogger } from './server-logger'
 
 const logger = serverLogger.child({
   component: 'website-actions',
+})
+
+const slackLogger = serverLogger.child({
+  component: 'website-server-utils',
 })
 
 export const submitContactMsg = async (
@@ -69,6 +73,9 @@ export const submitContactMsg = async (
     ],
   }
 
-  await sendSlackMessage(slackWebhookUrl, slackMessage, 'contact')
+  await sendSlackMessage(slackWebhookUrl, slackMessage, 'contact', {
+    logger: slackLogger,
+    failureEvent: 'website.slack_send.failed',
+  })
   return entries
 }

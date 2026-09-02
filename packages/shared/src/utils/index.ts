@@ -1,4 +1,5 @@
 export * from './admin-email/index.ts'
+export * from './notifications/index.ts'
 export * from './content/index.ts'
 export * from './primitives/index.ts'
 export * from '../data/blog-catalog-seed.ts'

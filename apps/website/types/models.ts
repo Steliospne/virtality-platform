@@ -6,25 +6,3 @@ export interface WaitlistFormType extends z.infer<typeof WaitlistFormSchema> {
 }
 
 export type ContactForm = z.infer<typeof ContactFormSchema>
-
-export type SlackMessage = {
-  text: string
-  blocks: (
-    | {
-        type: string
-        text: {
-          type: string
-          text: string
-        }
-        fields?: undefined
-      }
-    | {
-        type: string
-        fields: {
-          type: string
-          text: string
-        }[]
-        text?: undefined
-      }
-  )[]
-}
