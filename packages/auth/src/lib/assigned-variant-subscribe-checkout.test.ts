@@ -10,8 +10,8 @@ vi.mock('./campaign-window.ts', () => ({
   })),
 }))
 
-vi.mock('./pending-promotion-code.ts', () => ({
-  getOpenPendingPromotionCodeForCheckout: vi.fn(async () => null),
+vi.mock('./console-promo-redeem.ts', () => ({
+  resolvePromotionCodeForNewCheckout: vi.fn(async () => null),
 }))
 
 import {

@@ -62,7 +62,12 @@ function promoOutcomeChrome({
       return <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
     case 'applied_live':
       return (
-        <AppliedPromoRow appliedCode={chrome.code} onRemove={onRemoveLive} />
+        <AppliedPromoRow
+          appliedCode={chrome.code}
+          expiresAt={chrome.expiresAt}
+          onRemove={onRemoveLive}
+          onExpired={onPendingExpired}
+        />
       )
     case 'entry':
       // Entry form is rendered below when showEntry is true.
@@ -108,6 +113,7 @@ export function PromoRedeemSection({
   const chrome = resolvePromoRedeemChrome({
     hasEligibleSubscription,
     pendingHoldCode,
+    pendingHoldExpiresAt,
     discount,
     staffBlocked,
   })

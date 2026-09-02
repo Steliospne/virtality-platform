@@ -23,6 +23,7 @@ type PendingPromotionCodeRow = {
   code: string
   promotionCodeId: string
   couponId: string
+  liveSubscriptionId: string | null
   expiresAt: Date
 }
 
@@ -101,20 +102,133 @@ async function resolvePromotionCodeForProCheckout(
   }
 }
 
-async function expireOpenPendingPromotionCodes(
+function isStripeMissingResource(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false
+  if (!('statusCode' in error)) return false
+  return (error as { statusCode?: number }).statusCode === 404
+}
+
+/**
+ * Revert the live Subscription Discount a hold was tracking. Best-effort:
+ * a resource that's already gone (404) counts as reverted; any other Stripe
+ * error is swallowed and the row is left `open` so the next sweep retries.
+ */
+async function revertLiveDiscountForHold(
+  stripeClient: Stripe,
+  liveSubscriptionId: string,
+): Promise<boolean> {
+  try {
+    await stripeClient.subscriptions.deleteDiscount(liveSubscriptionId)
+    return true
+  } catch (error) {
+    return isStripeMissingResource(error)
+  }
+}
+
+/**
+ * Expire open holds past TTL for a user. A hold tracking a live Subscription
+ * Discount (`liveSubscriptionId` set) is force-reverted via Stripe first —
+ * the same 2-minute TTL applies whether the hold is a pre-Checkout code or a
+ * Discount already redeemed onto a live Subscription. Rows whose Stripe
+ * revert fails are left `open` for the next sweep to retry.
+ */
+async function sweepExpiredPendingPromotionCodes(
+  client: PrismaClient,
+  stripeClient: Stripe,
+  userId: string,
+  now: Date,
+): Promise<void> {
+  const due = await client.pendingPromotionCode.findMany({
+    where: { userId, status: 'open', expiresAt: { lte: now } },
+    select: { id: true, liveSubscriptionId: true },
+  })
+  if (due.length === 0) return
+
+  const reverted: string[] = []
+  for (const row of due) {
+    if (row.liveSubscriptionId == null) {
+      reverted.push(row.id)
+      continue
+    }
+    const ok = await revertLiveDiscountForHold(
+      stripeClient,
+      row.liveSubscriptionId,
+    )
+    if (ok) reverted.push(row.id)
+  }
+  if (reverted.length === 0) return
+
+  await client.pendingPromotionCode.updateMany({
+    where: { id: { in: reverted } },
+    data: { status: 'expired', updatedAt: now },
+  })
+}
+
+/**
+ * Public entry point for the same TTL sweep, for callers that read live
+ * Discount state directly (not through a hold lookup) and need it to
+ * reflect a just-expired revert rather than stale Stripe state.
+ */
+export async function sweepExpiredPromotionCodeHoldsForUser(
+  input: { userId: string; now?: Date },
+  deps: PendingPromotionCodeDeps,
+): Promise<void> {
+  const client = getClient(deps.prisma)
+  await sweepExpiredPendingPromotionCodes(
+    client,
+    deps.stripeClient,
+    input.userId,
+    input.now ?? new Date(),
+  )
+}
+
+/** Cancel any open hold, canceling out a prior in-progress redeem/apply. */
+async function cancelOpenHolds(
   client: PrismaClient,
   userId: string,
   now: Date,
-) {
+): Promise<void> {
   await client.pendingPromotionCode.updateMany({
-    where: {
-      userId,
-      status: 'open',
-      expiresAt: { lte: now },
-    },
+    where: { userId, status: 'open' },
+    data: { status: 'canceled', updatedAt: now },
+  })
+}
+
+async function armPromotionCodeHold(
+  client: PrismaClient,
+  input: {
+    userId: string
+    code: string
+    promotionCodeId: string
+    couponId: string
+    liveSubscriptionId: string | null
+    now: Date
+  },
+): Promise<PendingPromotionCodeRow> {
+  await cancelOpenHolds(client, input.userId, input.now)
+
+  const expiresAt = new Date(
+    input.now.getTime() + PENDING_PROMOTION_CODE_TTL_MS,
+  )
+  return client.pendingPromotionCode.create({
     data: {
-      status: 'expired',
-      updatedAt: now,
+      userId: input.userId,
+      code: input.code,
+      promotionCodeId: input.promotionCodeId,
+      couponId: input.couponId,
+      liveSubscriptionId: input.liveSubscriptionId,
+      expiresAt,
+      createdAt: input.now,
+      updatedAt: input.now,
+    },
+    select: {
+      id: true,
+      userId: true,
+      code: true,
+      promotionCodeId: true,
+      couponId: true,
+      liveSubscriptionId: true,
+      expiresAt: true,
     },
   })
 }
@@ -130,29 +244,45 @@ export async function savePendingPromotionCodeForCheckout(
     input.code,
   )
 
-  await expireOpenPendingPromotionCodes(client, input.userId, now)
-  await client.pendingPromotionCode.updateMany({
-    where: { userId: input.userId, status: 'open' },
-    data: {
-      status: 'canceled',
-      updatedAt: now,
-    },
-  })
-
-  const expiresAt = new Date(now.getTime() + PENDING_PROMOTION_CODE_TTL_MS)
-  const row = await client.pendingPromotionCode.create({
-    data: {
-      userId: input.userId,
-      code: resolved.code,
-      promotionCodeId: resolved.promotionCodeId,
-      couponId: resolved.couponId,
-      expiresAt,
-      createdAt: now,
-      updatedAt: now,
-    },
+  const row = await armPromotionCodeHold(client, {
+    userId: input.userId,
+    code: resolved.code,
+    promotionCodeId: resolved.promotionCodeId,
+    couponId: resolved.couponId,
+    liveSubscriptionId: null,
+    now,
   })
 
   return { ...row, couponTerms: resolved.couponTerms }
+}
+
+/**
+ * Arm the same TTL hold for a Discount just redeemed directly onto a live
+ * Subscription (mid-cycle redeem, not a pre-Checkout hold). The Discount is
+ * already live on Stripe by the time this is called; the hold only tracks
+ * when it must be force-reverted.
+ */
+export async function armLivePromotionCodeHold(
+  input: {
+    userId: string
+    code: string
+    promotionCodeId: string
+    couponId: string
+    liveSubscriptionId: string
+    now?: Date
+  },
+  deps: Pick<PendingPromotionCodeDeps, 'prisma'>,
+): Promise<void> {
+  const client = getClient(deps.prisma)
+  const now = input.now ?? new Date()
+  await armPromotionCodeHold(client, {
+    userId: input.userId,
+    code: input.code,
+    promotionCodeId: input.promotionCodeId,
+    couponId: input.couponId,
+    liveSubscriptionId: input.liveSubscriptionId,
+    now,
+  })
 }
 
 export async function getOpenPendingPromotionCodeForCheckout(
@@ -161,7 +291,12 @@ export async function getOpenPendingPromotionCodeForCheckout(
 ): Promise<PendingPromotionCodeRow | null> {
   const client = getClient(deps.prisma)
   const now = input.now ?? new Date()
-  await expireOpenPendingPromotionCodes(client, input.userId, now)
+  await sweepExpiredPendingPromotionCodes(
+    client,
+    deps.stripeClient,
+    input.userId,
+    now,
+  )
   return client.pendingPromotionCode.findFirst({
     where: {
       userId: input.userId,
@@ -175,6 +310,7 @@ export async function getOpenPendingPromotionCodeForCheckout(
       code: true,
       promotionCodeId: true,
       couponId: true,
+      liveSubscriptionId: true,
       expiresAt: true,
     },
   })
@@ -193,9 +329,7 @@ export async function readOpenPendingPromotionCodeForCheckout(
 
   const coupon = await retrieveLibraryCoupon(deps.stripeClient, row.couponId)
   if (!coupon || coupon.archived) {
-    await cancelPendingPromotionCodeForCheckout(input, {
-      prisma: deps.prisma,
-    })
+    await cancelPendingPromotionCodeForCheckout(input, deps)
     return null
   }
 
@@ -211,44 +345,77 @@ export async function readOpenPendingPromotionCodeForCheckout(
   }
 }
 
+/**
+ * Explicit user cancel/remove of an open hold. When the hold tracks a live
+ * Subscription Discount, this also reverts that Discount on Stripe — for a
+ * live redeem, "cancel the hold" and "remove the Discount" are the same act.
+ */
 export async function cancelPendingPromotionCodeForCheckout(
   input: { userId: string; now?: Date },
-  deps: Pick<PendingPromotionCodeDeps, 'prisma'>,
-) {
+  deps: PendingPromotionCodeDeps,
+): Promise<number> {
   const client = getClient(deps.prisma)
   const now = input.now ?? new Date()
-  await expireOpenPendingPromotionCodes(client, input.userId, now)
+  await sweepExpiredPendingPromotionCodes(
+    client,
+    deps.stripeClient,
+    input.userId,
+    now,
+  )
+
+  const open = await client.pendingPromotionCode.findMany({
+    where: { userId: input.userId, status: 'open', expiresAt: { gt: now } },
+    select: { id: true, liveSubscriptionId: true },
+  })
+  if (open.length === 0) return 0
+
+  for (const row of open) {
+    if (row.liveSubscriptionId != null) {
+      await revertLiveDiscountForHold(deps.stripeClient, row.liveSubscriptionId)
+    }
+  }
+
   const result = await client.pendingPromotionCode.updateMany({
-    where: {
-      userId: input.userId,
-      status: 'open',
-      expiresAt: { gt: now },
-    },
-    data: {
-      status: 'canceled',
-      updatedAt: now,
-    },
+    where: { id: { in: open.map((row) => row.id) } },
+    data: { status: 'canceled', updatedAt: now },
+  })
+  return result.count
+}
+
+/**
+ * Discard a user's open hold in the database only — no Stripe call. For a
+ * caller that has already reverted the live Discount itself (direct remove)
+ * and just needs the hold row cleared without a second, redundant Stripe
+ * request against an already-cleared Discount.
+ */
+export async function discardOpenPendingPromotionCodeHold(
+  input: { userId: string; now?: Date },
+  deps: Pick<PendingPromotionCodeDeps, 'prisma'>,
+): Promise<number> {
+  const client = getClient(deps.prisma)
+  const now = input.now ?? new Date()
+  const result = await client.pendingPromotionCode.updateMany({
+    where: { userId: input.userId, status: 'open' },
+    data: { status: 'canceled', updatedAt: now },
   })
   return result.count
 }
 
 export async function markPendingPromotionCodeAppliedForCheckout(
   input: { userId: string; now?: Date },
-  deps: Pick<PendingPromotionCodeDeps, 'prisma'>,
-) {
+  deps: PendingPromotionCodeDeps,
+): Promise<number> {
   const client = getClient(deps.prisma)
   const now = input.now ?? new Date()
-  await expireOpenPendingPromotionCodes(client, input.userId, now)
+  await sweepExpiredPendingPromotionCodes(
+    client,
+    deps.stripeClient,
+    input.userId,
+    now,
+  )
   const result = await client.pendingPromotionCode.updateMany({
-    where: {
-      userId: input.userId,
-      status: 'open',
-      expiresAt: { gt: now },
-    },
-    data: {
-      status: 'applied',
-      updatedAt: now,
-    },
+    where: { userId: input.userId, status: 'open', expiresAt: { gt: now } },
+    data: { status: 'applied', updatedAt: now },
   })
   return result.count
 }

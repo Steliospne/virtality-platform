@@ -31,6 +31,7 @@ describe('resolvePromoRedeemChrome', () => {
       resolvePromoRedeemChrome({
         hasEligibleSubscription: false,
         pendingHoldCode: 'SAVE10',
+        pendingHoldExpiresAt: null,
         discount: none,
         staffBlocked: false,
       }),
@@ -60,14 +61,16 @@ describe('resolvePromoRedeemChrome', () => {
   })
 
   it('shows live applied promo when the seat is eligible', () => {
+    const expiresAt = new Date('2026-09-02T12:00:00Z')
     expect(
       resolvePromoRedeemChrome({
         hasEligibleSubscription: true,
         pendingHoldCode: null,
+        pendingHoldExpiresAt: expiresAt,
         discount: livePromo,
         staffBlocked: false,
       }),
-    ).toEqual({ kind: 'applied_live', code: 'SAVE10' })
+    ).toEqual({ kind: 'applied_live', code: 'SAVE10', expiresAt })
   })
 
   it('shows staff_blocked when staff discount blocks promo redeem', () => {

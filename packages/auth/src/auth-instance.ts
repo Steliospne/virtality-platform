@@ -10,7 +10,8 @@ import {
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
 import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
-import { getOpenPendingPromotionCodeForCheckout } from './lib/pending-promotion-code.ts'
+import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem.ts'
+import { markPendingPromotionCodeAppliedForCheckout } from './lib/pending-promotion-code.ts'
 import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
   readProVariantCatalogOrSandbox,
@@ -281,7 +282,7 @@ export const auth = betterAuth({
                 }
 
                 const pendingPromotionCode =
-                  await getOpenPendingPromotionCodeForCheckout(
+                  await resolvePromotionCodeForNewCheckout(
                     { userId: user.id },
                     { prisma, stripeClient },
                   )
@@ -310,6 +311,12 @@ export const auth = betterAuth({
                 stripeSubscription,
               }) => {
                 await rearmRenewPromptsAfterCheckout(subscription)
+                if (stripeClient) {
+                  await markPendingPromotionCodeAppliedForCheckout(
+                    { userId: subscription.referenceId },
+                    { prisma, stripeClient },
+                  )
+                }
                 const cancelStripeSubscriptionId =
                   stripeSubscription.metadata?.[
                     ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY

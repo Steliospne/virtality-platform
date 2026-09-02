@@ -319,5 +319,6 @@ export function readOpenPendingPromotionCodeAction(input: { userId: string }) {
 export function cancelPendingPromotionCodeAction(input: { userId: string }) {
   return cancelPendingPromotionCodeForCheckout(input, {
     prisma,
+    stripeClient: requireStripeForConsolePromo(),
   })
 }

@@ -4,13 +4,10 @@
  * Open Checkout hold for a Promotion Code (pre-subscribe). Cancel clears the hold.
  */
 
-import { useEffect, useRef, useState } from 'react'
 import { Badge } from '@virtality/ui/components/badge'
 import { Button } from '@virtality/ui/components/button'
-import {
-  formatPendingHoldCountdown,
-  pendingHoldRemainingMs,
-} from '@/lib/pending-hold-countdown'
+import { formatPendingHoldCountdown } from '@/lib/pending-hold-countdown'
+import { usePendingHoldCountdown } from '@/lib/use-pending-hold-countdown'
 
 export function PendingPromoHoldRow({
   code,
@@ -25,24 +22,7 @@ export function PendingPromoHoldRow({
   onCancel: () => void
   onExpired?: () => void
 }) {
-  const onExpiredRef = useRef(onExpired)
-  onExpiredRef.current = onExpired
-  const [remainingMs, setRemainingMs] = useState(() =>
-    pendingHoldRemainingMs(expiresAt),
-  )
-
-  useEffect(() => {
-    setRemainingMs(pendingHoldRemainingMs(expiresAt))
-    const id = window.setInterval(() => {
-      const next = pendingHoldRemainingMs(expiresAt)
-      setRemainingMs(next)
-      if (next <= 0) {
-        window.clearInterval(id)
-        onExpiredRef.current?.()
-      }
-    }, 250)
-    return () => window.clearInterval(id)
-  }, [expiresAt])
+  const remainingMs = usePendingHoldCountdown(expiresAt, onExpired)
 
   return (
     <div className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800'>

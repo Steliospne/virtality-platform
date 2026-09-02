@@ -14,7 +14,11 @@ export type PromoRedeemChrome =
   | { kind: 'checking_discount' }
   | { kind: 'redeem_unavailable' }
   | { kind: 'staff_blocked' }
-  | { kind: 'applied_live'; code: string | null }
+  | {
+      kind: 'applied_live'
+      code: string | null
+      expiresAt: Date | string | null
+    }
 
 /** Unified code field stays visible except when a live promo row replaces it. */
 export function profileBillingCodeEntryVisible(
@@ -26,6 +30,7 @@ export function profileBillingCodeEntryVisible(
 export function resolvePromoRedeemChrome(input: {
   hasEligibleSubscription: boolean
   pendingHoldCode: string | null | undefined
+  pendingHoldExpiresAt?: Date | string | null
   discount: SubscriptionDiscountRead | undefined
   staffBlocked: boolean
 }): PromoRedeemChrome {
@@ -54,6 +59,7 @@ export function resolvePromoRedeemChrome(input: {
     return {
       kind: 'applied_live',
       code: promoCodeLabel(input.discount),
+      expiresAt: input.pendingHoldExpiresAt ?? null,
     }
   }
 

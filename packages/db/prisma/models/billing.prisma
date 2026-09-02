@@ -74,15 +74,19 @@ model PromotionCodeDelivery {
 /// Promotion Code entered before first paid Checkout. Open rows are short-lived
 /// and used to attach a Promotion Code to the upcoming Stripe Checkout Session.
 model PendingPromotionCode {
-  id              String                     @id @default(cuid())
-  userId          String
-  code            String
-  promotionCodeId String
-  couponId        String
-  status          PendingPromotionCodeStatus @default(open)
-  expiresAt       DateTime                   @db.Timestamp(6)
-  createdAt       DateTime                   @db.Timestamp(6)
-  updatedAt       DateTime                   @db.Timestamp(6)
+  id                  String                     @id @default(cuid())
+  userId              String
+  code                String
+  promotionCodeId     String
+  couponId            String
+  /// Set only when this hold governs a Discount already live on a
+  /// Subscription (mid-cycle redeem); null for a pre-Checkout hold. The
+  /// live Discount is force-reverted via Stripe when this hold expires.
+  liveSubscriptionId  String?
+  status              PendingPromotionCodeStatus @default(open)
+  expiresAt           DateTime                   @db.Timestamp(6)
+  createdAt           DateTime                   @db.Timestamp(6)
+  updatedAt           DateTime                   @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

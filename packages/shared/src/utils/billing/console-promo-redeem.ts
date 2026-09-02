@@ -2,8 +2,9 @@
  * Console Profile → Billing mid-cycle Promotion Code redeem + promo remove
  * (#65 / #67 / #72 / issue #78).
  *
- * Apply via Subscription `discounts: [{ promotion_code }]`; clear with
- * `discounts: []` only (no restore). Staff channel blocks redeem; clinician
+ * Apply via Subscription `discounts: [{ promotion_code }]`; clear via the
+ * dedicated delete-discount endpoint only (no restore) — `discounts: []` is
+ * a Stripe no-op, not a clear. Staff channel blocks redeem; clinician
  * self-remove is promo-only. Fail closed on live Discount read failure.
  */
 
@@ -432,7 +433,8 @@ export async function redeemPromotionCodeOnSubscription(
 }
 
 /**
- * Clear a promo Discount only (`discounts: []`). No restore of prior Discount.
+ * Clear a promo Discount only, via the Stripe delete-discount endpoint. No
+ * restore of prior Discount.
  */
 export async function removePromoDiscountFromSubscription(
   store: ConsolePromoStore,

@@ -5,7 +5,7 @@
  * and period-end interval switch confirm / cancel.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
@@ -45,7 +45,6 @@ import {
   CANCEL_SCHEDULE_RESTORE_TOAST,
   UNDO_CANCELLATION_RESTORE_TOAST,
 } from '@/lib/console-better-auth-billing'
-import { readCheckoutReturnIntent } from '@/lib/subscription-checkout'
 import {
   formatAccessCodeAppliedMessage,
   isProfileBillingAccessCode,
@@ -85,8 +84,6 @@ export function useBillingTab() {
   const accessCodeMutation = useRedeemAccessCode()
   const savePendingMutation = useSavePendingPromotionCode()
   const cancelPendingMutation = useCancelPendingPromotionCode()
-  const cancelPendingAsyncRef = useRef(cancelPendingMutation.mutateAsync)
-  cancelPendingAsyncRef.current = cancelPendingMutation.mutateAsync
   const removeMutation = useRemovePromoDiscount()
   const {
     startCheckout,
@@ -121,10 +118,6 @@ export function useBillingTab() {
   const [upgradeConfirmInterval, setUpgradeConfirmInterval] =
     useState<BillingInterval | null>(null)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
-  const [initialCheckoutIntent] = useState(() =>
-    readInitialClientSearch(readCheckoutReturnIntent, null),
-  )
-  const clearedCheckoutCancelRef = useRef(false)
 
   const prices = billingCatalogPrices(catalogQuery.data)
   const catalogMinor = billingCatalogMinor(catalogQuery.data)
@@ -183,17 +176,11 @@ export function useBillingTab() {
   const pendingHoldCode = pendingHold?.code ?? null
   const pendingHoldExpiresAt = pendingHold?.expiresAt ?? null
   const pendingHoldSuccessMessage = pendingHold
-    ? `Promotion Code ${pendingHold.code} saved for Checkout. Finish subscribing within 2 minutes.`
+    ? hasEligibleSubscription
+      ? `Promotion Code ${pendingHold.code} applied. It reverts automatically in 2 minutes unless kept by reapplying.`
+      : `Promotion Code ${pendingHold.code} saved for Checkout. Finish subscribing within 2 minutes.`
     : null
   const promoSuccessBanner = redeemSuccessMessage ?? pendingHoldSuccessMessage
-
-  useEffect(() => {
-    if (initialCheckoutIntent !== 'cancel') return
-    if (clearedCheckoutCancelRef.current) return
-    clearedCheckoutCancelRef.current = true
-    setRedeemSuccessMessage(null)
-    void cancelPendingAsyncRef.current(undefined)
-  }, [initialCheckoutIntent])
 
   async function savePendingPromotionCode(code: string) {
     await savePendingMutation.mutateAsync({ code })
@@ -388,7 +375,11 @@ export function useBillingTab() {
 
   function handlePendingHoldExpired() {
     setRedeemSuccessMessage(null)
+    // A live-redeem hold's expiry reverts the Discount server-side as a
+    // side effect of the read (see `sweepExpiredPromotionCodeHoldsForUser`),
+    // so the Discount display must be refetched here too, not just the hold.
     void pendingHoldQuery.refetch()
+    void discountQuery.refetch()
   }
 
   const pendingDiscountPrices =

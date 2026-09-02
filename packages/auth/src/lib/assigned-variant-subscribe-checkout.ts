@@ -19,7 +19,7 @@ import {
 import type Stripe from 'stripe'
 import { buildCampaignAwareCheckoutSessionParams } from './campaign-window.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
-import { getOpenPendingPromotionCodeForCheckout } from './pending-promotion-code.ts'
+import { resolvePromotionCodeForNewCheckout } from './console-promo-redeem.ts'
 import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
 
 /** Stripe metadata: cancel the prior Free subscription after paid Checkout. */
@@ -111,7 +111,7 @@ export async function startAssignedVariantSubscribeCheckout(input: {
       line_items: [{ price: priceResolved.priceId, quantity: 1 }],
     }
 
-    const pendingPromotionCode = await getOpenPendingPromotionCodeForCheckout(
+    const pendingPromotionCode = await resolvePromotionCodeForNewCheckout(
       { userId: user.id },
       { prisma: client, stripeClient: input.stripeClient },
     )
