@@ -440,12 +440,12 @@ describe('sendTrialRedeemCodeEmail', () => {
     expect(findUserByEmail).toHaveBeenCalledWith('existing@clinic.example')
     expect(result).toMatchObject({
       ctaVariant: 'existing_account',
-      ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01`,
+      ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01&src=email`,
     })
     expect(deliver).toHaveBeenCalledWith(
       expect.objectContaining({
         ctaVariant: 'existing_account',
-        ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01`,
+        ctaUrl: `${CONSOLE_URL}/user/user-existing/profile?tab=billing&access_code=GO-EXISTING01&src=email`,
       }),
     )
   })
