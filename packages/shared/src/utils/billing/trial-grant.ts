@@ -2,6 +2,8 @@ import {
   computeExtensionTrialEnd,
   isEntitlementExtensionDurationUnit,
   type EntitlementExtensionDurationUnit,
+  type EntitlementExtensionDirection,
+  isEntitlementExtensionDirection,
 } from './entitlement-extension.ts'
 import type { EntitlementClockStanding } from './entitlement-clock.ts'
 import {
@@ -143,13 +145,22 @@ export type TrialGrantStore = {
     trialStart: Date
     trialEnd: Date
   }) => Promise<TrialGrantRecord>
+  adjustTrialGrant: (input: {
+    userId: string
+    trialEnd: Date
+  }) => Promise<TrialGrantRecord>
+  revokeTrialGrant: (input: { userId: string }) => Promise<TrialGrantRecord>
   summarizeBillingState: (
     userId: string,
   ) => Promise<AdminCustomerBillingSnapshot>
   recordAudit: (record: {
     targetUserId: string
     actorUserId: string
-    action: 'issue_trial_grant' | 'start_trial_grant'
+    action:
+      | 'issue_trial_grant'
+      | 'start_trial_grant'
+      | 'adjust_trial_grant'
+      | 'revoke_trial_grant'
     reason: string
     outcome: 'success' | 'failure'
     stripeOperationId: string | null
@@ -189,6 +200,35 @@ export type StartTrialGrantResult = {
   auditId: string
 }
 
+export type AdjustTrialGrantInput = {
+  userId: string
+  actorUserId: string
+  reason: string
+  amount: number
+  unit: EntitlementExtensionDurationUnit
+  direction?: EntitlementExtensionDirection
+}
+
+export type AdjustTrialGrantResult = {
+  trialGrantId: string
+  status: TrialGrantStatus
+  previousTrialEnd: Date
+  trialEnd: Date
+  auditId: string
+}
+
+export type RevokeTrialGrantInput = {
+  userId: string
+  actorUserId: string
+  reason: string
+}
+
+export type RevokeTrialGrantResult = {
+  trialGrantId: string
+  status: TrialGrantStatus
+  auditId: string
+}
+
 export class TrialGrantValidationError extends Error {
   constructor(message: string) {
     super(message)
@@ -200,6 +240,20 @@ export class TrialGrantNotFoundError extends Error {
   constructor(userId: string) {
     super(`No pending TrialGrant found for user "${userId}".`)
     this.name = 'TrialGrantNotFoundError'
+  }
+}
+
+export class TrialGrantNotActiveError extends Error {
+  constructor(userId: string) {
+    super(`No active TrialGrant found for user "${userId}".`)
+    this.name = 'TrialGrantNotActiveError'
+  }
+}
+
+export class TrialGrantOpenNotFoundError extends Error {
+  constructor(userId: string) {
+    super(`No pending or active TrialGrant found for user "${userId}".`)
+    this.name = 'TrialGrantOpenNotFoundError'
   }
 }
 
@@ -350,6 +404,134 @@ export async function startTrialGrantForCustomer(
     status: started.status,
     trialStart: started.trialStart ?? now,
     trialEnd: started.trialEnd ?? trialEnd,
+    auditId: audit.id,
+  }
+}
+
+function extensionBaseFromTrialGrant(now: Date, grant: TrialGrantClock): Date {
+  if (grant.trialEnd != null && grant.trialEnd.getTime() > now.getTime()) {
+    return grant.trialEnd
+  }
+  return now
+}
+
+export async function adjustTrialGrantForCustomer(
+  store: TrialGrantStore,
+  input: AdjustTrialGrantInput,
+  runtime: { now?: () => Date } = {},
+): Promise<AdjustTrialGrantResult> {
+  assertActors(input)
+  assertReason(input.reason)
+
+  if (!Number.isInteger(input.amount) || input.amount < 1) {
+    throw new TrialGrantValidationError(
+      'Trial amount must be a positive integer.',
+    )
+  }
+  if (!isEntitlementExtensionDurationUnit(input.unit)) {
+    throw new TrialGrantValidationError(
+      'Trial unit must be days, weeks, or months.',
+    )
+  }
+
+  const direction = input.direction ?? 'extend'
+  if (!isEntitlementExtensionDirection(direction)) {
+    throw new TrialGrantValidationError(
+      'Trial direction must be extend or reduce.',
+    )
+  }
+
+  const user = await store.findTargetUser(input.userId)
+  if (!user) {
+    throw new TrialGrantCustomerNotFoundError(input.userId)
+  }
+
+  const beforeBillingState = await store.summarizeBillingState(user.id)
+  const active = await store.findOpenTrialGrantByUserId(user.id)
+  if (!active || active.status !== 'active') {
+    throw new TrialGrantNotActiveError(user.id)
+  }
+  if (active.trialEnd == null) {
+    throw new TrialGrantNotActiveError(user.id)
+  }
+
+  const now = runtime.now?.() ?? new Date()
+  const previousTrialEnd = active.trialEnd
+  const trialEnd = computeExtensionTrialEnd(
+    extensionBaseFromTrialGrant(now, active),
+    input.amount,
+    input.unit,
+    direction,
+  )
+  if (direction === 'reduce' && trialEnd.getTime() <= now.getTime()) {
+    throw new TrialGrantValidationError(
+      'Reducing by this amount would end the Trial Grant in the past. Reduce by less, or revoke the grant instead.',
+    )
+  }
+
+  const adjusted = await store.adjustTrialGrant({
+    userId: user.id,
+    trialEnd,
+  })
+
+  const afterBillingState = await store.summarizeBillingState(user.id)
+  const audit = await store.recordAudit({
+    targetUserId: user.id,
+    actorUserId: input.actorUserId,
+    action: 'adjust_trial_grant',
+    reason: input.reason.trim(),
+    outcome: 'success',
+    stripeOperationId: null,
+    beforeBillingState,
+    afterBillingState,
+  })
+
+  return {
+    trialGrantId: adjusted.id,
+    status: adjusted.status,
+    previousTrialEnd,
+    trialEnd: adjusted.trialEnd ?? trialEnd,
+    auditId: audit.id,
+  }
+}
+
+export async function revokeTrialGrantForCustomer(
+  store: TrialGrantStore,
+  input: RevokeTrialGrantInput,
+): Promise<RevokeTrialGrantResult> {
+  assertActors(input)
+  assertReason(input.reason)
+
+  const user = await store.findTargetUser(input.userId)
+  if (!user) {
+    throw new TrialGrantCustomerNotFoundError(input.userId)
+  }
+
+  const beforeBillingState = await store.summarizeBillingState(user.id)
+  const open = await store.findOpenTrialGrantByUserId(user.id)
+  if (!open) {
+    throw new TrialGrantOpenNotFoundError(user.id)
+  }
+
+  const revoked = await store.revokeTrialGrant({
+    userId: user.id,
+  })
+
+  const afterBillingState = await store.summarizeBillingState(user.id)
+  const audit = await store.recordAudit({
+    targetUserId: user.id,
+    actorUserId: input.actorUserId,
+    action: 'revoke_trial_grant',
+    reason: input.reason.trim(),
+    outcome: 'success',
+    stripeOperationId: null,
+    beforeBillingState,
+    afterBillingState,
+  })
+
+  return {
+    trialGrantId: revoked.id,
+    status: revoked.status,
     auditId: audit.id,
   }
 }

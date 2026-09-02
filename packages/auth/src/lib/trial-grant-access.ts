@@ -4,12 +4,16 @@ import {
   billingSnapshotFromSubscription,
   effectiveAssignedProVariant,
   isProSubscriptionPlan,
+  adjustTrialGrantForCustomer,
   issueTrialGrantToCustomer,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   pickPrimaryCustomerSubscription,
+  revokeTrialGrantForCustomer,
   startTrialGrantForCustomer,
   TRIAL_GRANT_OPEN_STATUSES,
+  type AdjustTrialGrantInput,
   type IssueTrialGrantInput,
+  type RevokeTrialGrantInput,
   type StartTrialGrantInput,
   type TrialGrantStore,
 } from '@virtality/shared/utils'
@@ -84,6 +88,54 @@ export function createPrismaTrialGrantStore(
           status: 'active',
           trialStart: input.trialStart,
           trialEnd: input.trialEnd,
+          updatedAt: now,
+        },
+        select: trialGrantRecordSelect,
+      })
+    },
+    adjustTrialGrant: async (input) => {
+      const active = await client.trialGrant.findFirst({
+        where: {
+          userId: input.userId,
+          status: 'active',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      })
+      if (!active) {
+        throw new Error(`No active TrialGrant for user "${input.userId}".`)
+      }
+
+      const now = new Date()
+      return client.trialGrant.update({
+        where: { id: active.id },
+        data: {
+          trialEnd: input.trialEnd,
+          updatedAt: now,
+        },
+        select: trialGrantRecordSelect,
+      })
+    },
+    revokeTrialGrant: async (input) => {
+      const open = await client.trialGrant.findFirst({
+        where: {
+          userId: input.userId,
+          status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      })
+      if (!open) {
+        throw new Error(
+          `No pending or active TrialGrant for user "${input.userId}".`,
+        )
+      }
+
+      const now = new Date()
+      return client.trialGrant.update({
+        where: { id: open.id },
+        data: {
+          status: 'revoked',
           updatedAt: now,
         },
         select: trialGrantRecordSelect,
@@ -170,6 +222,12 @@ export type TrialGrantRuntime = {
   startTrial: (
     input: StartTrialGrantInput,
   ) => ReturnType<typeof startTrialGrantForCustomer>
+  adjustTrial: (
+    input: AdjustTrialGrantInput,
+  ) => ReturnType<typeof adjustTrialGrantForCustomer>
+  revokeTrial: (
+    input: RevokeTrialGrantInput,
+  ) => ReturnType<typeof revokeTrialGrantForCustomer>
 }
 
 export function createTrialGrantRuntime(deps: {
@@ -196,6 +254,26 @@ export function createTrialGrantRuntime(deps: {
         clockEnd: result.trialEnd,
       })
       return result
+    },
+    async adjustTrial(input) {
+      const open = await store.findOpenTrialGrantByUserId(input.userId)
+      const previousClockEnd =
+        open?.status === 'active' ? (open.trialEnd ?? null) : null
+
+      const result = await adjustTrialGrantForCustomer(store, input, {
+        now: deps.now,
+      })
+
+      await lifecycle.rearmAfterExtension({
+        userId: input.userId,
+        previousClockEnd,
+        nextClockEnd: result.trialEnd,
+      })
+
+      return result
+    },
+    revokeTrial(input) {
+      return revokeTrialGrantForCustomer(store, input)
     },
   }
 }

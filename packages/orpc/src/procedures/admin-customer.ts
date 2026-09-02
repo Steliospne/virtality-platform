@@ -12,6 +12,7 @@ import {
   assignFreeAfterCancellationInputSchema,
   assignPermanentFreeInputSchema,
   assignProVariantInputSchema,
+  adjustTrialGrantInputSchema,
   cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
@@ -20,6 +21,7 @@ import {
   listAssignableProVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
+  revokeTrialGrantInputSchema,
   sendPaidCheckoutLinkInputSchema,
   startTrialGrantInputSchema,
 } from '@virtality/shared/types'
@@ -36,7 +38,9 @@ import {
   TrialGrantAlreadyOpenError,
   TrialGrantCustomerAlreadyEntitledError,
   TrialGrantCustomerNotFoundError,
+  TrialGrantNotActiveError,
   TrialGrantNotFoundError,
+  TrialGrantOpenNotFoundError,
   TrialGrantValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
@@ -81,7 +85,9 @@ function throwAdminCustomerOrpcError(error: unknown): never {
     error instanceof TrialGrantCustomerNotFoundError ||
     error instanceof TrialGrantAlreadyOpenError ||
     error instanceof TrialGrantCustomerAlreadyEntitledError ||
-    error instanceof TrialGrantNotFoundError
+    error instanceof TrialGrantNotFoundError ||
+    error instanceof TrialGrantNotActiveError ||
+    error instanceof TrialGrantOpenNotFoundError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -202,6 +208,41 @@ const startTrialGrant = adminAuthed
         reason: input.reason,
         amount: input.amount,
         unit: input.unit,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const adjustTrialGrant = adminAuthed
+  .route({ path: '/admin-customer/adjust-trial-grant', method: 'POST' })
+  .input(adjustTrialGrantInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      const runtime = trialGrantRuntime(context)
+      return await runtime.adjustTrial({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
+        amount: input.amount,
+        unit: input.unit,
+        direction: input.direction,
+      })
+    } catch (error) {
+      throwAdminCustomerOrpcError(error)
+    }
+  })
+
+const revokeTrialGrant = adminAuthed
+  .route({ path: '/admin-customer/revoke-trial-grant', method: 'POST' })
+  .input(revokeTrialGrantInputSchema)
+  .handler(async ({ context, input }) => {
+    try {
+      const runtime = trialGrantRuntime(context)
+      return await runtime.revokeTrial({
+        userId: input.userId,
+        actorUserId: context.user.id,
+        reason: input.reason,
       })
     } catch (error) {
       throwAdminCustomerOrpcError(error)
@@ -340,6 +381,8 @@ export const adminCustomer = {
   grantTimedTrial,
   issueTrialGrant,
   startTrialGrant,
+  adjustTrialGrant,
+  revokeTrialGrant,
   previewChangePaidPlan,
   changePaidPlan,
   cancelPaidSubscription,
