@@ -58,7 +58,7 @@ const useControlPanel = () => {
 
   const { connected } = useSocketConnection({ device: selectedDevice })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
-  const { canLaunchVr } = useLiveEntitlementStanding()
+  const { canLaunchVr, checkoutCtaLabel } = useLiveEntitlementStanding()
   const treatmentLaunchReady = canLaunchTreatment({
     consoleConnected: connected,
     headsetPresent,
@@ -220,6 +220,8 @@ const useControlPanel = () => {
     isProgramActive,
     isProgramLaunching,
     treatmentLaunchReady,
+    canLaunchVr,
+    checkoutCtaLabel,
     programStart,
     programEnd,
     handleWarmupStart,

@@ -9,7 +9,7 @@ export const TREATMENT_LAUNCH_ERROR = {
   consoleDisconnected: 'Please connect with a device!',
   headsetAbsent: 'Waiting for the VR headset to connect.',
   entitlementExpired:
-    '[COPY] Remaining Time expired. VR program launch is unavailable.',
+    'Remaining Time expired. Subscribe to continue launching the VR program.',
 } as const
 
 export function canLaunchTreatment({

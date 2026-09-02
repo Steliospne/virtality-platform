@@ -38,7 +38,7 @@ export function RemainingTimeSidebar() {
       {showCheckoutCta ? (
         <SidebarMenuItem>
           <SidebarMenuButton
-            className='text-base'
+            className='bg-vital-blue-700 justify-center text-center text-base font-medium text-zinc-50 shadow hover:bg-vital-blue-700/90 hover:text-zinc-50 dark:bg-vital-blue-100 dark:text-zinc-900 dark:hover:bg-vital-blue-100/90 dark:hover:text-zinc-900'
             tooltip={checkoutCtaLabel}
             asChild
           >

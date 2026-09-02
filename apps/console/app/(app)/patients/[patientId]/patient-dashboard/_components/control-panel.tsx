@@ -1,5 +1,10 @@
+import Link from 'next/link'
+import { CreditCard } from 'lucide-react'
 import { Separator } from '@virtality/ui/components/separator'
+import { Button } from '@virtality/ui/components/button'
 import { cn } from '@/lib/utils'
+import { authClient } from '@/auth-client'
+import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 import ProgramSelector from './program-selector'
 import { Item } from '@/components/ui/item'
 import SessionExerciseChangeStatus from './session-exercise-change-status'
@@ -32,6 +37,8 @@ const ControlPanel = ({
     isProgramActive,
     isProgramLaunching,
     treatmentLaunchReady,
+    canLaunchVr,
+    checkoutCtaLabel,
     programStart,
     programEnd,
     handleWarmupStart,
@@ -48,6 +55,9 @@ const ControlPanel = ({
     missingSettings,
     GuardDialog,
   } = useControlPanel()
+  const { data: session } = authClient.useSession()
+  const userId = session?.user?.id
+  const showSubscribeCta = !canLaunchVr && checkoutCtaLabel != null && userId
 
   return (
     <div className={cn('flex items-center gap-4', className)}>
@@ -78,6 +88,15 @@ const ControlPanel = ({
         />
         <Separator orientation='vertical' className='h-8!' />
       </div>
+
+      {showSubscribeCta && (
+        <Button asChild variant='primary' size='lg'>
+          <Link href={profileBillingHref(userId)}>
+            <CreditCard />
+            {checkoutCtaLabel}
+          </Link>
+        </Button>
+      )}
 
       <div className='flex flex-1 gap-2'>
         {(isProgramActive || isProgramPaused) && isMain && (
