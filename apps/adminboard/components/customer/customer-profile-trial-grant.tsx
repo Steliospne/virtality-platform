@@ -79,26 +79,34 @@ export function CustomerProfileTrialGrant({
         )}
       </CustomerProfileSection>
 
-      <CustomerProfileIssueTrialGrantDialog
-        userId={profile.userId}
-        open={issueOpen}
-        onOpenChange={setIssueOpen}
-      />
-      <CustomerProfileStartTrialGrantDialog
-        userId={profile.userId}
-        open={startOpen}
-        onOpenChange={setStartOpen}
-      />
-      <CustomerProfileAdjustTrialGrantDialog
-        userId={profile.userId}
-        open={adjustOpen}
-        onOpenChange={setAdjustOpen}
-      />
-      <CustomerProfileRevokeTrialGrantDialog
-        userId={profile.userId}
-        open={revokeOpen}
-        onOpenChange={setRevokeOpen}
-      />
+      {canIssue ? (
+        <CustomerProfileIssueTrialGrantDialog
+          userId={profile.userId}
+          open={issueOpen}
+          onOpenChange={setIssueOpen}
+        />
+      ) : null}
+      {canStart ? (
+        <CustomerProfileStartTrialGrantDialog
+          userId={profile.userId}
+          open={startOpen}
+          onOpenChange={setStartOpen}
+        />
+      ) : null}
+      {canAdjust ? (
+        <CustomerProfileAdjustTrialGrantDialog
+          userId={profile.userId}
+          open={adjustOpen}
+          onOpenChange={setAdjustOpen}
+        />
+      ) : null}
+      {canRevoke ? (
+        <CustomerProfileRevokeTrialGrantDialog
+          userId={profile.userId}
+          open={revokeOpen}
+          onOpenChange={setRevokeOpen}
+        />
+      ) : null}
     </>
   )
 }

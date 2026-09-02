@@ -22,6 +22,7 @@ import {
   type AdminCustomerSubscriptionHistoryItem,
   type AdminCustomerTrialGrantSummary,
   type StripeDashboardMode,
+  type TrialGrantClock,
 } from '@virtality/shared/utils'
 
 type CustomerUserRow = {
@@ -192,62 +193,58 @@ export async function listAdminCustomers(
   )
 }
 
-async function loadAdminCustomerTrialGrant(
+const ADMIN_CUSTOMER_TRIAL_GRANT_SELECT = {
+  id: true,
+  userId: true,
+  code: true,
+  status: true,
+  trialStart: true,
+  trialEnd: true,
+  createdAt: true,
+} as const
+
+async function loadAdminCustomerTrialGrantContext(
   prisma: PrismaClient,
   userId: string,
   now: Date,
-): Promise<AdminCustomerTrialGrantSummary | null> {
+): Promise<{
+  openTrialGrantClock: TrialGrantClock | null
+  trialGrant: AdminCustomerTrialGrantSummary | null
+}> {
   const openGrant = await prisma.trialGrant.findFirst({
     where: {
       userId,
       status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
     },
     orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      userId: true,
-      code: true,
-      status: true,
-      trialStart: true,
-      trialEnd: true,
-      createdAt: true,
-    },
+    select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
   })
 
-  const grant =
+  const displayGrant =
     openGrant ??
     (await prisma.trialGrant.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        userId: true,
-        code: true,
-        status: true,
-        trialStart: true,
-        trialEnd: true,
-        createdAt: true,
-      },
+      select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
     }))
 
-  if (!grant) return null
+  if (!displayGrant) {
+    return { openTrialGrantClock: null, trialGrant: null }
+  }
 
-  return mapAdminCustomerTrialGrantSummary({ now, grant })
-}
-
-async function loadOpenTrialGrantClock(prisma: PrismaClient, userId: string) {
-  return prisma.trialGrant.findFirst({
-    where: {
-      userId,
-      status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
-    },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      status: true,
-      trialStart: true,
-      trialEnd: true,
-    },
-  })
+  return {
+    openTrialGrantClock: openGrant
+      ? {
+          status: openGrant.status as TrialGrantClock['status'],
+          trialStart: openGrant.trialStart,
+          trialEnd: openGrant.trialEnd,
+        }
+      : null,
+    trialGrant: mapAdminCustomerTrialGrantSummary({
+      now,
+      grant: displayGrant,
+    }),
+  }
 }
 
 export async function getAdminCustomerProfile(
@@ -284,15 +281,13 @@ export async function getAdminCustomerProfile(
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
   const livePaidPro = findLivePaidProSubscription(subscriptionHistory)
-  const [openTrialGrant, trialGrant] = await Promise.all([
-    loadOpenTrialGrantClock(prisma, user.id),
-    loadAdminCustomerTrialGrant(prisma, user.id, now),
-  ])
+  const { openTrialGrantClock, trialGrant } =
+    await loadAdminCustomerTrialGrantContext(prisma, user.id, now)
   const standing = buildEntitlementStanding({
     now,
     role: user.role,
     subscriptions: subscriptionHistory,
-    trialGrant: openTrialGrant,
+    trialGrant: openTrialGrantClock,
   })
 
   const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)

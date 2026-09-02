@@ -1,6 +1,6 @@
 import {
   findLivePaidProSubscription,
-  TRIAL_GRANT_OPEN_STATUSES,
+  isTrialGrantOpenStatus,
   type AdminCustomerProfile,
   type AdminCustomerTrialGrantSummary,
   type AdjustTrialGrantResult,
@@ -14,12 +14,8 @@ function openTrialGrant(
   profile: AdminCustomerProfile,
 ): AdminCustomerTrialGrantSummary | null {
   const grant = profile.trialGrant
-  if (!grant) return null
-  return TRIAL_GRANT_OPEN_STATUSES.includes(
-    grant.status as (typeof TRIAL_GRANT_OPEN_STATUSES)[number],
-  )
-    ? grant
-    : null
+  if (!grant || !isTrialGrantOpenStatus(grant.status)) return null
+  return grant
 }
 
 export function canIssueTrialGrant(profile: AdminCustomerProfile): boolean {

@@ -28,6 +28,12 @@ export const TRIAL_GRANT_OPEN_STATUSES = ['pending', 'active'] as const
 
 export type TrialGrantOpenStatus = (typeof TRIAL_GRANT_OPEN_STATUSES)[number]
 
+export function isTrialGrantOpenStatus(
+  value: string,
+): value is TrialGrantOpenStatus {
+  return (TRIAL_GRANT_OPEN_STATUSES as readonly string[]).includes(value)
+}
+
 export type TrialGrantClock = {
   status: TrialGrantStatus
   trialStart: Date | null
