@@ -18,3 +18,13 @@ When applying `ready-for-agent`, always add `Sandcastle` in the same operation.
 
 - Required pair: `ready-for-agent` + `Sandcastle`
 - Do not leave `ready-for-agent` issues without `Sandcastle`
+
+## Other repo-specific labels
+
+Not part of the five canonical triage roles above, but used elsewhere in this repo's workflows:
+
+| Label  | Meaning                                                                                                                                      |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spec` | A parent/PRD issue tracked via GitHub sub-issues (`subIssuesSummary`), not implemented directly. Title prefix (`Spec:`, `PRD:`, or none) varies — the label is the reliable signal. See `docs/agents/issue-tracker.md` for the parent-ticket close check that reads it. |
+
+Apply `spec` to a parent issue when it's created (planning/triage), not after the fact — the merger step depends on it being present to know which closed-out parents to check.

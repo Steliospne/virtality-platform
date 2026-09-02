@@ -31,6 +31,16 @@ Create a GitHub issue on `Virtality-app/virtality-platform`.
 
 Run `gh issue view <number> --repo Virtality-app/virtality-platform --comments` (or rely on `GH_REPO`).
 
+## Spec / parent tickets
+
+A `spec`-labelled issue (see `docs/agents/triage-labels.md`) is a parent/PRD tracked via GitHub's native sub-issues, not implemented directly — e.g. issue #218. Sub-issues are linked as children (`gh issue view <child> --json parent` returns the parent's number/state); the parent exposes rollup counts via `subIssuesSummary`.
+
+- **Check a child's parent**: `gh issue view <child> --repo Virtality-app/virtality-platform --json parent --jq '.parent.number'` (empty/null if none).
+- **Check parent completion**: `gh issue view <parent> --repo Virtality-app/virtality-platform --json state,labels,subIssuesSummary`. Close the parent only when `state == "OPEN"`, `labels` includes `spec`, and `subIssuesSummary.percentCompleted == 100`.
+- **Close it**: `gh issue close <parent> --repo Virtality-app/virtality-platform --comment "..."` — the comment should name which sub-issues closed it out, not just assert completion.
+
+Used by `.sandcastle/merge-prompt.md`'s post-merge parent check.
+
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets. All of these run against `Virtality-app/virtality-platform` (`GH_REPO` or `--repo`).
