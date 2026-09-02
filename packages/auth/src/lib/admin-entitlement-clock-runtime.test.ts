@@ -254,4 +254,33 @@ describe('createAdminEntitlementClockRuntimeFromPorts', () => {
     })
     expect(rearm.rearmForNewClock).not.toHaveBeenCalled()
   })
+
+  it('reduces a live clock with the Pro price and rearms after Extension', async () => {
+    const previousTrialEnd = new Date('2026-08-20T12:00:00.000Z')
+    const extensionStripe = createExtensionStripe()
+    const rearm = createRearm()
+    const runtime = createRuntime({
+      extensionStore: createExtensionStore({
+        live: liveSub({ trialEnd: previousTrialEnd }),
+      }),
+      extensionStripe,
+      rearm,
+    })
+
+    const result = await runtime.extendEntitlementClock({
+      userId: USER.id,
+      actorUserId: ACTOR_ID,
+      amount: 3,
+      unit: 'days',
+      direction: 'reduce',
+    })
+
+    expect(result.mode).toBe('updated')
+    expect(result.trialEnd).toEqual(new Date('2026-08-17T12:00:00.000Z'))
+    expect(rearm.rearmAfterExtension).toHaveBeenCalledWith({
+      userId: USER.id,
+      previousClockEnd: previousTrialEnd,
+      nextClockEnd: result.trialEnd,
+    })
+  })
 })

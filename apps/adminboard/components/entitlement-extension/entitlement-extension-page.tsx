@@ -15,12 +15,16 @@ import {
   useExtendableSeats,
 } from '@virtality/react-query'
 import {
+  isEntitlementExtensionDirection,
   isEntitlementExtensionDurationUnit,
+  type EntitlementExtensionDirection,
   type EntitlementExtensionDurationUnit,
 } from '@virtality/shared/utils'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import {
+  EXTENSION_DIRECTION_LABELS,
+  EXTENSION_DIRECTIONS,
   EXTENSION_DURATION_UNIT_LABELS,
   EXTENSION_DURATION_UNITS,
   EXTENSION_PAGE_DESCRIPTION,
@@ -37,8 +41,11 @@ export function EntitlementExtensionPage() {
   const [userId, setUserId] = useState('')
   const [amount, setAmount] = useState('7')
   const [unit, setUnit] = useState<EntitlementExtensionDurationUnit>('days')
+  const [direction, setDirection] =
+    useState<EntitlementExtensionDirection>('extend')
 
   const selectedSeat = seats?.find((seat) => seat.userId === userId) ?? null
+  const canReduce = selectedSeat?.extensionMode === 'update'
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -59,6 +66,7 @@ export function EntitlementExtensionPage() {
         userId,
         amount: parsedAmount,
         unit,
+        direction,
       },
       {
         onSuccess: (result) => {
@@ -67,9 +75,11 @@ export function EntitlementExtensionPage() {
               mode: result.mode,
               previousStatus: result.previousStatus,
               trialEnd: result.trialEnd,
+              direction,
             }),
           )
           setUserId('')
+          setDirection('extend')
         },
         onError: (error) => {
           toast.error(
@@ -96,7 +106,13 @@ export function EntitlementExtensionPage() {
           <Label htmlFor='extension-seat'>Seat</Label>
           <Select
             value={userId || undefined}
-            onValueChange={setUserId}
+            onValueChange={(value) => {
+              setUserId(value)
+              const seat = seats?.find((candidate) => candidate.userId === value)
+              if (seat?.extensionMode !== 'update') {
+                setDirection('extend')
+              }
+            }}
             disabled={seatsPending || isPending}
           >
             <SelectTrigger id='extension-seat' className='w-full'>
@@ -123,7 +139,7 @@ export function EntitlementExtensionPage() {
           ) : null}
         </div>
 
-        <div className='grid gap-4 sm:grid-cols-2'>
+        <div className='grid gap-4 sm:grid-cols-3'>
           <div className='grid gap-2'>
             <Label htmlFor='extension-amount'>Duration amount</Label>
             <Input
@@ -159,6 +175,38 @@ export function EntitlementExtensionPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className='grid gap-2'>
+            <Label htmlFor='extension-direction'>Direction</Label>
+            <Select
+              value={direction}
+              onValueChange={(value) => {
+                if (isEntitlementExtensionDirection(value)) {
+                  setDirection(value)
+                }
+              }}
+              disabled={isPending || !canReduce}
+            >
+              <SelectTrigger id='extension-direction' className='w-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EXTENSION_DIRECTIONS.map((candidateDirection) => (
+                  <SelectItem
+                    key={candidateDirection}
+                    value={candidateDirection}
+                    disabled={candidateDirection === 'reduce' && !canReduce}
+                  >
+                    {EXTENSION_DIRECTION_LABELS[candidateDirection]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedSeat && !canReduce ? (
+              <p className='text-muted-foreground text-sm'>
+                Only a live seat can be reduced.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div>
@@ -167,7 +215,13 @@ export function EntitlementExtensionPage() {
             variant='primary'
             disabled={isPending || seatsPending || !userId}
           >
-            {isPending ? 'Extending...' : 'Extend Entitlement Clock'}
+            {isPending
+              ? direction === 'reduce'
+                ? 'Reducing...'
+                : 'Extending...'
+              : direction === 'reduce'
+                ? 'Reduce Entitlement Clock'
+                : 'Extend Entitlement Clock'}
           </Button>
         </div>
       </form>

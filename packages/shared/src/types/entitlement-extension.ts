@@ -10,10 +10,20 @@ export type EntitlementExtensionDurationUnitInput = z.infer<
   typeof entitlementExtensionDurationUnitSchema
 >
 
+export const entitlementExtensionDirectionSchema = z.enum([
+  'extend',
+  'reduce',
+])
+
+export type EntitlementExtensionDirectionInput = z.infer<
+  typeof entitlementExtensionDirectionSchema
+>
+
 export const extendEntitlementClockInputSchema = z.object({
   userId: z.string().trim().min(1),
   amount: z.number().int().positive(),
   unit: entitlementExtensionDurationUnitSchema,
+  direction: entitlementExtensionDirectionSchema.default('extend'),
 })
 
 export type ExtendEntitlementClockInput = z.infer<

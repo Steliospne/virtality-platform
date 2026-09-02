@@ -1,11 +1,13 @@
 import {
+  ENTITLEMENT_EXTENSION_DIRECTIONS,
   ENTITLEMENT_EXTENSION_DURATION_UNITS,
+  type EntitlementExtensionDirection,
   type EntitlementExtensionDurationUnit,
 } from '@virtality/shared/utils'
 import type { ExtendableSeatSubscriptionStatus } from '@virtality/shared/types'
 
 export const EXTENSION_PAGE_DESCRIPTION =
-  'Lengthen a clinician Entitlement Clock. Staff choose the seat and duration only; Stripe verbs and Prices stay server-owned. Live seats add the duration onto the current clock end; expired, canceled, or never-entitled seats get a new no-card Trial Subscription.'
+  'Lengthen or shorten a clinician Entitlement Clock. Staff choose the seat, duration, and direction only; Stripe verbs and Prices stay server-owned. Live seats add or subtract the duration from the current clock end; expired, canceled, or never-entitled seats can only get a new no-card Trial Subscription (Extend only).'
 
 export const EXTENSION_DURATION_UNIT_LABELS: Record<
   EntitlementExtensionDurationUnit,
@@ -17,6 +19,16 @@ export const EXTENSION_DURATION_UNIT_LABELS: Record<
 }
 
 export const EXTENSION_DURATION_UNITS = ENTITLEMENT_EXTENSION_DURATION_UNITS
+
+export const EXTENSION_DIRECTION_LABELS: Record<
+  EntitlementExtensionDirection,
+  string
+> = {
+  extend: 'Extend (add time)',
+  reduce: 'Reduce (remove time)',
+}
+
+export const EXTENSION_DIRECTIONS = ENTITLEMENT_EXTENSION_DIRECTIONS
 
 export const EXTENSION_SEAT_STATUS_LABELS: Record<
   ExtendableSeatSubscriptionStatus,
@@ -60,10 +72,12 @@ export function formatExtensionSuccessMessage(input: {
   mode: 'updated' | 'created'
   previousStatus: string
   trialEnd: Date
+  direction?: EntitlementExtensionDirection
 }): string {
   const end = formatExtensionClockEnd(input.trialEnd)
   if (input.mode === 'created') {
     return `Created a new Trial Subscription through ${end}. Remaining Time and VR launch restore after Stripe webhook sync.`
   }
-  return `Extended ${input.previousStatus} seat through ${end}. Remaining Time updates after Stripe webhook sync.`
+  const verb = input.direction === 'reduce' ? 'Reduced' : 'Extended'
+  return `${verb} ${input.previousStatus} seat through ${end}. Remaining Time updates after Stripe webhook sync.`
 }

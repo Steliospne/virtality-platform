@@ -70,7 +70,19 @@ describe('computeExtensionTrialEnd', () => {
     )
   })
 
-  it('rejects non-positive amounts and unknown units', () => {
+  it('subtracts days, weeks, and calendar months when direction is reduce', () => {
+    expect(computeExtensionTrialEnd(NOW, 3, 'days', 'reduce')).toEqual(
+      new Date('2026-08-07T12:00:00.000Z'),
+    )
+    expect(computeExtensionTrialEnd(NOW, 2, 'weeks', 'reduce')).toEqual(
+      new Date('2026-07-27T12:00:00.000Z'),
+    )
+    expect(computeExtensionTrialEnd(NOW, 1, 'months', 'reduce')).toEqual(
+      new Date('2026-07-10T12:00:00.000Z'),
+    )
+  })
+
+  it('rejects non-positive amounts, unknown units, and unknown directions', () => {
     expect(() => computeExtensionTrialEnd(NOW, 0, 'days')).toThrow(
       EntitlementExtensionValidationError,
     )
@@ -80,6 +92,9 @@ describe('computeExtensionTrialEnd', () => {
     expect(() => computeExtensionTrialEnd(NOW, 1, 'years' as 'days')).toThrow(
       EntitlementExtensionValidationError,
     )
+    expect(() =>
+      computeExtensionTrialEnd(NOW, 1, 'days', 'shorten' as 'reduce'),
+    ).toThrow(EntitlementExtensionValidationError)
   })
 })
 
@@ -161,8 +176,81 @@ describe('extendLiveEntitlementClock', () => {
         extensionActorUserId: 'admin_9',
         extensionDurationAmount: '7',
         extensionDurationUnit: 'days',
+        extensionDirection: 'extend',
       },
     })
+  })
+
+  it('subtracts duration from the current clock end when direction is reduce', async () => {
+    const store = createStore({
+      live: liveSub({ status: 'trialing' }),
+      customers: { user_1: 'cus_1' },
+    })
+    const updateTrialEnd = vi.fn(
+      async (input: {
+        stripeSubscriptionId: string
+        trialEndUnix: number
+        metadata: Record<string, string>
+      }) => ({ trialEndUnix: input.trialEndUnix }),
+    )
+    const stripe = createGateway({ updateTrialEnd })
+
+    const result = await extendLiveEntitlementClock(
+      store,
+      stripe,
+      {
+        userId: 'user_1',
+        amount: 7,
+        unit: 'days',
+        direction: 'reduce',
+        actorUserId: 'admin_9',
+      },
+      { now: () => NOW },
+    )
+
+    // Clock was Aug 20; -7 days → Aug 13 (not now-7 = Aug 3).
+    const expectedEnd = new Date('2026-08-13T12:00:00.000Z')
+    expect(result).toEqual({
+      mode: 'updated',
+      stripeSubscriptionId: 'sub_stripe_1',
+      previousStatus: 'trialing',
+      trialEnd: expectedEnd,
+    })
+    expect(updateTrialEnd).toHaveBeenCalledWith({
+      stripeSubscriptionId: 'sub_stripe_1',
+      trialEndUnix: Math.floor(expectedEnd.getTime() / 1000),
+      metadata: {
+        extensionActorUserId: 'admin_9',
+        extensionDurationAmount: '7',
+        extensionDurationUnit: 'days',
+        extensionDirection: 'reduce',
+      },
+    })
+  })
+
+  it('rejects a reduction that would end the clock in the past', async () => {
+    const store = createStore({
+      live: liveSub({ trialEnd: new Date('2026-08-12T12:00:00.000Z') }),
+      customers: { user_1: 'cus_1' },
+    })
+    const updateTrialEnd = vi.fn()
+    const stripe = createGateway({ updateTrialEnd })
+
+    await expect(
+      extendLiveEntitlementClock(
+        store,
+        stripe,
+        {
+          userId: 'user_1',
+          amount: 7,
+          unit: 'days',
+          direction: 'reduce',
+          actorUserId: 'admin_9',
+        },
+        { now: () => NOW },
+      ),
+    ).rejects.toBeInstanceOf(EntitlementExtensionValidationError)
+    expect(updateTrialEnd).not.toHaveBeenCalled()
   })
 
   it('re-enters trialing for an active seat from periodEnd plus duration', async () => {
@@ -272,6 +360,7 @@ describe('extendEntitlementClock create path', () => {
             extensionActorUserId: 'admin_9',
             extensionDurationAmount: '7',
             extensionDurationUnit: 'days',
+            extensionDirection: 'extend',
           },
         })
         return { stripeSubscriptionId: 'sub_created_1' }
@@ -425,6 +514,32 @@ describe('extendEntitlementClock create path', () => {
         { now: () => NOW },
       ),
     ).rejects.toThrow('card network down')
+  })
+
+  it('rejects reduce when the seat has no live Entitlement Clock to shorten', async () => {
+    const store = createStore({
+      live: null,
+      customers: { user_never: 'cus_never' },
+    })
+    const createNoCardTrialSubscription = vi.fn()
+    const stripe = createGateway({ createNoCardTrialSubscription })
+
+    await expect(
+      extendEntitlementClock(
+        store,
+        stripe,
+        {
+          userId: 'user_never',
+          amount: 7,
+          unit: 'days',
+          direction: 'reduce',
+          actorUserId: 'admin_9',
+          priceId: PRICE_ID,
+        },
+        { now: () => NOW },
+      ),
+    ).rejects.toBeInstanceOf(EntitlementExtensionValidationError)
+    expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
   })
 
   it('still updates live seats via the unified entry without creating', async () => {

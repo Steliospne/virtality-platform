@@ -131,8 +131,8 @@ Staff mutations that assign permanent Free, grant a timed trial, or apply an Ext
 _Avoid_: per-verb Access/Extension Action, merging Access and Extension into one store as a prerequisite, folding Renew Prompt evaluate into this runtime
 
 **Extension**:
-A staff-applied lengthening of the **Entitlement Clock** by days, weeks, or months. For a live seat, the chosen duration is added onto the current clock end (not measured from "now", which would overwrite Remaining Time). Expired, canceled, or never-entitled seats get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration.
-_Avoid_: renewal, top-up, trial extension (as a separate entity name), replace clock with now+N
+A staff-applied lengthening or shortening of the **Entitlement Clock** by days, weeks, or months, chosen via a staff-picked direction (Extend/Reduce; Extend is the default). For a live seat, the chosen duration is added onto (Extend) or subtracted from (Reduce) the current clock end (not measured from "now", which would overwrite Remaining Time). A Reduce that would put the clock end at or before now is rejected — reduce by less, or cancel the seat instead. Expired, canceled, or never-entitled seats have no clock to shorten, so Reduce is unavailable for them; they only get a new no-card **Trial Subscription** whose clock starts from now plus the chosen duration (Extend only).
+_Avoid_: renewal, top-up, trial extension (as a separate entity name), replace clock with now+N, reduce on a non-live seat
 
 **Renew Email Trigger**:
 An Adminboard-configured row `{ daysBefore, active }` that schedules a renew **System Email** offset before **Entitlement Clock** end. Independent from the in-app list. Empty or all-inactive rows silence email (no separate master switch). Copy stays code-owned.

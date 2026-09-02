@@ -7,6 +7,11 @@ export const ENTITLEMENT_EXTENSION_DURATION_UNITS = [
 export type EntitlementExtensionDurationUnit =
   (typeof ENTITLEMENT_EXTENSION_DURATION_UNITS)[number]
 
+export const ENTITLEMENT_EXTENSION_DIRECTIONS = ['extend', 'reduce'] as const
+
+export type EntitlementExtensionDirection =
+  (typeof ENTITLEMENT_EXTENSION_DIRECTIONS)[number]
+
 export const LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES = [
   'trialing',
   'active',
@@ -40,6 +45,7 @@ export type EntitlementExtensionStripeMetadata = {
   extensionActorUserId: string
   extensionDurationAmount: string
   extensionDurationUnit: EntitlementExtensionDurationUnit
+  extensionDirection: EntitlementExtensionDirection
 }
 
 export type EntitlementExtensionStripeGateway = {
@@ -72,6 +78,8 @@ export type ExtendLiveEntitlementClockInput = {
   amount: number
   unit: EntitlementExtensionDurationUnit
   actorUserId: string
+  /** Lengthen or shorten the clock by `amount` `unit`s. Defaults to `extend`. */
+  direction?: EntitlementExtensionDirection
 }
 
 export type ExtendEntitlementClockInput = ExtendLiveEntitlementClockInput & {
@@ -131,6 +139,14 @@ export function isEntitlementExtensionDurationUnit(
   )
 }
 
+export function isEntitlementExtensionDirection(
+  value: string,
+): value is EntitlementExtensionDirection {
+  return (ENTITLEMENT_EXTENSION_DIRECTIONS as readonly string[]).includes(
+    value,
+  )
+}
+
 export function isLiveEntitlementSubscriptionStatus(
   status: string,
 ): status is LiveEntitlementSubscriptionStatus {
@@ -142,12 +158,15 @@ export function isLiveEntitlementSubscriptionStatus(
 /**
  * Staff duration → absolute trial end, measured from `from`.
  * Live updates pass the current clock end (or now if that end is missing /
- * already past). Create paths pass now.
+ * already past). Create paths pass now. `direction` flips the offset so
+ * staff can shorten (`reduce`) as well as lengthen (`extend`, the default)
+ * the clock.
  */
 export function computeExtensionTrialEnd(
   from: Date,
   amount: number,
   unit: EntitlementExtensionDurationUnit,
+  direction: EntitlementExtensionDirection = 'extend',
 ): Date {
   if (!Number.isInteger(amount) || amount < 1) {
     throw new EntitlementExtensionValidationError(
@@ -159,17 +178,23 @@ export function computeExtensionTrialEnd(
       'Extension unit must be days, weeks, or months.',
     )
   }
+  if (!isEntitlementExtensionDirection(direction)) {
+    throw new EntitlementExtensionValidationError(
+      'Extension direction must be extend or reduce.',
+    )
+  }
 
+  const signedAmount = direction === 'reduce' ? -amount : amount
   const end = new Date(from.getTime())
   switch (unit) {
     case 'days':
-      end.setUTCDate(end.getUTCDate() + amount)
+      end.setUTCDate(end.getUTCDate() + signedAmount)
       break
     case 'weeks':
-      end.setUTCDate(end.getUTCDate() + amount * 7)
+      end.setUTCDate(end.getUTCDate() + signedAmount * 7)
       break
     case 'months':
-      end.setUTCMonth(end.getUTCMonth() + amount)
+      end.setUTCMonth(end.getUTCMonth() + signedAmount)
       break
   }
   return end
@@ -201,13 +226,14 @@ export function extensionBaseFromLiveClock(
 function extensionMetadata(
   input: Pick<
     ExtendLiveEntitlementClockInput,
-    'actorUserId' | 'amount' | 'unit'
+    'actorUserId' | 'amount' | 'unit' | 'direction'
   >,
 ): EntitlementExtensionStripeMetadata {
   return {
     extensionActorUserId: input.actorUserId,
     extensionDurationAmount: String(input.amount),
     extensionDurationUnit: input.unit,
+    extensionDirection: input.direction ?? 'extend',
   }
 }
 
@@ -242,11 +268,18 @@ async function updateLiveSubscriptionTrialEnd(
   runtime: { now?: () => Date },
 ): Promise<ExtendEntitlementClockResult> {
   const now = runtime.now?.() ?? new Date()
+  const direction = input.direction ?? 'extend'
   const trialEnd = computeExtensionTrialEnd(
     extensionBaseFromLiveClock(now, subscription),
     input.amount,
     input.unit,
+    direction,
   )
+  if (direction === 'reduce' && trialEnd.getTime() <= now.getTime()) {
+    throw new EntitlementExtensionValidationError(
+      'Reducing by this amount would end the Entitlement Clock in the past. Reduce by less, or cancel the seat instead.',
+    )
+  }
   const trialEndUnix = Math.floor(trialEnd.getTime() / 1000)
   await stripe.updateTrialEnd({
     stripeSubscriptionId: subscription.stripeSubscriptionId,
@@ -295,6 +328,11 @@ export async function createTrialSubscriptionForExtension(
   assertExtensionActors(input)
   if (!input.priceId.trim()) {
     throw new EntitlementExtensionValidationError('priceId is required.')
+  }
+  if ((input.direction ?? 'extend') === 'reduce') {
+    throw new EntitlementExtensionValidationError(
+      'Cannot reduce a seat with no live Entitlement Clock; there is nothing to shorten.',
+    )
   }
 
   const trialEnd = computeExtensionTrialEnd(

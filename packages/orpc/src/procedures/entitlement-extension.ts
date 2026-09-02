@@ -133,6 +133,7 @@ const extend = authed
         userId: input.userId,
         amount: input.amount,
         unit: input.unit,
+        direction: input.direction,
         actorUserId: context.user.id,
       })
     } catch (error) {

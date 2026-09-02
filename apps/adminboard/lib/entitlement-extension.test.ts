@@ -38,5 +38,13 @@ describe('formatExtensionSuccessMessage', () => {
         trialEnd,
       }),
     ).toMatch(/Extended trialing seat/)
+    expect(
+      formatExtensionSuccessMessage({
+        mode: 'updated',
+        previousStatus: 'trialing',
+        trialEnd,
+        direction: 'reduce',
+      }),
+    ).toMatch(/Reduced trialing seat/)
   })
 })
