@@ -105,11 +105,49 @@ export type ReconcileStripeSubscriptionsInput = {
   createId: () => string
 }
 
+export type ReconciliationDriftEntry =
+  | {
+      kind: 'created'
+      stripeSubscriptionId: string
+      subscriptionId: string
+      userId: string
+    }
+  | {
+      kind: 'unresolvable_user'
+      stripeSubscriptionId: string
+    }
+  | {
+      kind: 'orphaned'
+      subscriptionId: string
+      stripeSubscriptionId: string
+      userId: string
+    }
+
+export type StripeSubscriptionReconciliationStage =
+  | 'list_subscriptions'
+  | 'process_subscription'
+  | 'scan_orphans'
+
+export class StripeSubscriptionReconciliationError extends Error {
+  readonly stage: StripeSubscriptionReconciliationStage
+
+  constructor(
+    stage: StripeSubscriptionReconciliationStage,
+    message: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options)
+    this.name = 'StripeSubscriptionReconciliationError'
+    this.stage = stage
+  }
+}
+
 export type ReconcileStripeSubscriptionsResult = {
   matched: number
   created: number
   skipped: number
   orphaned: number
+  drift: ReconciliationDriftEntry[]
 }
 
 type ResolvedPlanItem = {
@@ -122,7 +160,10 @@ type ReconciliationSkipReason =
   | 'organization_owned'
   | 'unresolvable_user'
 
-type StripeSubscriptionOutcome = 'matched' | 'created' | 'skipped'
+type StripeSubscriptionOutcome =
+  | { kind: 'matched' }
+  | { kind: 'created'; drift: ReconciliationDriftEntry }
+  | { kind: 'skipped'; drift?: ReconciliationDriftEntry }
 
 function unixToDate(value: number | null | undefined): Date | null {
   return value == null ? null : new Date(value * 1000)
@@ -294,7 +335,7 @@ async function processStripeSubscription(
   const resolved = resolvePlanItem(plans, stripeSubscription.items.data)
   if (!resolved) {
     logSkipped(logger, stripeSubscription.id, 'plan_unresolved')
-    return 'skipped'
+    return { kind: 'skipped' }
   }
 
   const ownership = await resolveUserOwnedReferenceId(
@@ -304,7 +345,16 @@ async function processStripeSubscription(
   )
   if (!ownership.ok) {
     logSkipped(logger, stripeSubscription.id, ownership.reason)
-    return 'skipped'
+    if (ownership.reason === 'unresolvable_user') {
+      return {
+        kind: 'skipped',
+        drift: {
+          kind: 'unresolvable_user',
+          stripeSubscriptionId: stripeSubscription.id,
+        },
+      }
+    }
+    return { kind: 'skipped' }
   }
 
   const derived = buildStripeDerivedFields(stripeSubscription, resolved)
@@ -317,12 +367,12 @@ async function processStripeSubscription(
       subscriptionId: existing.id,
       userId: ownership.userId,
     })
-    return 'matched'
+    return { kind: 'matched' }
   }
 
   if (!resolved.plan) {
     logSkipped(logger, stripeSubscription.id, 'plan_unresolved')
-    return 'skipped'
+    return { kind: 'skipped' }
   }
 
   const plan = resolved.plan.name.toLowerCase()
@@ -332,28 +382,61 @@ async function processStripeSubscription(
   await store.createSubscription(
     toSubscriptionRow(subscriptionId, ownership.userId, plan, derived),
   )
-  logger.info('billing.subscription.reconcile.created', {
+  const drift: ReconciliationDriftEntry = {
+    kind: 'created',
     stripeSubscriptionId: stripeSubscription.id,
     subscriptionId,
     userId: ownership.userId,
+  }
+  logger.info('billing.subscription.reconcile.created', {
+    stripeSubscriptionId: drift.stripeSubscriptionId,
+    subscriptionId: drift.subscriptionId,
+    userId: drift.userId,
   })
-  return 'created'
+  return { kind: 'created', drift }
 }
 
-async function countOrphanedSubscriptions(
+function applySubscriptionOutcome(
+  outcome: StripeSubscriptionOutcome,
+  counts: { matched: number; created: number; skipped: number },
+  drift: ReconciliationDriftEntry[],
+): void {
+  switch (outcome.kind) {
+    case 'matched':
+      counts.matched += 1
+      break
+    case 'created':
+      counts.created += 1
+      drift.push(outcome.drift)
+      break
+    case 'skipped':
+      counts.skipped += 1
+      if (outcome.drift) {
+        drift.push(outcome.drift)
+      }
+      break
+  }
+}
+
+async function findOrphanedSubscriptionDrift(
   stripeIds: Set<string>,
   store: ReconciliationStore,
   logger: ReconciliationLogger,
-): Promise<number> {
+): Promise<ReconciliationDriftEntry[]> {
   const localRows = await store.listWithStripeSubscriptionId()
-  let orphaned = 0
+  const drift: ReconciliationDriftEntry[] = []
 
   for (const row of localRows) {
     if (!row.stripeSubscriptionId) continue
     if (stripeIds.has(row.stripeSubscriptionId)) continue
     if (!(await store.userExists(row.referenceId))) continue
 
-    orphaned += 1
+    drift.push({
+      kind: 'orphaned',
+      subscriptionId: row.id,
+      stripeSubscriptionId: row.stripeSubscriptionId,
+      userId: row.referenceId,
+    })
     logger.warn('billing.subscription.reconcile.orphaned', {
       subscriptionId: row.id,
       stripeSubscriptionId: row.stripeSubscriptionId,
@@ -361,7 +444,7 @@ async function countOrphanedSubscriptions(
     })
   }
 
-  return orphaned
+  return drift
 }
 
 export async function reconcileStripeSubscriptions(
@@ -369,11 +452,14 @@ export async function reconcileStripeSubscriptions(
 ): Promise<ReconcileStripeSubscriptionsResult> {
   const { gateway, store, plans, logger, createId } = input
   const counts = { matched: 0, created: 0, skipped: 0, orphaned: 0 }
+  const drift: ReconciliationDriftEntry[] = []
+  let stage: StripeSubscriptionReconciliationStage = 'list_subscriptions'
 
   try {
     const stripeSubscriptions = await gateway.listAllSubscriptions()
     const stripeIds = new Set(stripeSubscriptions.map((sub) => sub.id))
 
+    stage = 'process_subscription'
     for (const stripeSubscription of stripeSubscriptions) {
       const outcome = await processStripeSubscription(stripeSubscription, {
         gateway,
@@ -382,13 +468,21 @@ export async function reconcileStripeSubscriptions(
         logger,
         createId,
       })
-      counts[outcome] += 1
+      applySubscriptionOutcome(outcome, counts, drift)
     }
 
-    counts.orphaned = await countOrphanedSubscriptions(stripeIds, store, logger)
+    stage = 'scan_orphans'
+    const orphanedDrift = await findOrphanedSubscriptionDrift(
+      stripeIds,
+      store,
+      logger,
+    )
+    counts.orphaned = orphanedDrift.length
+    drift.push(...orphanedDrift)
 
+    const result = { ...counts, drift }
     logger.info('billing.subscription.reconcile.completed', counts)
-    return counts
+    return result
   } catch (error) {
     const normalized =
       error instanceof Error
@@ -396,10 +490,12 @@ export async function reconcileStripeSubscriptions(
             errorName: error.name,
             errorMessage: error.message,
             errorStack: error.stack,
+            stage,
           }
         : {
             errorName: 'UnknownError',
             errorMessage: String(error),
+            stage,
           }
 
     logger.error(
@@ -407,6 +503,18 @@ export async function reconcileStripeSubscriptions(
       normalized,
       'Stripe subscription reconciliation failed',
     )
-    throw error
+
+    if (error instanceof StripeSubscriptionReconciliationError) {
+      throw error
+    }
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Stripe subscription reconciliation failed'
+
+    throw new StripeSubscriptionReconciliationError(stage, message, {
+      cause: error,
+    })
   }
 }

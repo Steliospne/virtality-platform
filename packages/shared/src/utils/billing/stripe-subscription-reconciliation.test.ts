@@ -9,6 +9,7 @@ import {
 } from './pro-variant-catalog.ts'
 import {
   reconcileStripeSubscriptions,
+  StripeSubscriptionReconciliationError,
   type ReconciliationLogger,
   type ReconciliationStore,
   type ReconciliationStripeGateway,
@@ -155,6 +156,7 @@ describe('reconcileStripeSubscriptions', () => {
       created: 0,
       skipped: 0,
       orphaned: 0,
+      drift: [],
     })
     expect(store.updateStripeDerivedFields).toHaveBeenCalledWith(
       'local_sub_1',
@@ -194,6 +196,14 @@ describe('reconcileStripeSubscriptions', () => {
       created: 1,
       skipped: 0,
       orphaned: 0,
+      drift: [
+        {
+          kind: 'created',
+          stripeSubscriptionId: STRIPE_SUB_ID,
+          subscriptionId: 'created_sub_1',
+          userId: USER_ID,
+        },
+      ],
     })
     expect(store.createSubscription).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -239,6 +249,12 @@ describe('reconcileStripeSubscriptions', () => {
       created: 0,
       skipped: 1,
       orphaned: 0,
+      drift: [
+        {
+          kind: 'unresolvable_user',
+          stripeSubscriptionId: STRIPE_SUB_ID,
+        },
+      ],
     })
     expect(store.createSubscription).not.toHaveBeenCalled()
     expect(logger.warn).toHaveBeenCalledWith(
@@ -303,6 +319,14 @@ describe('reconcileStripeSubscriptions', () => {
       created: 0,
       skipped: 0,
       orphaned: 1,
+      drift: [
+        {
+          kind: 'orphaned',
+          subscriptionId: 'orphan_sub',
+          stripeSubscriptionId: 'sub_missing_in_stripe',
+          userId: USER_ID,
+        },
+      ],
     })
     expect(store.updateStripeDerivedFields).not.toHaveBeenCalled()
     expect(logger.warn).toHaveBeenCalledWith(
@@ -333,11 +357,14 @@ describe('reconcileStripeSubscriptions', () => {
         logger,
         createId: () => 'created_sub_1',
       }),
-    ).rejects.toThrow('stripe unavailable')
+    ).rejects.toBeInstanceOf(StripeSubscriptionReconciliationError)
 
     expect(logger.error).toHaveBeenCalledWith(
       'billing.subscription.reconcile.failed',
-      expect.objectContaining({ errorMessage: 'stripe unavailable' }),
+      expect.objectContaining({
+        errorMessage: 'stripe unavailable',
+        stage: 'list_subscriptions',
+      }),
       'Stripe subscription reconciliation failed',
     )
   })

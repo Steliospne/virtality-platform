@@ -3,13 +3,19 @@ import { readProVariantCatalogOrSandbox, stripeClient } from '@virtality/auth'
 import {
   buildBetterAuthStripePlansFromProVariantCatalog,
   reconcileStripeSubscriptions,
-  type ReconciliationLogger,
   type ReconciliationStore,
   type ReconciliationStripeGateway,
   type ReconciliationStripeSubscription,
+  type ReconciliationLogger,
 } from '@virtality/shared/utils'
+import type { AppLogger } from '@virtality/shared/observability'
 import type Stripe from 'stripe'
 import { randomUUID } from 'node:crypto'
+import {
+  alertStripeSubscriptionReconciliationDrift,
+  alertStripeSubscriptionReconciliationFailure,
+  createStripeSubscriptionReconciliationAlertDeps,
+} from './stripe-subscription-reconciliation-alerts.ts'
 
 function mapStripeSubscription(
   subscription: Stripe.Subscription,
@@ -99,9 +105,7 @@ export function createPrismaSubscriptionReconciliationStore(): ReconciliationSto
   }
 }
 
-export async function runStripeSubscriptionReconciliation(
-  logger: ReconciliationLogger,
-) {
+export async function runStripeSubscriptionReconciliation(logger: AppLogger) {
   if (!stripeClient) {
     logger.warn('billing.subscription.reconcile.skipped', {
       reason: 'stripe_not_configured',
@@ -109,14 +113,24 @@ export async function runStripeSubscriptionReconciliation(
     return null
   }
 
-  const catalog = await readProVariantCatalogOrSandbox(stripeClient)
-  const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
+  const alertDeps = createStripeSubscriptionReconciliationAlertDeps(logger)
 
-  return reconcileStripeSubscriptions({
-    gateway: createStripeSubscriptionReconciliationGateway(stripeClient),
-    store: createPrismaSubscriptionReconciliationStore(),
-    plans,
-    logger,
-    createId: () => randomUUID(),
-  })
+  try {
+    const catalog = await readProVariantCatalogOrSandbox(stripeClient)
+    const plans = buildBetterAuthStripePlansFromProVariantCatalog(catalog)
+
+    const result = await reconcileStripeSubscriptions({
+      gateway: createStripeSubscriptionReconciliationGateway(stripeClient),
+      store: createPrismaSubscriptionReconciliationStore(),
+      plans,
+      logger: logger as ReconciliationLogger,
+      createId: () => randomUUID(),
+    })
+
+    await alertStripeSubscriptionReconciliationDrift(result, alertDeps)
+    return result
+  } catch (error) {
+    await alertStripeSubscriptionReconciliationFailure({ error }, alertDeps)
+    throw error
+  }
 }
