@@ -224,4 +224,13 @@ describe('formatAuditActionLabel', () => {
       'Assign Pro variant',
     )
   })
+
+  it('labels trial grant audit actions', () => {
+    expect(formatAuditActionLabel('issue_trial_grant')).toBe(
+      'Issue trial grant',
+    )
+    expect(formatAuditActionLabel('revoke_trial_grant')).toBe(
+      'Revoke trial grant',
+    )
+  })
 })

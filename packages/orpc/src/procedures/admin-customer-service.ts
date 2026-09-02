@@ -9,16 +9,20 @@ import {
   effectiveAssignedProVariant,
   findLivePaidProSubscription,
   hasPendingCyclePlanChange,
+  mapAdminCustomerTrialGrantSummary,
   pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
   sortCustomerSubscriptionHistory,
+  TRIAL_GRANT_OPEN_STATUSES,
   mapAdminCustomerAuditHistoryItem,
   type AdminCustomerAuditHistoryItem,
   type AdminCustomerBillingSnapshot,
   type AdminCustomerListItem,
   type AdminCustomerProfile,
   type AdminCustomerSubscriptionHistoryItem,
+  type AdminCustomerTrialGrantSummary,
   type StripeDashboardMode,
+  type TrialGrantClock,
 } from '@virtality/shared/utils'
 
 type CustomerUserRow = {
@@ -189,6 +193,60 @@ export async function listAdminCustomers(
   )
 }
 
+const ADMIN_CUSTOMER_TRIAL_GRANT_SELECT = {
+  id: true,
+  userId: true,
+  code: true,
+  status: true,
+  trialStart: true,
+  trialEnd: true,
+  createdAt: true,
+} as const
+
+async function loadAdminCustomerTrialGrantContext(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date,
+): Promise<{
+  openTrialGrantClock: TrialGrantClock | null
+  trialGrant: AdminCustomerTrialGrantSummary | null
+}> {
+  const openGrant = await prisma.trialGrant.findFirst({
+    where: {
+      userId,
+      status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
+  })
+
+  const displayGrant =
+    openGrant ??
+    (await prisma.trialGrant.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
+    }))
+
+  if (!displayGrant) {
+    return { openTrialGrantClock: null, trialGrant: null }
+  }
+
+  return {
+    openTrialGrantClock: openGrant
+      ? {
+          status: openGrant.status as TrialGrantClock['status'],
+          trialStart: openGrant.trialStart,
+          trialEnd: openGrant.trialEnd,
+        }
+      : null,
+    trialGrant: mapAdminCustomerTrialGrantSummary({
+      now,
+      grant: displayGrant,
+    }),
+  }
+}
+
 export async function getAdminCustomerProfile(
   prisma: PrismaClient,
   input: {
@@ -223,10 +281,13 @@ export async function getAdminCustomerProfile(
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
   const livePaidPro = findLivePaidProSubscription(subscriptionHistory)
+  const { openTrialGrantClock, trialGrant } =
+    await loadAdminCustomerTrialGrantContext(prisma, user.id, now)
   const standing = buildEntitlementStanding({
     now,
     role: user.role,
     subscriptions: subscriptionHistory,
+    trialGrant: openTrialGrantClock,
   })
 
   const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)
@@ -264,6 +325,7 @@ export async function getAdminCustomerProfile(
     }),
     subscriptionHistory,
     auditHistory,
+    trialGrant,
   }
 }
 

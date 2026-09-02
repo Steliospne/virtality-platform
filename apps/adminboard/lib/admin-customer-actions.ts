@@ -2,8 +2,10 @@ import {
   findLivePaidProSubscription,
   formatAdminCustomerAccessActionLabel,
   formatAdminCustomerBillingActionLabel,
+  formatAdminCustomerTrialGrantActionLabel,
   isAdminCustomerAccessAction,
   isAdminCustomerBillingAction,
+  isAdminCustomerTrialGrantAction,
   qualifiesForAssignFreeAfterCancellation,
   type AdminCustomerBillingSnapshotState,
   type AdminCustomerProfile,
@@ -45,6 +47,9 @@ export function formatAuditActionLabel(action: string): string {
   if (action === 'assign_pro_variant') return 'Assign Pro variant'
   if (isAdminCustomerAccessAction(action)) {
     return formatAdminCustomerAccessActionLabel(action)
+  }
+  if (isAdminCustomerTrialGrantAction(action)) {
+    return formatAdminCustomerTrialGrantActionLabel(action)
   }
   if (isAdminCustomerBillingAction(action)) {
     return formatAdminCustomerBillingActionLabel(action)

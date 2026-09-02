@@ -4,6 +4,7 @@ import {
   isProSubscriptionPlan,
 } from '../billing/billing-plans.ts'
 import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
+import type { AdminCustomerTrialGrantSummary } from '../billing/trial-grant.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 
 export type CustomerSubscriptionSummary = {
@@ -286,4 +287,6 @@ export type AdminCustomerProfile = {
   }
   subscriptionHistory: AdminCustomerSubscriptionHistoryItem[]
   auditHistory: AdminCustomerAuditHistoryItem[]
+  /** Latest trial grant for display; open grants drive lifecycle actions. */
+  trialGrant: AdminCustomerTrialGrantSummary | null
 }

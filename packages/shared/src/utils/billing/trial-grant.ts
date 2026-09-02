@@ -28,6 +28,12 @@ export const TRIAL_GRANT_OPEN_STATUSES = ['pending', 'active'] as const
 
 export type TrialGrantOpenStatus = (typeof TRIAL_GRANT_OPEN_STATUSES)[number]
 
+export function isTrialGrantOpenStatus(
+  value: string,
+): value is TrialGrantOpenStatus {
+  return (TRIAL_GRANT_OPEN_STATUSES as readonly string[]).includes(value)
+}
+
 export type TrialGrantClock = {
   status: TrialGrantStatus
   trialStart: Date | null
@@ -584,4 +590,76 @@ export async function convertActiveTrialGrantOnPaidSubscription(
     converted: true,
     trialGrantId: converted.id,
   }
+}
+
+export const ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS = [
+  'issue_trial_grant',
+  'start_trial_grant',
+  'adjust_trial_grant',
+  'revoke_trial_grant',
+] as const
+
+export type AdminCustomerTrialGrantAction =
+  (typeof ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS)[number]
+
+export const TRIAL_GRANT_STATUS_LABELS: Record<TrialGrantStatus, string> = {
+  pending: 'Pending onboarding',
+  active: 'Active',
+  converted: 'Converted to paid',
+  revoked: 'Revoked',
+}
+
+export type AdminCustomerTrialGrantSummary = {
+  id: string
+  code: string
+  status: TrialGrantStatus
+  trialStart: Date | null
+  trialEnd: Date | null
+  createdAt: Date
+  remainingMs: number
+  entitled: boolean
+}
+
+export function mapAdminCustomerTrialGrantSummary(input: {
+  now: Date
+  grant: TrialGrantRecord & { createdAt: Date }
+}): AdminCustomerTrialGrantSummary {
+  const standing = resolveTrialGrantClock({
+    now: input.now,
+    trialGrant: input.grant,
+  })
+
+  return {
+    id: input.grant.id,
+    code: input.grant.code,
+    status: input.grant.status,
+    trialStart: input.grant.trialStart,
+    trialEnd: input.grant.trialEnd,
+    createdAt: input.grant.createdAt,
+    remainingMs: standing.remainingMs,
+    entitled: standing.entitled,
+  }
+}
+
+export function formatAdminCustomerTrialGrantActionLabel(
+  action: AdminCustomerTrialGrantAction,
+): string {
+  switch (action) {
+    case 'issue_trial_grant':
+      return 'Issue trial grant'
+    case 'start_trial_grant':
+      return 'Start trial grant'
+    case 'adjust_trial_grant':
+      return 'Adjust trial grant'
+    case 'revoke_trial_grant':
+      return 'Revoke trial grant'
+  }
+}
+
+export function isAdminCustomerTrialGrantAction(
+  value: string,
+): value is AdminCustomerTrialGrantAction {
+  return (ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS as readonly string[]).includes(
+    value,
+  )
 }
