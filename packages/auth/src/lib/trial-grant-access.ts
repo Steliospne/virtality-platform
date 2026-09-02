@@ -28,6 +28,22 @@ const trialGrantRecordSelect = {
   trialEnd: true,
 } as const
 
+async function findLatestTrialGrantId(
+  client: PrismaClient,
+  userId: string,
+  statuses: readonly (typeof TRIAL_GRANT_OPEN_STATUSES)[number][],
+): Promise<string | null> {
+  const row = await client.trialGrant.findFirst({
+    where: {
+      userId,
+      status: { in: [...statuses] },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  })
+  return row?.id ?? null
+}
+
 export function createPrismaTrialGrantStore(
   client: PrismaClient = prisma,
 ): TrialGrantStore {
@@ -69,21 +85,16 @@ export function createPrismaTrialGrantStore(
       })
     },
     startTrialGrant: async (input) => {
-      const pending = await client.trialGrant.findFirst({
-        where: {
-          userId: input.userId,
-          status: 'pending',
-        },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true },
-      })
-      if (!pending) {
+      const pendingId = await findLatestTrialGrantId(client, input.userId, [
+        'pending',
+      ])
+      if (!pendingId) {
         throw new Error(`No pending TrialGrant for user "${input.userId}".`)
       }
 
       const now = new Date()
       return client.trialGrant.update({
-        where: { id: pending.id },
+        where: { id: pendingId },
         data: {
           status: 'active',
           trialStart: input.trialStart,
@@ -94,21 +105,16 @@ export function createPrismaTrialGrantStore(
       })
     },
     adjustTrialGrant: async (input) => {
-      const active = await client.trialGrant.findFirst({
-        where: {
-          userId: input.userId,
-          status: 'active',
-        },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true },
-      })
-      if (!active) {
+      const activeId = await findLatestTrialGrantId(client, input.userId, [
+        'active',
+      ])
+      if (!activeId) {
         throw new Error(`No active TrialGrant for user "${input.userId}".`)
       }
 
       const now = new Date()
       return client.trialGrant.update({
-        where: { id: active.id },
+        where: { id: activeId },
         data: {
           trialEnd: input.trialEnd,
           updatedAt: now,
@@ -117,15 +123,12 @@ export function createPrismaTrialGrantStore(
       })
     },
     revokeTrialGrant: async (input) => {
-      const open = await client.trialGrant.findFirst({
-        where: {
-          userId: input.userId,
-          status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
-        },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true },
-      })
-      if (!open) {
+      const openId = await findLatestTrialGrantId(
+        client,
+        input.userId,
+        TRIAL_GRANT_OPEN_STATUSES,
+      )
+      if (!openId) {
         throw new Error(
           `No pending or active TrialGrant for user "${input.userId}".`,
         )
@@ -133,7 +136,7 @@ export function createPrismaTrialGrantStore(
 
       const now = new Date()
       return client.trialGrant.update({
-        where: { id: open.id },
+        where: { id: openId },
         data: {
           status: 'revoked',
           updatedAt: now,
@@ -256,17 +259,13 @@ export function createTrialGrantRuntime(deps: {
       return result
     },
     async adjustTrial(input) {
-      const open = await store.findOpenTrialGrantByUserId(input.userId)
-      const previousClockEnd =
-        open?.status === 'active' ? (open.trialEnd ?? null) : null
-
       const result = await adjustTrialGrantForCustomer(store, input, {
         now: deps.now,
       })
 
       await lifecycle.rearmAfterExtension({
         userId: input.userId,
-        previousClockEnd,
+        previousClockEnd: result.previousTrialEnd,
         nextClockEnd: result.trialEnd,
       })
 

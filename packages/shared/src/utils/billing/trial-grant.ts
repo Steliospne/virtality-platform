@@ -296,6 +296,34 @@ function assertActors(input: { userId: string; actorUserId: string }): void {
   }
 }
 
+function assertTrialExtensionAmount(
+  amount: number,
+  unit: string,
+): asserts unit is EntitlementExtensionDurationUnit {
+  if (!Number.isInteger(amount) || amount < 1) {
+    throw new TrialGrantValidationError(
+      'Trial amount must be a positive integer.',
+    )
+  }
+  if (!isEntitlementExtensionDurationUnit(unit)) {
+    throw new TrialGrantValidationError(
+      'Trial unit must be days, weeks, or months.',
+    )
+  }
+}
+
+function resolveTrialExtensionDirection(
+  direction: EntitlementExtensionDirection | undefined,
+): EntitlementExtensionDirection {
+  const resolved = direction ?? 'extend'
+  if (!isEntitlementExtensionDirection(resolved)) {
+    throw new TrialGrantValidationError(
+      'Trial direction must be extend or reduce.',
+    )
+  }
+  return resolved
+}
+
 export async function issueTrialGrantToCustomer(
   store: TrialGrantStore,
   input: IssueTrialGrantInput,
@@ -356,17 +384,7 @@ export async function startTrialGrantForCustomer(
 ): Promise<StartTrialGrantResult> {
   assertActors(input)
   assertReason(input.reason)
-
-  if (!Number.isInteger(input.amount) || input.amount < 1) {
-    throw new TrialGrantValidationError(
-      'Trial amount must be a positive integer.',
-    )
-  }
-  if (!isEntitlementExtensionDurationUnit(input.unit)) {
-    throw new TrialGrantValidationError(
-      'Trial unit must be days, weeks, or months.',
-    )
-  }
+  assertTrialExtensionAmount(input.amount, input.unit)
 
   const user = await store.findTargetUser(input.userId)
   if (!user) {
@@ -409,6 +427,7 @@ export async function startTrialGrantForCustomer(
 }
 
 function extensionBaseFromTrialGrant(now: Date, grant: TrialGrantClock): Date {
+  // Use the current trial end when it is still in the future; otherwise now.
   if (grant.trialEnd != null && grant.trialEnd.getTime() > now.getTime()) {
     return grant.trialEnd
   }
@@ -422,24 +441,8 @@ export async function adjustTrialGrantForCustomer(
 ): Promise<AdjustTrialGrantResult> {
   assertActors(input)
   assertReason(input.reason)
-
-  if (!Number.isInteger(input.amount) || input.amount < 1) {
-    throw new TrialGrantValidationError(
-      'Trial amount must be a positive integer.',
-    )
-  }
-  if (!isEntitlementExtensionDurationUnit(input.unit)) {
-    throw new TrialGrantValidationError(
-      'Trial unit must be days, weeks, or months.',
-    )
-  }
-
-  const direction = input.direction ?? 'extend'
-  if (!isEntitlementExtensionDirection(direction)) {
-    throw new TrialGrantValidationError(
-      'Trial direction must be extend or reduce.',
-    )
-  }
+  assertTrialExtensionAmount(input.amount, input.unit)
+  const direction = resolveTrialExtensionDirection(input.direction)
 
   const user = await store.findTargetUser(input.userId)
   if (!user) {
@@ -448,10 +451,7 @@ export async function adjustTrialGrantForCustomer(
 
   const beforeBillingState = await store.summarizeBillingState(user.id)
   const active = await store.findOpenTrialGrantByUserId(user.id)
-  if (!active || active.status !== 'active') {
-    throw new TrialGrantNotActiveError(user.id)
-  }
-  if (active.trialEnd == null) {
+  if (!active || active.status !== 'active' || active.trialEnd == null) {
     throw new TrialGrantNotActiveError(user.id)
   }
 
