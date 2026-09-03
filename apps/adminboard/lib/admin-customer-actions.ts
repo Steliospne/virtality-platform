@@ -43,8 +43,14 @@ export function formatBillingSnapshotSummary(
   return parts.join('; ')
 }
 
+const LEGACY_AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
+  assign_pro_variant: 'Assign Pro variant',
+  grant_timed_trial: 'Grant timed trial',
+}
+
 export function formatAuditActionLabel(action: string): string {
-  if (action === 'assign_pro_variant') return 'Assign Pro variant'
+  const legacyLabel = LEGACY_AUDIT_ACTION_LABELS[action]
+  if (legacyLabel) return legacyLabel
   if (isAdminCustomerAccessAction(action)) {
     return formatAdminCustomerAccessActionLabel(action)
   }
@@ -158,13 +164,4 @@ export function formatAssignPermanentFreeSuccessMessage(input: {
   return input.testerDemoted
     ? 'Assigned permanent Free and changed the account role to user.'
     : 'Assigned permanent Free. Subscription state settles after Stripe webhook sync.'
-}
-
-export function formatGrantTimedTrialSuccessMessage(input: {
-  trialEnd: Date | string
-  testerDemoted: boolean
-}): string {
-  const end = new Date(input.trialEnd).toLocaleString()
-  const base = `Granted a timed trial through ${end}. VR launch restores after Stripe webhook sync.`
-  return input.testerDemoted ? `${base} Account role changed to user.` : base
 }

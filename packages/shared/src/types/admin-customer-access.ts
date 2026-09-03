@@ -14,24 +14,11 @@ export const assignPermanentFreeInputSchema = z.object({
   reason: adminCustomerAccessReasonSchema,
 })
 
-export const grantTimedTrialInputSchema = z.object({
-  userId: z.string().trim().min(1),
-  reason: adminCustomerAccessReasonSchema,
-  amount: z.number().int().positive(),
-  unit: entitlementExtensionDurationUnitSchema,
-})
-
 export type AssignPermanentFreeInput = z.infer<
   typeof assignPermanentFreeInputSchema
 >
 
 export const issueTrialGrantInputSchema = z.object({
-  userId: z.string().trim().min(1),
-  reason: adminCustomerAccessReasonSchema,
-  code: z.string().trim().min(1),
-})
-
-export const startTrialGrantInputSchema = z.object({
   userId: z.string().trim().min(1),
   reason: adminCustomerAccessReasonSchema,
   amount: z.number().int().positive(),
@@ -52,8 +39,6 @@ export const revokeTrialGrantInputSchema = z.object({
 })
 
 export type IssueTrialGrantInput = z.infer<typeof issueTrialGrantInputSchema>
-
-export type StartTrialGrantInput = z.infer<typeof startTrialGrantInputSchema>
 
 export type AdjustTrialGrantInput = z.infer<typeof adjustTrialGrantInputSchema>
 

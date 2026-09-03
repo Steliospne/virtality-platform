@@ -7,6 +7,7 @@ import {
   readSignUpCodeFromUnknown,
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
+import { redeemAccessCodeForUser } from './lib/console-access-code-redeem.ts'
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
@@ -88,6 +89,25 @@ async function consumeTesterCodeIfPresent(
   if (isValid) {
     await updateUserRole(userId, 'tester')
   }
+}
+
+/**
+ * Best-effort Access Code redemption for an existing user's sign-in (email
+ * or OAuth). Auto-assigns a Free Stripe plan when the user doesn't already
+ * have one, then grants an active TrialGrant. Never throws - a stale,
+ * already-used, or missing code must not block sign-in.
+ */
+async function redeemTrialCodeOnSignInIfPresent(
+  rawCode: string | null | undefined,
+  userId: string,
+): Promise<void> {
+  const routed = routeSignUpCode(rawCode)
+  if (routed.kind !== 'trial_redeem' || !stripeClient) return
+
+  await redeemAccessCodeForUser(
+    { userId, code: routed.code },
+    { stripeClient, priceId: FREE_PLAN_PRICE_ID },
+  ).catch(() => undefined)
 }
 
 async function readSignUpCodeFromOAuthState(): Promise<string | undefined> {
@@ -441,11 +461,20 @@ export const auth = betterAuth({
         }
       }
 
+      if (path === '/sign-in/email' && newSession?.user?.id) {
+        await redeemTrialCodeOnSignInIfPresent(
+          readSignUpCodeFromUnknown(ctx.body),
+          newSession.user.id,
+        )
+      }
+
       if (path.startsWith('/callback/:id')) {
         const additionalData = await getOAuthState()
         if (newSession?.user?.id) {
-          await consumeTesterCodeIfPresent(
-            readSignUpCodeFromUnknown(additionalData),
+          const rawCode = readSignUpCodeFromUnknown(additionalData)
+          await consumeTesterCodeIfPresent(rawCode, newSession.user.id)
+          await redeemTrialCodeOnSignInIfPresent(
+            rawCode,
             newSession.user.id,
           )
         }

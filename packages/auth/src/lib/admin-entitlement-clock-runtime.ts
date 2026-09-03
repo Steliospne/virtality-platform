@@ -8,7 +8,6 @@ import {
   assignPermanentFreeToCustomer,
   clockEndForSubscriptionStatus,
   extendEntitlementClock,
-  grantTimedTrialToCustomer,
   type AdminCustomerAccessStore,
   type AdminCustomerAccessStripeGateway,
   type AssignPermanentFreeInput,
@@ -17,8 +16,6 @@ import {
   type EntitlementExtensionStripeGateway,
   type ExtendEntitlementClockInput,
   type ExtendEntitlementClockResult,
-  type GrantTimedTrialInput,
-  type GrantTimedTrialResult,
 } from '@virtality/shared/utils'
 
 export type AdminEntitlementClockRearmPort = {
@@ -48,9 +45,6 @@ export type AdminEntitlementClockRuntime = {
   assignPermanentFree: (
     input: Omit<AssignPermanentFreeInput, 'priceId'>,
   ) => Promise<AssignPermanentFreeResult>
-  grantTimedTrial: (
-    input: Omit<GrantTimedTrialInput, 'priceId'>,
-  ) => Promise<GrantTimedTrialResult>
   extendEntitlementClock: (
     input: Omit<ExtendEntitlementClockInput, 'priceId'>,
   ) => Promise<ExtendEntitlementClockResult>
@@ -94,24 +88,6 @@ export function createAdminEntitlementClockRuntimeFromPorts(
         },
         { now },
       )
-    },
-    async grantTimedTrial(input) {
-      const result = await grantTimedTrialToCustomer(
-        accessStore,
-        accessStripe,
-        {
-          ...input,
-          priceId: freePlanPriceId,
-        },
-        { now },
-      )
-
-      await rearm.rearmForNewClock({
-        userId: input.userId,
-        clockEnd: result.trialEnd,
-      })
-
-      return result
     },
     async extendEntitlementClock(input) {
       const previousClockEnd = await readPreviousClockEnd(

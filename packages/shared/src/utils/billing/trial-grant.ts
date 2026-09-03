@@ -1,6 +1,7 @@
 import {
   computeExtensionTrialEnd,
   isEntitlementExtensionDurationUnit,
+  isLiveEntitlementSubscriptionStatus,
   type EntitlementExtensionDurationUnit,
   type EntitlementExtensionDirection,
   isEntitlementExtensionDirection,
@@ -15,16 +16,11 @@ import {
 import { isProSubscriptionPlan } from './billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from '../admin-customer/admin-customer-access.ts'
 
-export const TRIAL_GRANT_STATUSES = [
-  'pending',
-  'active',
-  'converted',
-  'revoked',
-] as const
+export const TRIAL_GRANT_STATUSES = ['active', 'converted', 'revoked'] as const
 
 export type TrialGrantStatus = (typeof TRIAL_GRANT_STATUSES)[number]
 
-export const TRIAL_GRANT_OPEN_STATUSES = ['pending', 'active'] as const
+export const TRIAL_GRANT_OPEN_STATUSES = ['active'] as const
 
 export type TrialGrantOpenStatus = (typeof TRIAL_GRANT_OPEN_STATUSES)[number]
 
@@ -43,7 +39,6 @@ export type TrialGrantClock = {
 export type TrialGrantRecord = TrialGrantClock & {
   id: string
   userId: string
-  code: string
 }
 
 function expiredTrialGrantStanding(
@@ -61,6 +56,22 @@ export function userHasStripeSubscriptionForEntitlement(
   subscriptions: readonly EntitlementClockSubscription[],
 ): boolean {
   return subscriptions.length > 0
+}
+
+/**
+ * A live, paid (non-free) Stripe subscription - the only Stripe state that
+ * should preempt an owned TrialGrant clock. A synced `free` plan row (e.g.
+ * from "assign permanent Free") must not shadow an active trial.
+ */
+function userHasLivePaidSubscriptionForEntitlement(
+  subscriptions: readonly EntitlementClockSubscription[],
+): boolean {
+  const subscription = pickEntitlementSubscription(subscriptions)
+  if (!subscription) return false
+  return (
+    isLiveEntitlementSubscriptionStatus(subscription.status) &&
+    isProSubscriptionPlan(subscription.plan)
+  )
 }
 
 export function resolveTrialGrantClock(input: {
@@ -100,6 +111,27 @@ export function resolveEntitlementFromSources(input: {
   subscriptions: readonly EntitlementClockSubscription[]
   trialGrant?: TrialGrantClock | null
 }): EntitlementClockStanding {
+  // A live paid Stripe subscription always wins. Otherwise a currently-live
+  // TrialGrant wins even when the customer also has an inert Stripe row
+  // (e.g. a synced `free` plan subscription from "assign permanent Free") -
+  // otherwise that row would shadow the trial clock and the customer would
+  // never show as entitled/trialing.
+  if (userHasLivePaidSubscriptionForEntitlement(input.subscriptions)) {
+    const subscription = pickEntitlementSubscription(input.subscriptions)
+    return resolveEntitlementClock({
+      now: input.now,
+      subscription,
+    })
+  }
+
+  const trialStanding = resolveTrialGrantClock({
+    now: input.now,
+    trialGrant: input.trialGrant ?? null,
+  })
+  if (trialStanding.entitled) {
+    return trialStanding
+  }
+
   if (userHasStripeSubscriptionForEntitlement(input.subscriptions)) {
     const subscription = pickEntitlementSubscription(input.subscriptions)
     return resolveEntitlementClock({
@@ -108,16 +140,28 @@ export function resolveEntitlementFromSources(input: {
     })
   }
 
-  return resolveTrialGrantClock({
-    now: input.now,
-    trialGrant: input.trialGrant ?? null,
-  })
+  return trialStanding
 }
 
 export function clockEndForEntitlementSource(input: {
   subscriptions: readonly EntitlementClockSubscription[]
   trialGrant?: TrialGrantClock | null
 }): Date | null {
+  if (userHasLivePaidSubscriptionForEntitlement(input.subscriptions)) {
+    const subscription = pickEntitlementSubscription(input.subscriptions)
+    if (!subscription) return null
+    return clockEndForSubscriptionStatus(
+      subscription.status,
+      subscription.trialEnd,
+      subscription.periodEnd,
+    )
+  }
+
+  const trialClockEnd = clockEndForTrialGrant(input.trialGrant ?? null)
+  if (trialClockEnd != null) {
+    return trialClockEnd
+  }
+
   if (userHasStripeSubscriptionForEntitlement(input.subscriptions)) {
     const subscription = pickEntitlementSubscription(input.subscriptions)
     if (!subscription) return null
@@ -128,7 +172,7 @@ export function clockEndForEntitlementSource(input: {
     )
   }
 
-  return clockEndForTrialGrant(input.trialGrant ?? null)
+  return trialClockEnd
 }
 
 export type TrialGrantTargetUser = {
@@ -164,10 +208,6 @@ export type TrialGrantStore = {
   ) => Promise<TrialGrantRecord | null>
   createTrialGrant: (input: {
     userId: string
-    code: string
-  }) => Promise<TrialGrantRecord>
-  startTrialGrant: (input: {
-    userId: string
     trialStart: Date
     trialEnd: Date
   }) => Promise<TrialGrantRecord>
@@ -185,11 +225,7 @@ export type TrialGrantStore = {
   recordAudit: (record: {
     targetUserId: string
     actorUserId: string
-    action:
-      | 'issue_trial_grant'
-      | 'start_trial_grant'
-      | 'adjust_trial_grant'
-      | 'revoke_trial_grant'
+    action: 'issue_trial_grant' | 'adjust_trial_grant' | 'revoke_trial_grant'
     reason: string
     outcome: 'success' | 'failure'
     stripeOperationId: string | null
@@ -203,30 +239,28 @@ export type IssueTrialGrantInput = {
   userId: string
   actorUserId: string
   reason: string
-  code: string
-}
-
-export type StartTrialGrantInput = {
-  userId: string
-  actorUserId: string
-  reason: string
   amount: number
   unit: EntitlementExtensionDurationUnit
 }
 
 export type IssueTrialGrantResult = {
   trialGrantId: string
-  code: string
-  status: TrialGrantStatus
-  auditId: string
-}
-
-export type StartTrialGrantResult = {
-  trialGrantId: string
   status: TrialGrantStatus
   trialStart: Date
   trialEnd: Date
   auditId: string
+}
+
+export type GrantActiveTrialInput = {
+  userId: string
+  trialDays: number
+}
+
+export type GrantActiveTrialResult = {
+  trialGrantId: string
+  status: TrialGrantStatus
+  trialStart: Date
+  trialEnd: Date
 }
 
 export type AdjustTrialGrantInput = {
@@ -270,13 +304,6 @@ export class TrialGrantValidationError extends Error {
   }
 }
 
-export class TrialGrantNotFoundError extends Error {
-  constructor(userId: string) {
-    super(`No pending TrialGrant found for user "${userId}".`)
-    this.name = 'TrialGrantNotFoundError'
-  }
-}
-
 export class TrialGrantNotActiveError extends Error {
   constructor(userId: string) {
     super(`No active TrialGrant found for user "${userId}".`)
@@ -286,14 +313,14 @@ export class TrialGrantNotActiveError extends Error {
 
 export class TrialGrantOpenNotFoundError extends Error {
   constructor(userId: string) {
-    super(`No pending or active TrialGrant found for user "${userId}".`)
+    super(`No open TrialGrant found for user "${userId}".`)
     this.name = 'TrialGrantOpenNotFoundError'
   }
 }
 
 export class TrialGrantAlreadyOpenError extends Error {
   constructor(userId: string) {
-    super(`User "${userId}" already has a pending or active TrialGrant.`)
+    super(`User "${userId}" already has an open TrialGrant.`)
     this.name = 'TrialGrantAlreadyOpenError'
   }
 }
@@ -361,14 +388,11 @@ function resolveTrialExtensionDirection(
 export async function issueTrialGrantToCustomer(
   store: TrialGrantStore,
   input: IssueTrialGrantInput,
+  runtime: { now?: () => Date } = {},
 ): Promise<IssueTrialGrantResult> {
   assertActors(input)
   assertReason(input.reason)
-
-  const code = input.code.trim()
-  if (!code) {
-    throw new TrialGrantValidationError('code is required.')
-  }
+  assertTrialExtensionAmount(input.amount, input.unit)
 
   const user = await store.findTargetUser(input.userId)
   if (!user) {
@@ -386,9 +410,12 @@ export async function issueTrialGrantToCustomer(
     throw new TrialGrantCustomerAlreadyEntitledError(user.id)
   }
 
+  const now = runtime.now?.() ?? new Date()
+  const trialEnd = computeExtensionTrialEnd(now, input.amount, input.unit)
   const created = await store.createTrialGrant({
     userId: user.id,
-    code,
+    trialStart: now,
+    trialEnd,
   })
 
   const afterBillingState = await store.summarizeBillingState(user.id)
@@ -405,58 +432,61 @@ export async function issueTrialGrantToCustomer(
 
   return {
     trialGrantId: created.id,
-    code: created.code,
     status: created.status,
+    trialStart: created.trialStart ?? now,
+    trialEnd: created.trialEnd ?? trialEnd,
     auditId: audit.id,
   }
 }
 
-export async function startTrialGrantForCustomer(
-  store: TrialGrantStore,
-  input: StartTrialGrantInput,
+/**
+ * Self-serve counterpart to {@link issueTrialGrantToCustomer}: same open-grant
+ * / live-Pro guards, but no actor/reason and no AdminCustomerAudit row. Used
+ * by Access Code redemption (sign-up, Profile Billing, sign-in) rather than
+ * admin action.
+ */
+export async function grantActiveTrialToUser(
+  store: Pick<
+    TrialGrantStore,
+    | 'findOpenTrialGrantByUserId'
+    | 'createTrialGrant'
+    | 'userHasLiveProSubscription'
+  >,
+  input: GrantActiveTrialInput,
   runtime: { now?: () => Date } = {},
-): Promise<StartTrialGrantResult> {
-  assertActors(input)
-  assertReason(input.reason)
-  assertTrialExtensionAmount(input.amount, input.unit)
-
-  const user = await store.findTargetUser(input.userId)
-  if (!user) {
-    throw new TrialGrantCustomerNotFoundError(input.userId)
+): Promise<GrantActiveTrialResult> {
+  if (!input.userId.trim()) {
+    throw new TrialGrantValidationError('userId is required.')
+  }
+  if (!Number.isInteger(input.trialDays) || input.trialDays < 1) {
+    throw new TrialGrantValidationError(
+      'Trial days must be a positive integer.',
+    )
   }
 
-  const beforeBillingState = await store.summarizeBillingState(user.id)
-  const pending = await store.findOpenTrialGrantByUserId(user.id)
-  if (!pending || pending.status !== 'pending') {
-    throw new TrialGrantNotFoundError(user.id)
+  const existing = await store.findOpenTrialGrantByUserId(input.userId)
+  if (existing) {
+    throw new TrialGrantAlreadyOpenError(input.userId)
+  }
+
+  const entitled = await store.userHasLiveProSubscription(input.userId)
+  if (entitled) {
+    throw new TrialGrantCustomerAlreadyEntitledError(input.userId)
   }
 
   const now = runtime.now?.() ?? new Date()
-  const trialEnd = computeExtensionTrialEnd(now, input.amount, input.unit)
-  const started = await store.startTrialGrant({
-    userId: user.id,
+  const trialEnd = computeExtensionTrialEnd(now, input.trialDays, 'days')
+  const created = await store.createTrialGrant({
+    userId: input.userId,
     trialStart: now,
     trialEnd,
   })
 
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
-    actorUserId: input.actorUserId,
-    action: 'start_trial_grant',
-    reason: input.reason.trim(),
-    outcome: 'success',
-    stripeOperationId: null,
-    beforeBillingState,
-    afterBillingState,
-  })
-
   return {
-    trialGrantId: started.id,
-    status: started.status,
-    trialStart: started.trialStart ?? now,
-    trialEnd: started.trialEnd ?? trialEnd,
-    auditId: audit.id,
+    trialGrantId: created.id,
+    status: created.status,
+    trialStart: created.trialStart ?? now,
+    trialEnd: created.trialEnd ?? trialEnd,
   }
 }
 
@@ -594,7 +624,6 @@ export async function convertActiveTrialGrantOnPaidSubscription(
 
 export const ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS = [
   'issue_trial_grant',
-  'start_trial_grant',
   'adjust_trial_grant',
   'revoke_trial_grant',
 ] as const
@@ -603,7 +632,6 @@ export type AdminCustomerTrialGrantAction =
   (typeof ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS)[number]
 
 export const TRIAL_GRANT_STATUS_LABELS: Record<TrialGrantStatus, string> = {
-  pending: 'Pending onboarding',
   active: 'Active',
   converted: 'Converted to paid',
   revoked: 'Revoked',
@@ -611,7 +639,6 @@ export const TRIAL_GRANT_STATUS_LABELS: Record<TrialGrantStatus, string> = {
 
 export type AdminCustomerTrialGrantSummary = {
   id: string
-  code: string
   status: TrialGrantStatus
   trialStart: Date | null
   trialEnd: Date | null
@@ -631,7 +658,6 @@ export function mapAdminCustomerTrialGrantSummary(input: {
 
   return {
     id: input.grant.id,
-    code: input.grant.code,
     status: input.grant.status,
     trialStart: input.grant.trialStart,
     trialEnd: input.grant.trialEnd,
@@ -647,8 +673,6 @@ export function formatAdminCustomerTrialGrantActionLabel(
   switch (action) {
     case 'issue_trial_grant':
       return 'Issue trial grant'
-    case 'start_trial_grant':
-      return 'Start trial grant'
     case 'adjust_trial_grant':
       return 'Adjust trial grant'
     case 'revoke_trial_grant':

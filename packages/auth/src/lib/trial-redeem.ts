@@ -3,16 +3,18 @@ import type { PrismaClient } from '@virtality/db'
 import { APIError } from 'better-auth/api'
 import type Stripe from 'stripe'
 import {
-  buildFreeTrialSubscriptionCreateParams,
   buildPermanentFreeSubscriptionCreateParams,
   evaluateTrialRedeemAtSignUp,
+  grantActiveTrialToUser,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
   type TrialRedeemConsumeStore,
   type TrialRedeemStripeGateway,
+  type TrialRedeemTrialGrantIssuer,
 } from '@virtality/shared/utils'
+import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
 
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,
@@ -57,22 +59,6 @@ export function createStripeTrialRedeemGateway(
       )
       return results.some((page) => page.data.length > 0)
     },
-    createNoCardTrialSubscription: async ({
-      customerId,
-      priceId,
-      trialPeriodDays,
-      metadata,
-    }) => {
-      const subscription = await stripeClient.subscriptions.create(
-        buildFreeTrialSubscriptionCreateParams({
-          customerId,
-          priceId,
-          trialPeriodDays,
-          metadata,
-        }),
-      )
-      return { stripeSubscriptionId: subscription.id }
-    },
     createPermanentFreeSubscription: async ({
       customerId,
       priceId,
@@ -87,6 +73,15 @@ export function createStripeTrialRedeemGateway(
       )
       return { stripeSubscriptionId: subscription.id }
     },
+  }
+}
+
+export function createTrialGrantIssuer(
+  client: PrismaClient = prisma,
+): TrialRedeemTrialGrantIssuer {
+  const store = createPrismaTrialGrantStore(client)
+  return {
+    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
   }
 }
 
@@ -127,6 +122,7 @@ export async function redeemTrialCodeForCustomer(input: {
   await redeemTrialCodeAfterSignUp(
     trialRedeemStore,
     createStripeTrialRedeemGateway(input.stripeClient),
+    createTrialGrantIssuer(),
     {
       code: routed.code,
       userId: input.userId,

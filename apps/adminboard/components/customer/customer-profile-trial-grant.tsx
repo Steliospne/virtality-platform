@@ -4,13 +4,11 @@ import { CustomerProfileAdjustTrialGrantDialog } from '@/components/customer/cus
 import { CustomerProfileIssueTrialGrantDialog } from '@/components/customer/customer-profile-issue-trial-grant-dialog'
 import { CustomerProfileRevokeTrialGrantDialog } from '@/components/customer/customer-profile-revoke-trial-grant-dialog'
 import { CustomerProfileSection } from '@/components/customer/customer-profile-section'
-import { CustomerProfileStartTrialGrantDialog } from '@/components/customer/customer-profile-start-trial-grant-dialog'
 import { Button } from '@/components/ui/button'
 import {
   canAdjustTrialGrant,
   canIssueTrialGrant,
   canRevokeTrialGrant,
-  canStartTrialGrant,
 } from '@/lib/trial-grant-actions'
 import { formatTrialGrantStatusSummary } from '@/lib/trial-grant-display'
 import type { AdminCustomerProfile } from '@virtality/shared/utils'
@@ -24,23 +22,22 @@ export function CustomerProfileTrialGrant({
   profile,
 }: CustomerProfileTrialGrantProps) {
   const [issueOpen, setIssueOpen] = useState(false)
-  const [startOpen, setStartOpen] = useState(false)
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [revokeOpen, setRevokeOpen] = useState(false)
 
   const canIssue = canIssueTrialGrant(profile)
-  const canStart = canStartTrialGrant(profile)
   const canAdjust = canAdjustTrialGrant(profile)
   const canRevoke = canRevokeTrialGrant(profile)
-  const hasActions = canIssue || canStart || canAdjust || canRevoke
+  const hasActions = canIssue || canAdjust || canRevoke
 
   return (
     <>
       <CustomerProfileSection title='Owned trial grant'>
         <p className='text-muted-foreground mb-4 text-sm'>
-          Manage the free-product-code trial lifecycle without Stripe calls.
-          Issue a pending grant, start it after onboarding, then extend, reduce,
-          or revoke as needed. Each action requires a reason and audit record.
+          Manage the owned trial lifecycle without Stripe calls. Issuing a
+          grant activates it immediately for the selected duration; extend,
+          reduce, or revoke as needed. Each action requires a reason and
+          audit record.
         </p>
 
         {profile.trialGrant ? (
@@ -57,9 +54,6 @@ export function CustomerProfileTrialGrant({
           <div className='flex flex-wrap gap-3'>
             {canIssue ? (
               <Button onClick={() => setIssueOpen(true)}>Issue grant</Button>
-            ) : null}
-            {canStart ? (
-              <Button onClick={() => setStartOpen(true)}>Start trial</Button>
             ) : null}
             {canAdjust ? (
               <Button variant='outline' onClick={() => setAdjustOpen(true)}>
@@ -84,13 +78,6 @@ export function CustomerProfileTrialGrant({
           userId={profile.userId}
           open={issueOpen}
           onOpenChange={setIssueOpen}
-        />
-      ) : null}
-      {canStart ? (
-        <CustomerProfileStartTrialGrantDialog
-          userId={profile.userId}
-          open={startOpen}
-          onOpenChange={setStartOpen}
         />
       ) : null}
       {canAdjust ? (

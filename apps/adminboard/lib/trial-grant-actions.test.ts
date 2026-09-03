@@ -4,7 +4,6 @@ import {
   canAdjustTrialGrant,
   canIssueTrialGrant,
   canRevokeTrialGrant,
-  canStartTrialGrant,
 } from './trial-grant-actions.ts'
 
 function profile(
@@ -27,7 +26,6 @@ describe('trial grant action eligibility', () => {
         profile({
           trialGrant: {
             id: 'grant_1',
-            code: 'OLD',
             status: 'converted',
             trialStart: null,
             trialEnd: null,
@@ -40,46 +38,28 @@ describe('trial grant action eligibility', () => {
     ).toBe(true)
   })
 
-  it('blocks issuing when a grant is pending or active', () => {
+  it('blocks issuing when a grant is active', () => {
     expect(
       canIssueTrialGrant(
         profile({
           trialGrant: {
             id: 'grant_1',
-            code: 'PILOT',
-            status: 'pending',
-            trialStart: null,
-            trialEnd: null,
+            status: 'active',
+            trialStart: new Date('2026-08-01T12:00:00.000Z'),
+            trialEnd: new Date('2026-08-20T12:00:00.000Z'),
             createdAt: new Date(),
-            remainingMs: 0,
-            entitled: false,
+            remainingMs: 10 * 24 * 60 * 60 * 1000,
+            entitled: true,
           },
         }),
       ),
     ).toBe(false)
   })
 
-  it('exposes start, adjust, and revoke actions by grant status', () => {
-    const pending = profile({
-      trialGrant: {
-        id: 'grant_1',
-        code: 'PILOT',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
-        createdAt: new Date(),
-        remainingMs: 0,
-        entitled: false,
-      },
-    })
-    expect(canStartTrialGrant(pending)).toBe(true)
-    expect(canAdjustTrialGrant(pending)).toBe(false)
-    expect(canRevokeTrialGrant(pending)).toBe(true)
-
+  it('exposes adjust and revoke actions for an active grant', () => {
     const active = profile({
       trialGrant: {
         id: 'grant_1',
-        code: 'PILOT',
         status: 'active',
         trialStart: new Date('2026-08-01T12:00:00.000Z'),
         trialEnd: new Date('2026-08-20T12:00:00.000Z'),
@@ -88,8 +68,21 @@ describe('trial grant action eligibility', () => {
         entitled: true,
       },
     })
-    expect(canStartTrialGrant(active)).toBe(false)
     expect(canAdjustTrialGrant(active)).toBe(true)
     expect(canRevokeTrialGrant(active)).toBe(true)
+
+    const converted = profile({
+      trialGrant: {
+        id: 'grant_1',
+        status: 'converted',
+        trialStart: new Date('2026-08-01T12:00:00.000Z'),
+        trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+        createdAt: new Date(),
+        remainingMs: 0,
+        entitled: false,
+      },
+    })
+    expect(canAdjustTrialGrant(converted)).toBe(false)
+    expect(canRevokeTrialGrant(converted)).toBe(false)
   })
 })

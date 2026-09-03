@@ -94,31 +94,6 @@ export function buildFreeTrialSubscriptionCreateParams(
   }
 }
 
-export type FreeTimedTrialSubscriptionCreateInput = {
-  customerId: string
-  priceId: string
-  trialEndUnix: number
-  metadata: Record<string, string>
-}
-
-/**
- * Stripe `subscriptions.create` shape for a no-card Free Trial Subscription
- * with an absolute `trial_end` (admin timed trial grants).
- */
-export function buildFreeTimedTrialSubscriptionCreateParams(
-  input: FreeTimedTrialSubscriptionCreateInput,
-) {
-  return {
-    customer: input.customerId,
-    items: [{ price: input.priceId }],
-    trial_end: input.trialEndUnix,
-    metadata: {
-      plan: FREE_SUBSCRIPTION_PLAN,
-      ...input.metadata,
-    },
-  }
-}
-
 export type PermanentFreeSubscriptionCreateInput = {
   customerId: string
   priceId: string

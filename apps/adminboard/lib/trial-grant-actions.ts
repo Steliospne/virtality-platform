@@ -6,7 +6,6 @@ import {
   type AdjustTrialGrantResult,
   type IssueTrialGrantResult,
   type RevokeTrialGrantResult,
-  type StartTrialGrantResult,
 } from '@virtality/shared/utils'
 import { formatExtensionClockEnd } from './entitlement-extension.ts'
 
@@ -24,10 +23,6 @@ export function canIssueTrialGrant(profile: AdminCustomerProfile): boolean {
   return findLivePaidProSubscription(profile.subscriptionHistory) == null
 }
 
-export function canStartTrialGrant(profile: AdminCustomerProfile): boolean {
-  return openTrialGrant(profile)?.status === 'pending'
-}
-
 export function canAdjustTrialGrant(profile: AdminCustomerProfile): boolean {
   return openTrialGrant(profile)?.status === 'active'
 }
@@ -39,13 +34,7 @@ export function canRevokeTrialGrant(profile: AdminCustomerProfile): boolean {
 export function formatIssueTrialGrantSuccessMessage(
   result: IssueTrialGrantResult,
 ): string {
-  return `Issued trial grant ${result.code} (${result.status}).`
-}
-
-export function formatStartTrialGrantSuccessMessage(
-  result: StartTrialGrantResult,
-): string {
-  return `Started trial grant through ${formatExtensionClockEnd(result.trialEnd)}.`
+  return `Issued trial grant through ${formatExtensionClockEnd(result.trialEnd)}.`
 }
 
 export function formatAdjustTrialGrantSuccessMessage(

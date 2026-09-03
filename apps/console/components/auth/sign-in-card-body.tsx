@@ -79,7 +79,10 @@ const SignInCardBody = () => {
         />
       </div>
       <Separator className='my-2' />
-      <EmailSignIn postLoginPath={postLoginPath} />
+      <EmailSignIn
+        postLoginPath={postLoginPath}
+        testerCode={testerCode?.trim() || undefined}
+      />
       <div className='flex w-full flex-col gap-2'>
         <p className='text-muted-foreground mt-6 text-sm'>
           {"Don't have an account? "}

@@ -16,14 +16,12 @@ import {
   cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
-  grantTimedTrialInputSchema,
   issueTrialGrantInputSchema,
   listAssignableProVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
   revokeTrialGrantInputSchema,
   sendPaidCheckoutLinkInputSchema,
-  startTrialGrantInputSchema,
 } from '@virtality/shared/types'
 import {
   AdminCustomerAccessAlreadyEntitledError,
@@ -39,7 +37,6 @@ import {
   TrialGrantCustomerAlreadyEntitledError,
   TrialGrantCustomerNotFoundError,
   TrialGrantNotActiveError,
-  TrialGrantNotFoundError,
   TrialGrantOpenNotFoundError,
   TrialGrantValidationError,
 } from '@virtality/shared/utils'
@@ -85,7 +82,6 @@ function throwAdminCustomerOrpcError(error: unknown): never {
     error instanceof TrialGrantCustomerNotFoundError ||
     error instanceof TrialGrantAlreadyOpenError ||
     error instanceof TrialGrantCustomerAlreadyEntitledError ||
-    error instanceof TrialGrantNotFoundError ||
     error instanceof TrialGrantNotActiveError ||
     error instanceof TrialGrantOpenNotFoundError
   ) {
@@ -161,24 +157,6 @@ const assignPermanentFree = adminAuthed
     }
   })
 
-const grantTimedTrial = adminAuthed
-  .route({ path: '/admin-customer/grant-timed-trial', method: 'POST' })
-  .input(grantTimedTrialInputSchema)
-  .handler(async ({ context, input }) => {
-    try {
-      const clock = adminEntitlementClockRuntime(context)
-      return await clock.grantTimedTrial({
-        userId: input.userId,
-        actorUserId: context.user.id,
-        reason: input.reason,
-        amount: input.amount,
-        unit: input.unit,
-      })
-    } catch (error) {
-      throwAdminCustomerOrpcError(error)
-    }
-  })
-
 const issueTrialGrant = adminAuthed
   .route({ path: '/admin-customer/issue-trial-grant', method: 'POST' })
   .input(issueTrialGrantInputSchema)
@@ -186,23 +164,6 @@ const issueTrialGrant = adminAuthed
     try {
       const runtime = trialGrantRuntime(context)
       return await runtime.issueGrant({
-        userId: input.userId,
-        actorUserId: context.user.id,
-        reason: input.reason,
-        code: input.code,
-      })
-    } catch (error) {
-      throwAdminCustomerOrpcError(error)
-    }
-  })
-
-const startTrialGrant = adminAuthed
-  .route({ path: '/admin-customer/start-trial-grant', method: 'POST' })
-  .input(startTrialGrantInputSchema)
-  .handler(async ({ context, input }) => {
-    try {
-      const runtime = trialGrantRuntime(context)
-      return await runtime.startTrial({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -378,9 +339,7 @@ export const adminCustomer = {
   listAssignableProVariants,
   assignProVariant,
   assignPermanentFree,
-  grantTimedTrial,
   issueTrialGrant,
-  startTrialGrant,
   adjustTrialGrant,
   revokeTrialGrant,
   previewChangePaidPlan,

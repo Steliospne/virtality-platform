@@ -95,15 +95,15 @@ model PendingPromotionCode {
   @@index([status, expiresAt])
 }
 
-/// Owned entitlement clock for free-product-code customers without a Stripe
-/// subscription. At most one pending/active row per user (partial unique index).
+/// Owned entitlement clock for customers granted a free trial without a
+/// Stripe subscription. Created directly `active` (trialStart/trialEnd set
+/// at issue time - no pending step). At most one open (active) row per user.
 model TrialGrant {
   id         String           @id @default(cuid())
   userId     String
-  code       String
   trialStart DateTime?        @db.Timestamp(6)
   trialEnd   DateTime?        @db.Timestamp(6)
-  status     TrialGrantStatus @default(pending)
+  status     TrialGrantStatus @default(active)
   createdAt  DateTime         @db.Timestamp(6)
   updatedAt  DateTime         @db.Timestamp(6)
 

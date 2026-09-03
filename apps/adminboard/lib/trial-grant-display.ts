@@ -18,16 +18,12 @@ export function formatTrialGrantStatusSummary(
       remainingMs: grant.remainingMs,
       clockEnd: grant.trialEnd,
     })
-    return `${statusLabel} · ${clock} · code ${grant.code}`
-  }
-
-  if (grant.status === 'pending') {
-    return `${statusLabel} · code ${grant.code}`
+    return `${statusLabel} · ${clock}`
   }
 
   const ended =
     grant.trialEnd != null
       ? ` · ended ${formatCustomerSubscriptionDate(grant.trialEnd)}`
       : ''
-  return `${statusLabel}${ended} · code ${grant.code}`
+  return `${statusLabel}${ended}`
 }
