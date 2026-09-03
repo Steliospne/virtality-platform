@@ -30,6 +30,7 @@ function record(
     mode: 'timed_trial',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
+    variant: null,
     createdAt: NOW,
     usedAt: null,
     usedBy: null,
@@ -39,6 +40,7 @@ function record(
 
 function createMemoryStore(
   initial: TrialRedeemCodeRecord[] = [],
+  applyVariant: TrialRedeemConsumeStore['applyVariant'] = async () => 'applied',
 ): TrialRedeemConsumeStore & {
   rows: TrialRedeemCodeRecord[]
 } {
@@ -59,6 +61,7 @@ function createMemoryStore(
     findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
     consumeAsRedeemed: consumeUnusedAs('redeemed'),
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
+    applyVariant,
   }
 }
 
@@ -527,5 +530,75 @@ describe('redeemTrialCodeAfterSignUp', () => {
     expect(result).toEqual({ status: 'ignored' })
     expect(createPermanentFreeSubscription).not.toHaveBeenCalled()
     expect(customerHasEntitledSubscription).not.toHaveBeenCalled()
+  })
+
+  it('applies the baked-in variant before consuming the code', async () => {
+    const applyVariant = vi.fn(async () => 'applied' as const)
+    const store = createMemoryStore(
+      [record({ id: 60, mode: 'permanent_free', variant: 'early-bird' })],
+      applyVariant,
+    )
+
+    await redeemTrialCodeAfterSignUp(
+      store,
+      stripeGateway(),
+      trialGrantIssuer(),
+      {
+        code: 'GO-ABCDEFGHIJ',
+        userId: 'user_60',
+        stripeCustomerId: 'cus_60',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(applyVariant).toHaveBeenCalledWith('user_60', 'early-bird')
+    expect(store.rows[0]?.status).toBe('redeemed')
+  })
+
+  it('fails and leaves the code unused when the variant is blocked', async () => {
+    const store = createMemoryStore(
+      [record({ id: 61, mode: 'permanent_free', variant: 'early-bird' })],
+      async () => 'blocked',
+    )
+
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripeGateway(),
+      trialGrantIssuer(),
+      {
+        code: 'GO-ABCDEFGHIJ',
+        userId: 'user_61',
+        stripeCustomerId: 'cus_61',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({ status: 'failed' })
+    expect(store.rows[0]?.status).toBe('unused')
+  })
+
+  it('fails and leaves the code unused when the variant no longer resolves', async () => {
+    const store = createMemoryStore(
+      [record({ id: 62, mode: 'permanent_free', variant: 'retired-tier' })],
+      async () => 'unavailable',
+    )
+
+    const result = await redeemTrialCodeAfterSignUp(
+      store,
+      stripeGateway(),
+      trialGrantIssuer(),
+      {
+        code: 'GO-ABCDEFGHIJ',
+        userId: 'user_62',
+        stripeCustomerId: 'cus_62',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({ status: 'failed' })
+    expect(store.rows[0]?.status).toBe('unused')
   })
 })

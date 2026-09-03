@@ -1,3 +1,4 @@
+import { type AccessCodeVariantOutcome } from './access-code-variant.ts'
 import {
   TRIAL_REDEEM_CODE_PATTERN,
   getTrialRedeemDisplayStatus,
@@ -117,6 +118,11 @@ export type TrialRedeemConsumeStore = Pick<
     usedBy: string,
     usedAt: Date,
   ) => Promise<boolean>
+  /** Applies a code's baked-in Plan Variant. No-op only called when set. */
+  applyVariant: (
+    userId: string,
+    variantName: string,
+  ) => Promise<AccessCodeVariantOutcome>
 }
 
 /** Stripe Subscription statuses treated as already entitled (PRD #41). */
@@ -183,7 +189,13 @@ export async function redeemTrialCodeAfterSignUp(
   const gate = await evaluateTrialRedeemAtSignUp(store, input.code, now)
   if (gate.action !== 'proceed') return { status: 'ignored' }
 
-  const { id: codeId, trialDays, mode } = gate.record
+  const { id: codeId, trialDays, mode, variant } = gate.record
+
+  if (variant) {
+    const variantOutcome = await store.applyVariant(input.userId, variant)
+    if (variantOutcome !== 'applied') return { status: 'failed' }
+  }
+
   const alreadyEntitled = await stripe.customerHasEntitledSubscription(
     input.stripeCustomerId,
   )

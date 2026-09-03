@@ -63,6 +63,8 @@ export type TrialRedeemCodeRecord = {
   mode: TrialRedeemCodeMode
   trialDays: number
   note: string | null
+  /** Plan Variant name baked into the code (sparse). Null = no auto-assign. */
+  variant: string | null
   createdAt: Date
   usedAt: Date | null
   usedBy: string | null
@@ -81,6 +83,7 @@ export type TrialRedeemCodeStore = {
     mode: TrialRedeemCodeMode
     trialDays: number
     note: string | null
+    variant: string | null
     createdAt: Date
     usedAt: null
     usedBy: null
@@ -212,6 +215,11 @@ export type CreateTrialRedeemCodeInput = {
   mode?: TrialRedeemCodeMode
   trialDays?: number
   note?: string | null
+  /**
+   * Plan Variant name to bake into the code, already resolved/sparse-written
+   * by the caller (this function does not touch the Stripe-backed catalog).
+   */
+  variant?: string | null
 }
 
 async function generateUniqueTrialRedeemCode(
@@ -253,6 +261,9 @@ export async function createTrialRedeemCode(
   const trimmedNote = input.note?.trim()
   const note = trimmedNote ? trimmedNote : null
 
+  const trimmedVariant = input.variant?.trim()
+  const variant = trimmedVariant ? trimmedVariant : null
+
   const code = await generateUniqueTrialRedeemCode(
     store,
     runtime.generateCode ?? generateTrialRedeemCode,
@@ -264,6 +275,7 @@ export async function createTrialRedeemCode(
     mode,
     trialDays,
     note,
+    variant,
     createdAt: now,
     usedAt: null,
     usedBy: null,

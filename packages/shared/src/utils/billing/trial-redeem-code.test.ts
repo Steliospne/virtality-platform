@@ -40,6 +40,7 @@ function record(
     mode: 'timed_trial',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
+    variant: null,
     createdAt: NOW,
     usedAt: null,
     usedBy: null,
@@ -179,6 +180,23 @@ describe('createTrialRedeemCode', () => {
       mode: 'permanent_free',
       note: 'partner clinic',
     })
+  })
+
+  it('stores a Plan Variant name when given, and null otherwise', async () => {
+    const store = createMemoryStore()
+    const withVariant = await createTrialRedeemCode(
+      store,
+      { variant: 'early-bird' },
+      { now: () => NOW, generateCode: () => 'GO-VARIANT001' },
+    )
+    expect(withVariant.variant).toBe('early-bird')
+
+    const withoutVariant = await createTrialRedeemCode(
+      store,
+      {},
+      { now: () => NOW, generateCode: () => 'GO-NOVARIANT1' },
+    )
+    expect(withoutVariant.variant).toBeNull()
   })
 })
 

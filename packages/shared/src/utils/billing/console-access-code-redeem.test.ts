@@ -36,6 +36,7 @@ function record(
     mode: 'timed_trial',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
+    variant: null,
     createdAt: NOW,
     usedAt: null,
     usedBy: null,
@@ -46,6 +47,7 @@ function record(
 function createMemoryStore(
   initial: TrialRedeemCodeRecord[] = [],
   seat: ProfileBillingSeat = null,
+  applyVariant: TrialRedeemConsumeStore['applyVariant'] = async () => 'applied',
 ): ConsoleAccessCodeStore & { rows: TrialRedeemCodeRecord[] } {
   const rows = [...initial]
   const consumeUnusedAs =
@@ -63,6 +65,7 @@ function createMemoryStore(
     findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
     consumeAsRedeemed: consumeUnusedAs('redeemed'),
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
+    applyVariant,
   }
 
   return {
@@ -443,6 +446,105 @@ describe('redeemAccessCodeOnProfile', () => {
         },
       ),
     ).rejects.toThrow(TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE)
+  })
+})
+
+describe('redeemAccessCodeOnProfile variant', () => {
+  it('applies the baked-in variant before consuming the code', async () => {
+    const applyVariant = vi.fn(async () => 'applied' as const)
+    const store = createMemoryStore(
+      [record({ id: 20, mode: 'permanent_free', variant: 'early-bird' })],
+      null,
+      applyVariant,
+    )
+
+    await redeemAccessCodeOnProfile(
+      store,
+      stripeGateway(),
+      trialGrantIssuer(),
+      {
+        userId: 'user_20',
+        code: 'GO-ABCDEFGHIJ',
+        stripeCustomerId: 'cus_20',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(applyVariant).toHaveBeenCalledWith('user_20', 'early-bird')
+    expect(store.rows[0]?.status).toBe('redeemed')
+  })
+
+  it('fails the whole redemption and leaves the code unused when blocked', async () => {
+    const store = createMemoryStore(
+      [record({ id: 21, mode: 'permanent_free', variant: 'early-bird' })],
+      null,
+      async () => 'blocked',
+    )
+
+    await expect(
+      redeemAccessCodeOnProfile(
+        store,
+        stripeGateway(),
+        trialGrantIssuer(),
+        {
+          userId: 'user_21',
+          code: 'GO-ABCDEFGHIJ',
+          stripeCustomerId: 'cus_21',
+          priceId: FREE_PLAN_PRICE_ID,
+        },
+        { now: () => NOW },
+      ),
+    ).rejects.toThrow()
+    expect(store.rows[0]?.status).toBe('unused')
+  })
+
+  it('fails the whole redemption when the variant no longer resolves', async () => {
+    const store = createMemoryStore(
+      [record({ id: 22, mode: 'permanent_free', variant: 'retired-tier' })],
+      null,
+      async () => 'unavailable',
+    )
+
+    await expect(
+      redeemAccessCodeOnProfile(
+        store,
+        stripeGateway(),
+        trialGrantIssuer(),
+        {
+          userId: 'user_22',
+          code: 'GO-ABCDEFGHIJ',
+          stripeCustomerId: 'cus_22',
+          priceId: FREE_PLAN_PRICE_ID,
+        },
+        { now: () => NOW },
+      ),
+    ).rejects.toThrow()
+    expect(store.rows[0]?.status).toBe('unused')
+  })
+
+  it('does not call applyVariant when the code has no variant', async () => {
+    const applyVariant = vi.fn(async () => 'applied' as const)
+    const store = createMemoryStore(
+      [record({ id: 23, mode: 'permanent_free' })],
+      null,
+      applyVariant,
+    )
+
+    await redeemAccessCodeOnProfile(
+      store,
+      stripeGateway(),
+      trialGrantIssuer(),
+      {
+        userId: 'user_23',
+        code: 'GO-ABCDEFGHIJ',
+        stripeCustomerId: 'cus_23',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(applyVariant).not.toHaveBeenCalled()
   })
 })
 

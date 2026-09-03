@@ -1,5 +1,6 @@
 export * from './trial-redeem-code.ts'
 export * from './trial-redeem-sign-up.ts'
+export * from './access-code-variant.ts'
 export * from './coupon-library.ts'
 export * from './promotion-code.ts'
 export * from './campaign-window.ts'

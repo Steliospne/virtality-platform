@@ -24,6 +24,7 @@ import {
   type TrialRedeemStripeGateway,
   type TrialRedeemTrialGrantIssuer,
 } from './trial-redeem-sign-up.ts'
+import { type AccessCodeVariantOutcome } from './access-code-variant.ts'
 
 export const CONSOLE_ACCESS_CODE_INVALID_MESSAGE =
   "That Access Code isn't valid." as const
@@ -183,6 +184,22 @@ export class ConsoleAccessCodeFailedError extends Error {
   }
 }
 
+export class ConsoleAccessCodeVariantBlockedError extends Error {
+  constructor() {
+    super(
+      'Cannot apply this Access Code while a live paid plan is active. Cancel or wait for the seat to end, then use manual assignment.',
+    )
+    this.name = 'ConsoleAccessCodeVariantBlockedError'
+  }
+}
+
+export class ConsoleAccessCodeVariantUnavailableError extends Error {
+  constructor() {
+    super("This code's plan is no longer available. Contact support.")
+    this.name = 'ConsoleAccessCodeVariantUnavailableError'
+  }
+}
+
 function profileMatrixAlreadyEntitled(input: {
   seatKind: ProfileBillingSeatKind
   mode: TrialRedeemCodeMode
@@ -229,7 +246,18 @@ export async function redeemAccessCodeOnProfile(
     throw new ConsoleAccessCodeAlreadyUsedError()
   }
 
-  const { id: codeId, trialDays, mode } = gate.record
+  const { id: codeId, trialDays, mode, variant } = gate.record
+
+  if (variant) {
+    const variantOutcome = await store.applyVariant(input.userId, variant)
+    if (variantOutcome === 'blocked') {
+      throw new ConsoleAccessCodeVariantBlockedError()
+    }
+    if (variantOutcome === 'unavailable') {
+      throw new ConsoleAccessCodeVariantUnavailableError()
+    }
+  }
+
   const seat = await store.findBillingSeatByUserId(input.userId)
   const seatKind = classifyProfileBillingSeat(seat)
   const metadata = { trialRedeemCodeId: String(codeId) }
