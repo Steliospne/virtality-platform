@@ -377,7 +377,7 @@ describe('profileBillingIsExpiredFree', () => {
     ).toBe(true)
   })
 
-  it('is false while a Free trial is live, and for Pro or no plan', () => {
+  it('is false while a Free trial is live, and for Default or no plan', () => {
     expect(
       profileBillingIsExpiredFree({
         entitled: true,
@@ -389,7 +389,7 @@ describe('profileBillingIsExpiredFree', () => {
       profileBillingIsExpiredFree({
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
       }),
     ).toBe(false)
     expect(
