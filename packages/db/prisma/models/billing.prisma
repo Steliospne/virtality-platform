@@ -38,6 +38,9 @@ model TrialRedeemCode {
   mode      TrialRedeemCodeMode    @default(timed_trial)
   trialDays Int                    @default(14)
   note      String?
+  /// Assigned Variant name (kebab-case), e.g. `early-bird`. Sparse: null means
+  /// no variant is granted on redemption (existing trial/free-only behavior).
+  variant   String?
   createdAt DateTime               @db.Timestamp(6)
   usedAt    DateTime?              @db.Timestamp(6)
   usedBy    String?
