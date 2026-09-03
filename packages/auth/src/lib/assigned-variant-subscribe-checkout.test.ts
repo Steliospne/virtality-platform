@@ -67,6 +67,11 @@ function createStripeMock(input?: {
   const yearly = input?.assignedYearlyPriceId ?? 'price_early_y'
 
   return {
+    products: {
+      search: vi.fn(async () => ({
+        data: [{ id: 'prod_test_default' }],
+      })),
+    },
     prices: {
       list: vi.fn(async () => ({
         data: [

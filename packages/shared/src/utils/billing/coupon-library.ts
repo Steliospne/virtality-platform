@@ -9,10 +9,13 @@ export const COUPON_LIBRARY_CURRENCY = 'eur' as const
 export const COUPON_LIBRARY_ARCHIVE_METADATA_KEY = 'virtality_archived' as const
 
 /**
- * Canonical sandbox Default Product. Same Product as Checkout / Access Code
- * Prices in auth. Coupons created here no longer restrict `applies_to` — they
- * apply store-wide — but existing Coupons/Campaign discounts still reference
- * this id when checking eligibility.
+ * Sandbox/no-Stripe-client fallback Default Product id, and the id legacy
+ * Coupon `applies_to` eligibility reads compare against. The live checkout
+ * path does NOT use this constant — it resolves the current Default plan
+ * Product from Stripe by metadata at runtime (see
+ * `resolveDefaultPlanProductId` in `@virtality/auth`), so the Product can be
+ * swapped in Stripe without a deploy. Coupons created here no longer
+ * restrict `applies_to` — they apply store-wide.
  */
 export const DEFAULT_PLAN_PRODUCT_ID = 'prod_VBrsOJhc54iHSG' as const
 
