@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   FREE_SUBSCRIPTION_PLAN,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_SUBSCRIPTION_PLAN,
   shouldRouteSubscribeCheckoutViaAssignedVariant,
 } from './subscribe-checkout.ts'
 
@@ -33,16 +33,16 @@ describe('shouldRouteSubscribeCheckoutViaAssignedVariant', () => {
     ).toBe(false)
     expect(
       shouldRouteSubscribeCheckoutViaAssignedVariant({
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
       }),
     ).toBe(false)
   })
 
-  it('keeps live paid Pro on portal / cycle plan change', () => {
+  it('keeps live paid Default on portal / cycle plan change', () => {
     expect(
       shouldRouteSubscribeCheckoutViaAssignedVariant({
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
       }),
     ).toBe(false)

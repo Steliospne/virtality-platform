@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PRO_PLAN_PRODUCT_ID,
+  DEFAULT_PLAN_PRODUCT_ID,
   type CouponLibraryRecord,
 } from './coupon-library.ts'
 import {
@@ -27,7 +27,7 @@ function baseCoupon(
     currency: null,
     duration: 'once',
     durationInMonths: null,
-    appliesToProductIds: [PRO_PLAN_PRODUCT_ID],
+    appliesToProductIds: [DEFAULT_PLAN_PRODUCT_ID],
     archived: false,
     created: 1_700_000_000,
     ...overrides,
@@ -136,14 +136,22 @@ describe('assessCampaignCouponHealth', () => {
     )
   })
 
-  it('marks Coupons that omit Pro applies_to', () => {
+  it('marks Coupons scoped to a different product', () => {
     expect(
-      assessCampaignCouponHealth(baseCoupon({ appliesToProductIds: [] })),
+      assessCampaignCouponHealth(
+        baseCoupon({ appliesToProductIds: ['prod_other'] }),
+      ),
     ).toBe('applies_to_miss')
   })
 
-  it('marks Pro Coupons healthy', () => {
+  it('marks Default Coupons healthy', () => {
     expect(assessCampaignCouponHealth(baseCoupon())).toBe('healthy')
+  })
+
+  it('marks store-wide Coupons (empty applies_to) healthy', () => {
+    expect(
+      assessCampaignCouponHealth(baseCoupon({ appliesToProductIds: [] })),
+    ).toBe('healthy')
   })
 })
 
@@ -233,14 +241,16 @@ describe('resolveCampaignCheckoutCouponId', () => {
 })
 
 describe('listCouponsForCampaignPicker', () => {
-  it('returns only non-archived Coupons that apply to Pro', () => {
+  it('returns only non-archived Coupons that apply to Default', () => {
     const coupons = [
       baseCoupon({ id: 'cou_ok' }),
+      baseCoupon({ id: 'cou_store_wide', appliesToProductIds: [] }),
       baseCoupon({ id: 'cou_archived', archived: true }),
-      baseCoupon({ id: 'cou_miss', appliesToProductIds: [] }),
+      baseCoupon({ id: 'cou_miss', appliesToProductIds: ['prod_other'] }),
     ]
     expect(listCouponsForCampaignPicker(coupons).map((c) => c.id)).toEqual([
       'cou_ok',
+      'cou_store_wide',
     ])
   })
 })

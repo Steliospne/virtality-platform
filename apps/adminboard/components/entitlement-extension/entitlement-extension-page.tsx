@@ -108,7 +108,9 @@ export function EntitlementExtensionPage() {
             value={userId || undefined}
             onValueChange={(value) => {
               setUserId(value)
-              const seat = seats?.find((candidate) => candidate.userId === value)
+              const seat = seats?.find(
+                (candidate) => candidate.userId === value,
+              )
               if (seat?.extensionMode !== 'update') {
                 setDirection('extend')
               }

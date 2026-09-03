@@ -19,7 +19,7 @@ function profile(
 }
 
 describe('trial grant action eligibility', () => {
-  it('allows issuing when no open grant and no live Pro subscription', () => {
+  it('allows issuing when no open grant and no live Default subscription', () => {
     expect(canIssueTrialGrant(profile())).toBe(true)
     expect(
       canIssueTrialGrant(

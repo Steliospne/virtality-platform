@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Profile → Billing: stacked Monthly/Yearly Pro cards + Checkout / Portal CTA,
+ * Profile → Billing: stacked Monthly/Yearly Default cards + Checkout / Portal CTA,
  * Assigned Variant compare-at, Discount rewrite, and promo redeem (#78 / #190).
  */
 

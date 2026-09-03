@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   FREE_SUBSCRIPTION_PLAN,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from '../billing/billing-plans.ts'
 import {
   buildStripeCustomerDashboardUrl,
@@ -15,7 +15,7 @@ import {
 const NOW = new Date('2026-08-10T12:00:00.000Z')
 
 describe('pickPrimaryCustomerSubscription', () => {
-  it('prefers a live paid Pro subscription over a live Free trial', () => {
+  it('prefers a live paid Default subscription over a live Free trial', () => {
     const picked = pickPrimaryCustomerSubscription([
       {
         id: 'sub_free',
@@ -28,7 +28,7 @@ describe('pickPrimaryCustomerSubscription', () => {
       },
       {
         id: 'sub_pro',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
         trialEnd: null,
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -44,7 +44,7 @@ describe('pickPrimaryCustomerSubscription', () => {
     const picked = pickPrimaryCustomerSubscription([
       {
         id: 'sub_old',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
         trialEnd: null,
         periodEnd: new Date('2026-07-01T12:00:00.000Z'),
@@ -69,7 +69,7 @@ describe('pickPrimaryCustomerSubscription', () => {
     const picked = pickPrimaryCustomerSubscription([
       {
         id: 'sub_older',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
         trialEnd: null,
         periodEnd: new Date('2026-05-01T12:00:00.000Z'),
@@ -78,7 +78,7 @@ describe('pickPrimaryCustomerSubscription', () => {
       },
       {
         id: 'sub_recent',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
         trialEnd: null,
         periodEnd: new Date('2026-07-15T12:00:00.000Z'),
@@ -92,14 +92,14 @@ describe('pickPrimaryCustomerSubscription', () => {
 })
 
 describe('deriveCustomerAccessStatus', () => {
-  it('labels entitled Pro clinicians as paid access', () => {
+  it('labels entitled Default clinicians as paid access', () => {
     expect(
       deriveCustomerAccessStatus({
         now: NOW,
         role: 'user',
         subscriptions: [
           {
-            plan: PRO_SUBSCRIPTION_PLAN,
+            plan: DEFAULT_SUBSCRIPTION_PLAN,
             status: 'active',
             trialEnd: null,
             periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -180,7 +180,7 @@ describe('deriveCustomerBillingStatus', () => {
     expect(
       deriveCustomerBillingStatus({
         id: 'sub_1',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
         trialEnd: null,
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -202,7 +202,7 @@ describe('deriveCustomerBillingStatus', () => {
     expect(
       deriveCustomerBillingStatus({
         id: 'sub_3',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'past_due',
         trialEnd: null,
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -213,7 +213,7 @@ describe('deriveCustomerBillingStatus', () => {
     expect(
       deriveCustomerBillingStatus({
         id: 'sub_4',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
         trialEnd: null,
         periodEnd: new Date('2026-07-01T12:00:00.000Z'),
@@ -229,7 +229,7 @@ describe('sortCustomerSubscriptionHistory', () => {
     const sorted = sortCustomerSubscriptionHistory([
       {
         id: 'sub_old',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'canceled',
         trialEnd: null,
         periodEnd: new Date('2026-05-01T12:00:00.000Z'),

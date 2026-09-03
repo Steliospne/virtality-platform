@@ -1,7 +1,7 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import type Stripe from 'stripe'
-import { FREE_PLAN_PRICE_ID, PRO_PLAN_PRICE_ID } from '../auth-instance.ts'
+import { FREE_PLAN_PRICE_ID, DEFAULT_PLAN_PRICE_ID } from '../auth-instance.ts'
 import {
   createPrismaAdminCustomerAccessStore,
   createStripeAdminCustomerAccessGateway,
@@ -34,7 +34,7 @@ export function createAdminEntitlementClockRuntime(deps: {
     extensionStripe: createStripeEntitlementExtensionGateway(deps.stripeClient),
     rearm: lifecycle,
     freePlanPriceId: FREE_PLAN_PRICE_ID,
-    proPlanPriceId: PRO_PLAN_PRICE_ID,
+    proPlanPriceId: DEFAULT_PLAN_PRICE_ID,
     now: deps.now,
   })
 }

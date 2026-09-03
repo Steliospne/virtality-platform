@@ -250,8 +250,8 @@ Product intent for managed logos was earlier sketched in `docs/prd/0139-adminboa
 
 | Layer       | Paths                                                                                                                                     |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Prisma      | `packages/db/prisma/models/marketing-{partner-logo,promo-video,mosaic}.prisma`                                                    |
-| Migrations  | `packages/db/prisma/migrations/20260717*` / `20260720*`                                                                           |
+| Prisma      | `packages/db/prisma/models/marketing-{partner-logo,promo-video,mosaic}.prisma`                                                            |
+| Migrations  | `packages/db/prisma/migrations/20260717*` / `20260720*`                                                                                   |
 | Shared      | `packages/shared/src/{types,utils}/{partner-logo,promo-video,mosaic}.*`                                                                   |
 | oRPC        | `packages/orpc/src/procedures/{partner-logo,promo-video,mosaic}.ts`, `router.ts`                                                          |
 | React Query | `packages/react-query/src/hooks/{queries,mutations}/{partner-logo,promo-video,mosaic}/`                                                   |

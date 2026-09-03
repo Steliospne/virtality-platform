@@ -5,24 +5,24 @@ import {
   CHECKOUT_RETURN_PARAM,
   CHECKOUT_SUCCESS_INTENT_PARAM,
   CHECKOUT_SUCCESS_PATH,
-  PRO_SUBSCRIPTION_PLAN,
-  buildProCheckoutUpgradeInput,
+  DEFAULT_SUBSCRIPTION_PLAN,
+  buildDefaultCheckoutUpgradeInput,
   readCheckoutReturnIntent,
   shouldPollCheckoutEntitlementRestore,
-  startProSubscriptionCheckout,
+  startDefaultSubscriptionCheckout,
 } from './subscription-checkout.js'
 
 const consoleOrigin = getConsoleUrl()
 
-describe('buildProCheckoutUpgradeInput', () => {
+describe('buildDefaultCheckoutUpgradeInput', () => {
   it('lands successful Checkout on the Checkout Success Page with intent', () => {
-    const input = buildProCheckoutUpgradeInput('/app', {
+    const input = buildDefaultCheckoutUpgradeInput('/app', {
       checkoutSuccessIntent: 'renew',
     })
     const success = new URL(input.successUrl)
     const cancel = new URL(input.cancelUrl)
 
-    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(input.plan).toBe(DEFAULT_SUBSCRIPTION_PLAN)
     expect(success.pathname).toBe(CHECKOUT_SUCCESS_PATH)
     expect(success.searchParams.get(CHECKOUT_SUCCESS_INTENT_PARAM)).toBe(
       'renew',
@@ -33,7 +33,7 @@ describe('buildProCheckoutUpgradeInput', () => {
   })
 
   it('defaults Checkout Success Intent to subscribe', () => {
-    const success = new URL(buildProCheckoutUpgradeInput('/app').successUrl)
+    const success = new URL(buildDefaultCheckoutUpgradeInput('/app').successUrl)
 
     expect(success.searchParams.get(CHECKOUT_SUCCESS_INTENT_PARAM)).toBe(
       'subscribe',
@@ -41,7 +41,7 @@ describe('buildProCheckoutUpgradeInput', () => {
   })
 
   it('preserves existing query params on the cancel return URL', () => {
-    const input = buildProCheckoutUpgradeInput('/patients?tab=devices')
+    const input = buildDefaultCheckoutUpgradeInput('/patients?tab=devices')
     const cancel = new URL(input.cancelUrl)
 
     expect(cancel.origin).toBe(new URL(consoleOrigin).origin)
@@ -51,7 +51,7 @@ describe('buildProCheckoutUpgradeInput', () => {
   })
 
   it('keeps absolute console cancel URLs absolute (not auth-host relative)', () => {
-    const input = buildProCheckoutUpgradeInput(
+    const input = buildDefaultCheckoutUpgradeInput(
       `${consoleOrigin}/user/abc/profile?tab=billing`,
       { checkoutSuccessIntent: 'subscribe' },
     )
@@ -63,27 +63,27 @@ describe('buildProCheckoutUpgradeInput', () => {
   })
 
   it('does not request a trial period on the paid Checkout path', () => {
-    const input = buildProCheckoutUpgradeInput('/')
+    const input = buildDefaultCheckoutUpgradeInput('/')
 
     expect(input).not.toHaveProperty('trialDays')
     expect(input).not.toHaveProperty('freeTrial')
   })
 
   it('defaults to monthly Checkout (annual: false)', () => {
-    const input = buildProCheckoutUpgradeInput('/app')
+    const input = buildDefaultCheckoutUpgradeInput('/app')
 
     expect(input.annual).toBe(false)
   })
 
   it('requests yearly Checkout when annual is true', () => {
-    const input = buildProCheckoutUpgradeInput('/app', { annual: true })
+    const input = buildDefaultCheckoutUpgradeInput('/app', { annual: true })
 
-    expect(input.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(input.plan).toBe(DEFAULT_SUBSCRIPTION_PLAN)
     expect(input.annual).toBe(true)
   })
 
   it('is immediate Checkout only (no scheduleAtPeriodEnd or disableRedirect)', () => {
-    const input = buildProCheckoutUpgradeInput('/app', { annual: true })
+    const input = buildDefaultCheckoutUpgradeInput('/app', { annual: true })
 
     expect(input).not.toHaveProperty('scheduleAtPeriodEnd')
     expect(input).not.toHaveProperty('disableRedirect')
@@ -132,7 +132,7 @@ describe('checkout return intent', () => {
   })
 })
 
-describe('startProSubscriptionCheckout', () => {
+describe('startDefaultSubscriptionCheckout', () => {
   it('starts Better Auth upgrade for the canonical pro plan at returnUrl', async () => {
     const calls: unknown[] = []
     const upgrade = async (input: unknown) => {
@@ -140,7 +140,7 @@ describe('startProSubscriptionCheckout', () => {
       return { data: { url: 'https://checkout.stripe.test/cs_test' } }
     }
 
-    const result = await startProSubscriptionCheckout({
+    const result = await startDefaultSubscriptionCheckout({
       upgrade,
       returnUrl: '/patients',
       checkoutSuccessIntent: 'renew',
@@ -148,7 +148,7 @@ describe('startProSubscriptionCheckout', () => {
 
     expect(result).toEqual({ ok: true })
     expect(calls).toEqual([
-      buildProCheckoutUpgradeInput('/patients', {
+      buildDefaultCheckoutUpgradeInput('/patients', {
         checkoutSuccessIntent: 'renew',
       }),
     ])
@@ -161,7 +161,7 @@ describe('startProSubscriptionCheckout', () => {
       return { data: { url: 'https://checkout.stripe.test/cs_test' } }
     }
 
-    const result = await startProSubscriptionCheckout({
+    const result = await startDefaultSubscriptionCheckout({
       upgrade,
       returnUrl: '/profile',
       annual: true,
@@ -169,12 +169,12 @@ describe('startProSubscriptionCheckout', () => {
 
     expect(result).toEqual({ ok: true })
     expect(calls).toEqual([
-      buildProCheckoutUpgradeInput('/profile', { annual: true }),
+      buildDefaultCheckoutUpgradeInput('/profile', { annual: true }),
     ])
   })
 
   it('surfaces Better Auth upgrade failures without claiming success', async () => {
-    const result = await startProSubscriptionCheckout({
+    const result = await startDefaultSubscriptionCheckout({
       upgrade: async () => ({
         error: { message: 'Already subscribed to this plan' },
       }),
@@ -188,7 +188,7 @@ describe('startProSubscriptionCheckout', () => {
   })
 
   it('falls back when Better Auth omits an error message', async () => {
-    const result = await startProSubscriptionCheckout({
+    const result = await startDefaultSubscriptionCheckout({
       upgrade: async () => ({
         error: { message: '   ' },
       }),

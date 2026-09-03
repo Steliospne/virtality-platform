@@ -14,7 +14,7 @@ import {
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
   isFreeSubscriptionPlan,
-  isPaidProPortalEligible,
+  isPaidDefaultPortalEligible,
   isStaffRedeemBlocked,
   promoCodeLabel,
   replaceConfirmDiscountLabel,
@@ -39,13 +39,13 @@ export type BillingInterval = EntitlementBillingInterval
 
 export type BillingPlanPrices = BillingPlanPriceLabels
 
-/** Plan-card CTA when a live paid Pro seat switches monthly ↔ yearly. */
+/** Plan-card CTA when a live paid Default seat switches monthly ↔ yearly. */
 export const PAID_INTERVAL_UPGRADE_LABEL = 'Upgrade' as const
 
 /** Plan-card CTA when a period-end interval switch is already scheduled. */
 export const PAID_INTERVAL_CANCEL_LABEL = 'Cancel' as const
 
-/** Plan-card CTA to undo cancel-at-period-end on the current Pro interval. */
+/** Plan-card CTA to undo cancel-at-period-end on the current Default interval. */
 export const PAID_CANCELLATION_UNDO_LABEL = "Don't cancel" as const
 
 export type ProfileBillingCardActionConfirm = {
@@ -150,7 +150,7 @@ export function profileBillingIntervalTitle(
   return interval === 'year' ? 'Yearly' : 'Monthly'
 }
 
-/** Opposite Pro interval when a period-end switch is scheduled. */
+/** Opposite Default interval when a period-end switch is scheduled. */
 export function profileBillingPendingTargetInterval(
   standing: Pick<
     BillingStandingView,
@@ -177,7 +177,7 @@ function resolveProfileBillingPlanCardCheckoutCta(
 }
 
 /**
- * Centralized Manage billing CTA. Paid Pro seats with a live clock open the
+ * Centralized Manage billing CTA. Paid Default seats with a live clock open the
  * Customer Portal; Free and trialing clinicians use per-card Checkout instead.
  */
 export function profileBillingPrimaryCtaLabel(
@@ -190,7 +190,7 @@ export function profileBillingPrimaryCtaLabel(
 export function profileBillingOpensPortal(
   standing: Pick<BillingStandingView, 'entitled' | 'plan' | 'status'>,
 ): boolean {
-  return isPaidProPortalEligible(standing)
+  return isPaidDefaultPortalEligible(standing)
 }
 
 /** Whether plan cards should expose Checkout / interval-switch actions. */
@@ -207,7 +207,7 @@ export function profileBillingShowsPlanCardCheckout(
 
 /**
  * Interval-specific plan-card action. Free / Renew seats share one
- * Subscribe/Renew checkout on both cards. Live paid Pro schedules "Upgrade" on
+ * Subscribe/Renew checkout on both cards. Live paid Default schedules "Upgrade" on
  * the other interval, or "Cancel" when that switch is already scheduled. While
  * cancel-at-period-end is set, the current interval restores ("Don't cancel")
  * and the other interval checkouts "Upgrade" (pay now, not period-end schedule).
@@ -308,9 +308,9 @@ export function profileBillingPendingCancellationBanner(
   if (!standing.cancelAtPeriodEnd || !standing.entitled) return null
   if (standing.clockEnd) {
     const when = formatEntitlementClockEndLabel(new Date(standing.clockEnd))
-    return `Your subscription ends on ${when}. You'll keep Pro access until then.`
+    return `Your subscription ends on ${when}. You'll keep Default access until then.`
   }
-  return `Your subscription ends at the next billing cycle. You'll keep Pro access until then.`
+  return `Your subscription ends at the next billing cycle. You'll keep Default access until then.`
 }
 
 /** Confirm-dialog body for scheduling an interval switch. */
@@ -362,9 +362,9 @@ export function profileBillingStatusHeadline(
 
   if (standing.entitled) {
     if (standing.status === 'trialing') return 'Trial in progress'
-    if (standing.billingInterval === 'year') return 'Pro · Yearly'
-    if (standing.billingInterval === 'month') return 'Pro · Monthly'
-    return 'Pro'
+    if (standing.billingInterval === 'year') return 'Default · Yearly'
+    if (standing.billingInterval === 'month') return 'Default · Monthly'
+    return 'Default'
   }
 
   switch (standing.status) {
@@ -394,9 +394,9 @@ export function profileBillingStatusDetail(
     return `Renews ${label}`
   }
 
-  if (standing.entitled) return 'Your Pro access is active.'
+  if (standing.entitled) return 'Your Default access is active.'
 
-  return 'Choose Monthly or Yearly Pro, then continue to Checkout.'
+  return 'Choose Monthly or Yearly Default, then continue to Checkout.'
 }
 
 export function profileBillingDiscountDisplay(

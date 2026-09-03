@@ -2,13 +2,13 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   AdminCustomerBillingValidationError,
-  annualFlagForProPlanPriceId,
+  annualFlagForDefaultPlanPriceId,
   billingSnapshotFromPrimarySubscription,
   buildCheckoutCancelReturnUrl,
   buildCheckoutSuccessUrl,
-  buildPaidProSubscriptionCreateParams,
+  buildPaidDefaultSubscriptionCreateParams,
   buildPermanentFreeAfterCancellationStripeParams,
-  effectiveAssignedProVariant,
+  effectiveAssignedPlanVariant,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AdminCustomerCyclePlanPort,
@@ -24,9 +24,9 @@ import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
 import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
 import {
-  readProVariantCatalogOrSandbox,
-  resolveAssignedProVariantChargePrice,
-} from './pro-variant-catalog.ts'
+  readPlanVariantCatalogOrSandbox,
+  resolveAssignedPlanVariantChargePrice,
+} from './plan-variant-catalog.ts'
 
 export type { AdminCustomerBillingRuntime }
 
@@ -101,7 +101,7 @@ export function createPrismaAdminCustomerBillingStore(
         select: {
           role: true,
           stripeCustomerId: true,
-          assignedProVariant: true,
+          assignedDefaultVariant: true,
         },
       })
       if (!user) {
@@ -111,7 +111,7 @@ export function createPrismaAdminCustomerBillingStore(
           primaryPlan: null,
           primaryStatus: null,
           stripeSubscriptionId: null,
-          assignedProVariant: null,
+          assignedDefaultVariant: null,
         }
       }
 
@@ -132,8 +132,8 @@ export function createPrismaAdminCustomerBillingStore(
       return billingSnapshotFromPrimarySubscription({
         role: user.role,
         stripeCustomerId: user.stripeCustomerId,
-        assignedProVariant: effectiveAssignedProVariant(
-          user.assignedProVariant,
+        assignedDefaultVariant: effectiveAssignedPlanVariant(
+          user.assignedDefaultVariant,
         ),
         subscriptions,
       })
@@ -181,12 +181,12 @@ export function createStripeAdminCustomerBillingGateway(
       })
       return paymentMethods.data.length > 0
     },
-    retrievePaidProSubscription: async (stripeSubscriptionId) => {
+    retrievePaidDefaultSubscription: async (stripeSubscriptionId) => {
       const subscription =
         await stripeClient.subscriptions.retrieve(stripeSubscriptionId)
       const item = subscription.items.data[0]
       if (!item?.id || !item.price?.id) {
-        throw new Error('Paid Pro subscription is missing a billable item.')
+        throw new Error('Paid Default subscription is missing a billable item.')
       }
 
       return {
@@ -222,9 +222,9 @@ export function createStripeAdminCustomerBillingGateway(
         currency: preview.currency ?? 'eur',
       }
     },
-    createPaidProSubscription: async (input) => {
+    createPaidDefaultSubscription: async (input) => {
       const subscription = await stripeClient.subscriptions.create(
-        buildPaidProSubscriptionCreateParams(input),
+        buildPaidDefaultSubscriptionCreateParams(input),
       )
       return { stripeSubscriptionId: subscription.id }
     },
@@ -323,22 +323,22 @@ export function createAdminCustomerBillingRuntime(deps: {
     cyclePlan,
     freePlanPriceId: FREE_PLAN_PRICE_ID,
     checkoutReturnUrls: buildAdminCheckoutReturnUrls,
-    resolveProVariantCatalog: () =>
-      readProVariantCatalogOrSandbox(deps.stripeClient),
+    resolvePlanVariantCatalog: () =>
+      readPlanVariantCatalogOrSandbox(deps.stripeClient),
   })
 
   async function remapTargetPriceId(
     userId: string,
     targetPriceId: string,
   ): Promise<string> {
-    const annual = annualFlagForProPlanPriceId(targetPriceId)
+    const annual = annualFlagForDefaultPlanPriceId(targetPriceId)
     const user = await client.user.findFirst({
       where: { id: userId, deletedAt: null },
-      select: { assignedProVariant: true },
+      select: { assignedDefaultVariant: true },
     })
-    const resolved = await resolveAssignedProVariantChargePrice({
+    const resolved = await resolveAssignedPlanVariantChargePrice({
       stripeClient: deps.stripeClient,
-      assignedProVariant: user?.assignedProVariant ?? null,
+      assignedDefaultVariant: user?.assignedDefaultVariant ?? null,
       annual,
     })
     if (!resolved.ok) {

@@ -13,7 +13,7 @@ import {
   resolveEntitlementClock,
   type EntitlementClockSubscription,
 } from './entitlement-clock.ts'
-import { isProSubscriptionPlan } from './billing-plans.ts'
+import { isDefaultSubscriptionPlan } from './billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from '../admin-customer/admin-customer-access.ts'
 
 export const TRIAL_GRANT_STATUSES = ['active', 'converted', 'revoked'] as const
@@ -70,7 +70,7 @@ function userHasLivePaidSubscriptionForEntitlement(
   if (!subscription) return false
   return (
     isLiveEntitlementSubscriptionStatus(subscription.status) &&
-    isProSubscriptionPlan(subscription.plan)
+    isDefaultSubscriptionPlan(subscription.plan)
   )
 }
 
@@ -196,7 +196,7 @@ export function isPaidStripeSubscriptionForTrialGrantConversion(
   subscription: PaidStripeSubscriptionForTrialGrantConversion,
 ): boolean {
   return (
-    isProSubscriptionPlan(subscription.plan) &&
+    isDefaultSubscriptionPlan(subscription.plan) &&
     Boolean(subscription.stripeSubscriptionId?.trim())
   )
 }
@@ -232,7 +232,7 @@ export type TrialGrantStore = {
     beforeBillingState: AdminCustomerBillingSnapshot
     afterBillingState: AdminCustomerBillingSnapshot | null
   }) => Promise<{ id: string }>
-  userHasLiveProSubscription: (userId: string) => Promise<boolean>
+  userHasLiveDefaultSubscription: (userId: string) => Promise<boolean>
 }
 
 export type IssueTrialGrantInput = {
@@ -405,7 +405,7 @@ export async function issueTrialGrantToCustomer(
     throw new TrialGrantAlreadyOpenError(user.id)
   }
 
-  const entitled = await store.userHasLiveProSubscription(user.id)
+  const entitled = await store.userHasLiveDefaultSubscription(user.id)
   if (entitled) {
     throw new TrialGrantCustomerAlreadyEntitledError(user.id)
   }
@@ -441,7 +441,7 @@ export async function issueTrialGrantToCustomer(
 
 /**
  * Self-serve counterpart to {@link issueTrialGrantToCustomer}: same open-grant
- * / live-Pro guards, but no actor/reason and no AdminCustomerAudit row. Used
+ * / live-Default guards, but no actor/reason and no AdminCustomerAudit row. Used
  * by Access Code redemption (sign-up, Profile Billing, sign-in) rather than
  * admin action.
  */
@@ -450,7 +450,7 @@ export async function grantActiveTrialToUser(
     TrialGrantStore,
     | 'findOpenTrialGrantByUserId'
     | 'createTrialGrant'
-    | 'userHasLiveProSubscription'
+    | 'userHasLiveDefaultSubscription'
   >,
   input: GrantActiveTrialInput,
   runtime: { now?: () => Date } = {},
@@ -469,7 +469,7 @@ export async function grantActiveTrialToUser(
     throw new TrialGrantAlreadyOpenError(input.userId)
   }
 
-  const entitled = await store.userHasLiveProSubscription(input.userId)
+  const entitled = await store.userHasLiveDefaultSubscription(input.userId)
   if (entitled) {
     throw new TrialGrantCustomerAlreadyEntitledError(input.userId)
   }

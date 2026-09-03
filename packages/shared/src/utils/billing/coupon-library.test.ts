@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   COUPON_LIBRARY_CURRENCY,
   CouponLibraryValidationError,
-  PRO_PLAN_PRODUCT_ID,
   archiveLibraryCoupon,
   createLibraryCoupon,
   deleteLibraryCoupon,
@@ -19,13 +18,13 @@ function baseRecord(
 ): CouponLibraryRecord {
   return {
     id: 'cou_1',
-    name: 'Pro launch',
+    name: 'Default launch',
     percentOff: 20,
     amountOff: null,
     currency: null,
     duration: 'once',
     durationInMonths: null,
-    appliesToProductIds: [PRO_PLAN_PRODUCT_ID],
+    appliesToProductIds: [],
     archived: false,
     created: 1_700_000_000,
     ...overrides,
@@ -44,7 +43,6 @@ function createGateway(
         currency: input.currency ?? null,
         duration: input.duration,
         durationInMonths: input.durationInMonths ?? null,
-        appliesToProductIds: input.productIds,
       }),
     list: async () => [],
     updateName: async (id, name) => baseRecord({ id, name }),
@@ -55,7 +53,7 @@ function createGateway(
 }
 
 describe('createLibraryCoupon', () => {
-  it('creates a percent-off Coupon for Pro with once duration', async () => {
+  it('creates a store-wide percent-off Coupon with once duration', async () => {
     const created: CouponLibraryCreateParams[] = []
     const gateway = createGateway({
       create: async (input) => {
@@ -67,31 +65,28 @@ describe('createLibraryCoupon', () => {
           currency: input.currency ?? null,
           duration: input.duration,
           durationInMonths: input.durationInMonths ?? null,
-          appliesToProductIds: input.productIds,
         })
       },
     })
 
     const result = await createLibraryCoupon(gateway, {
-      name: 'Pro launch',
+      name: 'Default launch',
       percentOff: 20,
       duration: 'once',
-      planIds: ['pro'],
     })
 
     expect(result).toMatchObject({
-      name: 'Pro launch',
+      name: 'Default launch',
       percentOff: 20,
       amountOff: null,
       duration: 'once',
-      appliesToProductIds: [PRO_PLAN_PRODUCT_ID],
+      appliesToProductIds: [],
       archived: false,
     })
     expect(created[0]).toMatchObject({
-      name: 'Pro launch',
+      name: 'Default launch',
       percentOff: 20,
       duration: 'once',
-      productIds: [PRO_PLAN_PRODUCT_ID],
     })
     expect(created[0]?.currency).toBeUndefined()
     expect(created[0]?.amountOff).toBeUndefined()
@@ -109,7 +104,6 @@ describe('createLibraryCoupon', () => {
           currency: input.currency ?? null,
           duration: input.duration,
           durationInMonths: input.durationInMonths ?? null,
-          appliesToProductIds: input.productIds,
         })
       },
     })
@@ -119,7 +113,6 @@ describe('createLibraryCoupon', () => {
       amountOff: 1000,
       duration: 'repeating',
       durationInMonths: 3,
-      planIds: ['pro'],
     })
 
     expect(captured).toMatchObject({
@@ -127,7 +120,6 @@ describe('createLibraryCoupon', () => {
       currency: COUPON_LIBRARY_CURRENCY,
       duration: 'repeating',
       durationInMonths: 3,
-      productIds: [PRO_PLAN_PRODUCT_ID],
     })
     expect(result.amountOff).toBe(1000)
     expect(result.currency).toBe(COUPON_LIBRARY_CURRENCY)
@@ -140,20 +132,8 @@ describe('createLibraryCoupon', () => {
         amountOff: 1000,
         currency: 'usd',
         duration: 'forever',
-        planIds: ['pro'],
       }),
     ).rejects.toBeInstanceOf(CouponLibraryValidationError)
-  })
-
-  it('rejects create without a plan for applies_to', async () => {
-    await expect(
-      createLibraryCoupon(createGateway(), {
-        name: 'No plan',
-        percentOff: 10,
-        duration: 'forever',
-        planIds: [],
-      }),
-    ).rejects.toThrow(/at least one plan/i)
   })
 
   it('requires durationInMonths for repeating Coupons', async () => {
@@ -162,7 +142,6 @@ describe('createLibraryCoupon', () => {
         name: 'Repeat',
         percentOff: 10,
         duration: 'repeating',
-        planIds: ['pro'],
       }),
     ).rejects.toThrow(/durationInMonths/i)
   })

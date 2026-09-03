@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { getConsoleUrl } from '../../types/index.ts'
 import {
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
 } from './billing-plans.ts'
 import {
-  annualFlagForProPlanPriceId,
+  annualFlagForDefaultPlanPriceId,
   authorizeAdminCyclePlanReference,
   buildCyclePlanChangeUpgradeInput,
   hasPendingCyclePlanChange,
@@ -64,10 +64,14 @@ describe('authorizeAdminCyclePlanReference', () => {
   })
 })
 
-describe('annualFlagForProPlanPriceId', () => {
-  it('maps yearly vs monthly Pro Prices to the Better Auth annual flag', () => {
-    expect(annualFlagForProPlanPriceId(PRO_PLAN_ANNUAL_PRICE_ID)).toBe(true)
-    expect(annualFlagForProPlanPriceId(PRO_PLAN_MONTHLY_PRICE_ID)).toBe(false)
+describe('annualFlagForDefaultPlanPriceId', () => {
+  it('maps yearly vs monthly Default Prices to the Better Auth annual flag', () => {
+    expect(annualFlagForDefaultPlanPriceId(DEFAULT_PLAN_ANNUAL_PRICE_ID)).toBe(
+      true,
+    )
+    expect(annualFlagForDefaultPlanPriceId(DEFAULT_PLAN_MONTHLY_PRICE_ID)).toBe(
+      false,
+    )
   })
 })
 
@@ -89,7 +93,7 @@ describe('buildCyclePlanChangeUpgradeInput', () => {
       referenceId: 'user_customer',
     })
 
-    expect(input.plan).toBe('pro')
+    expect(input.plan).toBe('default')
     expect(input.annual).toBe(true)
     expect(input.referenceId).toBe('user_customer')
     expect(input.scheduleAtPeriodEnd).toBe(true)
@@ -118,7 +122,7 @@ describe('scheduleCyclePlanChange', () => {
     expect(result).toEqual({ ok: true, stripeScheduleId: 'sub_sched_fake' })
     expect(port.upgrade).toHaveBeenCalledWith(
       expect.objectContaining({
-        plan: 'pro',
+        plan: 'default',
         annual: true,
         referenceId: 'user_customer',
         scheduleAtPeriodEnd: true,

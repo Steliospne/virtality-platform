@@ -32,8 +32,8 @@ export function ExpiredFreeUpgradeDialog() {
         <DialogHeader>
           <DialogTitle>Upgrade to launch VR programs</DialogTitle>
           <DialogDescription>
-            Your Pro access has ended. Subscribe to Pro to start VR programs
-            again. You can keep browsing Console while you decide.
+            Your Default access has ended. Subscribe to Default to start VR
+            programs again. You can keep browsing Console while you decide.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -5,7 +5,7 @@ import {
   formatCouponDuration,
 } from './coupon-library-display'
 import {
-  PRO_PLAN_PRODUCT_ID,
+  DEFAULT_PLAN_PRODUCT_ID,
   type CouponLibraryRecord,
 } from '@virtality/shared/utils'
 
@@ -20,7 +20,7 @@ function coupon(
     currency: null,
     duration: 'once',
     durationInMonths: null,
-    appliesToProductIds: [PRO_PLAN_PRODUCT_ID],
+    appliesToProductIds: [DEFAULT_PLAN_PRODUCT_ID],
     archived: false,
     created: 1,
     ...overrides,
@@ -52,7 +52,13 @@ describe('coupon library display', () => {
     ).toBe('Repeating (3 months)')
   })
 
-  it('maps Pro product applies_to to plan label', () => {
-    expect(formatCouponAppliesTo(coupon())).toBe('Pro')
+  it('shows product ids when applies_to is set', () => {
+    expect(formatCouponAppliesTo(coupon())).toBe(DEFAULT_PLAN_PRODUCT_ID)
+  })
+
+  it('shows "All products" when applies_to is empty', () => {
+    expect(formatCouponAppliesTo(coupon({ appliesToProductIds: [] }))).toBe(
+      'All products',
+    )
   })
 })

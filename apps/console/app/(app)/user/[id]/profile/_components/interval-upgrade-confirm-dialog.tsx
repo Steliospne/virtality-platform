@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Confirm scheduling a paid Pro monthly ↔ yearly switch at period end.
+ * Confirm scheduling a paid Default monthly ↔ yearly switch at period end.
  */
 
 import { Button } from '@virtality/ui/components/button'

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { adminCustomerAccessReasonSchema } from './admin-customer-access.js'
 
-export const assignProVariantInputSchema = z.object({
+export const assignPlanVariantInputSchema = z.object({
   userId: z.string().trim().min(1),
   reason: adminCustomerAccessReasonSchema,
   variantName: z
@@ -11,12 +11,14 @@ export const assignProVariantInputSchema = z.object({
     .regex(/^[a-z][a-z0-9-]*$/),
 })
 
-export const listAssignableProVariantsInputSchema = z.object({
+export const listAssignablePlanVariantsInputSchema = z.object({
   userId: z.string().trim().min(1).optional(),
 })
 
-export type AssignProVariantInput = z.infer<typeof assignProVariantInputSchema>
+export type AssignPlanVariantInput = z.infer<
+  typeof assignPlanVariantInputSchema
+>
 
-export type ListAssignableProVariantsInput = z.infer<
-  typeof listAssignableProVariantsInputSchema
+export type ListAssignablePlanVariantsInput = z.infer<
+  typeof listAssignablePlanVariantsInputSchema
 >

@@ -1,5 +1,5 @@
 /**
- * Console Pro catalog list prices from Stripe canonical Prices.
+ * Console Default catalog list prices from Stripe canonical Prices.
  * Display labels and minor units stay derived from the same source for
  * plan cards and Discount rewrite math.
  */
@@ -39,13 +39,13 @@ export const BILLING_CATALOG_YEARLY_SAVINGS_LABEL_METADATA_KEY =
   'yearlySavingsLabel' as const
 
 /** Sandbox canonical amounts when Stripe is unavailable in development. */
-export const PRO_BILLING_CATALOG_SANDBOX: BillingCatalogMinor = {
+export const DEFAULT_BILLING_CATALOG_SANDBOX: BillingCatalogMinor = {
   monthly: 15_000,
   yearly: 150_000,
 } as const
 
 /** Sandbox yearly savings badge copy; mirrors canonical yearly Price metadata. */
-export const PRO_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL =
+export const DEFAULT_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL =
   'Save ~2 months' as const
 
 export function formatEurFromMinor(minor: number): string {
@@ -92,8 +92,8 @@ export function buildSandboxBillingCatalogRead(): Extract<
   { ok: true }
 > {
   return buildBillingCatalogFromMinor(
-    PRO_BILLING_CATALOG_SANDBOX,
-    PRO_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
+    DEFAULT_BILLING_CATALOG_SANDBOX,
+    DEFAULT_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
   )
 }
 

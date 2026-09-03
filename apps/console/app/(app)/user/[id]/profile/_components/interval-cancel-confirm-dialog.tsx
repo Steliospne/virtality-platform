@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Confirm releasing a scheduled paid Pro interval switch.
+ * Confirm releasing a scheduled paid Default interval switch.
  */
 
 import { Button } from '@virtality/ui/components/button'

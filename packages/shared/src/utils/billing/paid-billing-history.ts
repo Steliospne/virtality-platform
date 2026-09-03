@@ -1,6 +1,6 @@
 /**
  * Canonical "Paid billing history" rule: has this clinician ever completed a
- * paid Pro billing period (not only trial-style entitlement that never
+ * paid Default billing period (not only trial-style entitlement that never
  * converted)? Used by Subscribe/Renew, Campaign Window attach, and Assign Free
  * after cancellation.
  */

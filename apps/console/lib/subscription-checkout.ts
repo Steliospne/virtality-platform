@@ -1,7 +1,7 @@
 /**
  * Console Subscribe/Renew → Better Auth Stripe Checkout (mode=subscription).
  * Visibility/labels come from the Entitlement Clock; this module only starts
- * Checkout on the canonical `pro` plan Price configured in auth.
+ * Checkout on the canonical `default` plan Price configured in auth.
  *
  * Return URLs mark success vs cancel so the console can await webhook/success
  * sync without dual-writing entitlement. Abandon stays soft-expired; restore
@@ -34,7 +34,7 @@ export {
   type CheckoutSuccessIntent,
 } from '@virtality/shared/utils'
 
-export const PRO_SUBSCRIPTION_PLAN = 'pro' as const
+export const DEFAULT_SUBSCRIPTION_PLAN = 'default' as const
 
 export const CHECKOUT_ENTITLEMENT_RESTORE_POLL_MS = 2_000
 export const CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS = 60_000
@@ -54,8 +54,8 @@ export function shouldPollCheckoutEntitlementRestore(input: {
   return input.nowMs - input.startedAtMs < CHECKOUT_ENTITLEMENT_RESTORE_MAX_MS
 }
 
-export type ProCheckoutUpgradeInput = {
-  plan: typeof PRO_SUBSCRIPTION_PLAN
+export type DefaultCheckoutUpgradeInput = {
+  plan: typeof DEFAULT_SUBSCRIPTION_PLAN
   /** When true, Better Auth uses the plan's annualDiscountPriceId (yearly). */
   annual: boolean
   /** Absolute console URL for Checkout return. */
@@ -70,19 +70,19 @@ export type ProCheckoutUpgradeInput = {
  * return to the same console path with distinct intent markers so abandon stays
  * soft-expired and success can await webhook sync (no optimistic entitlement).
  *
- * Immediate Checkout only: paid Pro monthly ↔ yearly period-end switches use
+ * Immediate Checkout only: paid Default monthly ↔ yearly period-end switches use
  * Cycle plan change (`scheduleCycleChange`), not this builder.
- * `annual` selects monthly vs yearly Price on the same `pro` plan.
+ * `annual` selects monthly vs yearly Price on the same `default` plan.
  * `successUrl` / `cancelUrl` / `returnUrl` are absolute console URLs.
  */
-export function buildProCheckoutUpgradeInput(
+export function buildDefaultCheckoutUpgradeInput(
   returnUrl: string,
   options?: { annual?: boolean; checkoutSuccessIntent?: CheckoutSuccessIntent },
-): ProCheckoutUpgradeInput {
+): DefaultCheckoutUpgradeInput {
   const absoluteReturn = toAbsoluteConsoleReturnUrl(returnUrl)
   const checkoutSuccessIntent = options?.checkoutSuccessIntent ?? 'subscribe'
   return {
-    plan: PRO_SUBSCRIPTION_PLAN,
+    plan: DEFAULT_SUBSCRIPTION_PLAN,
     annual: options?.annual ?? false,
     returnUrl: absoluteReturn,
     successUrl: buildCheckoutSuccessUrl(checkoutSuccessIntent),
@@ -90,31 +90,31 @@ export function buildProCheckoutUpgradeInput(
   }
 }
 
-export type ProSubscriptionUpgradeFn = (
-  input: ProCheckoutUpgradeInput,
+export type DefaultSubscriptionUpgradeFn = (
+  input: DefaultCheckoutUpgradeInput,
 ) => Promise<{
   data?: unknown
   error?: { message?: string | null } | null
 }>
 
-export type StartProSubscriptionCheckoutResult =
+export type StartDefaultSubscriptionCheckoutResult =
   | { ok: true }
   | { ok: false; message: string }
 
 /**
- * Starts Better Auth Stripe Checkout / upgrade for the canonical pro Price
- * (monthly or yearly). Immediate only: period-end Pro interval switches go
+ * Starts Better Auth Stripe Checkout / upgrade for the canonical default Price
+ * (monthly or yearly). Immediate only: period-end Default interval switches go
  * through Cycle plan change. Does not write local entitlement; restore is
  * webhook/success sync only.
  */
-export async function startProSubscriptionCheckout(input: {
-  upgrade: ProSubscriptionUpgradeFn
+export async function startDefaultSubscriptionCheckout(input: {
+  upgrade: DefaultSubscriptionUpgradeFn
   returnUrl: string
   annual?: boolean
   checkoutSuccessIntent?: CheckoutSuccessIntent
-}): Promise<StartProSubscriptionCheckoutResult> {
+}): Promise<StartDefaultSubscriptionCheckoutResult> {
   const { error } = await input.upgrade(
-    buildProCheckoutUpgradeInput(input.returnUrl, {
+    buildDefaultCheckoutUpgradeInput(input.returnUrl, {
       annual: input.annual,
       checkoutSuccessIntent: input.checkoutSuccessIntent,
     }),

@@ -93,8 +93,8 @@ export {
   useRevokeTrialGrant,
 } from './admin-customer/use-admin-customer-access-mutations.js'
 export {
-  useAssignableProVariants,
-  useAssignProVariant,
+  useAssignablePlanVariants,
+  useAssignPlanVariant,
 } from './admin-customer/use-admin-customer-assigned-variant.js'
 export {
   useAssignFreeAfterCancellation,

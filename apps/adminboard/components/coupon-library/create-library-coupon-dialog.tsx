@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
 import {
@@ -23,10 +22,8 @@ import { getErrorMessage } from '@/lib/get-error-message'
 import { useCreateLibraryCoupon } from '@virtality/react-query'
 import {
   COUPON_LIBRARY_CURRENCY,
-  COUPON_LIBRARY_PLANS,
   majorToMinorUnits,
   type CouponDuration,
-  type CouponLibraryPlanId,
   type CreateLibraryCouponInput,
 } from '@virtality/shared/utils'
 import { useEffect, useState, type FormEvent } from 'react'
@@ -39,8 +36,6 @@ type CreateLibraryCouponDialogProps = {
 
 type DiscountKind = 'percent' | 'amount'
 
-const DEFAULT_PLAN_IDS: CouponLibraryPlanId[] = ['pro']
-
 export function CreateLibraryCouponDialog({
   open,
   onOpenChange,
@@ -51,8 +46,6 @@ export function CreateLibraryCouponDialog({
   const [amountMajor, setAmountMajor] = useState('')
   const [duration, setDuration] = useState<CouponDuration>('once')
   const [durationInMonths, setDurationInMonths] = useState('')
-  const [planIds, setPlanIds] =
-    useState<CouponLibraryPlanId[]>(DEFAULT_PLAN_IDS)
   const { mutate: createLibraryCoupon, isPending } = useCreateLibraryCoupon()
 
   useEffect(() => {
@@ -63,29 +56,14 @@ export function CreateLibraryCouponDialog({
     setAmountMajor('')
     setDuration('once')
     setDurationInMonths('')
-    setPlanIds(DEFAULT_PLAN_IDS)
   }, [open])
-
-  const togglePlan = (planId: CouponLibraryPlanId) => {
-    setPlanIds((current) =>
-      current.includes(planId)
-        ? current.filter((id) => id !== planId)
-        : [...current, planId],
-    )
-  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
 
-    if (planIds.length === 0) {
-      toast.error('Select at least one plan')
-      return
-    }
-
     const payload: CreateLibraryCouponInput = {
       name: name.trim(),
       duration,
-      planIds,
     }
 
     if (discountKind === 'percent') {
@@ -227,23 +205,6 @@ export function CreateLibraryCouponDialog({
                 />
               </div>
             ) : null}
-            <div className='grid gap-2'>
-              <Label>Applies to</Label>
-              <div className='flex flex-col gap-2'>
-                {COUPON_LIBRARY_PLANS.map((plan) => (
-                  <label
-                    key={plan.planId}
-                    className='flex items-center gap-2 text-sm'
-                  >
-                    <Checkbox
-                      checked={planIds.includes(plan.planId)}
-                      onCheckedChange={() => togglePlan(plan.planId)}
-                    />
-                    {plan.label}
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button

@@ -15,10 +15,10 @@ function useInvalidateAdminCustomerQueries() {
   }
 }
 
-export function useAssignableProVariants(enabled = true) {
+export function useAssignablePlanVariants(enabled = true) {
   const orpc = useORPC()
   return useQuery({
-    ...orpc.adminCustomer.listAssignableProVariants.queryOptions({
+    ...orpc.adminCustomer.listAssignablePlanVariants.queryOptions({
       input: {},
     }),
     enabled,
@@ -26,12 +26,12 @@ export function useAssignableProVariants(enabled = true) {
   })
 }
 
-export function useAssignProVariant() {
+export function useAssignPlanVariant() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()
 
   return useMutation(
-    orpc.adminCustomer.assignProVariant.mutationOptions({
+    orpc.adminCustomer.assignPlanVariant.mutationOptions({
       onSuccess: invalidate,
     }),
   )

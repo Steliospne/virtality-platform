@@ -1,21 +1,21 @@
 /**
- * Stripe-backed Assigned Variant catalog: list Pro Product Prices, cache ~15m,
+ * Stripe-backed Assigned Variant catalog: list Default Product Prices, cache ~15m,
  * resolve pairs for charge paths and Adminboard picker.
  */
 
 import {
-  PRO_PLAN_PRODUCT_ID,
-  buildProVariantCatalogFromStripePrices,
-  buildSandboxProVariantCatalog,
+  DEFAULT_PLAN_PRODUCT_ID,
+  buildPlanVariantCatalogFromStripePrices,
+  buildSandboxPlanVariantCatalog,
   buildBillingCatalogForUser,
   buildSandboxBillingCatalogForUser,
-  effectiveAssignedProVariant,
-  humanizeProVariantName,
-  resolveProVariantChargePrice,
+  effectiveAssignedPlanVariant,
+  humanizePlanVariantName,
+  resolvePlanVariantChargePrice,
   type BillingCatalogForUserRead,
-  type ProVariantCatalog,
-  type ProVariantPair,
-  type StripeProVariantPriceSnapshot,
+  type PlanVariantCatalog,
+  type PlanVariantPair,
+  type StripePlanVariantPriceSnapshot,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 
@@ -23,22 +23,22 @@ const CACHE_TTL_MS = 15 * 60 * 1000
 
 let cachedCatalog: {
   readAtMs: number
-  value: ProVariantCatalog
+  value: PlanVariantCatalog
 } | null = null
 
-export function clearProVariantCatalogCache(): void {
+export function clearPlanVariantCatalogCache(): void {
   cachedCatalog = null
 }
 
-async function listActiveRecurringProPrices(
+async function listActiveRecurringDefaultPrices(
   stripeClient: Stripe,
-): Promise<StripeProVariantPriceSnapshot[]> {
-  const prices: StripeProVariantPriceSnapshot[] = []
+): Promise<StripePlanVariantPriceSnapshot[]> {
+  const prices: StripePlanVariantPriceSnapshot[] = []
   let startingAfter: string | undefined
 
   for (;;) {
     const page = await stripeClient.prices.list({
-      product: PRO_PLAN_PRODUCT_ID,
+      product: DEFAULT_PLAN_PRODUCT_ID,
       active: true,
       type: 'recurring',
       limit: 100,
@@ -67,9 +67,9 @@ async function listActiveRecurringProPrices(
   return prices
 }
 
-export async function readProVariantCatalog(
+export async function readPlanVariantCatalog(
   stripeClient: Stripe,
-): Promise<ProVariantCatalog> {
+): Promise<PlanVariantCatalog> {
   if (
     cachedCatalog &&
     Date.now() - cachedCatalog.readAtMs < CACHE_TTL_MS &&
@@ -78,67 +78,69 @@ export async function readProVariantCatalog(
     return cachedCatalog.value
   }
 
-  const prices = await listActiveRecurringProPrices(stripeClient)
-  const value = buildProVariantCatalogFromStripePrices(prices)
+  const prices = await listActiveRecurringDefaultPrices(stripeClient)
+  const value = buildPlanVariantCatalogFromStripePrices(prices)
   if (value.basic != null) {
     cachedCatalog = { readAtMs: Date.now(), value }
   }
   return value
 }
 
-export function readProVariantCatalogOrSandbox(
+export function readPlanVariantCatalogOrSandbox(
   stripeClient: Stripe | null,
-): Promise<ProVariantCatalog> {
+): Promise<PlanVariantCatalog> {
   if (!stripeClient) {
-    return Promise.resolve(buildSandboxProVariantCatalog())
+    return Promise.resolve(buildSandboxPlanVariantCatalog())
   }
-  return readProVariantCatalog(stripeClient).catch(() =>
-    buildSandboxProVariantCatalog(),
+  return readPlanVariantCatalog(stripeClient).catch(() =>
+    buildSandboxPlanVariantCatalog(),
   )
 }
 
 /** Fresh catalog for Adminboard assign dialog (bypass TTL). */
-export async function readProVariantCatalogFresh(
+export async function readPlanVariantCatalogFresh(
   stripeClient: Stripe | null,
-): Promise<ProVariantCatalog> {
-  clearProVariantCatalogCache()
-  return readProVariantCatalogOrSandbox(stripeClient)
+): Promise<PlanVariantCatalog> {
+  clearPlanVariantCatalogCache()
+  return readPlanVariantCatalogOrSandbox(stripeClient)
 }
 
 export async function readBillingCatalogForUser(
   stripeClient: Stripe | null,
-  assignedProVariant: string | null | undefined,
+  assignedDefaultVariant: string | null | undefined,
 ): Promise<BillingCatalogForUserRead> {
   if (!stripeClient) {
-    return buildSandboxBillingCatalogForUser(assignedProVariant)
+    return buildSandboxBillingCatalogForUser(assignedDefaultVariant)
   }
   try {
-    const catalog = await readProVariantCatalog(stripeClient)
-    return buildBillingCatalogForUser(catalog, assignedProVariant)
+    const catalog = await readPlanVariantCatalog(stripeClient)
+    return buildBillingCatalogForUser(catalog, assignedDefaultVariant)
   } catch {
     return {
       ok: false,
       reason: 'stripe_unavailable',
-      assignedVariant: effectiveAssignedProVariant(assignedProVariant),
+      assignedVariant: effectiveAssignedPlanVariant(assignedDefaultVariant),
     }
   }
 }
 
-export async function resolveAssignedProVariantChargePrice(input: {
+export async function resolveAssignedPlanVariantChargePrice(input: {
   stripeClient: Stripe | null
-  assignedProVariant: string | null | undefined
+  assignedDefaultVariant: string | null | undefined
   annual: boolean
 }): Promise<
-  | { ok: true; priceId: string; pair: ProVariantPair; annual: boolean }
+  | { ok: true; priceId: string; pair: PlanVariantPair; annual: boolean }
   | {
       ok: false
       reason: string
       assignedVariant: string
     }
 > {
-  const assignedVariant = effectiveAssignedProVariant(input.assignedProVariant)
-  const catalog = await readProVariantCatalogOrSandbox(input.stripeClient)
-  const resolved = resolveProVariantChargePrice(
+  const assignedVariant = effectiveAssignedPlanVariant(
+    input.assignedDefaultVariant,
+  )
+  const catalog = await readPlanVariantCatalogOrSandbox(input.stripeClient)
+  const resolved = resolvePlanVariantChargePrice(
     catalog,
     assignedVariant,
     input.annual,
@@ -153,7 +155,7 @@ export async function resolveAssignedProVariantChargePrice(input: {
   return resolved
 }
 
-export type AssignableProVariantOption = {
+export type AssignablePlanVariantOption = {
   name: string
   label: string
   secondaryLabel: string
@@ -161,12 +163,12 @@ export type AssignableProVariantOption = {
   yearlyMinor: number
 }
 
-export function toAssignableProVariantOptions(
-  catalog: ProVariantCatalog,
-): AssignableProVariantOption[] {
+export function toAssignablePlanVariantOptions(
+  catalog: PlanVariantCatalog,
+): AssignablePlanVariantOption[] {
   return catalog.variants.map((pair) => ({
     name: pair.name,
-    label: humanizeProVariantName(pair.name),
+    label: humanizePlanVariantName(pair.name),
     secondaryLabel: pair.name,
     monthlyMinor: pair.minor.monthly,
     yearlyMinor: pair.minor.yearly,

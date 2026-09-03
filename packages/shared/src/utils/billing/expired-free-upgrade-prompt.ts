@@ -7,7 +7,7 @@
 
 import {
   isFreeSubscriptionPlan,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
 } from './billing-plans.ts'
 import {
   pickEntitlementSubscription,
@@ -33,7 +33,7 @@ export function isCanceledUpgradeSeat(
   return subscription.status === 'canceled'
 }
 
-/** Pro cancel-at-period-end with paid access still remaining before period end. */
+/** Default cancel-at-period-end with paid access still remaining before period end. */
 function hasPendingCancellationAccess(input: {
   now: Date
   subscriptions: readonly EntitlementClockSubscription[]
@@ -42,7 +42,7 @@ function hasPendingCancellationAccess(input: {
   return input.subscriptions.some((subscription) => {
     if (
       !subscription.cancelAtPeriodEnd ||
-      !isProSubscriptionPlan(subscription.plan)
+      !isDefaultSubscriptionPlan(subscription.plan)
     ) {
       return false
     }

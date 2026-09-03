@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { adminCustomerAccessReasonSchema } from './admin-customer-access.js'
 
-export const supportedProPlanPriceIdSchema = z.enum([
+export const supportedDefaultPlanPriceIdSchema = z.enum([
   'price_1SeVrm4Fc2DAAhEfIWIRZ2v9',
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1',
 ])
@@ -13,13 +13,13 @@ export const adminCustomerBillingCheckoutUrlsSchema = z.object({
 
 export const previewChangePaidPlanInputSchema = z.object({
   userId: z.string().trim().min(1),
-  targetPriceId: supportedProPlanPriceIdSchema,
+  targetPriceId: supportedDefaultPlanPriceIdSchema,
 })
 
 export const changePaidPlanInputSchema = z.object({
   userId: z.string().trim().min(1),
   reason: adminCustomerAccessReasonSchema,
-  targetPriceId: supportedProPlanPriceIdSchema,
+  targetPriceId: supportedDefaultPlanPriceIdSchema,
   successUrl: z.string().trim().url().optional(),
   cancelUrl: z.string().trim().url().optional(),
 })

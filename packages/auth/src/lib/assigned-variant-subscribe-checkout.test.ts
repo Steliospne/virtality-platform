@@ -15,7 +15,7 @@ vi.mock('./console-promo-redeem.ts', () => ({
 }))
 
 import {
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
   buildCheckoutCancelReturnUrl,
 } from '@virtality/shared/utils'
 import {
@@ -31,7 +31,7 @@ const EARLY_BIRD_MONTHLY = 'price_early_m'
 const RETURN_URL = 'https://console.test/user/u1/profile?tab=billing'
 
 function createPrismaMock(input: {
-  assignedProVariant?: string | null
+  assignedDefaultVariant?: string | null
   stripeCustomerId?: string | null
   user?: null
   subscription?: {
@@ -47,7 +47,8 @@ function createPrismaMock(input: {
           ? null
           : {
               id: USER_ID,
-              assignedProVariant: input.assignedProVariant ?? 'early-bird',
+              assignedDefaultVariant:
+                input.assignedDefaultVariant ?? 'early-bird',
               stripeCustomerId: input.stripeCustomerId ?? CUSTOMER_ID,
             },
       ),
@@ -70,7 +71,7 @@ function createStripeMock(input?: {
       list: vi.fn(async () => ({
         data: [
           {
-            id: PRO_PLAN_MONTHLY_PRICE_ID,
+            id: DEFAULT_PLAN_MONTHLY_PRICE_ID,
             lookup_key: 'basic_monthly',
             unit_amount: 15_000,
             currency: 'eur',

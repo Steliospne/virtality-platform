@@ -74,7 +74,7 @@ function existingAccountEmailCopy(
           'You already have a Virtality account. Open Profile, then Billing, and apply the code below to unlock permanent Free access.',
         entitlement: 'Access type: permanent Free (no trial period)',
         footer:
-          'This code grants permanent Free access. It does not include a paid Pro subscription.',
+          'This code grants permanent Free access. It does not include a paid Default subscription.',
       }
     case 'timed_trial':
       return {
@@ -83,7 +83,7 @@ function existingAccountEmailCopy(
           'You already have a Virtality account. Open Profile, then Billing, and apply the code below to start your no-card Free trial.',
         entitlement: `Trial length: ${trialDays} days`,
         footer:
-          'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
+          'When the trial ends, your seat stays on the Free plan unless you subscribe to Default.',
       }
   }
 }
@@ -105,7 +105,7 @@ function newAccountEmailCopy(
         instructions,
         cta: 'Create account and redeem',
         footer:
-          'This code grants permanent Free access. It does not include a paid Pro subscription.',
+          'This code grants permanent Free access. It does not include a paid Default subscription.',
       }
     case 'timed_trial':
       return {
@@ -116,7 +116,7 @@ function newAccountEmailCopy(
         instructions,
         cta: 'Create account and start trial',
         footer:
-          'When the trial ends, your seat stays on the Free plan unless you subscribe to Pro.',
+          'When the trial ends, your seat stays on the Free plan unless you subscribe to Default.',
       }
   }
 }

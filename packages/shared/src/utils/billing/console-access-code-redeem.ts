@@ -8,7 +8,7 @@
 
 import {
   isFreeSubscriptionPlan,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
 } from './billing-plans.ts'
 import {
   TRIAL_REDEEM_CODE_PATTERN,
@@ -67,7 +67,7 @@ export function classifyProfileBillingSeat(
   if (seat.status === 'trialing') return 'trialing'
   if (
     (seat.status === 'active' || seat.status === 'past_due') &&
-    isProSubscriptionPlan(seat.plan)
+    isDefaultSubscriptionPlan(seat.plan)
   ) {
     return 'paid_pro_active'
   }

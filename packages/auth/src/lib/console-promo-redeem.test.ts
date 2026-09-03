@@ -71,7 +71,11 @@ function createStripeMock() {
 }
 
 function createPrismaMock(input: {
-  subscription?: { stripeSubscriptionId: string; status: string; plan: string } | null
+  subscription?: {
+    stripeSubscriptionId: string
+    status: string
+    plan: string
+  } | null
   pendingHold?: {
     id: string
     userId: string
@@ -125,7 +129,7 @@ describe('resolvePromotionCodeForNewCheckout', () => {
       subscription: {
         stripeSubscriptionId: LIVE_SUB_ID,
         status: 'active',
-        plan: 'pro',
+        plan: 'default',
       },
       pendingHold: null,
     })
@@ -167,7 +171,7 @@ describe('redeemPromotionCodeForUser', () => {
       subscription: {
         stripeSubscriptionId: LIVE_SUB_ID,
         status: 'active',
-        plan: 'pro',
+        plan: 'default',
       },
     })
     const stripeClient = createStripeMock()
@@ -205,7 +209,7 @@ describe('removePromoDiscountForUser', () => {
       subscription: {
         stripeSubscriptionId: LIVE_SUB_ID,
         status: 'active',
-        plan: 'pro',
+        plan: 'default',
       },
       pendingHold: null,
     })

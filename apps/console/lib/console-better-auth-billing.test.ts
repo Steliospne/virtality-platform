@@ -3,7 +3,7 @@ import { getConsoleUrl } from '@virtality/shared/types'
 import {
   CHECKOUT_SUCCESS_INTENT_PARAM,
   CHECKOUT_SUCCESS_PATH,
-  buildProCheckoutUpgradeInput,
+  buildDefaultCheckoutUpgradeInput,
 } from './subscription-checkout.js'
 import {
   createConsoleBetterAuthBilling,
@@ -39,7 +39,7 @@ describe('createConsoleBetterAuthBilling', () => {
     ).resolves.toEqual({ ok: true })
 
     expect(upgrade).toHaveBeenCalledWith(
-      buildProCheckoutUpgradeInput(
+      buildDefaultCheckoutUpgradeInput(
         `${consoleOrigin}/user/u1/profile?tab=billing`,
         { annual: true, checkoutSuccessIntent: 'renew' },
       ),
@@ -81,7 +81,7 @@ describe('createConsoleBetterAuthBilling', () => {
 
     expect(upgrade).toHaveBeenCalledWith(
       expect.objectContaining({
-        plan: 'pro',
+        plan: 'default',
         annual: true,
         scheduleAtPeriodEnd: true,
         disableRedirect: true,

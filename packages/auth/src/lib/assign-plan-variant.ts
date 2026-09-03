@@ -5,35 +5,35 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  assignProVariantForCustomer,
-  type AssignProVariantStore,
+  assignPlanVariantForCustomer,
+  type AssignPlanVariantStore,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { createPrismaAdminCustomerBillingStore } from './admin-customer-billing.ts'
 import {
-  readProVariantCatalogFresh,
-  toAssignableProVariantOptions,
-} from './pro-variant-catalog.ts'
+  readPlanVariantCatalogFresh,
+  toAssignablePlanVariantOptions,
+} from './plan-variant-catalog.ts'
 
-export function createPrismaAssignProVariantStore(
+export function createPrismaAssignPlanVariantStore(
   client: PrismaClient = prisma,
-): AssignProVariantStore {
+): AssignPlanVariantStore {
   const billingStore = createPrismaAdminCustomerBillingStore(client)
   return {
     findTargetUser: async (userId) => {
       const user = await client.user.findFirst({
         where: { id: userId, deletedAt: null },
-        select: { id: true, assignedProVariant: true },
+        select: { id: true, assignedDefaultVariant: true },
       })
       return user ?? null
     },
     listSubscriptions: async (userId) => billingStore.listSubscriptions(userId),
     summarizeBillingState: async (userId) =>
       billingStore.summarizeBillingState(userId),
-    updateAssignedProVariant: async (userId, variantName) => {
+    updateAssignedPlanVariant: async (userId, variantName) => {
       await client.user.update({
         where: { id: userId },
-        data: { assignedProVariant: variantName },
+        data: { assignedDefaultVariant: variantName },
       })
     },
     recordAudit: async (record) => {
@@ -55,17 +55,17 @@ export function createPrismaAssignProVariantStore(
   }
 }
 
-export async function listAssignableProVariantsAction(
+export async function listAssignablePlanVariantsAction(
   stripeClient: Stripe | null,
 ) {
-  const catalog = await readProVariantCatalogFresh(stripeClient)
+  const catalog = await readPlanVariantCatalogFresh(stripeClient)
   return {
-    variants: toAssignableProVariantOptions(catalog),
+    variants: toAssignablePlanVariantOptions(catalog),
     basicPresent: catalog.basic != null,
   }
 }
 
-export async function assignProVariantAction(input: {
+export async function assignPlanVariantAction(input: {
   stripeClient: Stripe | null
   prisma?: PrismaClient
   userId: string
@@ -73,9 +73,9 @@ export async function assignProVariantAction(input: {
   reason: string
   variantName: string
 }) {
-  const catalog = await readProVariantCatalogFresh(input.stripeClient)
-  const store = createPrismaAssignProVariantStore(input.prisma ?? prisma)
-  return assignProVariantForCustomer(store, catalog, {
+  const catalog = await readPlanVariantCatalogFresh(input.stripeClient)
+  const store = createPrismaAssignPlanVariantStore(input.prisma ?? prisma)
+  return assignPlanVariantForCustomer(store, catalog, {
     userId: input.userId,
     actorUserId: input.actorUserId,
     reason: input.reason,

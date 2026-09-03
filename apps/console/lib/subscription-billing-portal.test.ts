@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { getConsoleUrl } from '@virtality/shared/types'
 import {
   CUSTOMER_PORTAL_PROMOTION_CODES_ON_SUBSCRIPTION_UPDATE,
-  buildProBillingPortalInput,
-  startProBillingPortal,
+  buildDefaultBillingPortalInput,
+  startDefaultBillingPortal,
 } from './subscription-billing-portal.js'
 
 const consoleOrigin = getConsoleUrl()
@@ -14,17 +14,19 @@ describe('Customer Portal promo posture', () => {
   })
 
   it('opens portal with returnUrl only (no promo enablement flags)', () => {
-    expect(buildProBillingPortalInput('/user/abc/profile?tab=billing')).toEqual(
-      {
-        returnUrl: `${consoleOrigin}/user/abc/profile?tab=billing`,
-      },
-    )
+    expect(
+      buildDefaultBillingPortalInput('/user/abc/profile?tab=billing'),
+    ).toEqual({
+      returnUrl: `${consoleOrigin}/user/abc/profile?tab=billing`,
+    })
   })
 })
 
-describe('buildProBillingPortalInput', () => {
+describe('buildDefaultBillingPortalInput', () => {
   it('resolves relative return paths to absolute console URLs', () => {
-    const input = buildProBillingPortalInput('/user/abc/profile?tab=billing')
+    const input = buildDefaultBillingPortalInput(
+      '/user/abc/profile?tab=billing',
+    )
 
     expect(input.returnUrl).toBe(
       `${consoleOrigin}/user/abc/profile?tab=billing`,
@@ -33,13 +35,13 @@ describe('buildProBillingPortalInput', () => {
 
   it('keeps absolute console return URLs absolute (not auth-host relative)', () => {
     const absolute = `${consoleOrigin}/user/abc/profile?tab=billing`
-    const input = buildProBillingPortalInput(absolute)
+    const input = buildDefaultBillingPortalInput(absolute)
 
     expect(input.returnUrl).toBe(absolute)
   })
 })
 
-describe('startProBillingPortal', () => {
+describe('startDefaultBillingPortal', () => {
   it('starts Better Auth billingPortal at the absolute console returnUrl', async () => {
     const calls: unknown[] = []
     const billingPortal = async (input: unknown) => {
@@ -47,17 +49,17 @@ describe('startProBillingPortal', () => {
       return { data: { url: 'https://billing.stripe.test/session' } }
     }
 
-    const result = await startProBillingPortal({
+    const result = await startDefaultBillingPortal({
       billingPortal,
       returnUrl: '/user/abc/profile',
     })
 
     expect(result).toEqual({ ok: true })
-    expect(calls).toEqual([buildProBillingPortalInput('/user/abc/profile')])
+    expect(calls).toEqual([buildDefaultBillingPortalInput('/user/abc/profile')])
   })
 
   it('surfaces Better Auth portal failures without claiming success', async () => {
-    const result = await startProBillingPortal({
+    const result = await startDefaultBillingPortal({
       billingPortal: async () => ({
         error: { message: 'No Stripe customer' },
       }),
@@ -71,7 +73,7 @@ describe('startProBillingPortal', () => {
   })
 
   it('falls back when Better Auth omits an error message', async () => {
-    const result = await startProBillingPortal({
+    const result = await startDefaultBillingPortal({
       billingPortal: async () => ({
         error: { message: '   ' },
       }),

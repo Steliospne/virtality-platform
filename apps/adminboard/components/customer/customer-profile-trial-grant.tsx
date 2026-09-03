@@ -34,10 +34,9 @@ export function CustomerProfileTrialGrant({
     <>
       <CustomerProfileSection title='Owned trial grant'>
         <p className='text-muted-foreground mb-4 text-sm'>
-          Manage the owned trial lifecycle without Stripe calls. Issuing a
-          grant activates it immediately for the selected duration; extend,
-          reduce, or revoke as needed. Each action requires a reason and
-          audit record.
+          Manage the owned trial lifecycle without Stripe calls. Issuing a grant
+          activates it immediately for the selected duration; extend, reduce, or
+          revoke as needed. Each action requires a reason and audit record.
         </p>
 
         {profile.trialGrant ? (

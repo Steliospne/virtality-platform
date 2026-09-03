@@ -8,7 +8,7 @@ import {
   formatCustomerInitials,
 } from '@/lib/admin-customer-display'
 import {
-  humanizeProVariantName,
+  humanizePlanVariantName,
   type AdminCustomerProfile,
 } from '@virtality/shared/utils'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
@@ -71,9 +71,9 @@ export function CustomerProfileRail({ profile }: CustomerProfileRailProps) {
           <div>
             <dt className='text-muted-foreground'>Assigned Variant</dt>
             <dd className='font-medium'>
-              {humanizeProVariantName(profile.assignedProVariant)}{' '}
+              {humanizePlanVariantName(profile.assignedDefaultVariant)}{' '}
               <span className='text-muted-foreground font-normal'>
-                ({profile.assignedProVariant})
+                ({profile.assignedDefaultVariant})
               </span>
             </dd>
           </div>

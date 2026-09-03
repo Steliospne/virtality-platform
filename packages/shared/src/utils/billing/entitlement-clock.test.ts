@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   FREE_SUBSCRIPTION_PLAN,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 import {
   buildEntitlementStanding,
@@ -124,7 +124,7 @@ describe('resolveEntitlementClock', () => {
 })
 
 describe('pickEntitlementSubscription', () => {
-  it('prefers a live paid Pro row over a live Free trial', () => {
+  it('prefers a live paid Default row over a live Free trial', () => {
     const picked = pickEntitlementSubscription([
       {
         plan: FREE_SUBSCRIPTION_PLAN,
@@ -132,14 +132,14 @@ describe('pickEntitlementSubscription', () => {
         trialEnd: new Date('2026-08-20T12:00:00.000Z'),
       },
       {
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
       },
     ])
 
     expect(picked?.status).toBe('active')
-    expect(picked?.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(picked?.plan).toBe(DEFAULT_SUBSCRIPTION_PLAN)
   })
 
   it('prefers a live active or trialing row over expired history', () => {
@@ -319,7 +319,7 @@ describe('buildEntitlementStanding', () => {
     expect(standing.canLaunchVr).toBe(true)
   })
 
-  it('hides Subscribe/Renew CTA while entitled on a paid Pro seat', () => {
+  it('hides Subscribe/Renew CTA while entitled on a paid Default seat', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -419,7 +419,7 @@ describe('buildEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: 'pro',
+          plan: 'default',
           periodEnd: new Date('2026-09-10T12:00:00.000Z'),
           billingInterval: 'month',
           stripeScheduleId: 'sub_sched_1',
@@ -434,7 +434,7 @@ describe('buildEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: 'pro',
+          plan: 'default',
           periodEnd: new Date('2026-09-10T12:00:00.000Z'),
           billingInterval: 'month',
           stripeScheduleId: null,
@@ -451,7 +451,7 @@ describe('buildEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: 'pro',
+          plan: 'default',
           periodEnd: new Date('2026-09-10T12:00:00.000Z'),
           billingInterval: 'month',
           cancelAtPeriodEnd: true,
@@ -467,7 +467,7 @@ describe('buildEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: 'pro',
+          plan: 'default',
           periodEnd: new Date('2026-09-10T12:00:00.000Z'),
           billingInterval: 'month',
           cancelAtPeriodEnd: false,
@@ -669,7 +669,7 @@ describe('projectLiveEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd,
         },
       ],
@@ -704,7 +704,7 @@ describe('projectLiveEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd,
           billingInterval: 'year',
           cancelAtPeriodEnd: true,
@@ -721,7 +721,7 @@ describe('projectLiveEntitlementStanding', () => {
     expect(live.billingPathEstablished).toBe(true)
     expect(live.hadPaidBilling).toBe(true)
     expect(live.billingInterval).toBe('year')
-    expect(live.plan).toBe(PRO_SUBSCRIPTION_PLAN)
+    expect(live.plan).toBe(DEFAULT_SUBSCRIPTION_PLAN)
     expect(live.cancelAtPeriodEnd).toBe(true)
     expect(live.hasPendingPlanChange).toBe(true)
     expect(live.clockEnd).toEqual(periodEnd)
@@ -733,13 +733,13 @@ describe('projectLiveEntitlementStanding', () => {
 })
 
 describe('resolveCheckoutCta', () => {
-  it('returns null while entitled on a paid Pro seat even with paid history', () => {
+  it('returns null while entitled on a paid Default seat even with paid history', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,
         billingPathEstablished: true,
         hadPaidBilling: true,
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
       }),
     ).toBeNull()
@@ -789,19 +789,19 @@ describe('resolveCheckoutCta', () => {
 })
 
 describe('resolveProfileBillingCheckoutCta', () => {
-  it('returns null for entitled paid Pro seats that use the portal', () => {
+  it('returns null for entitled paid Default seats that use the portal', () => {
     expect(
       resolveProfileBillingCheckoutCta({
         entitled: true,
         hasStripeCustomer: true,
         hadPaidBilling: true,
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
       }),
     ).toBeNull()
   })
 
-  it('allows Subscribe for entitled Free trial seats upgrading to Pro', () => {
+  it('allows Subscribe for entitled Free trial seats upgrading to Default', () => {
     expect(
       resolveProfileBillingCheckoutCta({
         entitled: true,

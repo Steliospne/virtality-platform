@@ -206,7 +206,7 @@ describe('getAdminCustomerProfile', () => {
       subscriptions: [
         {
           id: 'sub_old',
-          plan: 'pro',
+          plan: 'default',
           referenceId: 'user_1',
           status: 'canceled',
           stripeCustomerId: 'cus_123',
@@ -258,7 +258,7 @@ describe('getAdminCustomerProfile', () => {
     expect(profile?.auditHistory).toEqual([])
   })
 
-  it('flags hasPendingCyclePlanChange when live Pro has a Stripe schedule', async () => {
+  it('flags hasPendingCyclePlanChange when live Default has a Stripe schedule', async () => {
     const prisma = createPrismaMock({
       users: [
         {
@@ -272,7 +272,7 @@ describe('getAdminCustomerProfile', () => {
       subscriptions: [
         {
           id: 'sub_pro',
-          plan: 'pro',
+          plan: 'default',
           referenceId: 'user_paid',
           status: 'active',
           stripeCustomerId: 'cus_paid',

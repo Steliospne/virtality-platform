@@ -22,7 +22,7 @@ describe('canAssignCustomerAccessGrant', () => {
     ).toBe(true)
   })
 
-  it('blocks grants for admins and customers with a live Pro subscription', () => {
+  it('blocks grants for admins and customers with a live Default subscription', () => {
     expect(
       canAssignCustomerAccessGrant({
         role: 'admin',
@@ -36,7 +36,7 @@ describe('canAssignCustomerAccessGrant', () => {
         billingStatus: 'trialing',
         subscriptionHistory: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'trialing',
             cancelAtPeriodEnd: false,
             stripeSubscriptionId: 'sub_1',
@@ -71,7 +71,7 @@ describe('paid billing administration eligibility', () => {
     accessStatus: 'paid',
     subscriptionHistory: [
       {
-        plan: 'pro',
+        plan: 'default',
         status: 'active',
         cancelAtPeriodEnd: false,
         stripeSubscriptionId: 'sub_1',
@@ -90,7 +90,7 @@ describe('paid billing administration eligibility', () => {
         ...paidProfile,
         subscriptionHistory: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'active',
             cancelAtPeriodEnd: true,
             stripeSubscriptionId: 'sub_1',
@@ -115,7 +115,7 @@ describe('paid billing administration eligibility', () => {
     ).toBe(false)
   })
 
-  it('allows assign Free after cancellation for paid history or live paid Pro', () => {
+  it('allows assign Free after cancellation for paid history or live paid Default', () => {
     expect(canAssignFreeAfterCancellation(paidProfile)).toBe(true)
     expect(
       canAssignFreeAfterCancellation({
@@ -124,7 +124,7 @@ describe('paid billing administration eligibility', () => {
         accessStatus: 'blocked',
         subscriptionHistory: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'canceled',
             trialEnd: new Date('2026-07-01T12:00:00.000Z'),
             periodEnd: new Date('2026-08-01T12:00:00.000Z'),
@@ -143,7 +143,7 @@ describe('paid billing administration eligibility', () => {
         accessStatus: 'blocked',
         subscriptionHistory: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'canceled',
             trialEnd: new Date('2026-08-01T12:00:00.000Z'),
             periodEnd: new Date('2026-08-01T12:00:00.000Z'),
@@ -192,7 +192,7 @@ describe('formatBillingSnapshotSummary', () => {
         primaryPlan: 'free',
         primaryStatus: 'active',
         stripeSubscriptionId: 'sub_1',
-        assignedProVariant: 'basic',
+        assignedDefaultVariant: 'basic',
       }),
     ).toContain('Free')
     expect(
@@ -202,7 +202,7 @@ describe('formatBillingSnapshotSummary', () => {
         primaryPlan: 'free',
         primaryStatus: 'active',
         stripeSubscriptionId: 'sub_1',
-        assignedProVariant: 'early-bird',
+        assignedDefaultVariant: 'early-bird',
       }),
     ).toContain('variant early-bird')
     expect(
@@ -212,16 +212,16 @@ describe('formatBillingSnapshotSummary', () => {
         primaryPlan: null,
         primaryStatus: null,
         stripeSubscriptionId: null,
-        assignedProVariant: null,
+        assignedDefaultVariant: null,
       }),
     ).toContain('no primary subscription')
   })
 })
 
 describe('formatAuditActionLabel', () => {
-  it('labels assign_pro_variant', () => {
-    expect(formatAuditActionLabel('assign_pro_variant')).toBe(
-      'Assign Pro variant',
+  it('labels assign_plan_variant', () => {
+    expect(formatAuditActionLabel('assign_plan_variant')).toBe(
+      'Assign Plan variant',
     )
   })
 

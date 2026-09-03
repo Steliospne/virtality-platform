@@ -1,6 +1,5 @@
 import {
   COUPON_LIBRARY_CURRENCY,
-  COUPON_LIBRARY_PLANS,
   type CouponLibraryRecord,
 } from '@virtality/shared/utils'
 
@@ -28,14 +27,11 @@ export function formatCouponDuration(coupon: CouponLibraryRecord): string {
   return `Repeating (${months} months)`
 }
 
+/** New Coupons apply store-wide (no `applies_to`); legacy ones may still list product ids. */
 export function formatCouponAppliesTo(coupon: CouponLibraryRecord): string {
-  const labels = coupon.appliesToProductIds.map((productId) => {
-    const plan = COUPON_LIBRARY_PLANS.find(
-      (entry) => entry.productId === productId,
-    )
-    return plan?.label ?? productId
-  })
-  return labels.length > 0 ? labels.join(', ') : '-'
+  return coupon.appliesToProductIds.length > 0
+    ? coupon.appliesToProductIds.join(', ')
+    : 'All products'
 }
 
 export function formatCouponName(coupon: CouponLibraryRecord): string {

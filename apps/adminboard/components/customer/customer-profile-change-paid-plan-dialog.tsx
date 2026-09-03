@@ -23,9 +23,9 @@ import {
   usePreviewChangePaidPlan,
 } from '@virtality/react-query'
 import {
-  SUPPORTED_PRO_PLAN_PRICE_IDS,
-  formatProPlanPriceLabel,
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  SUPPORTED_DEFAULT_PLAN_PRICE_IDS,
+  formatDefaultPlanPriceLabel,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
 } from '@virtality/shared/utils'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -34,7 +34,7 @@ import {
   formatMutationErrorMessage,
 } from '@/lib/admin-customer-actions'
 
-type SupportedProPlanPriceId = (typeof SUPPORTED_PRO_PLAN_PRICE_IDS)[number]
+type SupportedProPlanPriceId = (typeof SUPPORTED_DEFAULT_PLAN_PRICE_IDS)[number]
 
 type CustomerProfileChangePaidPlanDialogProps = {
   userId: string
@@ -50,7 +50,7 @@ export function CustomerProfileChangePaidPlanDialog({
   const { mutate, isPending } = useChangePaidPlan()
   const [reason, setReason] = useState('')
   const [targetPriceId, setTargetPriceId] = useState<SupportedProPlanPriceId>(
-    PRO_PLAN_MONTHLY_PRICE_ID,
+    DEFAULT_PLAN_MONTHLY_PRICE_ID,
   )
   const [confirmed, setConfirmed] = useState(false)
   const preview = usePreviewChangePaidPlan({
@@ -99,18 +99,18 @@ export function CustomerProfileChangePaidPlanDialog({
           <DialogHeader>
             <DialogTitle>Change paid plan</DialogTitle>
             <DialogDescription>
-              Select Monthly or Yearly using the supported Pro interval tokens.
-              The server remaps those tokens to this customer&apos;s Assigned
-              Variant Price ids when applying the change. Live paid interval
-              changes apply at the next billing cycle. Customers without a
-              payment method receive a Checkout link and stay on Free until
-              purchase completes.
+              Select Monthly or Yearly using the supported Default interval
+              tokens. The server remaps those tokens to this customer&apos;s
+              Assigned Variant Price ids when applying the change. Live paid
+              interval changes apply at the next billing cycle. Customers
+              without a payment method receive a Checkout link and stay on Free
+              until purchase completes.
             </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-4'>
             <div>
-              <Label>Paid Pro interval</Label>
+              <Label>Paid Default interval</Label>
               <Select
                 value={targetPriceId}
                 onValueChange={(value) =>
@@ -121,9 +121,9 @@ export function CustomerProfileChangePaidPlanDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUPPORTED_PRO_PLAN_PRICE_IDS.map((priceId) => (
+                  {SUPPORTED_DEFAULT_PLAN_PRICE_IDS.map((priceId) => (
                     <SelectItem key={priceId} value={priceId}>
-                      {formatProPlanPriceLabel(priceId)}
+                      {formatDefaultPlanPriceLabel(priceId)}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { CouponLibraryRecord } from './coupon-library.ts'
-import { PRO_PLAN_PRODUCT_ID } from './coupon-library.ts'
+import { DEFAULT_PLAN_PRODUCT_ID } from './coupon-library.ts'
 import type { SubscriptionDiscountRead } from './subscription-discount-read.ts'
 import {
   ConsolePromoConfirmRequiredError,
@@ -35,7 +35,7 @@ function coupon(
     currency: null,
     duration: 'once',
     durationInMonths: null,
-    appliesToProductIds: [PRO_PLAN_PRODUCT_ID],
+    appliesToProductIds: [DEFAULT_PLAN_PRODUCT_ID],
     archived: false,
     created: 1_700_000_000,
     ...overrides,
@@ -63,7 +63,7 @@ function eligible(
   return {
     stripeSubscriptionId: 'sub_1',
     status: 'active',
-    productIds: [PRO_PLAN_PRODUCT_ID],
+    productIds: [DEFAULT_PLAN_PRODUCT_ID],
     ...overrides,
   }
 }

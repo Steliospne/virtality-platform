@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Persistent notice while a period-end Pro interval switch is scheduled.
+ * Persistent notice while a period-end Default interval switch is scheduled.
  */
 
 export function PendingPlanChangeBanner({ message }: { message: string }) {

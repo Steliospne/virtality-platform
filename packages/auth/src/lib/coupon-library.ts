@@ -74,9 +74,6 @@ export function createStripeCouponLibraryGateway(
       const params: Stripe.CouponCreateParams = {
         name: input.name,
         duration: input.duration,
-        applies_to: {
-          products: input.productIds,
-        },
         metadata: {
           [COUPON_LIBRARY_ARCHIVE_METADATA_KEY]: 'false',
         },

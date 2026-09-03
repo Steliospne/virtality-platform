@@ -1,7 +1,7 @@
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import {
   isFreeSubscriptionPlan,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
 } from '../billing/billing-plans.ts'
 import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
 import type { AdminCustomerTrialGrantSummary } from '../billing/trial-grant.ts'
@@ -116,12 +116,12 @@ export function sortCustomerSubscriptionHistory<
   )
 }
 
-function isLivePaidProSubscription(
+function isLivePaidDefaultSubscription(
   subscription: CustomerSubscriptionSummary,
 ): boolean {
   return (
     isLiveEntitlementSubscriptionStatus(subscription.status) &&
-    isProSubscriptionPlan(subscription.plan)
+    isDefaultSubscriptionPlan(subscription.plan)
   )
 }
 
@@ -136,8 +136,8 @@ export function pickPrimaryCustomerSubscription<
 >(subscriptions: readonly T[]): T | null {
   if (subscriptions.length === 0) return null
 
-  const livePaidPro = subscriptions.find(isLivePaidProSubscription)
-  if (livePaidPro) return livePaidPro
+  const livePaidDefault = subscriptions.find(isLivePaidDefaultSubscription)
+  if (livePaidDefault) return livePaidDefault
 
   const liveSubscription = subscriptions.find(isLiveSubscription)
   if (liveSubscription) return liveSubscription
@@ -263,14 +263,14 @@ export type AdminCustomerProfile = {
   role: string | null
   stripeCustomerId: string | null
   /** Effective Assigned Variant (`basic` when storage is null). */
-  assignedProVariant: string
-  /** False when live paid Pro blocks reassignment. */
-  canChangeAssignedProVariant: boolean
+  assignedDefaultVariant: string
+  /** False when live paid Default blocks reassignment. */
+  canChangeAssignedPlanVariant: boolean
   createdAt: Date
   accessStatus: CustomerAccessStatus
   billingStatus: CustomerBillingStatus
   /**
-   * True when the live paid Pro seat has a queued Cycle plan change
+   * True when the live paid Default seat has a queued Cycle plan change
    * (`stripeScheduleId`).
    */
   hasPendingCyclePlanChange: boolean

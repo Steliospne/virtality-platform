@@ -3,11 +3,11 @@ import {
   buildEntitlementStanding,
   buildStripeCustomerDashboardUrl,
   buildStripeSubscriptionDashboardUrl,
-  canChangeAssignedProVariant,
+  canChangeAssignedPlanVariant,
   deriveCustomerAccessStatus,
   deriveCustomerBillingStatus,
-  effectiveAssignedProVariant,
-  findLivePaidProSubscription,
+  effectiveAssignedPlanVariant,
+  findLivePaidDefaultSubscription,
   hasPendingCyclePlanChange,
   mapAdminCustomerTrialGrantSummary,
   pickPrimaryCustomerSubscription,
@@ -264,7 +264,7 @@ export async function getAdminCustomerProfile(
       email: true,
       role: true,
       stripeCustomerId: true,
-      assignedProVariant: true,
+      assignedDefaultVariant: true,
       createdAt: true,
     },
   })
@@ -279,7 +279,7 @@ export async function getAdminCustomerProfile(
     subscriptions.map(mapSubscriptionHistoryItem),
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
-  const livePaidPro = findLivePaidProSubscription(subscriptionHistory)
+  const livePaidDefault = findLivePaidDefaultSubscription(subscriptionHistory)
   const { openTrialGrantClock, trialGrant } =
     await loadAdminCustomerTrialGrantContext(prisma, user.id, now)
   const standing = buildEntitlementStanding({
@@ -297,9 +297,11 @@ export async function getAdminCustomerProfile(
     email: user.email,
     role: user.role,
     stripeCustomerId: user.stripeCustomerId,
-    assignedProVariant: effectiveAssignedProVariant(user.assignedProVariant),
-    canChangeAssignedProVariant:
-      canChangeAssignedProVariant(subscriptionHistory),
+    assignedDefaultVariant: effectiveAssignedPlanVariant(
+      user.assignedDefaultVariant,
+    ),
+    canChangeAssignedPlanVariant:
+      canChangeAssignedPlanVariant(subscriptionHistory),
     createdAt: user.createdAt,
     accessStatus: deriveCustomerAccessStatus({
       now,
@@ -307,8 +309,8 @@ export async function getAdminCustomerProfile(
       subscriptions: subscriptionHistory,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
-    hasPendingCyclePlanChange: livePaidPro
-      ? hasPendingCyclePlanChange(livePaidPro)
+    hasPendingCyclePlanChange: livePaidDefault
+      ? hasPendingCyclePlanChange(livePaidDefault)
       : false,
     entitlement: {
       entitled: standing.entitled,

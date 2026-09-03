@@ -56,11 +56,11 @@ export function CustomerProfileBillingActions({
     <>
       <CustomerProfileSection title='Billing administration'>
         <p className='text-muted-foreground mb-4 text-sm'>
-          Change paid Pro intervals, cancel or reactivate subscriptions, release
-          a queued Cycle plan change, assign Free after cancellation, or send
-          Checkout links when no payment method exists. Each action requires a
-          reason, confirmation, and audit record. Results stay pending until
-          Stripe webhook sync settles the profile.
+          Change paid Default intervals, cancel or reactivate subscriptions,
+          release a queued Cycle plan change, assign Free after cancellation, or
+          send Checkout links when no payment method exists. Each action
+          requires a reason, confirmation, and audit record. Results stay
+          pending until Stripe webhook sync settles the profile.
         </p>
         <div className='flex flex-wrap gap-3'>
           {canChangePlan ? (

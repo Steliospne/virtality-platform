@@ -13,9 +13,9 @@ import type {
 } from '@virtality/shared/utils'
 import {
   FREE_PLAN_PRICE_ID,
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_SUBSCRIPTION_PLAN,
   withCheckoutReturnIntent,
 } from '@virtality/shared/utils'
 
@@ -41,10 +41,10 @@ function snapshot(
   return {
     role: 'user',
     stripeCustomerId: 'cus_1',
-    primaryPlan: PRO_SUBSCRIPTION_PLAN,
+    primaryPlan: DEFAULT_SUBSCRIPTION_PLAN,
     primaryStatus: 'active',
     stripeSubscriptionId: 'sub_pro_monthly',
-    assignedProVariant: null,
+    assignedDefaultVariant: null,
     ...overrides,
   }
 }
@@ -54,7 +54,7 @@ function subscription(
 ): AdminCustomerBillingSubscriptionRow {
   return {
     id: 'sub_local_1',
-    plan: PRO_SUBSCRIPTION_PLAN,
+    plan: DEFAULT_SUBSCRIPTION_PLAN,
     status: 'active',
     trialEnd: null,
     periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -107,11 +107,11 @@ function createGateway(
   return {
     createCustomer: vi.fn(async () => ({ customerId: 'cus_new' })),
     customerHasDefaultPaymentMethod: vi.fn(async () => true),
-    retrievePaidProSubscription: vi.fn(async () => ({
+    retrievePaidDefaultSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_monthly',
       stripeCustomerId: 'cus_1',
       subscriptionItemId: 'si_1',
-      currentPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+      currentPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
       status: 'active',
       cancelAtPeriodEnd: false,
       periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -120,7 +120,7 @@ function createGateway(
       prorationAmountCents: 2500,
       currency: 'eur',
     })),
-    createPaidProSubscription: vi.fn(async () => ({
+    createPaidDefaultSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_new',
     })),
     cancelSubscriptionImmediately: vi.fn(async () => ({
@@ -184,12 +184,12 @@ describe('createAdminCustomerBillingRuntimeFromPorts', () => {
       userId: PAID_USER.id,
       actorUserId: ACTOR_ID,
       reason: 'Requested yearly billing',
-      targetPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+      targetPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
     })
 
     expect(cyclePlan.upgrade).toHaveBeenCalledWith(
       expect.objectContaining({
-        plan: 'pro',
+        plan: 'default',
         annual: true,
         referenceId: PAID_USER.id,
         scheduleAtPeriodEnd: true,
@@ -252,7 +252,7 @@ describe('createAdminCustomerBillingRuntimeFromPorts', () => {
 
     const preview = await runtime.previewChangePaidPlan({
       userId: 'user_free',
-      targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+      targetPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
     })
 
     expect(preview.action).toBe('send_paid_checkout_link')

@@ -26,11 +26,11 @@ Requires a user with `role=admin`. The local seed creates one (see onboarding).
 
 ## Env
 
-| Variable               | Required for local | Notes                           |
-| ---------------------- | ------------------ | ------------------------------- |
-| `NEXT_PUBLIC_ENV`      | yes                | `development`                   |
-| `ENV`                  | recommended        | `development`                   |
-| `DATABASE_URL`         | yes                | Used by the Next proxy / Prisma |
+| Variable          | Required for local | Notes                           |
+| ----------------- | ------------------ | ------------------------------- |
+| `NEXT_PUBLIC_ENV` | yes                | `development`                   |
+| `ENV`             | recommended        | `development`                   |
+| `DATABASE_URL`    | yes                | Used by the Next proxy / Prisma |
 
 Seeded admin:
 

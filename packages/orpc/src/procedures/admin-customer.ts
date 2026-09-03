@@ -1,23 +1,23 @@
 import { ORPCError } from '@orpc/server'
 import {
-  assignProVariantAction,
+  assignPlanVariantAction,
   createAdminCustomerBillingRuntime,
   createTrialGrantRuntime,
   getRequiredStripeClient,
-  listAssignableProVariantsAction,
+  listAssignablePlanVariantsAction,
   stripeClient,
 } from '@virtality/auth'
 import { z } from 'zod'
 import {
   assignFreeAfterCancellationInputSchema,
   assignPermanentFreeInputSchema,
-  assignProVariantInputSchema,
+  assignPlanVariantInputSchema,
   adjustTrialGrantInputSchema,
   cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
   issueTrialGrantInputSchema,
-  listAssignableProVariantsInputSchema,
+  listAssignablePlanVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
   revokeTrialGrantInputSchema,
@@ -30,9 +30,9 @@ import {
   AdminCustomerBillingNotFoundError,
   AdminCustomerBillingStateError,
   AdminCustomerBillingValidationError,
-  AssignProVariantNotFoundError,
-  AssignProVariantStateError,
-  AssignProVariantValidationError,
+  AssignPlanVariantNotFoundError,
+  AssignPlanVariantStateError,
+  AssignPlanVariantValidationError,
   TrialGrantAlreadyOpenError,
   TrialGrantCustomerAlreadyEntitledError,
   TrialGrantCustomerNotFoundError,
@@ -75,9 +75,9 @@ function throwAdminCustomerOrpcError(error: unknown): never {
     error instanceof AdminCustomerBillingValidationError ||
     error instanceof AdminCustomerBillingNotFoundError ||
     error instanceof AdminCustomerBillingStateError ||
-    error instanceof AssignProVariantValidationError ||
-    error instanceof AssignProVariantNotFoundError ||
-    error instanceof AssignProVariantStateError ||
+    error instanceof AssignPlanVariantValidationError ||
+    error instanceof AssignPlanVariantNotFoundError ||
+    error instanceof AssignPlanVariantStateError ||
     error instanceof TrialGrantValidationError ||
     error instanceof TrialGrantCustomerNotFoundError ||
     error instanceof TrialGrantAlreadyOpenError ||
@@ -115,20 +115,20 @@ const getProfile = adminAuthed
     return profile
   })
 
-const listAssignableProVariants = adminAuthed
+const listAssignablePlanVariants = adminAuthed
   .route({
     path: '/admin-customer/list-assignable-pro-variants',
     method: 'GET',
   })
-  .input(listAssignableProVariantsInputSchema)
-  .handler(async () => listAssignableProVariantsAction(stripeClient))
+  .input(listAssignablePlanVariantsInputSchema)
+  .handler(async () => listAssignablePlanVariantsAction(stripeClient))
 
-const assignProVariant = adminAuthed
-  .route({ path: '/admin-customer/assign-pro-variant', method: 'POST' })
-  .input(assignProVariantInputSchema)
+const assignPlanVariant = adminAuthed
+  .route({ path: '/admin-customer/assign-plan-variant', method: 'POST' })
+  .input(assignPlanVariantInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      return await assignProVariantAction({
+      return await assignPlanVariantAction({
         stripeClient,
         prisma: context.prisma,
         userId: input.userId,
@@ -336,8 +336,8 @@ const sendPaidCheckoutLink = adminAuthed
 export const adminCustomer = {
   list,
   getProfile,
-  listAssignableProVariants,
-  assignProVariant,
+  listAssignablePlanVariants,
+  assignPlanVariant,
   assignPermanentFree,
   issueTrialGrant,
   adjustTrialGrant,

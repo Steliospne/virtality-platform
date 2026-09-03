@@ -9,7 +9,7 @@ import {
   cancelCyclePlanChangeForCustomer,
   cancelPaidSubscriptionForCustomer,
   changePaidPlanForCustomer,
-  findLivePaidProSubscription,
+  findLivePaidDefaultSubscription,
   previewChangePaidPlan,
   qualifiesForAssignFreeAfterCancellation,
   reactivatePaidSubscriptionForCustomer,
@@ -21,12 +21,12 @@ import {
 } from './admin-customer-billing.ts'
 import {
   FREE_PLAN_PRICE_ID,
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from '../billing/billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
-import { buildProVariantCatalogFromStripePrices } from '../billing/pro-variant-catalog.ts'
+import { buildPlanVariantCatalogFromStripePrices } from '../billing/plan-variant-catalog.ts'
 
 const ACTOR_ID = 'admin_1'
 const SUCCESS_URL = 'https://console.test/profile?checkoutReturn=success'
@@ -38,10 +38,10 @@ function snapshot(
   return {
     role: 'user',
     stripeCustomerId: 'cus_1',
-    primaryPlan: PRO_SUBSCRIPTION_PLAN,
+    primaryPlan: DEFAULT_SUBSCRIPTION_PLAN,
     primaryStatus: 'active',
     stripeSubscriptionId: 'sub_pro_monthly',
-    assignedProVariant: null,
+    assignedDefaultVariant: null,
     ...overrides,
   }
 }
@@ -51,7 +51,7 @@ function subscription(
 ): AdminCustomerBillingSubscriptionRow {
   return {
     id: 'sub_local_1',
-    plan: PRO_SUBSCRIPTION_PLAN,
+    plan: DEFAULT_SUBSCRIPTION_PLAN,
     status: 'active',
     trialEnd: null,
     periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -104,11 +104,11 @@ function createGateway(
   return {
     createCustomer: vi.fn(async () => ({ customerId: 'cus_new' })),
     customerHasDefaultPaymentMethod: vi.fn(async () => true),
-    retrievePaidProSubscription: vi.fn(async () => ({
+    retrievePaidDefaultSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_monthly',
       stripeCustomerId: 'cus_1',
       subscriptionItemId: 'si_1',
-      currentPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+      currentPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
       status: 'active',
       cancelAtPeriodEnd: false,
       periodEnd: new Date('2026-09-10T12:00:00.000Z'),
@@ -117,7 +117,7 @@ function createGateway(
       prorationAmountCents: 2500,
       currency: 'eur',
     })),
-    createPaidProSubscription: vi.fn(async () => ({
+    createPaidDefaultSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_new',
     })),
     cancelSubscriptionImmediately: vi.fn(async () => ({
@@ -153,10 +153,10 @@ function createCyclePlanPort(
   }
 }
 
-describe('findLivePaidProSubscription', () => {
-  it('selects the live paid Pro subscription from history', () => {
+describe('findLivePaidDefaultSubscription', () => {
+  it('selects the live paid Default subscription from history', () => {
     expect(
-      findLivePaidProSubscription([
+      findLivePaidDefaultSubscription([
         subscription({
           id: 'ended',
           status: 'canceled',
@@ -195,7 +195,7 @@ describe('qualifiesForAssignFreeAfterCancellation', () => {
     ).toBe(false)
   })
 
-  it('allows live trialing Pro even without Paid billing history', () => {
+  it('allows live trialing Default even without Paid billing history', () => {
     expect(
       qualifiesForAssignFreeAfterCancellation([
         subscription({
@@ -226,7 +226,7 @@ describe('previewChangePaidPlan', () => {
       }),
       {
         userId: 'user_free',
-        targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+        targetPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
       },
     )
 
@@ -250,7 +250,7 @@ describe('previewChangePaidPlan', () => {
       createGateway(),
       {
         userId: 'user_paid',
-        targetPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+        targetPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
       },
     )
 
@@ -266,7 +266,7 @@ describe('previewChangePaidPlan', () => {
     ).toBe(true)
     expect(
       buildChangePaidPlanPreview({
-        targetPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+        targetPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
         periodEnd: new Date('2026-09-10T12:00:00.000Z'),
         prorationAmountCents: null,
         currency: null,
@@ -290,7 +290,7 @@ describe('changePaidPlanForCustomer', () => {
       subscriptions: [subscription()],
       billingSnapshots: [
         snapshot(),
-        snapshot({ primaryPlan: PRO_SUBSCRIPTION_PLAN }),
+        snapshot({ primaryPlan: DEFAULT_SUBSCRIPTION_PLAN }),
       ],
     })
     const gateway = createGateway()
@@ -300,14 +300,14 @@ describe('changePaidPlanForCustomer', () => {
       userId: 'user_paid',
       actorUserId: ACTOR_ID,
       reason: 'Requested yearly billing',
-      targetPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+      targetPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
       successUrl: SUCCESS_URL,
       cancelUrl: CANCEL_URL,
     })
 
     expect(cyclePlan.upgrade).toHaveBeenCalledWith(
       expect.objectContaining({
-        plan: 'pro',
+        plan: 'default',
         annual: true,
         referenceId: 'user_paid',
         scheduleAtPeriodEnd: true,
@@ -347,7 +347,7 @@ describe('changePaidPlanForCustomer', () => {
         userId: 'user_free',
         actorUserId: ACTOR_ID,
         reason: 'Needs paid plan',
-        targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+        targetPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
         successUrl: SUCCESS_URL,
         cancelUrl: CANCEL_URL,
       },
@@ -507,7 +507,7 @@ describe('cancelCyclePlanChangeForCustomer', () => {
 })
 
 describe('assignFreeAfterCancellationForCustomer', () => {
-  it('cancels live paid Pro and creates permanent Free without a trial', async () => {
+  it('cancels live paid Default and creates permanent Free without a trial', async () => {
     const store = createStore({
       user: {
         id: 'user_paid',
@@ -549,7 +549,7 @@ describe('assignFreeAfterCancellationForCustomer', () => {
     )
   })
 
-  it('rejects trial-only canceled seats without live paid Pro', async () => {
+  it('rejects trial-only canceled seats without live paid Default', async () => {
     await expect(
       assignFreeAfterCancellationForCustomer(
         createStore({
@@ -592,7 +592,7 @@ describe('sendPaidCheckoutLinkForCustomer', () => {
           userId: 'missing',
           actorUserId: ACTOR_ID,
           reason: 'ab',
-          targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+          targetPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
           successUrl: SUCCESS_URL,
           cancelUrl: CANCEL_URL,
         },
@@ -607,7 +607,7 @@ describe('sendPaidCheckoutLinkForCustomer', () => {
           userId: 'missing',
           actorUserId: ACTOR_ID,
           reason: 'Valid reason',
-          targetPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+          targetPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
           successUrl: SUCCESS_URL,
           cancelUrl: CANCEL_URL,
         },
@@ -619,9 +619,9 @@ describe('sendPaidCheckoutLinkForCustomer', () => {
 describe('Assigned Variant target Prices', () => {
   const EARLY_MONTHLY = 'price_early_m'
   const EARLY_YEARLY = 'price_early_y'
-  const earlyBirdCatalog = buildProVariantCatalogFromStripePrices([
+  const earlyBirdCatalog = buildPlanVariantCatalogFromStripePrices([
     {
-      id: PRO_PLAN_MONTHLY_PRICE_ID,
+      id: DEFAULT_PLAN_MONTHLY_PRICE_ID,
       lookup_key: 'basic_monthly',
       unit_amount: 15_000,
       currency: 'eur',
@@ -629,7 +629,7 @@ describe('Assigned Variant target Prices', () => {
       active: true,
     },
     {
-      id: PRO_PLAN_ANNUAL_PRICE_ID,
+      id: DEFAULT_PLAN_ANNUAL_PRICE_ID,
       lookup_key: 'basic_yearly',
       unit_amount: 150_000,
       currency: 'eur',
@@ -676,7 +676,7 @@ describe('Assigned Variant target Prices', () => {
           cancelUrl: CANCEL_URL,
         },
       ),
-    ).rejects.toThrow(/supported Pro monthly or yearly Price/)
+    ).rejects.toThrow(/supported Default monthly or yearly Price/)
   })
 
   it('accepts remapped early-bird Price when catalog is provided', async () => {
@@ -697,7 +697,7 @@ describe('Assigned Variant target Prices', () => {
             primaryPlan: null,
             primaryStatus: null,
             stripeSubscriptionId: null,
-            assignedProVariant: 'early-bird',
+            assignedDefaultVariant: 'early-bird',
           }),
         ],
       }),
@@ -709,7 +709,7 @@ describe('Assigned Variant target Prices', () => {
         targetPriceId: EARLY_MONTHLY,
         successUrl: SUCCESS_URL,
         cancelUrl: CANCEL_URL,
-        proVariantCatalog: earlyBirdCatalog,
+        planVariantCatalog: earlyBirdCatalog,
       },
     )
 
@@ -722,7 +722,7 @@ describe('Assigned Variant target Prices', () => {
   it('schedules Cycle plan change from remapped early-bird yearly Price', async () => {
     const cyclePlan = createCyclePlanPort()
     const gateway = createGateway({
-      retrievePaidProSubscription: vi.fn(async () => ({
+      retrievePaidDefaultSubscription: vi.fn(async () => ({
         stripeSubscriptionId: 'sub_early_m',
         stripeCustomerId: 'cus_early',
         subscriptionItemId: 'si_early',
@@ -751,7 +751,7 @@ describe('Assigned Variant target Prices', () => {
         billingSnapshots: [
           snapshot({
             stripeSubscriptionId: 'sub_early_m',
-            assignedProVariant: 'early-bird',
+            assignedDefaultVariant: 'early-bird',
           }),
         ],
       }),
@@ -764,7 +764,7 @@ describe('Assigned Variant target Prices', () => {
         targetPriceId: EARLY_YEARLY,
         successUrl: SUCCESS_URL,
         cancelUrl: CANCEL_URL,
-        proVariantCatalog: earlyBirdCatalog,
+        planVariantCatalog: earlyBirdCatalog,
       },
     )
 
@@ -783,8 +783,8 @@ describe('Assigned Variant target Prices', () => {
       prorationAmountCents: null,
       currency: null,
       usesCheckout: true,
-      proVariantCatalog: earlyBirdCatalog,
+      planVariantCatalog: earlyBirdCatalog,
     })
-    expect(preview.confirmationMessage).toContain('Pro yearly (Early Bird)')
+    expect(preview.confirmationMessage).toContain('Default yearly (Early Bird)')
   })
 })

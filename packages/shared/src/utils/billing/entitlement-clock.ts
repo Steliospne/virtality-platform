@@ -6,7 +6,7 @@
  * clock (including Checkout `incomplete` before webhook/success sync). Entitled
  * for VR: status ∈ {active, trialing} AND now < clockEnd.
  *
- * Checkout CTA: none while entitled paid Pro (portal seats); Subscribe vs Renew
+ * Checkout CTA: none while entitled paid Default (portal seats); Subscribe vs Renew
  * for soft-expired clinicians and live Free trials when Billing Path Established
  * (Renew if subscription history shows a paid period).
  * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
@@ -16,7 +16,7 @@
 
 import {
   isFreeSubscriptionPlan,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
 } from './billing-plans.ts'
 import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { resolveExpiredFreeUpgradeQualifies } from './expired-free-upgrade-prompt.ts'
@@ -193,16 +193,16 @@ export function resolveCheckoutCta(input: {
 }
 
 /**
- * Profile → Billing Customer Portal eligibility: live paid Pro only. Free and
+ * Profile → Billing Customer Portal eligibility: live paid Default only. Free and
  * trialing clinicians upgrade through per-card Checkout instead.
  */
-export function isPaidProPortalEligible(input: {
+export function isPaidDefaultPortalEligible(input: {
   plan?: string | null
   entitled: boolean
   status?: string | null
 }): boolean {
   if (!input.entitled) return false
-  if (!isProSubscriptionPlan(input.plan)) return false
+  if (!isDefaultSubscriptionPlan(input.plan)) return false
   return isLiveEntitlementSubscriptionStatus(input.status ?? '')
 }
 
@@ -210,7 +210,7 @@ export function isPaidProPortalEligible(input: {
  * Profile → Billing Checkout CTA. Unlike sidebar Subscribe/Renew, a Stripe
  * Customer alone is enough to start Checkout even when Billing Path is not
  * established yet (typical tester seat: Customer id, no synced Subscription).
- * Entitled paid Pro seats use the portal instead; Free trial seats stay on
+ * Entitled paid Default seats use the portal instead; Free trial seats stay on
  * Subscribe even while their clock is live.
  */
 export function resolveProfileBillingCheckoutCta(input: {
@@ -223,7 +223,7 @@ export function resolveProfileBillingCheckoutCta(input: {
   // For Profile Billing, we allow Subscribe even when the console user does not
   // yet have a stored Stripe Customer id. Stripe/Better Auth can create the
   // customer as part of the Stripe Checkout flow.
-  if (isPaidProPortalEligible(input)) return null
+  if (isPaidDefaultPortalEligible(input)) return null
   return input.hadPaidBilling ? 'renew' : 'subscribe'
 }
 
@@ -249,7 +249,7 @@ export type EntitlementStanding = EntitlementClockStanding & {
   /** Prior paid billing period in synced Subscription history. */
   hadPaidBilling: boolean
   /**
-   * Subscribe/Renew Checkout CTA. Null for entitled paid Pro, without Billing
+   * Subscribe/Renew Checkout CTA. Null for entitled paid Default, without Billing
    * Path, or while renewing paid active. Live Free trials and soft-expired seats
    * show Subscribe/Renew. Console wires click to Better Auth Stripe Checkout.
    */
@@ -259,7 +259,7 @@ export type EntitlementStanding = EntitlementClockStanding & {
   /** Synced plan on the picked Subscription (`free` | `pro`). */
   plan: string | null
   /**
-   * Live paid Pro has a Stripe schedule for a plan/interval change at period
+   * Live paid Default has a Stripe schedule for a plan/interval change at period
    * end (Better Auth `scheduleAtPeriodEnd`).
    */
   hasPendingPlanChange: boolean

@@ -9,21 +9,12 @@ export const COUPON_LIBRARY_CURRENCY = 'eur' as const
 export const COUPON_LIBRARY_ARCHIVE_METADATA_KEY = 'virtality_archived' as const
 
 /**
- * Canonical sandbox Pro Product (`prod_SaYNooLgBNvYvA`) for Coupon
- * `applies_to`. Same Product as Checkout / Access Code Prices in auth.
+ * Canonical sandbox Default Product. Same Product as Checkout / Access Code
+ * Prices in auth. Coupons created here no longer restrict `applies_to` — they
+ * apply store-wide — but existing Coupons/Campaign discounts still reference
+ * this id when checking eligibility.
  */
-export const PRO_PLAN_PRODUCT_ID = 'prod_SaYNooLgBNvYvA' as const
-
-export const COUPON_LIBRARY_PLANS = [
-  {
-    planId: 'pro',
-    productId: PRO_PLAN_PRODUCT_ID,
-    label: 'Pro',
-  },
-] as const
-
-export type CouponLibraryPlanId =
-  (typeof COUPON_LIBRARY_PLANS)[number]['planId']
+export const DEFAULT_PLAN_PRODUCT_ID = 'prod_VBrsOJhc54iHSG' as const
 
 export const COUPON_DURATIONS = ['once', 'repeating', 'forever'] as const
 export type CouponDuration = (typeof COUPON_DURATIONS)[number]
@@ -54,8 +45,6 @@ export type CreateLibraryCouponInput = {
   duration: CouponDuration
   /** Required when duration is `repeating`. */
   durationInMonths?: number
-  /** At least one; today `pro`. */
-  planIds: CouponLibraryPlanId[]
 }
 
 export type UpdateLibraryCouponNameInput = {
@@ -70,7 +59,6 @@ export type CouponLibraryCreateParams = {
   currency?: string
   duration: CouponDuration
   durationInMonths?: number
-  productIds: string[]
 }
 
 export type CouponLibraryStripeGateway = {
@@ -99,32 +87,6 @@ export function isCouponArchivedMetadata(
   metadata: Record<string, string> | null | undefined,
 ): boolean {
   return metadata?.[COUPON_LIBRARY_ARCHIVE_METADATA_KEY] === 'true'
-}
-
-export function resolveProductIdsForPlans(
-  planIds: readonly string[],
-): string[] {
-  if (planIds.length === 0) {
-    throw new CouponLibraryValidationError(
-      'Select at least one plan for applies_to',
-    )
-  }
-
-  const productIds: string[] = []
-  const seen = new Set<string>()
-
-  for (const planId of planIds) {
-    const plan = COUPON_LIBRARY_PLANS.find((entry) => entry.planId === planId)
-    if (!plan) {
-      throw new CouponLibraryValidationError(`Unknown plan: ${planId}`)
-    }
-    if (!seen.has(plan.productId)) {
-      seen.add(plan.productId)
-      productIds.push(plan.productId)
-    }
-  }
-
-  return productIds
 }
 
 export function listCouponsForApplyPicker(
@@ -226,13 +188,11 @@ export async function createLibraryCoupon(
   const name = requireTrimmedName(input.name)
   const discount = validateDiscountFields(input)
   const duration = validateDuration(input)
-  const productIds = resolveProductIdsForPlans(input.planIds)
 
   return stripe.create({
     name,
     ...discount,
     ...duration,
-    productIds,
   })
 }
 

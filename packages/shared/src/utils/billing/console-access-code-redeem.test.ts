@@ -135,7 +135,7 @@ describe('classifyProfileBillingSeat', () => {
     expect(
       classifyProfileBillingSeat({
         status: 'active',
-        plan: 'pro',
+        plan: 'default',
         stripeSubscriptionId: 'sub_pro',
       }),
     ).toBe('paid_pro_active')
@@ -314,7 +314,7 @@ describe('redeemAccessCodeOnProfile', () => {
     expect(store.rows[0]?.status).toBe('already_entitled')
   })
 
-  it('burns already_entitled for trialing and paid Pro seats', async () => {
+  it('burns already_entitled for trialing and paid Default seats', async () => {
     for (const seat of [
       {
         status: 'trialing',
@@ -323,7 +323,7 @@ describe('redeemAccessCodeOnProfile', () => {
       },
       {
         status: 'active',
-        plan: 'pro',
+        plan: 'default',
         stripeSubscriptionId: 'sub_pro',
       },
     ] as const) {
