@@ -225,6 +225,12 @@ describe('formatAuditActionLabel', () => {
     )
   })
 
+  it('labels legacy grant_timed_trial audit entries', () => {
+    expect(formatAuditActionLabel('grant_timed_trial')).toBe(
+      'Grant timed trial',
+    )
+  })
+
   it('labels trial grant audit actions', () => {
     expect(formatAuditActionLabel('issue_trial_grant')).toBe(
       'Issue trial grant',

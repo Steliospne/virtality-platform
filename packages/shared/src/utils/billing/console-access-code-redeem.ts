@@ -22,6 +22,7 @@ import {
   TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
   type TrialRedeemConsumeStore,
   type TrialRedeemStripeGateway,
+  type TrialRedeemTrialGrantIssuer,
 } from './trial-redeem-sign-up.ts'
 
 export const CONSOLE_ACCESS_CODE_INVALID_MESSAGE =
@@ -82,12 +83,10 @@ export type ConsoleAccessCodeStore = Pick<TrialRedeemCodeStore, 'findByCode'> &
     findStripeCustomerIdByUserId: (userId: string) => Promise<string | null>
   }
 
-export type ConsoleAccessCodeStripeGateway = TrialRedeemStripeGateway & {
-  attachTrialOnSubscription: (input: {
-    stripeSubscriptionId: string
-    trialEndUnix: number
-    metadata: { trialRedeemCodeId: string }
-  }) => Promise<void>
+export type ConsoleAccessCodeStripeGateway = TrialRedeemStripeGateway
+
+export type ConsoleAccessCodeTrialGrantIssuer = TrialRedeemTrialGrantIssuer & {
+  hasOpenTrialGrant: (userId: string) => Promise<boolean>
 }
 
 export type AccessCodeProfileBlockReason = 'expired' | 'already_used'
@@ -124,15 +123,6 @@ export async function evaluateAccessCodeAtProfile(
   }
 }
 
-export function computeAccessCodeTrialEndUnix(
-  now: Date,
-  trialDays: number,
-): number {
-  const end = new Date(now.getTime())
-  end.setUTCDate(end.getUTCDate() + trialDays)
-  return Math.floor(end.getTime() / 1000)
-}
-
 export type RedeemAccessCodeOnProfileInput = {
   userId: string
   code: string
@@ -142,8 +132,7 @@ export type RedeemAccessCodeOnProfileInput = {
 
 export type RedeemAccessCodeEffect =
   | 'permanent_free_created'
-  | 'trial_created'
-  | 'trial_attached'
+  | 'trial_granted'
   | 'already_entitled'
 
 export type RedeemAccessCodeOnProfileResult = {
@@ -194,12 +183,21 @@ export class ConsoleAccessCodeFailedError extends Error {
   }
 }
 
-function profileMatrixAlreadyEntitled(
-  seatKind: ProfileBillingSeatKind,
-  mode: TrialRedeemCodeMode,
-): boolean {
-  if (seatKind === 'trialing' || seatKind === 'paid_pro_active') return true
-  if (seatKind === 'active_free_no_trial' && mode === 'permanent_free') {
+function profileMatrixAlreadyEntitled(input: {
+  seatKind: ProfileBillingSeatKind
+  mode: TrialRedeemCodeMode
+  hasOpenTrialGrant: boolean
+}): boolean {
+  if (input.seatKind === 'trialing' || input.seatKind === 'paid_pro_active') {
+    return true
+  }
+  if (
+    input.seatKind === 'active_free_no_trial' &&
+    input.mode === 'permanent_free'
+  ) {
+    return true
+  }
+  if (input.mode === 'timed_trial' && input.hasOpenTrialGrant) {
     return true
   }
   return false
@@ -212,6 +210,7 @@ function profileMatrixAlreadyEntitled(
 export async function redeemAccessCodeOnProfile(
   store: ConsoleAccessCodeStore,
   stripe: ConsoleAccessCodeStripeGateway,
+  trialGrant: ConsoleAccessCodeTrialGrantIssuer,
   input: RedeemAccessCodeOnProfileInput,
   runtime: { now?: () => Date } = {},
 ): Promise<RedeemAccessCodeOnProfileResult> {
@@ -234,8 +233,9 @@ export async function redeemAccessCodeOnProfile(
   const seat = await store.findBillingSeatByUserId(input.userId)
   const seatKind = classifyProfileBillingSeat(seat)
   const metadata = { trialRedeemCodeId: String(codeId) }
+  const hasOpenTrialGrant = await trialGrant.hasOpenTrialGrant(input.userId)
 
-  if (profileMatrixAlreadyEntitled(seatKind, mode)) {
+  if (profileMatrixAlreadyEntitled({ seatKind, mode, hasOpenTrialGrant })) {
     const consumed = await store.consumeAsAlreadyEntitled(
       codeId,
       input.userId,
@@ -247,13 +247,8 @@ export async function redeemAccessCodeOnProfile(
 
   if (seatKind === 'active_free_no_trial' && mode === 'timed_trial') {
     if (!seat) throw new ConsoleAccessCodeFailedError()
-    const trialEndUnix = computeAccessCodeTrialEndUnix(now, trialDays)
     try {
-      await stripe.attachTrialOnSubscription({
-        stripeSubscriptionId: seat.stripeSubscriptionId,
-        trialEndUnix,
-        metadata,
-      })
+      await trialGrant.grantActiveTrial({ userId: input.userId, trialDays })
     } catch {
       throw new ConsoleAccessCodeFailedError()
     }
@@ -261,7 +256,7 @@ export async function redeemAccessCodeOnProfile(
     if (!consumed) throw new ConsoleAccessCodeFailedError()
     return {
       codeId,
-      effect: 'trial_attached',
+      effect: 'trial_granted',
       stripeSubscriptionId: seat.stripeSubscriptionId,
     }
   }
@@ -274,19 +269,19 @@ export async function redeemAccessCodeOnProfile(
 
   let stripeSubscriptionId: string
   try {
-    if (mode === 'permanent_free') {
-      const created =
-        await stripe.createPermanentFreeSubscription(subscriptionInput)
-      stripeSubscriptionId = created.stripeSubscriptionId
-    } else {
-      const created = await stripe.createNoCardTrialSubscription({
-        ...subscriptionInput,
-        trialPeriodDays: trialDays,
-      })
-      stripeSubscriptionId = created.stripeSubscriptionId
-    }
+    const created =
+      await stripe.createPermanentFreeSubscription(subscriptionInput)
+    stripeSubscriptionId = created.stripeSubscriptionId
   } catch {
     throw new ConsoleAccessCodeFailedError()
+  }
+
+  if (mode === 'timed_trial') {
+    try {
+      await trialGrant.grantActiveTrial({ userId: input.userId, trialDays })
+    } catch {
+      throw new ConsoleAccessCodeFailedError()
+    }
   }
 
   const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
@@ -295,15 +290,14 @@ export async function redeemAccessCodeOnProfile(
   return {
     codeId,
     effect:
-      mode === 'permanent_free' ? 'permanent_free_created' : 'trial_created',
+      mode === 'permanent_free' ? 'permanent_free_created' : 'trial_granted',
     stripeSubscriptionId,
   }
 }
 
 const ACCESS_CODE_EFFECT_COPY: Record<RedeemAccessCodeEffect, string> = {
   permanent_free_created: 'You now have permanent Free access.',
-  trial_created: 'Your free trial has started.',
-  trial_attached: 'A free trial was added to your subscription.',
+  trial_granted: 'Your free trial has started.',
   already_entitled: "You're already on a qualifying plan.",
 }
 

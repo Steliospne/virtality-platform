@@ -4,7 +4,6 @@ import {
   AdminCustomerAccessNotFoundError,
   AdminCustomerAccessValidationError,
   assignPermanentFreeToCustomer,
-  grantTimedTrialToCustomer,
   type AdminCustomerAccessStore,
   type AdminCustomerAccessStripeGateway,
   type AdminCustomerBillingSnapshot,
@@ -77,10 +76,6 @@ function createGateway(
     customerHasEntitledSubscription: vi.fn(async () => false),
     createPermanentFreeSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_free_active',
-    })),
-    createTimedTrialSubscription: vi.fn(async (input) => ({
-      stripeSubscriptionId: 'sub_free_trial',
-      trialEndUnix: input.trialEndUnix,
     })),
     ...overrides,
   }
@@ -228,107 +223,5 @@ describe('assignPermanentFreeToCustomer', () => {
         { now: () => NOW },
       ),
     ).rejects.toThrow(AdminCustomerAccessAlreadyEntitledError)
-  })
-})
-
-describe('grantTimedTrialToCustomer', () => {
-  it('creates a no-card timed trial with the selected duration', async () => {
-    const store = createStore({
-      user: {
-        id: 'user_trial',
-        name: 'Trial',
-        email: 'trial@example.com',
-        role: 'user',
-        stripeCustomerId: 'cus_trial',
-      },
-      billingSnapshots: [
-        snapshot({ stripeCustomerId: 'cus_trial' }),
-        snapshot({
-          stripeCustomerId: 'cus_trial',
-          primaryPlan: FREE_SUBSCRIPTION_PLAN,
-          primaryStatus: 'trialing',
-          stripeSubscriptionId: 'sub_free_trial',
-        }),
-      ],
-    })
-    const gateway = createGateway({
-      createTimedTrialSubscription: async (input) => ({
-        stripeSubscriptionId: 'sub_free_trial',
-        trialEndUnix: input.trialEndUnix,
-      }),
-    })
-
-    const result = await grantTimedTrialToCustomer(
-      store,
-      gateway,
-      {
-        userId: 'user_trial',
-        actorUserId: ACTOR_ID,
-        reason: 'Two-week evaluation',
-        amount: 2,
-        unit: 'weeks',
-        priceId: FREE_PRICE_ID,
-      },
-      { now: () => NOW },
-    )
-
-    expect(result.trialEnd).toEqual(new Date('2026-08-24T12:00:00.000Z'))
-    expect(store.recordAudit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'grant_timed_trial',
-        outcome: 'success',
-        stripeOperationId: 'sub_free_trial',
-      }),
-    )
-
-    const standing = buildEntitlementStanding({
-      now: NOW,
-      role: 'user',
-      subscriptions: [
-        {
-          plan: FREE_SUBSCRIPTION_PLAN,
-          status: 'trialing',
-          trialEnd: result.trialEnd,
-        },
-      ],
-    })
-    expect(standing.canLaunchVr).toBe(true)
-    expect(standing.entitled).toBe(true)
-  })
-
-  it('requires a reason and an existing target user', async () => {
-    const store = createStore({ user: null })
-
-    await expect(
-      grantTimedTrialToCustomer(
-        store,
-        createGateway(),
-        {
-          userId: 'missing',
-          actorUserId: ACTOR_ID,
-          reason: 'ab',
-          amount: 7,
-          unit: 'days',
-          priceId: FREE_PRICE_ID,
-        },
-        { now: () => NOW },
-      ),
-    ).rejects.toThrow(AdminCustomerAccessValidationError)
-
-    await expect(
-      grantTimedTrialToCustomer(
-        store,
-        createGateway(),
-        {
-          userId: 'missing',
-          actorUserId: ACTOR_ID,
-          reason: 'Valid reason',
-          amount: 7,
-          unit: 'days',
-          priceId: FREE_PRICE_ID,
-        },
-        { now: () => NOW },
-      ),
-    ).rejects.toThrow(AdminCustomerAccessNotFoundError)
   })
 })

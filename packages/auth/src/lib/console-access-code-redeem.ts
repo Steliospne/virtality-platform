@@ -2,16 +2,18 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   CONSOLE_PROMO_ELIGIBLE_STATUSES,
-  FREE_SUBSCRIPTION_PLAN,
+  grantActiveTrialToUser,
   redeemAccessCodeOnProfile,
   type ConsoleAccessCodeStore,
   type ConsoleAccessCodeStripeGateway,
+  type ConsoleAccessCodeTrialGrantIssuer,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import {
   createPrismaTrialRedeemConsumeStore,
   createStripeTrialRedeemGateway,
 } from './trial-redeem.ts'
+import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
 
 type ConsoleAccessCodeDeps = {
   prisma?: PrismaClient
@@ -56,25 +58,14 @@ function createPrismaConsoleAccessCodeStore(
   }
 }
 
-function createStripeConsoleAccessCodeGateway(
-  stripeClient: Stripe,
-): ConsoleAccessCodeStripeGateway {
+function createConsoleAccessCodeTrialGrantIssuer(
+  client: PrismaClient = prisma,
+): ConsoleAccessCodeTrialGrantIssuer {
+  const store = createPrismaTrialGrantStore(client)
   return {
-    ...createStripeTrialRedeemGateway(stripeClient),
-    attachTrialOnSubscription: async ({
-      stripeSubscriptionId,
-      trialEndUnix,
-      metadata,
-    }) => {
-      await stripeClient.subscriptions.update(stripeSubscriptionId, {
-        trial_end: trialEndUnix,
-        proration_behavior: 'none',
-        metadata: {
-          plan: FREE_SUBSCRIPTION_PLAN,
-          trialRedeemCodeId: metadata.trialRedeemCodeId,
-        },
-      })
-    },
+    hasOpenTrialGrant: async (userId) =>
+      (await store.findOpenTrialGrantByUserId(userId)) != null,
+    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
   }
 }
 
@@ -84,11 +75,12 @@ export async function redeemAccessCodeForUser(
 ) {
   const client = deps.prisma ?? prisma
   const store = createPrismaConsoleAccessCodeStore(client)
-  const stripe = createStripeConsoleAccessCodeGateway(deps.stripeClient)
+  const stripe = createStripeTrialRedeemGateway(deps.stripeClient)
+  const trialGrant = createConsoleAccessCodeTrialGrantIssuer(client)
   const stripeCustomerId =
     (await store.findStripeCustomerIdByUserId(input.userId)) ?? ''
 
-  return redeemAccessCodeOnProfile(store, stripe, {
+  return redeemAccessCodeOnProfile(store, stripe, trialGrant, {
     userId: input.userId,
     code: input.code,
     stripeCustomerId,

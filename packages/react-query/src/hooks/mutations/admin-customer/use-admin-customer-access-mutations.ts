@@ -26,34 +26,12 @@ export function useAssignPermanentFree() {
   )
 }
 
-export function useGrantTimedTrial() {
-  const orpc = useORPC()
-  const invalidate = useInvalidateAdminCustomerQueries()
-
-  return useMutation(
-    orpc.adminCustomer.grantTimedTrial.mutationOptions({
-      onSuccess: invalidate,
-    }),
-  )
-}
-
 export function useIssueTrialGrant() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()
 
   return useMutation(
     orpc.adminCustomer.issueTrialGrant.mutationOptions({
-      onSuccess: invalidate,
-    }),
-  )
-}
-
-export function useStartTrialGrant() {
-  const orpc = useORPC()
-  const invalidate = useInvalidateAdminCustomerQueries()
-
-  return useMutation(
-    orpc.adminCustomer.startTrialGrant.mutationOptions({
       onSuccess: invalidate,
     }),
   )

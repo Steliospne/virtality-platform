@@ -36,7 +36,6 @@ function createPrismaMock(input: {
   trialGrants?: Array<{
     id: string
     userId: string
-    code: string
     status: string
     trialStart?: Date | null
     trialEnd?: Date | null
@@ -312,7 +311,6 @@ describe('getAdminCustomerProfile', () => {
         {
           id: 'grant_1',
           userId: 'user_grant',
-          code: 'PILOT-42',
           status: 'active',
           trialStart: NOW,
           trialEnd: new Date('2026-08-20T12:00:00.000Z'),
@@ -328,7 +326,6 @@ describe('getAdminCustomerProfile', () => {
     })
 
     expect(profile?.trialGrant).toMatchObject({
-      code: 'PILOT-42',
       status: 'active',
       entitled: true,
     })

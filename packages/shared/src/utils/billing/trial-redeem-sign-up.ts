@@ -128,17 +128,22 @@ export const TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES = [
 export type TrialRedeemStripeGateway = {
   /** True when the Customer already has a trialing or active Subscription. */
   customerHasEntitledSubscription: (customerId: string) => Promise<boolean>
-  createNoCardTrialSubscription: (input: {
-    customerId: string
-    priceId: string
-    trialPeriodDays: number
-    metadata: { trialRedeemCodeId: string }
-  }) => Promise<{ stripeSubscriptionId: string }>
   createPermanentFreeSubscription: (input: {
     customerId: string
     priceId: string
     metadata: { trialRedeemCodeId: string }
   }) => Promise<{ stripeSubscriptionId: string }>
+}
+
+/**
+ * Issues the owned entitlement clock for `timed_trial` mode codes. Active
+ * immediately - no pending step.
+ */
+export type TrialRedeemTrialGrantIssuer = {
+  grantActiveTrial: (input: {
+    userId: string
+    trialDays: number
+  }) => Promise<{ trialGrantId: string }>
 }
 
 export type RedeemTrialCodeInput = {
@@ -150,20 +155,27 @@ export type RedeemTrialCodeInput = {
 
 export type RedeemTrialCodeResult =
   | { status: 'ignored' }
-  | { status: 'redeemed'; stripeSubscriptionId: string; codeId: number }
+  | {
+      status: 'redeemed'
+      stripeSubscriptionId: string
+      codeId: number
+      trialGrantId?: string
+    }
   | { status: 'already_entitled'; codeId: number }
   | { status: 'failed' }
 
 /**
  * Stripe-first redeem: entitled Customers consume as already_entitled without a
- * second Subscription; otherwise create the mode-appropriate Free Subscription
- * (permanent Free or no-card timed trial) then consume as redeemed. Does not
- * write a local Subscription row (webhook-only). Does not set the tester role.
- * On Stripe failure the code stays unused.
+ * second Subscription; otherwise ensure a Free Subscription exists (permanent
+ * Free, no trial on the Stripe row) then, for `timed_trial` mode, issue an
+ * active TrialGrant as the owned entitlement clock. Does not write a local
+ * Subscription row (webhook-only). Does not set the tester role. On Stripe
+ * failure the code stays unused.
  */
 export async function redeemTrialCodeAfterSignUp(
   store: TrialRedeemConsumeStore,
   stripe: TrialRedeemStripeGateway,
+  trialGrant: TrialRedeemTrialGrantIssuer,
   input: RedeemTrialCodeInput,
   runtime: { now?: () => Date } = {},
 ): Promise<RedeemTrialCodeResult> {
@@ -185,26 +197,29 @@ export async function redeemTrialCodeAfterSignUp(
     return { status: 'already_entitled', codeId }
   }
 
-  const subscriptionInput = {
-    customerId: input.stripeCustomerId,
-    priceId: input.priceId,
-    metadata: { trialRedeemCodeId: String(codeId) },
-  }
-
   let stripeSubscriptionId: string
   try {
-    let created: { stripeSubscriptionId: string }
-    if (mode === 'permanent_free') {
-      created = await stripe.createPermanentFreeSubscription(subscriptionInput)
-    } else {
-      created = await stripe.createNoCardTrialSubscription({
-        ...subscriptionInput,
-        trialPeriodDays: trialDays,
-      })
-    }
+    const created = await stripe.createPermanentFreeSubscription({
+      customerId: input.stripeCustomerId,
+      priceId: input.priceId,
+      metadata: { trialRedeemCodeId: String(codeId) },
+    })
     stripeSubscriptionId = created.stripeSubscriptionId
   } catch {
     return { status: 'failed' }
+  }
+
+  let trialGrantId: string | undefined
+  if (mode !== 'permanent_free') {
+    try {
+      const granted = await trialGrant.grantActiveTrial({
+        userId: input.userId,
+        trialDays,
+      })
+      trialGrantId = granted.trialGrantId
+    } catch {
+      return { status: 'failed' }
+    }
   }
 
   const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
@@ -214,5 +229,6 @@ export async function redeemTrialCodeAfterSignUp(
     status: 'redeemed',
     stripeSubscriptionId,
     codeId,
+    ...(trialGrantId ? { trialGrantId } : {}),
   }
 }

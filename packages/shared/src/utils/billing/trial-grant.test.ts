@@ -5,16 +5,15 @@ import {
   adjustTrialGrantForCustomer,
   clockEndForEntitlementSource,
   convertActiveTrialGrantOnPaidSubscription,
+  grantActiveTrialToUser,
   issueTrialGrantToCustomer,
   isPaidStripeSubscriptionForTrialGrantConversion,
   mapAdminCustomerTrialGrantSummary,
   resolveEntitlementFromSources,
   resolveTrialGrantClock,
   revokeTrialGrantForCustomer,
-  startTrialGrantForCustomer,
   TrialGrantAlreadyOpenError,
   TrialGrantNotActiveError,
-  TrialGrantNotFoundError,
   TrialGrantOpenNotFoundError,
   type TrialGrantClock,
   type TrialGrantStore,
@@ -61,11 +60,11 @@ describe('resolveTrialGrantClock', () => {
     expect(standing.status).toBe('active')
   })
 
-  it('is not entitled for pending grants with no clock dates', () => {
+  it('is not entitled for revoked grants with no clock dates', () => {
     const standing = resolveTrialGrantClock({
       now: NOW,
       trialGrant: {
-        status: 'pending',
+        status: 'revoked',
         trialStart: null,
         trialEnd: null,
       },
@@ -83,7 +82,6 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
       grant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-42',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -92,7 +90,6 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
     })
 
     expect(summary).toMatchObject({
-      code: 'PILOT-42',
       status: 'active',
       entitled: true,
       remainingMs: 7 * 24 * 60 * 60 * 1000,
@@ -101,7 +98,24 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
 })
 
 describe('resolveEntitlementFromSources', () => {
-  it('prefers Stripe subscription clocks when any subscription exists', () => {
+  it('prefers a live paid Stripe subscription over an active TrialGrant', () => {
+    const standing = resolveEntitlementFromSources({
+      now: NOW,
+      subscriptions: [
+        {
+          status: 'active',
+          plan: PRO_SUBSCRIPTION_PLAN,
+          periodEnd: SUBSCRIPTION_PERIOD_END,
+        },
+      ],
+      trialGrant: activeGrant(),
+    })
+
+    expect(standing.entitled).toBe(true)
+    expect(standing.clockEnd).toEqual(SUBSCRIPTION_PERIOD_END)
+  })
+
+  it('does not let a canceled Stripe row shadow an active TrialGrant', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [
@@ -114,8 +128,25 @@ describe('resolveEntitlementFromSources', () => {
       trialGrant: activeGrant(),
     })
 
-    expect(standing.entitled).toBe(false)
-    expect(standing.clockEnd).toBeNull()
+    expect(standing.entitled).toBe(true)
+    expect(standing.clockEnd).toEqual(TRIAL_END)
+  })
+
+  it('does not let a synced `free` plan row shadow an active TrialGrant', () => {
+    const standing = resolveEntitlementFromSources({
+      now: NOW,
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'free',
+          periodEnd: null,
+        },
+      ],
+      trialGrant: activeGrant(),
+    })
+
+    expect(standing.entitled).toBe(true)
+    expect(standing.clockEnd).toEqual(TRIAL_END)
   })
 
   it('falls back to TrialGrant when the user has no Stripe subscriptions', () => {
@@ -127,6 +158,23 @@ describe('resolveEntitlementFromSources', () => {
 
     expect(standing.entitled).toBe(true)
     expect(standing.clockEnd).toEqual(TRIAL_END)
+  })
+
+  it('falls back to the Stripe clock once the TrialGrant is no longer live', () => {
+    const standing = resolveEntitlementFromSources({
+      now: NOW,
+      subscriptions: [
+        {
+          status: 'canceled',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-08-01T12:00:00.000Z'),
+        },
+      ],
+      trialGrant: { status: 'revoked', trialStart: NOW, trialEnd: TRIAL_END },
+    })
+
+    expect(standing.entitled).toBe(false)
+    expect(standing.clockEnd).toBeNull()
   })
 })
 
@@ -158,11 +206,11 @@ describe('clockEndForEntitlementSource', () => {
 
 function createTrialGrantStore(input: {
   user?: { id: string; name: string; email: string; role: string | null }
-  openGrant?: TrialGrantClock & { id: string; code: string; userId: string }
+  openGrant?: TrialGrantClock & { id: string; userId: string }
 }): TrialGrantStore {
   const grants = new Map<
     string,
-    TrialGrantClock & { id: string; code: string; userId: string }
+    TrialGrantClock & { id: string; userId: string }
   >()
   if (input.openGrant) {
     grants.set(input.openGrant.userId, input.openGrant)
@@ -173,7 +221,7 @@ function createTrialGrantStore(input: {
       input.user && input.user.id === userId ? input.user : null,
     findOpenTrialGrantByUserId: async (userId) => {
       const row = grants.get(userId)
-      if (!row || (row.status !== 'pending' && row.status !== 'active')) {
+      if (!row || row.status !== 'active') {
         return null
       }
       return row
@@ -182,21 +230,6 @@ function createTrialGrantStore(input: {
       const row = {
         id: 'grant_1',
         userId: data.userId,
-        code: data.code,
-        status: 'pending' as const,
-        trialStart: null,
-        trialEnd: null,
-      }
-      grants.set(data.userId, row)
-      return row
-    }),
-    startTrialGrant: vi.fn(async (data) => {
-      const existing = grants.get(data.userId)
-      if (!existing || existing.status !== 'pending') {
-        throw new TrialGrantNotFoundError(data.userId)
-      }
-      const row = {
-        ...existing,
         status: 'active' as const,
         trialStart: data.trialStart,
         trialEnd: data.trialEnd,
@@ -254,7 +287,7 @@ function createTrialGrantStore(input: {
 }
 
 describe('issueTrialGrantToCustomer', () => {
-  it('creates a pending grant without calling Stripe', () => {
+  it('creates an active grant with trialStart and trialEnd, no pending step', () => {
     const store = createTrialGrantStore({
       user: {
         id: 'user_1',
@@ -264,22 +297,29 @@ describe('issueTrialGrantToCustomer', () => {
       },
     })
 
-    const result = issueTrialGrantToCustomer(store, {
-      userId: 'user_1',
-      actorUserId: 'admin_1',
-      reason: 'VR pilot code',
-      code: 'PILOT-001',
-    })
+    const result = issueTrialGrantToCustomer(
+      store,
+      {
+        userId: 'user_1',
+        actorUserId: 'admin_1',
+        reason: 'VR pilot code',
+        amount: 7,
+        unit: 'days',
+      },
+      { now: () => NOW },
+    )
 
     return result.then((value) => {
       expect(store.createTrialGrant).toHaveBeenCalledWith({
         userId: 'user_1',
-        code: 'PILOT-001',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
       })
       expect(value).toMatchObject({
         trialGrantId: 'grant_1',
-        code: 'PILOT-001',
-        status: 'pending',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
         auditId: 'audit_1',
       })
     })
@@ -296,10 +336,9 @@ describe('issueTrialGrantToCustomer', () => {
       openGrant: {
         id: 'grant_existing',
         userId: 'user_1',
-        code: 'OLD',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
       },
     })
 
@@ -308,55 +347,51 @@ describe('issueTrialGrantToCustomer', () => {
         userId: 'user_1',
         actorUserId: 'admin_1',
         reason: 'Duplicate',
-        code: 'PILOT-002',
+        amount: 7,
+        unit: 'days',
       }),
     ).rejects.toBeInstanceOf(TrialGrantAlreadyOpenError)
   })
 })
 
-describe('startTrialGrantForCustomer', () => {
-  it('activates a pending grant with trialStart and trialEnd', () => {
-    const store = createTrialGrantStore({
-      user: {
-        id: 'user_1',
-        name: 'Pilot',
-        email: 'pilot@example.com',
-        role: 'user',
-      },
-      openGrant: {
-        id: 'grant_1',
-        userId: 'user_1',
-        code: 'PILOT-001',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
-      },
-    })
+describe('grantActiveTrialToUser', () => {
+  it('creates an active grant from a trial day count, unaudited', () => {
+    const store = createTrialGrantStore({})
 
-    return startTrialGrantForCustomer(
+    return grantActiveTrialToUser(
       store,
-      {
-        userId: 'user_1',
-        actorUserId: 'admin_1',
-        reason: 'Onboarding complete',
-        amount: 7,
-        unit: 'days',
-      },
+      { userId: 'user_1', trialDays: 7 },
       { now: () => NOW },
     ).then((result) => {
-      expect(store.startTrialGrant).toHaveBeenCalledWith({
+      expect(store.createTrialGrant).toHaveBeenCalledWith({
         userId: 'user_1',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       })
+      expect(store.recordAudit).not.toHaveBeenCalled()
       expect(result).toMatchObject({
         trialGrantId: 'grant_1',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
-        auditId: 'audit_1',
       })
     })
+  })
+
+  it('rejects when the user already has an open grant', () => {
+    const store = createTrialGrantStore({
+      openGrant: {
+        id: 'grant_existing',
+        userId: 'user_1',
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
+      },
+    })
+
+    return expect(
+      grantActiveTrialToUser(store, { userId: 'user_1', trialDays: 7 }),
+    ).rejects.toBeInstanceOf(TrialGrantAlreadyOpenError)
   })
 })
 
@@ -372,7 +407,6 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -416,7 +450,6 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -450,7 +483,6 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -473,21 +505,13 @@ describe('adjustTrialGrantForCustomer', () => {
     ).rejects.toThrow(/would end the Trial Grant in the past/)
   })
 
-  it('rejects adjusting a pending grant', () => {
+  it('rejects adjusting when there is no open grant', () => {
     const store = createTrialGrantStore({
       user: {
         id: 'user_1',
         name: 'Pilot',
         email: 'pilot@example.com',
         role: 'user',
-      },
-      openGrant: {
-        id: 'grant_1',
-        userId: 'user_1',
-        code: 'PILOT-001',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
       },
     })
 
@@ -508,7 +532,7 @@ describe('adjustTrialGrantForCustomer', () => {
 })
 
 describe('revokeTrialGrantForCustomer', () => {
-  it('revokes a pending grant and records audit', () => {
+  it('revokes an open grant and records audit', () => {
     const store = createTrialGrantStore({
       user: {
         id: 'user_1',
@@ -519,10 +543,9 @@ describe('revokeTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
+        status: 'active',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
       },
     })
 
@@ -553,7 +576,6 @@ describe('revokeTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -612,7 +634,6 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -635,20 +656,19 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     await expect(store.findOpenTrialGrantByUserId('user_1')).resolves.toBeNull()
   })
 
-  it('does not convert pending grants or Free subscriptions', async () => {
-    const pendingStore = createTrialGrantStore({
+  it('does not convert revoked grants or Free subscriptions', async () => {
+    const revokedStore = createTrialGrantStore({
       openGrant: {
-        id: 'grant_pending',
+        id: 'grant_revoked',
         userId: 'user_1',
-        code: 'PILOT-001',
-        status: 'pending',
-        trialStart: null,
-        trialEnd: null,
+        status: 'revoked',
+        trialStart: NOW,
+        trialEnd: TRIAL_END,
       },
     })
 
     await expect(
-      convertActiveTrialGrantOnPaidSubscription(pendingStore, {
+      convertActiveTrialGrantOnPaidSubscription(revokedStore, {
         userId: 'user_1',
         subscription: {
           plan: PRO_SUBSCRIPTION_PLAN,
@@ -661,7 +681,6 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -690,7 +709,6 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -709,12 +727,12 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       userId: 'user_1',
       actorUserId: 'admin_1',
       reason: 'Second pilot code',
-      code: 'PILOT-002',
+      amount: 7,
+      unit: 'days',
     })
 
     expect(issued).toMatchObject({
-      code: 'PILOT-002',
-      status: 'pending',
+      status: 'active',
     })
   })
 })
@@ -725,7 +743,6 @@ describe('trial grant conversion entitlement handoff', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        code: 'PILOT-001',
         status: 'active',
         trialStart: NOW,
         trialEnd: TRIAL_END,

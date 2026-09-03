@@ -19,10 +19,12 @@ type SignInDataType = {
 
 type EmailSignInProps = {
   postLoginPath?: string
+  testerCode?: string
 }
 
 const EmailSignIn = ({
   postLoginPath = DEFAULT_POST_LOGIN_PATH,
+  testerCode,
 }: EmailSignInProps) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -52,6 +54,9 @@ const EmailSignIn = ({
       try {
         await authClient.signIn.email({
           ...values,
+          // testerCode isn't part of the signIn.email schema, but the
+          // server reads it off the raw request body (readSignUpCodeFromUnknown).
+          ...(testerCode ? ({ testerCode } as object) : {}),
           fetchOptions: {
             onSuccess: () => {
               void warmUpSocketServer()

@@ -74,10 +74,6 @@ function createAccessStripe(
     createPermanentFreeSubscription: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_free_active',
     })),
-    createTimedTrialSubscription: vi.fn(async (input) => ({
-      stripeSubscriptionId: 'sub_free_trial',
-      trialEndUnix: input.trialEndUnix,
-    })),
     ...overrides,
   }
 }
@@ -181,43 +177,6 @@ describe('createAdminEntitlementClockRuntimeFromPorts', () => {
     )
     expect(result.stripeSubscriptionId).toBe('sub_free_active')
     expect(rearm.rearmForNewClock).not.toHaveBeenCalled()
-    expect(rearm.rearmAfterExtension).not.toHaveBeenCalled()
-  })
-
-  it('grants a timed trial with the Free price and rearms for the new clock', async () => {
-    const accessStripe = createAccessStripe()
-    const rearm = createRearm()
-    const runtime = createRuntime({
-      accessStore: createAccessStore({
-        billingSnapshots: [
-          snapshot(),
-          snapshot({
-            primaryPlan: 'free',
-            primaryStatus: 'trialing',
-            stripeSubscriptionId: 'sub_free_trial',
-          }),
-        ],
-      }),
-      accessStripe,
-      rearm,
-    })
-
-    const result = await runtime.grantTimedTrial({
-      userId: USER.id,
-      actorUserId: ACTOR_ID,
-      reason: 'Pilot access',
-      amount: 7,
-      unit: 'days',
-    })
-
-    expect(accessStripe.createTimedTrialSubscription).toHaveBeenCalledWith(
-      expect.objectContaining({ priceId: FREE_PLAN_PRICE_ID }),
-    )
-    expect(result.trialEnd).toEqual(new Date('2026-08-17T12:00:00.000Z'))
-    expect(rearm.rearmForNewClock).toHaveBeenCalledWith({
-      userId: USER.id,
-      clockEnd: result.trialEnd,
-    })
     expect(rearm.rearmAfterExtension).not.toHaveBeenCalled()
   })
 

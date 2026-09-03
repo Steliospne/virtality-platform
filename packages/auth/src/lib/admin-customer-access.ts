@@ -3,7 +3,6 @@ import type { PrismaClient } from '@virtality/db'
 import {
   billingSnapshotFromSubscription,
   buildPermanentFreeSubscriptionStripeParams,
-  buildTimedTrialSubscriptionStripeParams,
   effectiveAssignedProVariant,
   isProPlanPriceId,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
@@ -168,22 +167,6 @@ export function createStripeAdminCustomerAccessGateway(
         }),
       )
       return { stripeSubscriptionId: subscription.id }
-    },
-    createTimedTrialSubscription: async (input) => {
-      const actorUserId = input.metadata.adminCustomerActorUserId ?? ''
-      const subscription = await stripeClient.subscriptions.create(
-        buildTimedTrialSubscriptionStripeParams({
-          customerId: input.customerId,
-          priceId: input.priceId,
-          trialEndUnix: input.trialEndUnix,
-          actorUserId,
-        }),
-      )
-      const trialEndUnix = subscription.trial_end ?? input.trialEndUnix
-      return {
-        stripeSubscriptionId: subscription.id,
-        trialEndUnix,
-      }
     },
   }
 }

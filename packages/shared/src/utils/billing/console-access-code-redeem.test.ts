@@ -13,7 +13,6 @@ import {
 import {
   CONSOLE_ACCESS_CODE_INVALID_MESSAGE,
   classifyProfileBillingSeat,
-  computeAccessCodeTrialEndUnix,
   evaluateAccessCodeAtProfile,
   formatAccessCodeAppliedMessage,
   isProfileBillingAccessCode,
@@ -21,6 +20,7 @@ import {
   routeProfileBillingCode,
   type ConsoleAccessCodeStore,
   type ConsoleAccessCodeStripeGateway,
+  type ConsoleAccessCodeTrialGrantIssuer,
   type ProfileBillingSeat,
 } from './console-access-code-redeem.ts'
 
@@ -78,13 +78,19 @@ function stripeGateway(
 ): ConsoleAccessCodeStripeGateway {
   return {
     customerHasEntitledSubscription: async () => false,
-    createNoCardTrialSubscription: async () => ({
-      stripeSubscriptionId: 'sub_trial',
-    }),
     createPermanentFreeSubscription: async () => ({
       stripeSubscriptionId: 'sub_permanent_free',
     }),
-    attachTrialOnSubscription: async () => undefined,
+    ...overrides,
+  }
+}
+
+function trialGrantIssuer(
+  overrides: Partial<ConsoleAccessCodeTrialGrantIssuer> = {},
+): ConsoleAccessCodeTrialGrantIssuer {
+  return {
+    hasOpenTrialGrant: async () => false,
+    grantActiveTrial: async () => ({ trialGrantId: 'grant_default' }),
     ...overrides,
   }
 }
@@ -182,14 +188,12 @@ describe('redeemAccessCodeOnProfile', () => {
     const createPermanentFreeSubscription = vi.fn(async () => ({
       stripeSubscriptionId: 'sub_perm',
     }))
-    const createNoCardTrialSubscription = vi.fn()
+    const grantActiveTrial = vi.fn()
 
     const result = await redeemAccessCodeOnProfile(
       store,
-      stripeGateway({
-        createPermanentFreeSubscription,
-        createNoCardTrialSubscription,
-      }),
+      stripeGateway({ createPermanentFreeSubscription }),
+      trialGrantIssuer({ grantActiveTrial }),
       {
         userId: 'user_1',
         code: 'GO-PERMFREE01',
@@ -205,20 +209,24 @@ describe('redeemAccessCodeOnProfile', () => {
       stripeSubscriptionId: 'sub_perm',
     })
     expect(createPermanentFreeSubscription).toHaveBeenCalledOnce()
-    expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
+    expect(grantActiveTrial).not.toHaveBeenCalled()
     expect(store.rows[0]?.status).toBe('redeemed')
   })
 
-  it('creates a Free trial when there is no live seat', async () => {
+  it('assigns Free then grants a trial when there is no live seat', async () => {
     const store = createMemoryStore([record({ id: 11, trialDays: 21 })])
-    const createNoCardTrialSubscription = vi.fn(async (input) => {
-      expect(input.trialPeriodDays).toBe(21)
-      return { stripeSubscriptionId: 'sub_new_trial' }
+    const createPermanentFreeSubscription = vi.fn(async () => ({
+      stripeSubscriptionId: 'sub_new_free',
+    }))
+    const grantActiveTrial = vi.fn(async (input) => {
+      expect(input).toEqual({ userId: 'user_2', trialDays: 21 })
+      return { trialGrantId: 'grant_11' }
     })
 
     const result = await redeemAccessCodeOnProfile(
       store,
-      stripeGateway({ createNoCardTrialSubscription }),
+      stripeGateway({ createPermanentFreeSubscription }),
+      trialGrantIssuer({ grantActiveTrial }),
       {
         userId: 'user_2',
         code: 'GO-ABCDEFGHIJ',
@@ -230,32 +238,33 @@ describe('redeemAccessCodeOnProfile', () => {
 
     expect(result).toEqual({
       codeId: 11,
-      effect: 'trial_created',
-      stripeSubscriptionId: 'sub_new_trial',
+      effect: 'trial_granted',
+      stripeSubscriptionId: 'sub_new_free',
     })
+    expect(createPermanentFreeSubscription).toHaveBeenCalledOnce()
+    expect(grantActiveTrial).toHaveBeenCalledOnce()
   })
 
-  it('attaches a trial on active Free without creating a second subscription', async () => {
+  it('grants a trial on active Free without creating a second subscription', async () => {
     const seat = {
       status: 'active',
       plan: 'free',
       stripeSubscriptionId: 'sub_live_free',
     }
     const store = createMemoryStore([record({ id: 12 })], seat)
-    const attachTrialOnSubscription = vi.fn(async (input) => {
-      expect(input.stripeSubscriptionId).toBe('sub_live_free')
-      expect(input.trialEndUnix).toBe(
-        computeAccessCodeTrialEndUnix(NOW, DEFAULT_TRIAL_REDEEM_DAYS),
-      )
+    const createPermanentFreeSubscription = vi.fn()
+    const grantActiveTrial = vi.fn(async (input) => {
+      expect(input).toEqual({
+        userId: 'user_3',
+        trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
+      })
+      return { trialGrantId: 'grant_12' }
     })
-    const createNoCardTrialSubscription = vi.fn()
 
     const result = await redeemAccessCodeOnProfile(
       store,
-      stripeGateway({
-        attachTrialOnSubscription,
-        createNoCardTrialSubscription,
-      }),
+      stripeGateway({ createPermanentFreeSubscription }),
+      trialGrantIssuer({ grantActiveTrial }),
       {
         userId: 'user_3',
         code: 'GO-ABCDEFGHIJ',
@@ -267,11 +276,11 @@ describe('redeemAccessCodeOnProfile', () => {
 
     expect(result).toEqual({
       codeId: 12,
-      effect: 'trial_attached',
+      effect: 'trial_granted',
       stripeSubscriptionId: 'sub_live_free',
     })
-    expect(attachTrialOnSubscription).toHaveBeenCalledOnce()
-    expect(createNoCardTrialSubscription).not.toHaveBeenCalled()
+    expect(grantActiveTrial).toHaveBeenCalledOnce()
+    expect(createPermanentFreeSubscription).not.toHaveBeenCalled()
   })
 
   it('burns already_entitled for active Free plus permanent_free mode', async () => {
@@ -286,12 +295,12 @@ describe('redeemAccessCodeOnProfile', () => {
     )
     const stripe = stripeGateway({
       createPermanentFreeSubscription: vi.fn(),
-      attachTrialOnSubscription: vi.fn(),
     })
 
     const result = await redeemAccessCodeOnProfile(
       store,
       stripe,
+      trialGrantIssuer(),
       {
         userId: 'user_4',
         code: 'GO-ABCDEFGHIJ',
@@ -322,6 +331,7 @@ describe('redeemAccessCodeOnProfile', () => {
       const result = await redeemAccessCodeOnProfile(
         store,
         stripeGateway(),
+        trialGrantIssuer(),
         {
           userId: 'user_5',
           code: 'GO-ABCDEFGHIJ',
@@ -334,10 +344,29 @@ describe('redeemAccessCodeOnProfile', () => {
     }
   })
 
+  it('burns already_entitled for a timed_trial code when an open TrialGrant already exists', async () => {
+    const store = createMemoryStore([record({ id: 16 })])
+
+    const result = await redeemAccessCodeOnProfile(
+      store,
+      stripeGateway(),
+      trialGrantIssuer({ hasOpenTrialGrant: async () => true }),
+      {
+        userId: 'user_10',
+        code: 'GO-ABCDEFGHIJ',
+        stripeCustomerId: 'cus_10',
+        priceId: FREE_PLAN_PRICE_ID,
+      },
+      { now: () => NOW },
+    )
+
+    expect(result).toEqual({ codeId: 16, effect: 'already_entitled' })
+  })
+
   it('throws for unknown Access Codes', async () => {
     const store = createMemoryStore()
     await expect(
-      redeemAccessCodeOnProfile(store, stripeGateway(), {
+      redeemAccessCodeOnProfile(store, stripeGateway(), trialGrantIssuer(), {
         userId: 'user_6',
         code: 'GO-NOSUCHCODE',
         stripeCustomerId: 'cus_6',
@@ -346,19 +375,21 @@ describe('redeemAccessCodeOnProfile', () => {
     ).rejects.toThrow(CONSOLE_ACCESS_CODE_INVALID_MESSAGE)
   })
 
-  it('creates a Free trial when the live seat is canceled', async () => {
+  it('assigns Free then grants a trial when the live seat is canceled', async () => {
     const store = createMemoryStore([record({ id: 15 })], {
       status: 'canceled',
       plan: 'free',
       stripeSubscriptionId: 'sub_canceled',
     })
-    const createNoCardTrialSubscription = vi.fn(async () => ({
+    const createPermanentFreeSubscription = vi.fn(async () => ({
       stripeSubscriptionId: 'sub_after_cancel',
     }))
+    const grantActiveTrial = vi.fn(async () => ({ trialGrantId: 'grant_15' }))
 
     const result = await redeemAccessCodeOnProfile(
       store,
-      stripeGateway({ createNoCardTrialSubscription }),
+      stripeGateway({ createPermanentFreeSubscription }),
+      trialGrantIssuer({ grantActiveTrial }),
       {
         userId: 'user_7',
         code: 'GO-ABCDEFGHIJ',
@@ -370,10 +401,11 @@ describe('redeemAccessCodeOnProfile', () => {
 
     expect(result).toEqual({
       codeId: 15,
-      effect: 'trial_created',
+      effect: 'trial_granted',
       stripeSubscriptionId: 'sub_after_cancel',
     })
-    expect(createNoCardTrialSubscription).toHaveBeenCalledOnce()
+    expect(createPermanentFreeSubscription).toHaveBeenCalledOnce()
+    expect(grantActiveTrial).toHaveBeenCalledOnce()
   })
 
   it('shares Expired and Already used copy with sign-up', async () => {
@@ -386,6 +418,7 @@ describe('redeemAccessCodeOnProfile', () => {
       redeemAccessCodeOnProfile(
         expiredStore,
         stripeGateway(),
+        trialGrantIssuer(),
         {
           userId: 'user_8',
           code: 'GO-ABCDEFGHIJ',
@@ -398,12 +431,17 @@ describe('redeemAccessCodeOnProfile', () => {
 
     const usedStore = createMemoryStore([record({ status: 'redeemed' })])
     await expect(
-      redeemAccessCodeOnProfile(usedStore, stripeGateway(), {
-        userId: 'user_9',
-        code: 'GO-ABCDEFGHIJ',
-        stripeCustomerId: 'cus_9',
-        priceId: FREE_PLAN_PRICE_ID,
-      }),
+      redeemAccessCodeOnProfile(
+        usedStore,
+        stripeGateway(),
+        trialGrantIssuer(),
+        {
+          userId: 'user_9',
+          code: 'GO-ABCDEFGHIJ',
+          stripeCustomerId: 'cus_9',
+          priceId: FREE_PLAN_PRICE_ID,
+        },
+      ),
     ).rejects.toThrow(TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE)
   })
 })
@@ -411,10 +449,10 @@ describe('redeemAccessCodeOnProfile', () => {
 describe('formatAccessCodeAppliedMessage', () => {
   it('includes the headline and one-line effect', () => {
     expect(
-      formatAccessCodeAppliedMessage({ effect: 'trial_attached' }),
+      formatAccessCodeAppliedMessage({ effect: 'trial_granted' }),
     ).toContain('Access Code applied.')
     expect(
-      formatAccessCodeAppliedMessage({ effect: 'trial_attached' }),
+      formatAccessCodeAppliedMessage({ effect: 'trial_granted' }),
     ).toContain('free trial')
   })
 })

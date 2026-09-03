@@ -1,19 +1,10 @@
 import {
   FREE_SUBSCRIPTION_PLAN,
   buildPermanentFreeSubscriptionCreateParams,
-  buildFreeTimedTrialSubscriptionCreateParams,
 } from '../billing/billing-plans.ts'
-import {
-  computeExtensionTrialEnd,
-  isEntitlementExtensionDurationUnit,
-  type EntitlementExtensionDurationUnit,
-  type LiveSubscriptionRecord,
-} from '../billing/entitlement-extension.ts'
+import { type LiveSubscriptionRecord } from '../billing/entitlement-extension.ts'
 
-export const ADMIN_CUSTOMER_ACCESS_ACTIONS = [
-  'assign_permanent_free',
-  'grant_timed_trial',
-] as const
+export const ADMIN_CUSTOMER_ACCESS_ACTIONS = ['assign_permanent_free'] as const
 
 export type AdminCustomerAccessAction =
   (typeof ADMIN_CUSTOMER_ACCESS_ACTIONS)[number]
@@ -79,12 +70,6 @@ export type AdminCustomerAccessStripeGateway = {
     priceId: string
     metadata: Record<string, string>
   }) => Promise<{ stripeSubscriptionId: string }>
-  createTimedTrialSubscription: (input: {
-    customerId: string
-    priceId: string
-    trialEndUnix: number
-    metadata: Record<string, string>
-  }) => Promise<{ stripeSubscriptionId: string; trialEndUnix: number }>
 }
 
 export type AssignPermanentFreeInput = {
@@ -94,26 +79,9 @@ export type AssignPermanentFreeInput = {
   priceId: string
 }
 
-export type GrantTimedTrialInput = {
-  userId: string
-  actorUserId: string
-  reason: string
-  amount: number
-  unit: EntitlementExtensionDurationUnit
-  priceId: string
-}
-
 export type AssignPermanentFreeResult = {
   stripeCustomerId: string
   stripeSubscriptionId: string
-  testerDemoted: boolean
-  auditId: string
-}
-
-export type GrantTimedTrialResult = {
-  stripeCustomerId: string
-  stripeSubscriptionId: string
-  trialEnd: Date
   testerDemoted: boolean
   auditId: string
 }
@@ -283,66 +251,6 @@ export async function assignPermanentFreeToCustomer(
   }
 }
 
-export async function grantTimedTrialToCustomer(
-  store: AdminCustomerAccessStore,
-  stripe: AdminCustomerAccessStripeGateway,
-  input: GrantTimedTrialInput,
-  runtime: { now?: () => Date } = {},
-): Promise<GrantTimedTrialResult> {
-  assertActors(input)
-  assertReason(input.reason)
-  if (!input.priceId.trim()) {
-    throw new AdminCustomerAccessValidationError('priceId is required.')
-  }
-  if (!Number.isInteger(input.amount) || input.amount < 1) {
-    throw new AdminCustomerAccessValidationError(
-      'Trial amount must be a positive integer.',
-    )
-  }
-  if (!isEntitlementExtensionDurationUnit(input.unit)) {
-    throw new AdminCustomerAccessValidationError(
-      'Trial unit must be days, weeks, or months.',
-    )
-  }
-
-  const now = runtime.now?.() ?? new Date()
-  const trialEnd = computeExtensionTrialEnd(now, input.amount, input.unit)
-  const trialEndUnix = Math.floor(trialEnd.getTime() / 1000)
-
-  const { user, beforeBillingState, testerDemoted, stripeCustomerId } =
-    await prepareCustomerAccessGrant(store, stripe, input)
-
-  const created = await stripe.createTimedTrialSubscription({
-    customerId: stripeCustomerId,
-    priceId: input.priceId,
-    trialEndUnix,
-    metadata: stripeAssignMetadata({
-      actorUserId: input.actorUserId,
-      action: 'grant_timed_trial',
-    }),
-  })
-
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
-    actorUserId: input.actorUserId,
-    action: 'grant_timed_trial',
-    reason: input.reason.trim(),
-    outcome: 'success',
-    stripeOperationId: created.stripeSubscriptionId,
-    beforeBillingState,
-    afterBillingState,
-  })
-
-  return {
-    stripeCustomerId,
-    stripeSubscriptionId: created.stripeSubscriptionId,
-    trialEnd: new Date(created.trialEndUnix * 1000),
-    testerDemoted,
-    auditId: audit.id,
-  }
-}
-
 export function buildPermanentFreeSubscriptionStripeParams(input: {
   customerId: string
   priceId: string
@@ -358,32 +266,14 @@ export function buildPermanentFreeSubscriptionStripeParams(input: {
   })
 }
 
-export function buildTimedTrialSubscriptionStripeParams(input: {
-  customerId: string
-  priceId: string
-  trialEndUnix: number
-  actorUserId: string
-}) {
-  return buildFreeTimedTrialSubscriptionCreateParams({
-    customerId: input.customerId,
-    priceId: input.priceId,
-    trialEndUnix: input.trialEndUnix,
-    metadata: stripeAssignMetadata({
-      actorUserId: input.actorUserId,
-      action: 'grant_timed_trial',
-    }),
-  })
-}
+const ADMIN_CUSTOMER_ACCESS_ACTION_LABELS = {
+  assign_permanent_free: 'Assign permanent Free',
+} as const satisfies Record<AdminCustomerAccessAction, string>
 
 export function formatAdminCustomerAccessActionLabel(
   action: AdminCustomerAccessAction,
 ): string {
-  switch (action) {
-    case 'assign_permanent_free':
-      return 'Assign permanent Free'
-    case 'grant_timed_trial':
-      return 'Grant timed trial'
-  }
+  return ADMIN_CUSTOMER_ACCESS_ACTION_LABELS[action]
 }
 
 export function billingSnapshotFromSubscription(input: {

@@ -196,7 +196,6 @@ export async function listAdminCustomers(
 const ADMIN_CUSTOMER_TRIAL_GRANT_SELECT = {
   id: true,
   userId: true,
-  code: true,
   status: true,
   trialStart: true,
   trialEnd: true,
