@@ -14,6 +14,11 @@ import {
   TRIAL_REDEEM_DISPLAY_STATUSES,
   type TrialRedeemCodeStore,
 } from '@virtality/shared/utils'
+import {
+  AccessCodeVariantNameInvalidError,
+  resolveAccessCodeVariantName,
+  stripeClient,
+} from '@virtality/auth'
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
 
@@ -23,6 +28,7 @@ const createInputSchema = z.object({
   mode: z.enum(TRIAL_REDEEM_CODE_MODES).optional(),
   trialDays: z.number().int().positive().optional(),
   note: z.string().trim().max(500).nullable().optional(),
+  variantName: z.string().trim().min(1).optional(),
 })
 
 const listInputSchema = z
@@ -68,7 +74,8 @@ export function createPrismaTrialRedeemCodeStore(
 function throwTrialRedeemOrpcError(error: unknown): never {
   if (
     error instanceof TrialRedeemCodeValidationError ||
-    error instanceof TrialRedeemCodeNotSendableError
+    error instanceof TrialRedeemCodeNotSendableError ||
+    error instanceof AccessCodeVariantNameInvalidError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -103,15 +110,23 @@ const list = authed
 const create = authed
   .route({ path: '/trial-redeem-code/create', method: 'POST' })
   .input(createInputSchema)
-  .handler(async ({ context, input }) =>
-    runTrialRedeemHandler(context.prisma, (store) =>
+  .handler(async ({ context, input }) => {
+    const variant = input.variantName
+      ? await resolveAccessCodeVariantName(
+          stripeClient,
+          input.variantName,
+        ).catch(throwTrialRedeemOrpcError)
+      : null
+
+    return runTrialRedeemHandler(context.prisma, (store) =>
       createTrialRedeemCode(store, {
         mode: input.mode,
         trialDays: input.trialDays,
         note: input.note,
+        variant,
       }),
-    ),
-  )
+    )
+  })
 
 const deleteProcedure = authed
   .route({ path: '/trial-redeem-code/delete', method: 'DELETE' })

@@ -15,9 +15,11 @@ import {
   type TrialRedeemTrialGrantIssuer,
 } from '@virtality/shared/utils'
 import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
+import { createAccessCodeVariantGateway } from './access-code-variant.ts'
 
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,
+  stripeClient: Stripe | null = null,
 ): TrialRedeemConsumeStore {
   const consumeUnusedAs =
     (status: 'redeemed' | 'already_entitled') =>
@@ -33,6 +35,8 @@ export function createPrismaTrialRedeemConsumeStore(
       return count > 0
     }
 
+  const variantGateway = createAccessCodeVariantGateway(client, stripeClient)
+
   return {
     findByCode: (code) =>
       client.trialRedeemCode.findUnique({
@@ -40,6 +44,7 @@ export function createPrismaTrialRedeemConsumeStore(
       }),
     consumeAsRedeemed: consumeUnusedAs('redeemed'),
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
+    applyVariant: variantGateway.applyVariant,
   }
 }
 
@@ -120,7 +125,7 @@ export async function redeemTrialCodeForCustomer(input: {
   if (routed.kind !== 'trial_redeem') return
 
   await redeemTrialCodeAfterSignUp(
-    trialRedeemStore,
+    createPrismaTrialRedeemConsumeStore(prisma, input.stripeClient),
     createStripeTrialRedeemGateway(input.stripeClient),
     createTrialGrantIssuer(),
     {

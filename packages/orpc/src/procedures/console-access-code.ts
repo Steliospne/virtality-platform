@@ -8,6 +8,8 @@ import {
   ConsoleAccessCodeInvalidError,
   ConsoleAccessCodeMissingCustomerError,
   ConsoleAccessCodeValidationError,
+  ConsoleAccessCodeVariantBlockedError,
+  ConsoleAccessCodeVariantUnavailableError,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 
@@ -18,6 +20,8 @@ const CONSOLE_ACCESS_CODE_CLIENT_ERRORS = [
   ConsoleAccessCodeAlreadyUsedError,
   ConsoleAccessCodeMissingCustomerError,
   ConsoleAccessCodeFailedError,
+  ConsoleAccessCodeVariantBlockedError,
+  ConsoleAccessCodeVariantUnavailableError,
 ] as const
 
 function throwConsoleAccessCodeOrpcError(error: unknown): never {

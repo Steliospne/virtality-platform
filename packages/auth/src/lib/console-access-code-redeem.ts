@@ -23,8 +23,9 @@ type ConsoleAccessCodeDeps = {
 
 function createPrismaConsoleAccessCodeStore(
   client: PrismaClient = prisma,
+  stripeClient: Stripe | null = null,
 ): ConsoleAccessCodeStore {
-  const consumeStore = createPrismaTrialRedeemConsumeStore(client)
+  const consumeStore = createPrismaTrialRedeemConsumeStore(client, stripeClient)
   return {
     ...consumeStore,
     findBillingSeatByUserId: async (userId) => {
@@ -74,7 +75,7 @@ export async function redeemAccessCodeForUser(
   deps: ConsoleAccessCodeDeps,
 ) {
   const client = deps.prisma ?? prisma
-  const store = createPrismaConsoleAccessCodeStore(client)
+  const store = createPrismaConsoleAccessCodeStore(client, deps.stripeClient)
   const stripe = createStripeTrialRedeemGateway(deps.stripeClient)
   const trialGrant = createConsoleAccessCodeTrialGrantIssuer(client)
   const stripeCustomerId =

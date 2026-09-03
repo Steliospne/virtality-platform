@@ -247,6 +247,10 @@ export {
   listAssignablePlanVariantsAction,
 } from './lib/assign-plan-variant.ts'
 export {
+  AccessCodeVariantNameInvalidError,
+  resolveAccessCodeVariantName,
+} from './lib/access-code-variant.ts'
+export {
   clearPlanVariantCatalogCache,
   readBillingCatalogForUser,
   readPlanVariantCatalogOrSandbox,
