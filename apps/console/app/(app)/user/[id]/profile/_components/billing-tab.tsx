@@ -9,6 +9,7 @@ import { Button } from '@virtality/ui/components/button'
 import {
   BILLING_SOFT_UNAVAILABLE_COPY,
   profileBillingCardActiveAction,
+  profileBillingIsExpiredFree,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
 } from '@/lib/profile-billing'
@@ -94,6 +95,7 @@ export function BillingTab() {
   }
 
   const showPortalCta = cta != null
+  const isExpiredFree = profileBillingIsExpiredFree(standing)
   const monthlyCheckout = showPlanCardCheckout
     ? profileBillingCardActiveAction(planCardActionFor('month'))
     : null
@@ -105,10 +107,18 @@ export function BillingTab() {
     <div className='rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950'>
       <div className='space-y-6'>
         <header className='space-y-2'>
-          <p className='text-xs font-medium tracking-wide text-zinc-500 uppercase'>
+          <p
+            className={`text-xs font-medium tracking-wide uppercase ${
+              isExpiredFree ? 'text-red-600 dark:text-red-500' : 'text-zinc-500'
+            }`}
+          >
             Billing
           </p>
-          <h2 className='text-2xl font-semibold tracking-tight'>
+          <h2
+            className={`text-2xl font-semibold tracking-tight ${
+              isExpiredFree ? 'text-red-600 dark:text-red-500' : ''
+            }`}
+          >
             {profileBillingStatusHeadline(standing)}
           </h2>
           <p className='text-sm text-zinc-500'>

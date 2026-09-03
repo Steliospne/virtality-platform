@@ -350,6 +350,14 @@ function profileBillingIntervalCancelConfirmCopy(
   }
 }
 
+/** Free plan seat with no live clock: shown as expired everywhere in Billing. */
+export function profileBillingIsExpiredFree(
+  standing: Pick<BillingStandingView, 'entitled' | 'plan' | 'status'>,
+): boolean {
+  if (!isFreeSubscriptionPlan(standing.plan)) return false
+  return !(standing.status === 'trialing' && standing.entitled)
+}
+
 export function profileBillingStatusHeadline(
   standing: BillingStandingView,
 ): string {
@@ -357,7 +365,7 @@ export function profileBillingStatusHeadline(
     if (standing.status === 'trialing' && standing.entitled) {
       return 'Trial in progress'
     }
-    return 'Free'
+    return 'Expired'
   }
 
   if (standing.entitled) {
@@ -395,6 +403,10 @@ export function profileBillingStatusDetail(
   }
 
   if (standing.entitled) return 'Your Pro access is active.'
+
+  if (profileBillingIsExpiredFree(standing)) {
+    return 'Your Free plan has expired. Choose Monthly or Yearly Pro to continue.'
+  }
 
   return 'Choose Monthly or Yearly Pro, then continue to Checkout.'
 }

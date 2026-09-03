@@ -245,6 +245,23 @@ describe('showsRemainingTimeSidebar', () => {
       false,
     )
   })
+
+  it('always shows for Free plan, even when expired', () => {
+    expect(
+      showsRemainingTimeSidebar({
+        entitled: false,
+        status: 'active',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(true)
+    expect(
+      showsRemainingTimeSidebar({
+        entitled: false,
+        status: 'canceled',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(true)
+  })
 })
 
 describe('buildEntitlementStanding', () => {
@@ -597,7 +614,7 @@ describe('projectLiveEntitlementStanding', () => {
     expect(afterEnd.entitled).toBe(false)
     expect(afterEnd.remainingMs).toBe(0)
     expect(afterEnd.checkoutCta).toBe('subscribe')
-    expect(afterEnd.showRemainingTime).toBe(false)
+    expect(afterEnd.showRemainingTime).toBe(true)
     expect(afterEnd.label).toBe('Expired')
     expect(afterEnd.checkoutCtaLabel).toBe('Subscribe')
   })

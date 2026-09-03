@@ -13,6 +13,7 @@ import {
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
+  profileBillingIsExpiredFree,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   resolveProfileBillingCardAction,
@@ -360,14 +361,61 @@ describe('profileBillingStatusHeadline', () => {
         status: 'active',
         plan: FREE_SUBSCRIPTION_PLAN,
       }),
-    ).toBe('Free')
+    ).toBe('Expired')
     expect(profileBillingStatusHeadline(base)).toBe('No plan yet')
+  })
+})
+
+describe('profileBillingIsExpiredFree', () => {
+  it('is true for a Free plan with no live trial clock', () => {
+    expect(
+      profileBillingIsExpiredFree({
+        entitled: false,
+        status: 'active',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false while a Free trial is live, and for Pro or no plan', () => {
+    expect(
+      profileBillingIsExpiredFree({
+        entitled: true,
+        status: 'trialing',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsExpiredFree({
+        entitled: true,
+        status: 'active',
+        plan: PRO_SUBSCRIPTION_PLAN,
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsExpiredFree({
+        entitled: false,
+        status: null,
+        plan: null,
+      }),
+    ).toBe(false)
   })
 })
 
 describe('profileBillingStatusDetail', () => {
   it('prompts interval choice when there is no live clock', () => {
     expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Yearly/)
+  })
+
+  it('mentions the expired Free plan when the seat has no live clock', () => {
+    expect(
+      profileBillingStatusDetail({
+        ...base,
+        entitled: false,
+        status: 'active',
+        plan: FREE_SUBSCRIPTION_PLAN,
+      }),
+    ).toMatch(/Free plan has expired/)
   })
 
   it('mentions the scheduled target plan beside the renewal date', () => {

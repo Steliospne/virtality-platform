@@ -23,12 +23,13 @@ export function RemainingTimeSidebar() {
   const { state } = useSidebar()
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
-  const { label, checkoutCtaLabel, isPending, showRemainingTime } =
+  const { label, checkoutCtaLabel, isPending, showRemainingTime, entitled } =
     useLiveEntitlementStanding()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
   const userId = session?.user?.id
   const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
+  const isExpired = !isPending && !entitled
 
   if (!billingEnabled) return null
   if (!showCheckoutCta && !showRemainingTime) return null
@@ -38,7 +39,7 @@ export function RemainingTimeSidebar() {
       {showCheckoutCta ? (
         <SidebarMenuItem>
           <SidebarMenuButton
-            className='bg-vital-blue-700 justify-center text-center text-base font-medium text-zinc-50 shadow hover:bg-vital-blue-700/90 hover:text-zinc-50 dark:bg-vital-blue-100 dark:text-zinc-900 dark:hover:bg-vital-blue-100/90 dark:hover:text-zinc-900'
+            className='bg-vital-blue-700 hover:bg-vital-blue-700/90 dark:bg-vital-blue-100 dark:hover:bg-vital-blue-100/90 justify-center text-center text-base font-medium text-zinc-50 shadow hover:text-zinc-50 dark:text-zinc-900 dark:hover:text-zinc-900'
             tooltip={checkoutCtaLabel}
             asChild
           >
@@ -50,15 +51,25 @@ export function RemainingTimeSidebar() {
         </SidebarMenuItem>
       ) : null}
       {showRemainingTime ? (
-        <SidebarMenuItem>
+        <SidebarMenuItem className={showCheckoutCta ? 'mt-3' : undefined}>
           <SidebarMenuButton
-            className='pointer-events-none text-base'
-            tooltip={`Remaining Time: ${display}`}
+            className={`h-auto cursor-default justify-center gap-2 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current ${
+              isExpired ? 'text-red-600 dark:text-red-500' : ''
+            }`}
+            tooltip={`${display}`}
           >
-            <Clock />
+            <Clock
+              className={isExpired ? 'text-red-600 dark:text-red-500' : ''}
+            />
             {!collapsed && (
               <span className='flex min-w-0 flex-col items-start leading-tight'>
-                <span className='text-muted-foreground text-xs'>
+                <span
+                  className={
+                    isExpired
+                      ? 'text-xs text-red-600 dark:text-red-500'
+                      : 'text-muted-foreground text-xs'
+                  }
+                >
                   Remaining Time
                 </span>
                 <span className='truncate font-medium'>{display}</span>
