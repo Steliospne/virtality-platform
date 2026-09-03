@@ -26,7 +26,10 @@ import {
   type CreateTrialRedeemCodeInput,
   type TrialRedeemCodeMode,
 } from '@virtality/shared/utils'
-import { useCreateTrialRedeemCode } from '@virtality/react-query'
+import {
+  useAssignablePlanVariants,
+  useCreateTrialRedeemCode,
+} from '@virtality/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
@@ -35,6 +38,8 @@ type CreateTrialRedeemCodeDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
+const NO_VARIANT_VALUE = '__none__'
+
 export function CreateTrialRedeemCodeDialog({
   open,
   onOpenChange,
@@ -42,21 +47,27 @@ export function CreateTrialRedeemCodeDialog({
   const [mode, setMode] = useState<TrialRedeemCodeMode>('timed_trial')
   const [trialDays, setTrialDays] = useState('')
   const [note, setNote] = useState('')
+  const [variantName, setVariantName] = useState(NO_VARIANT_VALUE)
   const { mutate: createTrialRedeemCode, isPending } =
     useCreateTrialRedeemCode()
+  const variantsQuery = useAssignablePlanVariants(open)
+  const variants = variantsQuery.data?.variants ?? []
 
   useEffect(() => {
     if (!open) {
       setMode('timed_trial')
       setTrialDays('')
       setNote('')
+      setVariantName(NO_VARIANT_VALUE)
     }
   }, [open])
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
 
-    const payload: CreateTrialRedeemCodeInput = { mode }
+    const payload: CreateTrialRedeemCodeInput & { variantName?: string } = {
+      mode,
+    }
 
     if (mode === 'timed_trial') {
       const trimmedDays = trialDays.trim()
@@ -73,6 +84,10 @@ export function CreateTrialRedeemCodeDialog({
     const trimmedNote = note.trim()
     if (trimmedNote !== '') {
       payload.note = trimmedNote
+    }
+
+    if (variantName !== NO_VARIANT_VALUE) {
+      payload.variantName = variantName
     }
 
     createTrialRedeemCode(payload, {
@@ -131,6 +146,28 @@ export function CreateTrialRedeemCodeDialog({
                 />
               </div>
             ) : null}
+            <div className='grid gap-2'>
+              <Label htmlFor='access-code-variant'>
+                Plan variant (optional)
+              </Label>
+              <Select
+                value={variantName}
+                onValueChange={setVariantName}
+                disabled={variantsQuery.isPending}
+              >
+                <SelectTrigger id='access-code-variant'>
+                  <SelectValue placeholder='No variant' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_VARIANT_VALUE}>No variant</SelectItem>
+                  {variants.map((variant) => (
+                    <SelectItem key={variant.name} value={variant.name}>
+                      {variant.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className='grid gap-2'>
               <Label htmlFor='trial-note'>Note (optional)</Label>
               <Textarea

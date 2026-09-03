@@ -14,6 +14,7 @@ import {
 import { useDropdownMenu } from '@/hooks/use-dropdown-menu-action'
 import { useDeleteTrialRedeemCode } from '@virtality/react-query'
 import {
+  humanizePlanVariantName,
   TRIAL_REDEEM_CODE_MODE_LABELS,
   TRIAL_REDEEM_DISPLAY_STATUS_LABELS,
   type TrialRedeemCodeListItem,
@@ -92,6 +93,14 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
         {row.original.mode === 'permanent_free' ? '-' : row.original.trialDays}
       </div>
     ),
+  },
+  {
+    accessorKey: 'variant',
+    header: ({ column }) => <ColumnHeader column={column} title='Variant' />,
+    cell: ({ row }) => {
+      const variant = row.getValue('variant') as string | null
+      return <div>{variant ? humanizePlanVariantName(variant) : '—'}</div>
+    },
   },
   {
     accessorKey: 'note',
