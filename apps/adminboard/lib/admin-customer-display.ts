@@ -4,7 +4,7 @@ import {
   formatEntitlementClockEndLabel,
   formatRemainingTimeLabel,
   isFreeSubscriptionPlan,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
   type CustomerAccessStatus,
   type CustomerBillingStatus,
 } from '@virtality/shared/utils'
@@ -57,6 +57,6 @@ export function formatCustomerSubscriptionDate(
 
 export function formatCustomerPlanLabel(plan: string): string {
   if (isFreeSubscriptionPlan(plan)) return 'Free'
-  if (isProSubscriptionPlan(plan)) return 'Pro'
+  if (isDefaultSubscriptionPlan(plan)) return 'Default'
   return plan
 }

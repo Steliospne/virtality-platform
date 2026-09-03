@@ -12,12 +12,13 @@ export function checkoutSuccessCopy(
     case 'subscribe':
       return {
         headline: "You're in.",
-        subcopy: "Pro is yours now. Here's to more time with your patients.",
+        subcopy:
+          "Default is yours now. Here's to more time with your patients.",
       }
     case 'renew':
       return {
         headline: 'Thanks for staying with us.',
-        subcopy: 'Your Pro access carries on, no gap, no hassle.',
+        subcopy: 'Your Default access carries on, no gap, no hassle.',
       }
   }
 }

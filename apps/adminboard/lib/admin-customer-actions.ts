@@ -1,5 +1,5 @@
 import {
-  findLivePaidProSubscription,
+  findLivePaidDefaultSubscription,
   formatAdminCustomerAccessActionLabel,
   formatAdminCustomerBillingActionLabel,
   formatAdminCustomerTrialGrantActionLabel,
@@ -17,8 +17,8 @@ export function canAssignCustomerAccessGrant(
 ): boolean {
   if (profile.role === 'admin') return false
   // A Free-plan subscription (e.g. from an access-code redemption) must not
-  // block granting a real Pro trial — only a live Pro subscription should.
-  return findLivePaidProSubscription(profile.subscriptionHistory) == null
+  // block granting a real Default trial — only a live Default subscription should.
+  return findLivePaidDefaultSubscription(profile.subscriptionHistory) == null
 }
 
 export function formatBillingSnapshotSummary(
@@ -29,8 +29,8 @@ export function formatBillingSnapshotSummary(
   const parts: string[] = []
   if (snapshot.role) parts.push(`role ${snapshot.role}`)
   if (snapshot.stripeCustomerId) parts.push('Stripe customer present')
-  if (snapshot.assignedProVariant) {
-    parts.push(`variant ${snapshot.assignedProVariant}`)
+  if (snapshot.assignedDefaultVariant) {
+    parts.push(`variant ${snapshot.assignedDefaultVariant}`)
   }
   if (snapshot.primaryPlan && snapshot.primaryStatus) {
     parts.push(
@@ -44,7 +44,7 @@ export function formatBillingSnapshotSummary(
 }
 
 const LEGACY_AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
-  assign_pro_variant: 'Assign Pro variant',
+  assign_plan_variant: 'Assign Plan variant',
   grant_timed_trial: 'Grant timed trial',
 }
 
@@ -92,8 +92,10 @@ export function canReactivatePaidBilling(
   profile: AdminCustomerProfile,
 ): boolean {
   if (!canAdministerPaidBilling(profile)) return false
-  const livePaidPro = findLivePaidProSubscription(profile.subscriptionHistory)
-  return livePaidPro?.cancelAtPeriodEnd === true
+  const livePaidDefault = findLivePaidDefaultSubscription(
+    profile.subscriptionHistory,
+  )
+  return livePaidDefault?.cancelAtPeriodEnd === true
 }
 
 export function canCancelCyclePlanChange(
@@ -107,16 +109,19 @@ export function getCancelPaidSubscriptionPreviewPeriodEnd(
   profile: AdminCustomerProfile,
 ): Date | null {
   return (
-    findLivePaidProSubscription(profile.subscriptionHistory)?.periodEnd ?? null
+    findLivePaidDefaultSubscription(profile.subscriptionHistory)?.periodEnd ??
+    null
   )
 }
 
 export function getReactivatePaidSubscriptionPreviewPeriodEnd(
   profile: AdminCustomerProfile,
 ): Date | null {
-  const livePaidPro = findLivePaidProSubscription(profile.subscriptionHistory)
-  if (!livePaidPro?.cancelAtPeriodEnd) return null
-  return livePaidPro.periodEnd ?? null
+  const livePaidDefault = findLivePaidDefaultSubscription(
+    profile.subscriptionHistory,
+  )
+  if (!livePaidDefault?.cancelAtPeriodEnd) return null
+  return livePaidDefault.periodEnd ?? null
 }
 
 export function getCancelCyclePlanChangePreviewPeriodEnd(
@@ -124,7 +129,8 @@ export function getCancelCyclePlanChangePreviewPeriodEnd(
 ): Date | null {
   if (!profile.hasPendingCyclePlanChange) return null
   return (
-    findLivePaidProSubscription(profile.subscriptionHistory)?.periodEnd ?? null
+    findLivePaidDefaultSubscription(profile.subscriptionHistory)?.periodEnd ??
+    null
   )
 }
 

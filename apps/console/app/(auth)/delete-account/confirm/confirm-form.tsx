@@ -13,7 +13,10 @@ import {
   CardTitle,
 } from '@virtality/ui/components/card'
 import { authClient } from '@/auth-client'
-import { useApprovePendingAccountDeletion, useInspectPendingAccountDeletion } from '@virtality/react-query'
+import {
+  useApprovePendingAccountDeletion,
+  useInspectPendingAccountDeletion,
+} from '@virtality/react-query'
 import { INVALID_APPROVAL_LINK_MESSAGE } from '@virtality/shared/utils'
 
 type Session = ReturnType<typeof authClient.useSession>['data']
@@ -119,8 +122,8 @@ const DeleteAccountConfirmForm = ({ token }: { token?: string }) => {
           Approve account deletion
         </CardTitle>
         <CardDescription>
-          Confirm that you want to permanently delete your account. This
-          action cannot be undone.
+          Confirm that you want to permanently delete your account. This action
+          cannot be undone.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -128,8 +131,8 @@ const DeleteAccountConfirmForm = ({ token }: { token?: string }) => {
           <p className='text-destructive text-sm'>{errorMessage}</p>
         ) : (
           <p className='text-muted-foreground text-sm'>
-            Press approve to permanently delete your account. Opening this
-            page did not delete your account.
+            Press approve to permanently delete your account. Opening this page
+            did not delete your account.
           </p>
         )}
       </CardContent>

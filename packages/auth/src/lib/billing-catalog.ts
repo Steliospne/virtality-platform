@@ -5,8 +5,8 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import {
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_PRICE_ID,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_PRICE_ID,
 } from '../auth-instance.ts'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
@@ -26,8 +26,8 @@ export async function readConsoleBillingCatalog(
 
   try {
     const [monthlyPrice, yearlyPrice] = await Promise.all([
-      stripeClient.prices.retrieve(PRO_PLAN_PRICE_ID),
-      stripeClient.prices.retrieve(PRO_PLAN_ANNUAL_PRICE_ID),
+      stripeClient.prices.retrieve(DEFAULT_PLAN_PRICE_ID),
+      stripeClient.prices.retrieve(DEFAULT_PLAN_ANNUAL_PRICE_ID),
     ])
     const value = buildBillingCatalogFromStripePrices(monthlyPrice, yearlyPrice)
     if (value.ok) {

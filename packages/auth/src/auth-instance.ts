@@ -16,9 +16,9 @@ import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem.t
 import { markPendingPromotionCodeAppliedForCheckout } from './lib/pending-promotion-code.ts'
 import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
-  readProVariantCatalogOrSandbox,
-  resolveAssignedProVariantChargePrice,
-} from './lib/pro-variant-catalog.ts'
+  readPlanVariantCatalogOrSandbox,
+  resolveAssignedPlanVariantChargePrice,
+} from './lib/plan-variant-catalog.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
@@ -29,9 +29,9 @@ import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
 import {
   FREE_PLAN_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
   authorizeAdminCyclePlanReference,
-  buildBetterAuthStripePlansFromProVariantCatalog,
+  buildBetterAuthStripePlansFromPlanVariantCatalog,
   isPasswordValid,
   routeSignUpCode,
   type RenewPromptSubscriptionClock,
@@ -62,16 +62,16 @@ const googleEnabled = Boolean(googleClientId && googleClientSecret)
  * lookup_key `pro_monthly`). Checkout subscribe/renew only. Retired inactive
  * auth price: `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
  * Access Code redeem uses {@link FREE_PLAN_PRICE_ID} instead.
- * Alias for {@link PRO_PLAN_MONTHLY_PRICE_ID} in `@virtality/shared`.
+ * Alias for {@link DEFAULT_PLAN_MONTHLY_PRICE_ID} in `@virtality/shared`.
  */
-export const PRO_PLAN_PRICE_ID = PRO_PLAN_MONTHLY_PRICE_ID
+export const DEFAULT_PLAN_PRICE_ID = DEFAULT_PLAN_MONTHLY_PRICE_ID
 
 /**
  * Canonical sandbox `pro` yearly Price on the same Product
  * (`lookup_key: pro_yearly`). Provisional amount (€1500/year = 10× monthly
  * €150) until live amounts are locked. Access Code / Extension keep monthly.
  */
-export const PRO_PLAN_ANNUAL_PRICE_ID =
+export const DEFAULT_PLAN_ANNUAL_PRICE_ID =
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
 
 export { FREE_PLAN_PRICE_ID }
@@ -217,8 +217,8 @@ export const auth = betterAuth({
               // early-bird (etc.) Price ids; Checkout still asks for plan `pro`
               // (first row = basic) and overrides line_items to the assigned pair.
               plans: async () =>
-                buildBetterAuthStripePlansFromProVariantCatalog(
-                  await readProVariantCatalogOrSandbox(stripeClient),
+                buildBetterAuthStripePlansFromPlanVariantCatalog(
+                  await readPlanVariantCatalogOrSandbox(stripeClient),
                 ),
               /**
                * Admins may schedule / restore Cycle plan changes for a customer
@@ -266,21 +266,23 @@ export const auth = betterAuth({
                       params: { ...result.params, ...addressCollectionParams },
                     }))
 
-                const assignedProVariant =
-                  typeof user.assignedProVariant === 'string'
-                    ? user.assignedProVariant
+                const assignedDefaultVariant =
+                  typeof user.assignedDefaultVariant === 'string'
+                    ? user.assignedDefaultVariant
                     : await prisma.user
                         .findFirst({
                           where: { id: user.id },
-                          select: { assignedProVariant: true },
+                          select: { assignedDefaultVariant: true },
                         })
-                        .then((row) => row?.assignedProVariant ?? null)
+                        .then((row) => row?.assignedDefaultVariant ?? null)
 
-                const chargePrice = await resolveAssignedProVariantChargePrice({
-                  stripeClient,
-                  assignedProVariant,
-                  annual,
-                })
+                const chargePrice = await resolveAssignedPlanVariantChargePrice(
+                  {
+                    stripeClient,
+                    assignedDefaultVariant,
+                    annual,
+                  },
+                )
 
                 if (!chargePrice.ok) {
                   throw new APIError('BAD_REQUEST', {
@@ -473,10 +475,7 @@ export const auth = betterAuth({
         if (newSession?.user?.id) {
           const rawCode = readSignUpCodeFromUnknown(additionalData)
           await consumeTesterCodeIfPresent(rawCode, newSession.user.id)
-          await redeemTrialCodeOnSignInIfPresent(
-            rawCode,
-            newSession.user.id,
-          )
+          await redeemTrialCodeOnSignInIfPresent(rawCode, newSession.user.id)
         }
       }
     }),

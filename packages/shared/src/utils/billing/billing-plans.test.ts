@@ -2,36 +2,36 @@ import { describe, expect, it } from 'vitest'
 import {
   FREE_PLAN_PRICE_ID,
   FREE_SUBSCRIPTION_PLAN,
-  PRO_SUBSCRIPTION_PLAN,
-  PRO_PLAN_MONTHLY_PRICE_ID,
-  PRO_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_SUBSCRIPTION_PLAN,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
   buildFreeTrialSubscriptionCreateParams,
   isFreePlanPriceId,
   isFreeSubscriptionPlan,
-  isProPlanPriceId,
+  isDefaultPlanPriceId,
   shouldScheduleSubscriptionChangeAtPeriodEnd,
 } from './billing-plans.ts'
 
 describe('billing plan identifiers', () => {
-  it('keeps Free and Pro sandbox Prices distinct', () => {
-    expect(FREE_PLAN_PRICE_ID).not.toBe(PRO_PLAN_MONTHLY_PRICE_ID)
-    expect(FREE_PLAN_PRICE_ID).not.toBe(PRO_PLAN_ANNUAL_PRICE_ID)
+  it('keeps Free and Default sandbox Prices distinct', () => {
+    expect(FREE_PLAN_PRICE_ID).not.toBe(DEFAULT_PLAN_MONTHLY_PRICE_ID)
+    expect(FREE_PLAN_PRICE_ID).not.toBe(DEFAULT_PLAN_ANNUAL_PRICE_ID)
     expect(isFreePlanPriceId(FREE_PLAN_PRICE_ID)).toBe(true)
-    expect(isProPlanPriceId(PRO_PLAN_MONTHLY_PRICE_ID)).toBe(true)
-    expect(isProPlanPriceId(PRO_PLAN_ANNUAL_PRICE_ID)).toBe(true)
-    expect(isFreePlanPriceId(PRO_PLAN_MONTHLY_PRICE_ID)).toBe(false)
-    expect(isProPlanPriceId(FREE_PLAN_PRICE_ID)).toBe(false)
+    expect(isDefaultPlanPriceId(DEFAULT_PLAN_MONTHLY_PRICE_ID)).toBe(true)
+    expect(isDefaultPlanPriceId(DEFAULT_PLAN_ANNUAL_PRICE_ID)).toBe(true)
+    expect(isFreePlanPriceId(DEFAULT_PLAN_MONTHLY_PRICE_ID)).toBe(false)
+    expect(isDefaultPlanPriceId(FREE_PLAN_PRICE_ID)).toBe(false)
   })
 
   it('recognizes the Free subscription plan name', () => {
     expect(isFreeSubscriptionPlan(FREE_SUBSCRIPTION_PLAN)).toBe(true)
-    expect(isFreeSubscriptionPlan(PRO_SUBSCRIPTION_PLAN)).toBe(false)
+    expect(isFreeSubscriptionPlan(DEFAULT_SUBSCRIPTION_PLAN)).toBe(false)
     expect(isFreeSubscriptionPlan(null)).toBe(false)
   })
 
-  it('schedules only paid Pro plan changes at period end', () => {
+  it('schedules only paid Default plan changes at period end', () => {
     expect(
-      shouldScheduleSubscriptionChangeAtPeriodEnd(PRO_SUBSCRIPTION_PLAN),
+      shouldScheduleSubscriptionChangeAtPeriodEnd(DEFAULT_SUBSCRIPTION_PLAN),
     ).toBe(true)
     expect(
       shouldScheduleSubscriptionChangeAtPeriodEnd(FREE_SUBSCRIPTION_PLAN),
@@ -42,7 +42,7 @@ describe('billing plan identifiers', () => {
 })
 
 describe('buildFreeTrialSubscriptionCreateParams', () => {
-  it('creates a no-card Free trial without Pro cancel-on-expiry settings', () => {
+  it('creates a no-card Free trial without Default cancel-on-expiry settings', () => {
     const params = buildFreeTrialSubscriptionCreateParams({
       customerId: 'cus_1',
       priceId: FREE_PLAN_PRICE_ID,

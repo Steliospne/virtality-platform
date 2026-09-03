@@ -1,5 +1,5 @@
 /**
- * Cycle plan change: paid Pro monthly ↔ yearly at period end via Better Auth
+ * Cycle plan change: paid Default monthly ↔ yearly at period end via Better Auth
  * `subscription.upgrade({ scheduleAtPeriodEnd })`, released with
  * `subscription.restore`. Shared orchestration with an injected Better Auth
  * port so Console (browser client) and Adminboard (auth.api) share one path.
@@ -10,13 +10,13 @@ import {
   withCheckoutReturnIntent,
 } from './checkout-return-url.ts'
 import {
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
-  isProPlanPriceId,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_SUBSCRIPTION_PLAN,
+  isDefaultPlanPriceId,
 } from './billing-plans.ts'
 
 export type CyclePlanChangeUpgradeInput = {
-  plan: typeof PRO_SUBSCRIPTION_PLAN
+  plan: typeof DEFAULT_SUBSCRIPTION_PLAN
   annual: boolean
   referenceId?: string
   scheduleAtPeriodEnd: true
@@ -87,20 +87,22 @@ function portErrorMessage(
   return error?.message?.trim() || fallback
 }
 
-/** True when the Price id is the canonical Pro yearly Price. */
-export function isAnnualProPlanPriceId(priceId: string): boolean {
-  return priceId === PRO_PLAN_ANNUAL_PRICE_ID
+/** True when the Price id is the canonical Default yearly Price. */
+export function isAnnualDefaultPlanPriceId(priceId: string): boolean {
+  return priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID
 }
 
 /**
- * Map a supported Pro Price id to Better Auth `annual` for Cycle plan change.
- * Throws when the id is not a supported Pro Price.
+ * Map a supported Default Price id to Better Auth `annual` for Cycle plan change.
+ * Throws when the id is not a supported Default Price.
  */
-export function annualFlagForProPlanPriceId(priceId: string): boolean {
-  if (!isProPlanPriceId(priceId)) {
-    throw new Error('priceId must be a supported Pro monthly or yearly Price.')
+export function annualFlagForDefaultPlanPriceId(priceId: string): boolean {
+  if (!isDefaultPlanPriceId(priceId)) {
+    throw new Error(
+      'priceId must be a supported Default monthly or yearly Price.',
+    )
   }
-  return isAnnualProPlanPriceId(priceId)
+  return isAnnualDefaultPlanPriceId(priceId)
 }
 
 /** Pending Cycle plan change when Better Auth stored a Stripe schedule id. */
@@ -111,7 +113,7 @@ export function hasPendingCyclePlanChange(subscription: {
 }
 
 /**
- * Builds Better Auth upgrade params for a period-end Pro interval switch.
+ * Builds Better Auth upgrade params for a period-end Default interval switch.
  * Always sets `scheduleAtPeriodEnd` and `disableRedirect`.
  */
 export function buildCyclePlanChangeUpgradeInput(input: {
@@ -121,7 +123,7 @@ export function buildCyclePlanChangeUpgradeInput(input: {
 }): CyclePlanChangeUpgradeInput {
   const absoluteReturn = toAbsoluteConsoleReturnUrl(input.returnUrl)
   return {
-    plan: PRO_SUBSCRIPTION_PLAN,
+    plan: DEFAULT_SUBSCRIPTION_PLAN,
     annual: input.annual,
     ...(input.referenceId ? { referenceId: input.referenceId } : {}),
     scheduleAtPeriodEnd: true,
@@ -133,7 +135,7 @@ export function buildCyclePlanChangeUpgradeInput(input: {
 }
 
 /**
- * Schedules a paid Pro monthly ↔ yearly switch at period end through the
+ * Schedules a paid Default monthly ↔ yearly switch at period end through the
  * injected Better Auth port.
  */
 export async function scheduleCyclePlanChange(input: {

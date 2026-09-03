@@ -149,8 +149,8 @@ export function CustomerProfileIssueTrialGrantDialog({
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
               <span>
-                I confirm this customer should receive an active trial grant
-                for the selected duration now.
+                I confirm this customer should receive an active trial grant for
+                the selected duration now.
               </span>
             </label>
           </div>

@@ -2,7 +2,7 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   CONSOLE_PROMO_ELIGIBLE_STATUSES,
-  PRO_PLAN_PRODUCT_ID,
+  DEFAULT_PLAN_PRODUCT_ID,
   isConsolePromoEligibleStatus,
   loadConsolePromoRedeemPreflight,
   redeemPromotionCodeOnSubscription,
@@ -38,8 +38,8 @@ type ConsolePromoRuntime = {
 }
 
 function productIdsForPlan(plan: string): string[] {
-  if (plan === 'pro' || plan.trim() === '') {
-    return [PRO_PLAN_PRODUCT_ID]
+  if (plan === 'default' || plan.trim() === '') {
+    return [DEFAULT_PLAN_PRODUCT_ID]
   }
   return []
 }

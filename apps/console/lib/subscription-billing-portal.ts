@@ -21,7 +21,7 @@ import { toAbsoluteConsoleReturnUrl } from './subscription-checkout'
  */
 export const CUSTOMER_PORTAL_PROMOTION_CODES_ON_SUBSCRIPTION_UPDATE = false
 
-export type ProBillingPortalInput = {
+export type DefaultBillingPortalInput = {
   returnUrl: string
 }
 
@@ -29,22 +29,22 @@ export type ProBillingPortalInput = {
  * Params for Better Auth `authClient.subscription.billingPortal`.
  * `returnUrl` is an absolute console URL. Never enables Portal promotion codes.
  */
-export function buildProBillingPortalInput(
+export function buildDefaultBillingPortalInput(
   returnUrl: string,
-): ProBillingPortalInput {
+): DefaultBillingPortalInput {
   return {
     returnUrl: toAbsoluteConsoleReturnUrl(returnUrl),
   }
 }
 
-export type ProSubscriptionBillingPortalFn = (
-  input: ProBillingPortalInput,
+export type DefaultSubscriptionBillingPortalFn = (
+  input: DefaultBillingPortalInput,
 ) => Promise<{
   data?: unknown
   error?: { message?: string | null } | null
 }>
 
-export type StartProBillingPortalResult =
+export type StartDefaultBillingPortalResult =
   | { ok: true }
   | { ok: false; message: string }
 
@@ -52,12 +52,12 @@ export type StartProBillingPortalResult =
  * Starts a Stripe Customer Portal session via Better Auth. Redirects on
  * success (unless the client opts out); does not write local entitlement.
  */
-export async function startProBillingPortal(input: {
-  billingPortal: ProSubscriptionBillingPortalFn
+export async function startDefaultBillingPortal(input: {
+  billingPortal: DefaultSubscriptionBillingPortalFn
   returnUrl: string
-}): Promise<StartProBillingPortalResult> {
+}): Promise<StartDefaultBillingPortalResult> {
   const { error } = await input.billingPortal(
-    buildProBillingPortalInput(input.returnUrl),
+    buildDefaultBillingPortalInput(input.returnUrl),
   )
 
   if (error) {

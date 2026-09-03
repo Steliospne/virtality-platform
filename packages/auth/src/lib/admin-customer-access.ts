@@ -3,8 +3,8 @@ import type { PrismaClient } from '@virtality/db'
 import {
   billingSnapshotFromSubscription,
   buildPermanentFreeSubscriptionStripeParams,
-  effectiveAssignedProVariant,
-  isProPlanPriceId,
+  effectiveAssignedPlanVariant,
+  isDefaultPlanPriceId,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   pickPrimaryCustomerSubscription,
   TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
@@ -67,7 +67,7 @@ export function createPrismaAdminCustomerAccessStore(
         select: {
           role: true,
           stripeCustomerId: true,
-          assignedProVariant: true,
+          assignedDefaultVariant: true,
         },
       })
       if (!user) {
@@ -77,7 +77,7 @@ export function createPrismaAdminCustomerAccessStore(
           primaryPlan: null,
           primaryStatus: null,
           stripeSubscriptionId: null,
-          assignedProVariant: null,
+          assignedDefaultVariant: null,
         }
       }
 
@@ -99,8 +99,8 @@ export function createPrismaAdminCustomerAccessStore(
       return billingSnapshotFromSubscription({
         role: user.role,
         stripeCustomerId: user.stripeCustomerId,
-        assignedProVariant: effectiveAssignedProVariant(
-          user.assignedProVariant,
+        assignedDefaultVariant: effectiveAssignedPlanVariant(
+          user.assignedDefaultVariant,
         ),
         subscription: primary,
       })
@@ -148,11 +148,11 @@ export function createStripeAdminCustomerAccessGateway(
       )
       // Free-plan subscriptions (permanent Free / no-card trial granted via
       // access-code redemption) must not block an admin from granting a
-      // real Pro trial — only a live Pro-priced subscription is "entitled".
+      // real Default trial — only a live Default-priced subscription is "entitled".
       return results.some((page) =>
         page.data.some((subscription) =>
           subscription.items.data.some((item) =>
-            isProPlanPriceId(item.price.id),
+            isDefaultPlanPriceId(item.price.id),
           ),
         ),
       )

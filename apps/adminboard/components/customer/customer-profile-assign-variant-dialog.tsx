@@ -19,8 +19,8 @@ import {
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
 import {
-  useAssignableProVariants,
-  useAssignProVariant,
+  useAssignablePlanVariants,
+  useAssignPlanVariant,
 } from '@virtality/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -39,8 +39,8 @@ export function CustomerProfileAssignVariantDialog({
   open,
   onOpenChange,
 }: CustomerProfileAssignVariantDialogProps) {
-  const { mutate, isPending } = useAssignProVariant()
-  const variantsQuery = useAssignableProVariants(open)
+  const { mutate, isPending } = useAssignPlanVariant()
+  const variantsQuery = useAssignablePlanVariants(open)
   const [variantName, setVariantName] = useState(currentVariant)
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -73,7 +73,7 @@ export function CustomerProfileAssignVariantDialog({
       {
         onSuccess: (result) => {
           toast.success(
-            `Assigned Pro variant set to ${result.assignedProVariant}.`,
+            `Assigned Plan variant set to ${result.assignedDefaultVariant}.`,
           )
           setReason('')
           setConfirmed(false)
@@ -81,7 +81,7 @@ export function CustomerProfileAssignVariantDialog({
         },
         onError: (error) => {
           toast.error(
-            formatMutationErrorMessage(error, 'Failed to assign Pro variant'),
+            formatMutationErrorMessage(error, 'Failed to assign Plan variant'),
           )
         },
       },
@@ -93,7 +93,7 @@ export function CustomerProfileAssignVariantDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Assign Pro variant</DialogTitle>
+            <DialogTitle>Assign Plan variant</DialogTitle>
             <DialogDescription>
               Pick the Price pair this clinician should charge on Checkout and
               cycle plan changes. Requires a reason and confirmation.
@@ -138,9 +138,9 @@ export function CustomerProfileAssignVariantDialog({
             </div>
 
             <div>
-              <Label htmlFor='assign-pro-variant-reason'>Reason</Label>
+              <Label htmlFor='assign-plan-variant-reason'>Reason</Label>
               <Input
-                id='assign-pro-variant-reason'
+                id='assign-plan-variant-reason'
                 className='mt-1'
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -156,7 +156,7 @@ export function CustomerProfileAssignVariantDialog({
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
               <span>
-                I confirm this Assigned Variant should apply to future Pro
+                I confirm this Assigned Variant should apply to future Default
                 charges for this customer.
               </span>
             </label>

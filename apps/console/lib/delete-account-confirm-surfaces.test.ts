@@ -9,7 +9,9 @@ describe('delete account confirm route regression surfaces', () => {
   it('inspects the token on load without approving immediately', () => {
     expect(source).toMatch(/useInspectPendingAccountDeletion/)
     expect(source).toMatch(/inspect\(\{ token \}\)/)
-    expect(source).toMatch(/Opening this[\s\S]*?page did not delete your[\s\S]*?account/)
+    expect(source).toMatch(
+      /Opening\s+this\s+page\s+did\s+not\s+delete\s+your\s+account/,
+    )
   })
 
   it('shows a checking state while inspect is pending', () => {

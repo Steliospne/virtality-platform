@@ -180,8 +180,8 @@ const ProfileInfo = ({ user }: ProfileInfoProps) => {
           <>
             <CardContent>
               Permanently remove your Personal Account and all of its contents
-              from Virtality. This action is not reversible, so please
-              continue with caution.
+              from Virtality. This action is not reversible, so please continue
+              with caution.
             </CardContent>
             <CardFooter className='border-t'>
               <Button

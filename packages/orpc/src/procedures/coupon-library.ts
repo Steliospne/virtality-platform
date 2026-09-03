@@ -8,20 +8,11 @@ import {
 } from '@virtality/auth'
 import {
   COUPON_DURATIONS,
-  COUPON_LIBRARY_PLANS,
   CouponLibraryNotFoundError,
   CouponLibraryValidationError,
-  type CouponLibraryPlanId,
 } from '@virtality/shared/utils'
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
-
-const planIdSchema = z.enum(
-  COUPON_LIBRARY_PLANS.map((plan) => plan.planId) as [
-    CouponLibraryPlanId,
-    ...CouponLibraryPlanId[],
-  ],
-)
 
 const createInputSchema = z
   .object({
@@ -30,7 +21,6 @@ const createInputSchema = z
     amountOff: z.number().int().positive().optional(),
     duration: z.enum(COUPON_DURATIONS),
     durationInMonths: z.number().int().positive().optional(),
-    planIds: z.array(planIdSchema).min(1),
   })
   .superRefine((value, ctx) => {
     const hasPercent = value.percentOff !== undefined

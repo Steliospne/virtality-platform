@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SubscriptionDiscountRead } from './subscription-discount-read.ts'
-import { PRO_BILLING_CATALOG_SANDBOX } from './billing-catalog.ts'
+import { DEFAULT_BILLING_CATALOG_SANDBOX } from './billing-catalog.ts'
 import {
   buildDiscountedBillingPriceLabels,
   canRemovePromoDiscount,
@@ -36,7 +36,7 @@ describe('buildDiscountedBillingPriceLabels', () => {
         percentOff: 20,
         amountOff: null,
       },
-      PRO_BILLING_CATALOG_SANDBOX,
+      DEFAULT_BILLING_CATALOG_SANDBOX,
     )
 
     expect(labels).toEqual({
@@ -53,7 +53,7 @@ describe('buildDiscountedBillingPriceLabels', () => {
           percentOff: null,
           amountOff: 3_000,
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({
       monthlyAmount: '€120',
@@ -67,7 +67,7 @@ describe('resolveBillingDiscountDisplay', () => {
   it('rewrites plan cards when the live Discount read is healthy', () => {
     const display = resolveBillingDiscountDisplay(
       onePercent,
-      PRO_BILLING_CATALOG_SANDBOX,
+      DEFAULT_BILLING_CATALOG_SANDBOX,
     )
 
     expect(display).toEqual({
@@ -84,7 +84,7 @@ describe('resolveBillingDiscountDisplay', () => {
     expect(
       resolveBillingDiscountDisplay(
         { ok: true, presence: 'none' },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'catalog' })
   })
@@ -96,7 +96,7 @@ describe('resolveBillingDiscountDisplay', () => {
           ok: false,
           reason: 'stripe_unavailable',
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'soft_unavailable' })
 
@@ -107,7 +107,7 @@ describe('resolveBillingDiscountDisplay', () => {
           percentOff: null,
           amountOff: null,
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'soft_unavailable' })
 
@@ -119,7 +119,7 @@ describe('resolveBillingDiscountDisplay', () => {
           amountOff: 3_000,
           currency: 'usd',
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'soft_unavailable' })
   })

@@ -1,5 +1,5 @@
 import {
-  findLivePaidProSubscription,
+  findLivePaidDefaultSubscription,
   isTrialGrantOpenStatus,
   type AdminCustomerProfile,
   type AdminCustomerTrialGrantSummary,
@@ -20,7 +20,7 @@ function openTrialGrant(
 export function canIssueTrialGrant(profile: AdminCustomerProfile): boolean {
   if (profile.role === 'admin') return false
   if (openTrialGrant(profile)) return false
-  return findLivePaidProSubscription(profile.subscriptionHistory) == null
+  return findLivePaidDefaultSubscription(profile.subscriptionHistory) == null
 }
 
 export function canAdjustTrialGrant(profile: AdminCustomerProfile): boolean {

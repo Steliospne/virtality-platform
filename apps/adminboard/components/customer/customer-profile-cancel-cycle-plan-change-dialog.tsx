@@ -80,8 +80,8 @@ export function CustomerProfileCancelCyclePlanChangeDialog({
           <DialogHeader>
             <DialogTitle>Cancel Cycle plan change</DialogTitle>
             <DialogDescription>
-              Release the queued Pro interval switch. The customer stays on the
-              current plan for the rest of this billing cycle.
+              Release the queued Default interval switch. The customer stays on
+              the current plan for the rest of this billing cycle.
             </DialogDescription>
           </DialogHeader>
 

@@ -109,7 +109,7 @@ Do this from a machine that already has working local `.env` files (or vault exp
 
 | Path              | Example file                         | Typical secrets                                                                  |
 | ----------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| `packages/db`     | `.env.example`                       | `DATABASE_URL`                                                           |
+| `packages/db`     | `.env.example`                       | `DATABASE_URL`                                                                   |
 | `apps/console`    | `.env.example`                       | DB, PostHog, AWS, Discord                                                        |
 | `apps/adminboard` | `.env.example`                       | DB                                                                               |
 | `apps/website`    | `.env.example`                       | `REVALIDATE_SECRET`, PostHog                                                     |

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Monthly/Yearly Pro plan card with Assigned Variant compare-at rows.
+ * Monthly/Yearly Default plan card with Assigned Variant compare-at rows.
  */
 
 import { Check } from 'lucide-react'

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   FREE_SUBSCRIPTION_PLAN,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 import {
-  buildBetterAuthStripePlansFromProVariantCatalog,
-  buildSandboxProVariantCatalog,
-} from './pro-variant-catalog.ts'
+  buildBetterAuthStripePlansFromPlanVariantCatalog,
+  buildSandboxPlanVariantCatalog,
+} from './plan-variant-catalog.ts'
 import {
   reconcileStripeSubscriptions,
   StripeSubscriptionReconciliationError,
@@ -17,11 +17,11 @@ import {
   type ReconciliationSubscriptionRow,
 } from './stripe-subscription-reconciliation.ts'
 
-const PLANS = buildBetterAuthStripePlansFromProVariantCatalog(
-  buildSandboxProVariantCatalog(),
+const PLANS = buildBetterAuthStripePlansFromPlanVariantCatalog(
+  buildSandboxPlanVariantCatalog(),
 )
-const PRO_PLAN_PRICE_ID = PLANS.find(
-  (plan) => plan.name === PRO_SUBSCRIPTION_PLAN,
+const DEFAULT_PLAN_PRICE_ID = PLANS.find(
+  (plan) => plan.name === DEFAULT_SUBSCRIPTION_PLAN,
 )!.priceId
 
 const USER_ID = 'user_1'
@@ -40,7 +40,7 @@ function stripeSub(
       data: [
         {
           price: {
-            id: PRO_PLAN_PRICE_ID,
+            id: DEFAULT_PLAN_PRICE_ID,
             lookup_key: 'basic_monthly',
             recurring: { interval: 'month' },
           },
@@ -162,7 +162,7 @@ describe('reconcileStripeSubscriptions', () => {
       'local_sub_1',
       expect.objectContaining({
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         billingInterval: 'month',
         periodStart: new Date(1_700_000_000_000),
         periodEnd: new Date(1_702_592_000_000),
@@ -211,7 +211,7 @@ describe('reconcileStripeSubscriptions', () => {
         referenceId: USER_ID,
         stripeSubscriptionId: STRIPE_SUB_ID,
         stripeCustomerId: CUSTOMER_ID,
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'active',
       }),
     )

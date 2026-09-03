@@ -1,6 +1,6 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
-import { PRO_PLAN_PRODUCT_ID } from '@virtality/shared/utils'
+import { DEFAULT_PLAN_PRODUCT_ID } from '@virtality/shared/utils'
 import type {
   OpenPendingPromotionCodeHold,
   PendingPromotionCodeCouponTerms,
@@ -84,7 +84,7 @@ async function resolvePromotionCodeForProCheckout(
   }
   if (
     coupon.appliesToProductIds.length > 0 &&
-    !coupon.appliesToProductIds.includes(PRO_PLAN_PRODUCT_ID)
+    !coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)
   ) {
     throw new Error(
       'That Promotion Code cannot be applied to this plan (Coupon archived, deleted, or does not apply).',

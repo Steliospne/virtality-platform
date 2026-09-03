@@ -4,12 +4,12 @@ import {
 } from './admin-customer-access.ts'
 import {
   FREE_PLAN_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
-  SUPPORTED_PRO_PLAN_PRICE_IDS,
+  DEFAULT_SUBSCRIPTION_PLAN,
+  SUPPORTED_DEFAULT_PLAN_PRICE_IDS,
   buildPermanentFreeSubscriptionCreateParams,
-  formatProPlanPriceLabel,
-  isProPlanPriceId,
-  isProSubscriptionPlan,
+  formatDefaultPlanPriceLabel,
+  isDefaultPlanPriceId,
+  isDefaultSubscriptionPlan,
   shouldScheduleSubscriptionChangeAtPeriodEnd,
 } from '../billing/billing-plans.ts'
 import {
@@ -17,7 +17,7 @@ import {
   type CustomerSubscriptionSummary,
 } from './admin-customer.ts'
 import {
-  annualFlagForProPlanPriceId,
+  annualFlagForDefaultPlanPriceId,
   hasPendingCyclePlanChange,
   restoreSubscription,
   scheduleCyclePlanChange,
@@ -31,11 +31,11 @@ import { withCheckoutReturnIntent } from '../billing/checkout-return-url.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 import { hadPaidBillingHistory } from '../billing/paid-billing-history.ts'
 import {
-  annualFlagForProVariantPriceId,
-  formatProVariantPriceLabel,
-  isKnownProVariantPriceId,
-  type ProVariantCatalog,
-} from '../billing/pro-variant-catalog.ts'
+  annualFlagForPlanVariantPriceId,
+  formatPlanVariantPriceLabel,
+  isKnownPlanVariantPriceId,
+  type PlanVariantCatalog,
+} from '../billing/plan-variant-catalog.ts'
 
 export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'change_paid_plan',
@@ -74,7 +74,7 @@ export type AdminCustomerBillingSubscriptionRow =
     stripeCustomerId: string | null
   }
 
-export type LivePaidProSubscription = {
+export type LivePaidDefaultSubscription = {
   stripeSubscriptionId: string
   stripeCustomerId: string
   subscriptionItemId: string
@@ -110,16 +110,16 @@ export type AdminCustomerBillingStripeGateway = {
     metadata: Record<string, string>
   }) => Promise<{ customerId: string }>
   customerHasDefaultPaymentMethod: (customerId: string) => Promise<boolean>
-  retrievePaidProSubscription: (
+  retrievePaidDefaultSubscription: (
     stripeSubscriptionId: string,
-  ) => Promise<LivePaidProSubscription>
+  ) => Promise<LivePaidDefaultSubscription>
   previewPaidPlanChange: (input: {
     customerId: string
     stripeSubscriptionId: string
     subscriptionItemId: string
     newPriceId: string
   }) => Promise<{ prorationAmountCents: number; currency: string }>
-  createPaidProSubscription: (input: {
+  createPaidDefaultSubscription: (input: {
     customerId: string
     priceId: string
     metadata: Record<string, string>
@@ -166,7 +166,7 @@ export type ChangePaidPlanInput = {
    * When set (Assigned Variant catalog), targetPriceId may be any complete
    * catalog Price id, not only the canonical basic pair.
    */
-  proVariantCatalog?: ProVariantCatalog
+  planVariantCatalog?: PlanVariantCatalog
 }
 
 export type CancelPaidSubscriptionInput = {
@@ -202,8 +202,8 @@ export type SendPaidCheckoutLinkInput = {
   targetPriceId: string
   successUrl: string
   cancelUrl: string
-  /** See {@link ChangePaidPlanInput.proVariantCatalog}. */
-  proVariantCatalog?: ProVariantCatalog
+  /** See {@link ChangePaidPlanInput.planVariantCatalog}. */
+  planVariantCatalog?: PlanVariantCatalog
 }
 
 export type AdminCustomerBillingMutationResult = {
@@ -264,45 +264,45 @@ function assertActors(input: { userId: string; actorUserId: string }): void {
   }
 }
 
-function assertSupportedProPriceId(
+function assertSupportedDefaultPriceId(
   priceId: string,
-  catalog?: ProVariantCatalog,
+  catalog?: PlanVariantCatalog,
 ): void {
   const supported =
     catalog != null
-      ? isKnownProVariantPriceId(catalog, priceId)
-      : isProPlanPriceId(priceId)
+      ? isKnownPlanVariantPriceId(catalog, priceId)
+      : isDefaultPlanPriceId(priceId)
   if (!supported) {
     throw new AdminCustomerBillingValidationError(
-      'targetPriceId must be a supported Pro monthly or yearly Price.',
+      'targetPriceId must be a supported Default monthly or yearly Price.',
     )
   }
 }
 
-function annualFlagForTargetProPriceId(
+function annualFlagForTargetDefaultPriceId(
   priceId: string,
-  catalog?: ProVariantCatalog,
+  catalog?: PlanVariantCatalog,
 ): boolean {
   if (catalog != null) {
-    const annual = annualFlagForProVariantPriceId(catalog, priceId)
+    const annual = annualFlagForPlanVariantPriceId(catalog, priceId)
     if (annual == null) {
       throw new AdminCustomerBillingValidationError(
-        'targetPriceId must be a supported Pro monthly or yearly Price.',
+        'targetPriceId must be a supported Default monthly or yearly Price.',
       )
     }
     return annual
   }
-  return annualFlagForProPlanPriceId(priceId)
+  return annualFlagForDefaultPlanPriceId(priceId)
 }
 
-function formatTargetProPriceLabel(
+function formatTargetDefaultPriceLabel(
   priceId: string,
-  catalog?: ProVariantCatalog,
+  catalog?: PlanVariantCatalog,
 ): string {
   if (catalog != null) {
-    return formatProVariantPriceLabel(catalog, priceId)
+    return formatPlanVariantPriceLabel(catalog, priceId)
   }
-  return formatProPlanPriceLabel(priceId)
+  return formatDefaultPlanPriceLabel(priceId)
 }
 
 function stripeBillingMetadata(input: {
@@ -315,13 +315,13 @@ function stripeBillingMetadata(input: {
   }
 }
 
-export function findLivePaidProSubscription(
+export function findLivePaidDefaultSubscription(
   subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
 ): AdminCustomerBillingSubscriptionRow | null {
   return (
     subscriptions.find(
       (subscription) =>
-        isProSubscriptionPlan(subscription.plan) &&
+        isDefaultSubscriptionPlan(subscription.plan) &&
         isLiveEntitlementSubscriptionStatus(subscription.status) &&
         Boolean(subscription.stripeSubscriptionId),
     ) ?? null
@@ -329,16 +329,16 @@ export function findLivePaidProSubscription(
 }
 
 /**
- * Assign Free after cancellation: Paid billing history, or a live Pro seat
+ * Assign Free after cancellation: Paid billing history, or a live Default seat
  * (`active`/`trialing`) so staff can cancel immediately and create Free.
- * Trialing Pro alone is not Paid billing history; the live-seat arm covers it.
+ * Trialing Default alone is not Paid billing history; the live-seat arm covers it.
  */
 export function qualifiesForAssignFreeAfterCancellation(
   subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
 ): boolean {
   return (
     hadPaidBillingHistory(subscriptions) ||
-    findLivePaidProSubscription(subscriptions) != null
+    findLivePaidDefaultSubscription(subscriptions) != null
   )
 }
 
@@ -392,7 +392,7 @@ async function loadBillingContext(
   user: AdminCustomerBillingTargetUser
   subscriptions: AdminCustomerBillingSubscriptionRow[]
   beforeBillingState: AdminCustomerBillingSnapshot
-  livePaidPro: AdminCustomerBillingSubscriptionRow | null
+  livePaidDefault: AdminCustomerBillingSubscriptionRow | null
 }> {
   const user = await store.findTargetUser(input.userId)
   if (!user) {
@@ -401,9 +401,9 @@ async function loadBillingContext(
 
   const subscriptions = await store.listSubscriptions(user.id)
   const beforeBillingState = await store.summarizeBillingState(user.id)
-  const livePaidPro = findLivePaidProSubscription(subscriptions)
+  const livePaidDefault = findLivePaidDefaultSubscription(subscriptions)
 
-  return { user, subscriptions, beforeBillingState, livePaidPro }
+  return { user, subscriptions, beforeBillingState, livePaidDefault }
 }
 
 export function buildChangePaidPlanPreview(input: {
@@ -412,13 +412,13 @@ export function buildChangePaidPlanPreview(input: {
   prorationAmountCents: number | null
   currency: string | null
   usesCheckout: boolean
-  /** Live paid Pro interval switch; Free → Paid create stays immediate. */
+  /** Live paid Default interval switch; Free → Paid create stays immediate. */
   schedulesAtPeriodEnd?: boolean
-  proVariantCatalog?: ProVariantCatalog
+  planVariantCatalog?: PlanVariantCatalog
 }): AdminCustomerBillingPreview {
-  const planLabel = formatTargetProPriceLabel(
+  const planLabel = formatTargetDefaultPriceLabel(
     input.targetPriceId,
-    input.proVariantCatalog,
+    input.planVariantCatalog,
   )
   if (input.usesCheckout) {
     return {
@@ -493,7 +493,7 @@ export function buildCancelCyclePlanChangePreview(
     action: 'cancel_cycle_plan_change',
     effectiveTiming: 'immediate',
     prorationSummary: null,
-    confirmationMessage: `Cancel the queued Cycle plan change. The customer stays on the current Pro interval through ${formatPeriodEndLabel(periodEnd)}.`,
+    confirmationMessage: `Cancel the queued Cycle plan change. The customer stays on the current Default interval through ${formatPeriodEndLabel(periodEnd)}.`,
     requiresConfirmation: true,
   }
 }
@@ -515,12 +515,12 @@ export async function previewChangePaidPlan(
   input: {
     userId: string
     targetPriceId: string
-    proVariantCatalog?: ProVariantCatalog
+    planVariantCatalog?: PlanVariantCatalog
   },
 ): Promise<AdminCustomerBillingPreview> {
-  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
+  assertSupportedDefaultPriceId(input.targetPriceId, input.planVariantCatalog)
 
-  const { user, livePaidPro } = await loadBillingContext(store, {
+  const { user, livePaidDefault } = await loadBillingContext(store, {
     userId: input.userId,
     actorUserId: 'preview',
   })
@@ -533,15 +533,15 @@ export async function previewChangePaidPlan(
   if (!hasPaymentMethod) {
     return buildChangePaidPlanPreview({
       targetPriceId: input.targetPriceId,
-      periodEnd: livePaidPro?.periodEnd ?? null,
+      periodEnd: livePaidDefault?.periodEnd ?? null,
       prorationAmountCents: null,
       currency: null,
       usesCheckout: true,
-      proVariantCatalog: input.proVariantCatalog,
+      planVariantCatalog: input.planVariantCatalog,
     })
   }
 
-  if (!livePaidPro?.stripeSubscriptionId) {
+  if (!livePaidDefault?.stripeSubscriptionId) {
     return buildChangePaidPlanPreview({
       targetPriceId: input.targetPriceId,
       periodEnd: null,
@@ -549,16 +549,16 @@ export async function previewChangePaidPlan(
       currency: null,
       usesCheckout: false,
       schedulesAtPeriodEnd: false,
-      proVariantCatalog: input.proVariantCatalog,
+      planVariantCatalog: input.planVariantCatalog,
     })
   }
 
-  const live = await stripe.retrievePaidProSubscription(
-    livePaidPro.stripeSubscriptionId,
+  const live = await stripe.retrievePaidDefaultSubscription(
+    livePaidDefault.stripeSubscriptionId,
   )
   if (live.currentPriceId === input.targetPriceId) {
     throw new AdminCustomerBillingStateError(
-      'Customer is already on the selected paid Pro interval.',
+      'Customer is already on the selected paid Default interval.',
     )
   }
 
@@ -569,9 +569,9 @@ export async function previewChangePaidPlan(
     currency: null,
     usesCheckout: false,
     schedulesAtPeriodEnd: shouldScheduleSubscriptionChangeAtPeriodEnd(
-      livePaidPro.plan,
+      livePaidDefault.plan,
     ),
-    proVariantCatalog: input.proVariantCatalog,
+    planVariantCatalog: input.planVariantCatalog,
   })
 }
 
@@ -583,9 +583,9 @@ export async function changePaidPlanForCustomer(
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
   assertReason(input.reason)
-  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
+  assertSupportedDefaultPriceId(input.targetPriceId, input.planVariantCatalog)
 
-  const { user, subscriptions, beforeBillingState, livePaidPro } =
+  const { user, subscriptions, beforeBillingState, livePaidDefault } =
     await loadBillingContext(store, input)
   const stripeCustomerId = await ensureStripeCustomer(
     store,
@@ -606,28 +606,28 @@ export async function changePaidPlanForCustomer(
 
   let stripeOperationId: string
 
-  if (livePaidPro?.stripeSubscriptionId) {
-    const live = await stripe.retrievePaidProSubscription(
-      livePaidPro.stripeSubscriptionId,
+  if (livePaidDefault?.stripeSubscriptionId) {
+    const live = await stripe.retrievePaidDefaultSubscription(
+      livePaidDefault.stripeSubscriptionId,
     )
     if (live.currentPriceId === input.targetPriceId) {
       throw new AdminCustomerBillingStateError(
-        'Customer is already on the selected paid Pro interval.',
+        'Customer is already on the selected paid Default interval.',
       )
     }
 
-    if (!shouldScheduleSubscriptionChangeAtPeriodEnd(livePaidPro.plan)) {
+    if (!shouldScheduleSubscriptionChangeAtPeriodEnd(livePaidDefault.plan)) {
       throw new AdminCustomerBillingStateError(
-        'Cycle plan change requires a live paid Pro subscription.',
+        'Cycle plan change requires a live paid Default subscription.',
       )
     }
 
     const scheduled = await scheduleCyclePlanChange({
       port: cyclePlan,
       referenceId: user.id,
-      annual: annualFlagForTargetProPriceId(
+      annual: annualFlagForTargetDefaultPriceId(
         input.targetPriceId,
-        input.proVariantCatalog,
+        input.planVariantCatalog,
       ),
       returnUrl: withCheckoutReturnIntent(
         profileBillingReturnUrl(user.id),
@@ -639,7 +639,7 @@ export async function changePaidPlanForCustomer(
     }
     stripeOperationId = scheduled.stripeScheduleId ?? live.stripeSubscriptionId
   } else {
-    const created = await stripe.createPaidProSubscription({
+    const created = await stripe.createPaidDefaultSubscription({
       customerId: stripeCustomerId,
       priceId: input.targetPriceId,
       metadata: stripeBillingMetadata({
@@ -676,7 +676,7 @@ export async function sendPaidCheckoutLinkForCustomer(
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
   assertReason(input.reason)
-  assertSupportedProPriceId(input.targetPriceId, input.proVariantCatalog)
+  assertSupportedDefaultPriceId(input.targetPriceId, input.planVariantCatalog)
 
   const { user, subscriptions, beforeBillingState } = await loadBillingContext(
     store,
@@ -728,20 +728,18 @@ export async function cancelPaidSubscriptionForCustomer(
   assertActors(input)
   assertReason(input.reason)
 
-  const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
-    store,
-    input,
-  )
-  if (!livePaidPro?.stripeSubscriptionId) {
+  const { user, beforeBillingState, livePaidDefault } =
+    await loadBillingContext(store, input)
+  if (!livePaidDefault?.stripeSubscriptionId) {
     throw new AdminCustomerBillingStateError(
-      'Customer does not have a live paid Pro subscription to cancel.',
+      'Customer does not have a live paid Default subscription to cancel.',
     )
   }
 
   const action: AdminCustomerBillingAction =
     input.mode === 'immediate' ? 'cancel_immediately' : 'cancel_at_period_end'
 
-  if (input.mode === 'period_end' && livePaidPro.cancelAtPeriodEnd) {
+  if (input.mode === 'period_end' && livePaidDefault.cancelAtPeriodEnd) {
     throw new AdminCustomerBillingStateError(
       'Paid subscription is already scheduled to cancel at period end.',
     )
@@ -750,9 +748,11 @@ export async function cancelPaidSubscriptionForCustomer(
   const result =
     input.mode === 'immediate'
       ? await stripe.cancelSubscriptionImmediately(
-          livePaidPro.stripeSubscriptionId,
+          livePaidDefault.stripeSubscriptionId,
         )
-      : await stripe.scheduleCancelAtPeriodEnd(livePaidPro.stripeSubscriptionId)
+      : await stripe.scheduleCancelAtPeriodEnd(
+          livePaidDefault.stripeSubscriptionId,
+        )
 
   const afterBillingState = await store.summarizeBillingState(user.id)
   const audit = await store.recordAudit({
@@ -777,7 +777,7 @@ export async function cancelPaidSubscriptionForCustomer(
  * Shared Better Auth restore + pending audit for Reactivate and Cancel Cycle
  * plan change (same restore underneath, distinct audit actions).
  */
-async function restoreLivePaidProAndRecordAudit(input: {
+async function restoreLivePaidDefaultAndRecordAudit(input: {
   store: AdminCustomerBillingStore
   cyclePlan: AdminCustomerCyclePlanPort
   user: AdminCustomerBillingTargetUser
@@ -826,29 +826,27 @@ export async function reactivatePaidSubscriptionForCustomer(
   assertActors(input)
   assertReason(input.reason)
 
-  const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
-    store,
-    input,
-  )
-  if (!livePaidPro?.stripeSubscriptionId) {
+  const { user, beforeBillingState, livePaidDefault } =
+    await loadBillingContext(store, input)
+  if (!livePaidDefault?.stripeSubscriptionId) {
     throw new AdminCustomerBillingStateError(
-      'Customer does not have a live paid Pro subscription to reactivate.',
+      'Customer does not have a live paid Default subscription to reactivate.',
     )
   }
-  if (!livePaidPro.cancelAtPeriodEnd) {
+  if (!livePaidDefault.cancelAtPeriodEnd) {
     throw new AdminCustomerBillingStateError(
       'Paid subscription is not scheduled for cancellation.',
     )
   }
 
-  return restoreLivePaidProAndRecordAudit({
+  return restoreLivePaidDefaultAndRecordAudit({
     store,
     cyclePlan,
     user,
     actorUserId: input.actorUserId,
     reason: input.reason,
     action: 'reactivate_subscription',
-    fallbackStripeSubscriptionId: livePaidPro.stripeSubscriptionId,
+    fallbackStripeSubscriptionId: livePaidDefault.stripeSubscriptionId,
     beforeBillingState,
   })
 }
@@ -861,29 +859,27 @@ export async function cancelCyclePlanChangeForCustomer(
   assertActors(input)
   assertReason(input.reason)
 
-  const { user, beforeBillingState, livePaidPro } = await loadBillingContext(
-    store,
-    input,
-  )
-  if (!livePaidPro?.stripeSubscriptionId) {
+  const { user, beforeBillingState, livePaidDefault } =
+    await loadBillingContext(store, input)
+  if (!livePaidDefault?.stripeSubscriptionId) {
     throw new AdminCustomerBillingStateError(
-      'Customer does not have a live paid Pro subscription.',
+      'Customer does not have a live paid Default subscription.',
     )
   }
-  if (!hasPendingCyclePlanChange(livePaidPro)) {
+  if (!hasPendingCyclePlanChange(livePaidDefault)) {
     throw new AdminCustomerBillingStateError(
       'Customer does not have a pending Cycle plan change to cancel.',
     )
   }
 
-  return restoreLivePaidProAndRecordAudit({
+  return restoreLivePaidDefaultAndRecordAudit({
     store,
     cyclePlan,
     user,
     actorUserId: input.actorUserId,
     reason: input.reason,
     action: 'cancel_cycle_plan_change',
-    fallbackStripeSubscriptionId: livePaidPro.stripeSubscriptionId,
+    fallbackStripeSubscriptionId: livePaidDefault.stripeSubscriptionId,
     beforeBillingState,
   })
 }
@@ -899,7 +895,7 @@ export async function assignFreeAfterCancellationForCustomer(
     throw new AdminCustomerBillingValidationError('priceId is required.')
   }
 
-  const { user, subscriptions, beforeBillingState, livePaidPro } =
+  const { user, subscriptions, beforeBillingState, livePaidDefault } =
     await loadBillingContext(store, input)
 
   if (!qualifiesForAssignFreeAfterCancellation(subscriptions)) {
@@ -909,9 +905,9 @@ export async function assignFreeAfterCancellationForCustomer(
   }
 
   let stripeOperationId: string | null = null
-  if (livePaidPro?.stripeSubscriptionId) {
+  if (livePaidDefault?.stripeSubscriptionId) {
     const canceled = await stripe.cancelSubscriptionImmediately(
-      livePaidPro.stripeSubscriptionId,
+      livePaidDefault.stripeSubscriptionId,
     )
     stripeOperationId = canceled.stripeSubscriptionId
   }
@@ -981,14 +977,14 @@ export function isAdminCustomerBillingAction(
 export function billingSnapshotFromPrimarySubscription(input: {
   role: string | null
   stripeCustomerId: string | null
-  assignedProVariant?: string | null
+  assignedDefaultVariant?: string | null
   subscriptions: readonly CustomerSubscriptionSummary[]
 }): AdminCustomerBillingSnapshot {
   const primary = pickPrimaryCustomerSubscription(input.subscriptions)
   return billingSnapshotFromSubscription({
     role: input.role,
     stripeCustomerId: input.stripeCustomerId,
-    assignedProVariant: input.assignedProVariant ?? null,
+    assignedDefaultVariant: input.assignedDefaultVariant ?? null,
     subscription: primary
       ? {
           plan: primary.plan,
@@ -1014,7 +1010,7 @@ export function buildPermanentFreeAfterCancellationStripeParams(input: {
   })
 }
 
-export function buildPaidProSubscriptionCreateParams(input: {
+export function buildPaidDefaultSubscriptionCreateParams(input: {
   customerId: string
   priceId: string
   metadata: Record<string, string>
@@ -1023,10 +1019,10 @@ export function buildPaidProSubscriptionCreateParams(input: {
     customer: input.customerId,
     items: [{ price: input.priceId }],
     metadata: {
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       ...input.metadata,
     },
   }
 }
 
-export { FREE_PLAN_PRICE_ID, SUPPORTED_PRO_PLAN_PRICE_IDS }
+export { FREE_PLAN_PRICE_ID, SUPPORTED_DEFAULT_PLAN_PRICE_IDS }

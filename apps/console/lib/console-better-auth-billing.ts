@@ -12,16 +12,16 @@ import {
   type CyclePlanChangeUpgradeInput,
 } from '@virtality/shared/utils'
 import {
-  startProBillingPortal,
-  type ProSubscriptionBillingPortalFn,
+  startDefaultBillingPortal,
+  type DefaultSubscriptionBillingPortalFn,
 } from './subscription-billing-portal'
 import {
-  startProSubscriptionCheckout,
-  type ProCheckoutUpgradeInput,
+  startDefaultSubscriptionCheckout,
+  type DefaultCheckoutUpgradeInput,
 } from './subscription-checkout'
 
 export type ConsoleBetterAuthBillingUpgradeFn = (
-  input: ProCheckoutUpgradeInput | CyclePlanChangeUpgradeInput,
+  input: DefaultCheckoutUpgradeInput | CyclePlanChangeUpgradeInput,
 ) => Promise<{
   data?: unknown
   error?: { message?: string | null } | null
@@ -31,7 +31,7 @@ export type ConsoleBetterAuthBillingUpgradeFn = (
 export type ConsoleBetterAuthBillingPort = {
   upgrade: ConsoleBetterAuthBillingUpgradeFn
   restore: CyclePlanChangePort['restore']
-  billingPortal: ProSubscriptionBillingPortalFn
+  billingPortal: DefaultSubscriptionBillingPortalFn
 }
 
 export type ConsoleBetterAuthBillingResult =
@@ -57,7 +57,7 @@ export type ConsoleBetterAuthBilling = {
   }) => Promise<ConsoleBetterAuthBillingResult>
 }
 
-/** Clinician toast after a successful period-end Pro interval schedule. */
+/** Clinician toast after a successful period-end Default interval schedule. */
 export const CYCLE_PLAN_CHANGE_SCHEDULED_TOAST =
   'Plan change scheduled. It starts at your next billing cycle.'
 
@@ -113,7 +113,7 @@ export function createConsoleBetterAuthBilling(
 ): ConsoleBetterAuthBilling {
   return {
     async startCheckout(input) {
-      return startProSubscriptionCheckout({
+      return startDefaultSubscriptionCheckout({
         upgrade: port.upgrade,
         returnUrl: input.returnUrl,
         annual: input.annual,
@@ -140,7 +140,7 @@ export function createConsoleBetterAuthBilling(
     },
 
     async openPortal(input) {
-      return startProBillingPortal({
+      return startDefaultBillingPortal({
         billingPortal: port.billingPortal,
         returnUrl: input.returnUrl,
       })

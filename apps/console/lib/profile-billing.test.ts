@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildBillingPlanPriceLabels,
   FREE_SUBSCRIPTION_PLAN,
-  PRO_BILLING_CATALOG_SANDBOX,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_BILLING_CATALOG_SANDBOX,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from '@virtality/shared/utils'
 import {
   buildPendingCouponRewrite,
@@ -39,13 +39,13 @@ const base: BillingStandingView = {
 }
 
 describe('profileBillingPrimaryCtaLabel', () => {
-  it('shows Manage billing only for entitled paid Pro seats', () => {
+  it('shows Manage billing only for entitled paid Default seats', () => {
     expect(
       profileBillingPrimaryCtaLabel({
         ...base,
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
       }),
     ).toBe('Manage billing')
   })
@@ -65,12 +65,12 @@ describe('profileBillingPrimaryCtaLabel', () => {
 })
 
 describe('profileBillingOpensPortal', () => {
-  it('is true only for entitled paid Pro subscriptions', () => {
+  it('is true only for entitled paid Default subscriptions', () => {
     expect(
       profileBillingOpensPortal({
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
       }),
     ).toBe(true)
     expect(
@@ -118,14 +118,14 @@ describe('profileBillingShowsPlanCardCheckout', () => {
     ).toBe(true)
   })
 
-  it('offers plan-card actions for entitled paid Pro seats (interval switch)', () => {
+  it('offers plan-card actions for entitled paid Default seats (interval switch)', () => {
     expect(
       profileBillingShowsPlanCardCheckout(
         {
           ...base,
           entitled: true,
           status: 'active',
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
         },
         true,
       ),
@@ -182,12 +182,12 @@ describe('resolveProfileBillingCardAction', () => {
     })
   })
 
-  it('schedules Upgrade on the other paid Pro interval with confirm copy', () => {
+  it('schedules Upgrade on the other paid Default interval with confirm copy', () => {
     const standing: BillingStandingView = {
       ...base,
       entitled: true,
       status: 'active',
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
       clockEnd: '2026-09-10T12:00:00.000Z',
     }
@@ -216,7 +216,7 @@ describe('resolveProfileBillingCardAction', () => {
       ...base,
       entitled: true,
       status: 'active',
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
       hasPendingPlanChange: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
@@ -243,7 +243,7 @@ describe('resolveProfileBillingCardAction', () => {
       ...base,
       entitled: true,
       status: 'active',
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
       cancelAtPeriodEnd: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
@@ -267,7 +267,7 @@ describe('profileBillingPendingPlanChangeBanner', () => {
       ...base,
       entitled: true,
       status: 'active',
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
       hasPendingPlanChange: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
@@ -283,13 +283,13 @@ describe('profileBillingPendingCancellationBanner', () => {
       ...base,
       entitled: true,
       status: 'active',
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       billingInterval: 'month',
       cancelAtPeriodEnd: true,
       clockEnd: '2026-09-10T12:00:00.000Z',
     })
     expect(banner).toMatch(/subscription ends/)
-    expect(banner).toMatch(/keep Pro access/i)
+    expect(banner).toMatch(/keep Default access/i)
   })
 
   it('is absent when cancel-at-period-end is not scheduled', () => {
@@ -298,7 +298,7 @@ describe('profileBillingPendingCancellationBanner', () => {
         ...base,
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         billingInterval: 'month',
         clockEnd: '2026-09-10T12:00:00.000Z',
       }),
@@ -307,12 +307,12 @@ describe('profileBillingPendingCancellationBanner', () => {
 })
 
 describe('profileBillingSchedulesAtPeriodEnd', () => {
-  it('is true only for live paid Pro seats that are not canceling', () => {
+  it('is true only for live paid Default seats that are not canceling', () => {
     expect(
       profileBillingSchedulesAtPeriodEnd({
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         cancelAtPeriodEnd: false,
       }),
     ).toBe(true)
@@ -320,7 +320,7 @@ describe('profileBillingSchedulesAtPeriodEnd', () => {
       profileBillingSchedulesAtPeriodEnd({
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         cancelAtPeriodEnd: true,
       }),
     ).toBe(false)
@@ -342,10 +342,10 @@ describe('profileBillingStatusHeadline', () => {
         ...base,
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         billingInterval: 'year',
       }),
-    ).toBe('Pro · Yearly')
+    ).toBe('Default · Yearly')
     expect(
       profileBillingStatusHeadline({
         ...base,
@@ -424,7 +424,7 @@ describe('profileBillingStatusDetail', () => {
         ...base,
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         billingInterval: 'month',
         hasPendingPlanChange: true,
         clockEnd: '2026-09-10T12:00:00.000Z',
@@ -438,7 +438,7 @@ describe('profileBillingStatusDetail', () => {
         ...base,
         entitled: true,
         status: 'active',
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         billingInterval: 'month',
         cancelAtPeriodEnd: true,
         clockEnd: '2026-09-10T12:00:00.000Z',
@@ -468,7 +468,7 @@ describe('profileBillingDiscountDisplay', () => {
           duration: 'once',
           durationInMonths: null,
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({
       kind: 'rewrite',
@@ -487,19 +487,19 @@ describe('profileBillingDiscountDisplay', () => {
           ok: false,
           reason: 'stripe_unavailable',
         },
-        PRO_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
       ),
     ).toEqual({ kind: 'soft_unavailable' })
   })
 })
 
 describe('buildPendingCouponRewrite', () => {
-  const prices = buildBillingPlanPriceLabels(PRO_BILLING_CATALOG_SANDBOX)
+  const prices = buildBillingPlanPriceLabels(DEFAULT_BILLING_CATALOG_SANDBOX)
 
   it('rewrites plan card prices from pending coupon percent-off terms', () => {
     const rewrite = buildPendingCouponRewrite(
       { percentOff: 20, amountOff: null },
-      PRO_BILLING_CATALOG_SANDBOX,
+      DEFAULT_BILLING_CATALOG_SANDBOX,
       prices,
     )
 
@@ -514,7 +514,7 @@ describe('buildPendingCouponRewrite', () => {
   it('rewrites plan card prices from pending coupon amount-off terms', () => {
     const rewrite = buildPendingCouponRewrite(
       { percentOff: null, amountOff: 5000 },
-      PRO_BILLING_CATALOG_SANDBOX,
+      DEFAULT_BILLING_CATALOG_SANDBOX,
       prices,
     )
 
@@ -533,7 +533,7 @@ describe('splitCatalogPriceLabel', () => {
 })
 
 describe('buildBillingCompareAtCardDisplay', () => {
-  const basic = buildBillingPlanPriceLabels(PRO_BILLING_CATALOG_SANDBOX)
+  const basic = buildBillingPlanPriceLabels(DEFAULT_BILLING_CATALOG_SANDBOX)
   const assigned = buildBillingPlanPriceLabels({
     monthly: 9_900,
     yearly: 99_000,

@@ -18,7 +18,7 @@ import {
   type CancelCyclePlanChangeInput,
   type CancelPaidSubscriptionInput,
   type ChangePaidPlanInput,
-  type ProVariantCatalog,
+  type PlanVariantCatalog,
   type ReactivatePaidSubscriptionInput,
   type SendPaidCheckoutLinkInput,
 } from '@virtality/shared/utils'
@@ -38,7 +38,7 @@ export type AdminCustomerBillingRuntimePorts = {
    * When provided, paid-plan target Prices are validated against the Assigned
    * Variant catalog (basic + early-bird, etc.) instead of basic-only ids.
    */
-  resolveProVariantCatalog?: () => Promise<ProVariantCatalog>
+  resolvePlanVariantCatalog?: () => Promise<PlanVariantCatalog>
 }
 
 type OptionalCheckoutReturnUrls = {
@@ -103,33 +103,33 @@ export function createAdminCustomerBillingRuntimeFromPorts(
     cyclePlan,
     freePlanPriceId,
     checkoutReturnUrls,
-    resolveProVariantCatalog,
+    resolvePlanVariantCatalog,
   } = ports
 
-  async function withProVariantCatalog<T>(
-    run: (catalog: ProVariantCatalog | undefined) => Promise<T>,
+  async function withPlanVariantCatalog<T>(
+    run: (catalog: PlanVariantCatalog | undefined) => Promise<T>,
   ): Promise<T> {
-    const catalog = resolveProVariantCatalog
-      ? await resolveProVariantCatalog()
+    const catalog = resolvePlanVariantCatalog
+      ? await resolvePlanVariantCatalog()
       : undefined
     return run(catalog)
   }
 
   return {
     previewChangePaidPlan(input) {
-      return withProVariantCatalog((proVariantCatalog) =>
+      return withPlanVariantCatalog((planVariantCatalog) =>
         previewChangePaidPlan(store, stripe, {
           ...input,
-          proVariantCatalog,
+          planVariantCatalog,
         }),
       )
     },
     changePaidPlan(input) {
-      return withProVariantCatalog((proVariantCatalog) =>
+      return withPlanVariantCatalog((planVariantCatalog) =>
         changePaidPlanForCustomer(store, stripe, cyclePlan, {
           ...input,
           ...resolveCheckoutReturnUrls(checkoutReturnUrls, input),
-          proVariantCatalog,
+          planVariantCatalog,
         }),
       )
     },
@@ -149,11 +149,11 @@ export function createAdminCustomerBillingRuntimeFromPorts(
       })
     },
     sendPaidCheckoutLink(input) {
-      return withProVariantCatalog((proVariantCatalog) =>
+      return withPlanVariantCatalog((planVariantCatalog) =>
         sendPaidCheckoutLinkForCustomer(store, stripe, {
           ...input,
           ...resolveCheckoutReturnUrls(checkoutReturnUrls, input),
-          proVariantCatalog,
+          planVariantCatalog,
         }),
       )
     },

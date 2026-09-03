@@ -20,7 +20,7 @@ import type Stripe from 'stripe'
 import { buildCampaignAwareCheckoutSessionParams } from './campaign-window.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
 import { resolvePromotionCodeForNewCheckout } from './console-promo-redeem.ts'
-import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
+import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog.ts'
 
 /** Stripe metadata: cancel the prior Free subscription after paid Checkout. */
 export const ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY =
@@ -46,7 +46,7 @@ export async function startAssignedVariantSubscribeCheckout(input: {
     where: { id: input.referenceId, deletedAt: null },
     select: {
       id: true,
-      assignedProVariant: true,
+      assignedDefaultVariant: true,
       stripeCustomerId: true,
     },
   })
@@ -60,9 +60,9 @@ export async function startAssignedVariantSubscribeCheckout(input: {
     }
   }
 
-  const priceResolved = await resolveAssignedProVariantChargePrice({
+  const priceResolved = await resolveAssignedPlanVariantChargePrice({
     stripeClient: input.stripeClient,
-    assignedProVariant: user.assignedProVariant,
+    assignedDefaultVariant: user.assignedDefaultVariant,
     annual: input.annual,
   })
   if (!priceResolved.ok) {

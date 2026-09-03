@@ -1,5 +1,5 @@
 /**
- * Assigned Variant Pro catalog: discover monthly+yearly Stripe Price pairs by
+ * Assigned Variant Default catalog: discover monthly+yearly Stripe Price pairs by
  * lookup_key `{kebab-name}_{monthly|yearly}` (e.g. `early-bird_monthly`),
  * resolve charge Price ids, and read the sparse User assignment (`null` → `basic`).
  */
@@ -13,25 +13,25 @@ import {
 import {
   FREE_PLAN_PRICE_ID,
   FREE_SUBSCRIPTION_PLAN,
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_SUBSCRIPTION_PLAN,
 } from './billing-plans.ts'
 
-/** Default Assigned Variant when User.assignedProVariant is null. */
-export const DEFAULT_ASSIGNED_PRO_VARIANT = 'basic' as const
+/** Default Assigned Variant when User.assignedDefaultVariant is null. */
+export const DEFAULT_ASSIGNED_PLAN_VARIANT = 'basic' as const
 
 /** Live-paid block copy for Adminboard assign UX and server guard. */
-export const ASSIGN_PRO_VARIANT_LIVE_PAID_BLOCK_MESSAGE =
-  'Cannot change Assigned Variant while this clinician has live paid Pro. Cancel or wait for the seat to end, then reassign.' as const
+export const ASSIGN_PLAN_VARIANT_LIVE_PAID_BLOCK_MESSAGE =
+  'Cannot change Assigned Variant while this clinician has live paid Default. Cancel or wait for the seat to end, then reassign.' as const
 
-export const ASSIGN_PRO_VARIANT_ACTION = 'assign_pro_variant' as const
+export const ASSIGN_PLAN_VARIANT_ACTION = 'assign_plan_variant' as const
 
-export type ProVariantInterval = 'month' | 'year'
+export type PlanVariantInterval = 'month' | 'year'
 
-export type ProVariantLookupInterval = 'monthly' | 'yearly'
+export type PlanVariantLookupInterval = 'monthly' | 'yearly'
 
-export type StripeProVariantPriceSnapshot = {
+export type StripePlanVariantPriceSnapshot = {
   id: string
   lookup_key: string | null
   unit_amount: number | null
@@ -41,7 +41,7 @@ export type StripeProVariantPriceSnapshot = {
   metadata?: Record<string, string> | null
 }
 
-export type ProVariantPair = {
+export type PlanVariantPair = {
   name: string
   monthlyPriceId: string
   yearlyPriceId: string
@@ -49,22 +49,22 @@ export type ProVariantPair = {
   labels: BillingPlanPriceLabels
 }
 
-export type ProVariantCatalog = {
-  variants: ProVariantPair[]
+export type PlanVariantCatalog = {
+  variants: PlanVariantPair[]
   /** Complete `basic` pair when present. */
-  basic: ProVariantPair | null
+  basic: PlanVariantPair | null
 }
 
-export type ResolveProVariantPairResult =
-  | { ok: true; pair: ProVariantPair }
+export type ResolvePlanVariantPairResult =
+  | { ok: true; pair: PlanVariantPair }
   | {
       ok: false
       reason: 'incomplete_pair' | 'unknown_variant' | 'basic_missing'
       variantName: string
     }
 
-export type ProVariantChargePriceResult =
-  | { ok: true; priceId: string; pair: ProVariantPair; annual: boolean }
+export type PlanVariantChargePriceResult =
+  | { ok: true; priceId: string; pair: PlanVariantPair; annual: boolean }
   | {
       ok: false
       reason: 'incomplete_pair' | 'unknown_variant' | 'basic_missing'
@@ -78,16 +78,16 @@ const LOOKUP_KEY_SUFFIX_RE = /^(.+)_(monthly|yearly)$/
  * Variant names use hyphens (e.g. `early-bird_monthly` → `early-bird`).
  * Returns null when the key does not match the Assigned Variant convention.
  */
-export function parseProVariantLookupKey(
+export function parsePlanVariantLookupKey(
   lookupKey: string | null | undefined,
-): { name: string; interval: ProVariantLookupInterval } | null {
+): { name: string; interval: PlanVariantLookupInterval } | null {
   if (lookupKey == null || lookupKey.trim() === '') return null
   const match = LOOKUP_KEY_SUFFIX_RE.exec(lookupKey.trim())
   if (!match) return null
   const rawName = match[1]
-  const interval = match[2] as ProVariantLookupInterval
+  const interval = match[2] as PlanVariantLookupInterval
   if (rawName == null || rawName === '') return null
-  return { name: normalizeProVariantName(rawName), interval }
+  return { name: normalizePlanVariantName(rawName), interval }
 }
 
 /**
@@ -95,25 +95,25 @@ export function parseProVariantLookupKey(
  * Stripe rename completes. `pro` as a stored Assigned Variant name also reads
  * as `basic`.
  */
-export function normalizeProVariantName(name: string): string {
+export function normalizePlanVariantName(name: string): string {
   const trimmed = name.trim()
-  if (trimmed === 'pro') return DEFAULT_ASSIGNED_PRO_VARIANT
+  if (trimmed === 'pro') return DEFAULT_ASSIGNED_PLAN_VARIANT
   return trimmed
 }
 
 /** Sparse storage read: null/blank → `basic`. */
-export function effectiveAssignedProVariant(
-  assignedProVariant: string | null | undefined,
+export function effectiveAssignedPlanVariant(
+  assignedDefaultVariant: string | null | undefined,
 ): string {
-  if (assignedProVariant == null || assignedProVariant.trim() === '') {
-    return DEFAULT_ASSIGNED_PRO_VARIANT
+  if (assignedDefaultVariant == null || assignedDefaultVariant.trim() === '') {
+    return DEFAULT_ASSIGNED_PLAN_VARIANT
   }
-  return normalizeProVariantName(assignedProVariant)
+  return normalizePlanVariantName(assignedDefaultVariant)
 }
 
 /** Adminboard primary label: `early-bird` → `Early Bird`. */
-export function humanizeProVariantName(name: string): string {
-  return effectiveAssignedProVariant(name)
+export function humanizePlanVariantName(name: string): string {
+  return effectiveAssignedPlanVariant(name)
     .split('-')
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -121,8 +121,8 @@ export function humanizeProVariantName(name: string): string {
 }
 
 function isValidEurRecurringLeg(
-  price: StripeProVariantPriceSnapshot,
-  expectedInterval: ProVariantInterval,
+  price: StripePlanVariantPriceSnapshot,
+  expectedInterval: PlanVariantInterval,
 ): boolean {
   if (price.active === false) return false
   if (price.unit_amount == null || price.unit_amount <= 0) return false
@@ -132,8 +132,8 @@ function isValidEurRecurringLeg(
 }
 
 type PartialLegs = {
-  monthly?: StripeProVariantPriceSnapshot
-  yearly?: StripeProVariantPriceSnapshot
+  monthly?: StripePlanVariantPriceSnapshot
+  yearly?: StripePlanVariantPriceSnapshot
 }
 
 /**
@@ -141,15 +141,15 @@ type PartialLegs = {
  * Incomplete pairs are dropped. Prefer `basic_*` legs over legacy `pro_*`
  * when both exist for the same effective name.
  */
-export function buildProVariantCatalogFromStripePrices(
-  prices: readonly StripeProVariantPriceSnapshot[],
-): ProVariantCatalog {
+export function buildPlanVariantCatalogFromStripePrices(
+  prices: readonly StripePlanVariantPriceSnapshot[],
+): PlanVariantCatalog {
   const byName = new Map<string, PartialLegs>()
 
   for (const price of prices) {
-    const parsed = parseProVariantLookupKey(price.lookup_key)
+    const parsed = parsePlanVariantLookupKey(price.lookup_key)
     if (!parsed) continue
-    const expectedInterval: ProVariantInterval =
+    const expectedInterval: PlanVariantInterval =
       parsed.interval === 'monthly' ? 'month' : 'year'
     if (!isValidEurRecurringLeg(price, expectedInterval)) continue
 
@@ -160,46 +160,46 @@ export function buildProVariantCatalogFromStripePrices(
       // replacing a legacy pro_* id with an explicit basic_* source.
       if (
         !legs.monthly ||
-        shouldPreferIncomingProVariantLeg(price, legs.monthly)
+        shouldPreferIncomingPlanVariantLeg(price, legs.monthly)
       ) {
         legs.monthly = price
       }
     } else if (
       !legs.yearly ||
-      shouldPreferIncomingProVariantLeg(price, legs.yearly)
+      shouldPreferIncomingPlanVariantLeg(price, legs.yearly)
     ) {
       legs.yearly = price
     }
     byName.set(parsed.name, legs)
   }
 
-  const variants: ProVariantPair[] = []
+  const variants: PlanVariantPair[] = []
   for (const [name, legs] of byName) {
-    const pair = toCompleteProVariantPair(name, legs)
+    const pair = toCompletePlanVariantPair(name, legs)
     if (pair) variants.push(pair)
   }
 
   variants.sort((a, b) => {
-    if (a.name === DEFAULT_ASSIGNED_PRO_VARIANT) return -1
-    if (b.name === DEFAULT_ASSIGNED_PRO_VARIANT) return 1
+    if (a.name === DEFAULT_ASSIGNED_PLAN_VARIANT) return -1
+    if (b.name === DEFAULT_ASSIGNED_PLAN_VARIANT) return 1
     return a.name.localeCompare(b.name)
   })
 
   const basic =
-    variants.find((v) => v.name === DEFAULT_ASSIGNED_PRO_VARIANT) ?? null
+    variants.find((v) => v.name === DEFAULT_ASSIGNED_PLAN_VARIANT) ?? null
 
   return { variants, basic }
 }
 
-function shouldPreferIncomingProVariantLeg(
-  incoming: StripeProVariantPriceSnapshot,
-  existing: StripeProVariantPriceSnapshot,
+function shouldPreferIncomingPlanVariantLeg(
+  incoming: StripePlanVariantPriceSnapshot,
+  existing: StripePlanVariantPriceSnapshot,
 ): boolean {
   const incomingKey = incoming.lookup_key ?? ''
   const existingKey = existing.lookup_key ?? ''
   // Prefer keys that already say basic_* over legacy pro_*.
   if (
-    incomingKey.startsWith(`${DEFAULT_ASSIGNED_PRO_VARIANT}_`) &&
+    incomingKey.startsWith(`${DEFAULT_ASSIGNED_PLAN_VARIANT}_`) &&
     existingKey.startsWith('pro_')
   ) {
     return true
@@ -207,10 +207,10 @@ function shouldPreferIncomingProVariantLeg(
   return false
 }
 
-function toCompleteProVariantPair(
+function toCompletePlanVariantPair(
   name: string,
   legs: PartialLegs,
-): ProVariantPair | null {
+): PlanVariantPair | null {
   const monthly = legs.monthly
   const yearly = legs.yearly
   if (!monthly || !yearly) return null
@@ -240,13 +240,13 @@ function toCompleteProVariantPair(
  * Resolve a complete pair by Assigned Variant name. Fail closed: never invent
  * a silent fallback to `basic` for charging when the named pair is missing.
  */
-export function resolveProVariantPair(
-  catalog: ProVariantCatalog,
-  assignedProVariant: string | null | undefined,
-): ResolveProVariantPairResult {
-  const variantName = effectiveAssignedProVariant(assignedProVariant)
+export function resolvePlanVariantPair(
+  catalog: PlanVariantCatalog,
+  assignedDefaultVariant: string | null | undefined,
+): ResolvePlanVariantPairResult {
+  const variantName = effectiveAssignedPlanVariant(assignedDefaultVariant)
 
-  if (variantName === DEFAULT_ASSIGNED_PRO_VARIANT && catalog.basic == null) {
+  if (variantName === DEFAULT_ASSIGNED_PLAN_VARIANT && catalog.basic == null) {
     return { ok: false, reason: 'basic_missing', variantName }
   }
 
@@ -255,7 +255,7 @@ export function resolveProVariantPair(
     return {
       ok: false,
       reason:
-        variantName === DEFAULT_ASSIGNED_PRO_VARIANT
+        variantName === DEFAULT_ASSIGNED_PLAN_VARIANT
           ? 'basic_missing'
           : 'unknown_variant',
       variantName,
@@ -266,12 +266,12 @@ export function resolveProVariantPair(
 }
 
 /** Charge Price id for Assigned Variant + billing interval. */
-export function resolveProVariantChargePrice(
-  catalog: ProVariantCatalog,
-  assignedProVariant: string | null | undefined,
+export function resolvePlanVariantChargePrice(
+  catalog: PlanVariantCatalog,
+  assignedDefaultVariant: string | null | undefined,
   annual: boolean,
-): ProVariantChargePriceResult {
-  const resolved = resolveProVariantPair(catalog, assignedProVariant)
+): PlanVariantChargePriceResult {
+  const resolved = resolvePlanVariantPair(catalog, assignedDefaultVariant)
   if (!resolved.ok) return resolved
   return {
     ok: true,
@@ -283,8 +283,8 @@ export function resolveProVariantChargePrice(
   }
 }
 
-export function annualFlagForProVariantPriceId(
-  catalog: ProVariantCatalog,
+export function annualFlagForPlanVariantPriceId(
+  catalog: PlanVariantCatalog,
   priceId: string,
 ): boolean | null {
   for (const pair of catalog.variants) {
@@ -292,36 +292,36 @@ export function annualFlagForProVariantPriceId(
     if (pair.monthlyPriceId === priceId) return false
   }
   // Fallback for hardcoded basic ids before catalog is loaded.
-  if (priceId === PRO_PLAN_ANNUAL_PRICE_ID) return true
-  if (priceId === PRO_PLAN_MONTHLY_PRICE_ID) return false
+  if (priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID) return true
+  if (priceId === DEFAULT_PLAN_MONTHLY_PRICE_ID) return false
   return null
 }
 
-export function isKnownProVariantPriceId(
-  catalog: ProVariantCatalog,
+export function isKnownPlanVariantPriceId(
+  catalog: PlanVariantCatalog,
   priceId: string,
 ): boolean {
-  return annualFlagForProVariantPriceId(catalog, priceId) != null
+  return annualFlagForPlanVariantPriceId(catalog, priceId) != null
 }
 
-export function formatProVariantPriceLabel(
-  catalog: ProVariantCatalog,
+export function formatPlanVariantPriceLabel(
+  catalog: PlanVariantCatalog,
   priceId: string,
 ): string {
   for (const pair of catalog.variants) {
     if (pair.monthlyPriceId === priceId) {
-      return pair.name === DEFAULT_ASSIGNED_PRO_VARIANT
-        ? 'Pro monthly'
-        : `Pro monthly (${humanizeProVariantName(pair.name)})`
+      return pair.name === DEFAULT_ASSIGNED_PLAN_VARIANT
+        ? 'Default monthly'
+        : `Default monthly (${humanizePlanVariantName(pair.name)})`
     }
     if (pair.yearlyPriceId === priceId) {
-      return pair.name === DEFAULT_ASSIGNED_PRO_VARIANT
-        ? 'Pro yearly'
-        : `Pro yearly (${humanizeProVariantName(pair.name)})`
+      return pair.name === DEFAULT_ASSIGNED_PLAN_VARIANT
+        ? 'Default yearly'
+        : `Default yearly (${humanizePlanVariantName(pair.name)})`
     }
   }
-  if (priceId === PRO_PLAN_MONTHLY_PRICE_ID) return 'Pro monthly'
-  if (priceId === PRO_PLAN_ANNUAL_PRICE_ID) return 'Pro yearly'
+  if (priceId === DEFAULT_PLAN_MONTHLY_PRICE_ID) return 'Default monthly'
+  if (priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID) return 'Default yearly'
   return priceId
 }
 
@@ -356,15 +356,15 @@ export type BillingCatalogForUserRead =
     }
 
 export function buildBillingCatalogForUser(
-  catalog: ProVariantCatalog,
-  assignedProVariant: string | null | undefined,
+  catalog: PlanVariantCatalog,
+  assignedDefaultVariant: string | null | undefined,
 ): BillingCatalogForUserRead {
-  const assignedVariant = effectiveAssignedProVariant(assignedProVariant)
+  const assignedVariant = effectiveAssignedPlanVariant(assignedDefaultVariant)
   if (catalog.basic == null) {
     return { ok: false, reason: 'basic_missing', assignedVariant }
   }
 
-  const resolved = resolveProVariantPair(catalog, assignedVariant)
+  const resolved = resolvePlanVariantPair(catalog, assignedVariant)
   if (!resolved.ok) {
     return {
       ok: false,
@@ -378,7 +378,7 @@ export function buildBillingCatalogForUser(
   return {
     ok: true,
     assignedVariant,
-    showCompareAt: assignedVariant !== DEFAULT_ASSIGNED_PRO_VARIANT,
+    showCompareAt: assignedVariant !== DEFAULT_ASSIGNED_PLAN_VARIANT,
     assigned: {
       minor: assigned.minor,
       labels: assigned.labels,
@@ -395,12 +395,12 @@ export function buildBillingCatalogForUser(
 }
 
 /** Sandbox catalog when Stripe is unavailable in development. */
-export function buildSandboxProVariantCatalog(): ProVariantCatalog {
+export function buildSandboxPlanVariantCatalog(): PlanVariantCatalog {
   const minor = { monthly: 15_000, yearly: 150_000 }
-  const basic: ProVariantPair = {
-    name: DEFAULT_ASSIGNED_PRO_VARIANT,
-    monthlyPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
-    yearlyPriceId: PRO_PLAN_ANNUAL_PRICE_ID,
+  const basic: PlanVariantPair = {
+    name: DEFAULT_ASSIGNED_PLAN_VARIANT,
+    monthlyPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
+    yearlyPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
     minor,
     labels: buildBillingPlanPriceLabels(minor, 'Save ~2 months'),
   }
@@ -408,11 +408,11 @@ export function buildSandboxProVariantCatalog(): ProVariantCatalog {
 }
 
 export function buildSandboxBillingCatalogForUser(
-  assignedProVariant: string | null | undefined,
+  assignedDefaultVariant: string | null | undefined,
 ): BillingCatalogForUserRead {
   return buildBillingCatalogForUser(
-    buildSandboxProVariantCatalog(),
-    assignedProVariant,
+    buildSandboxPlanVariantCatalog(),
+    assignedDefaultVariant,
   )
 }
 
@@ -424,7 +424,7 @@ export function billingLabelsFromMinor(
   return buildBillingPlanPriceLabels(minor, yearlySavingsLabel)
 }
 
-export function catalogSliceFromPair(pair: ProVariantPair) {
+export function catalogSliceFromPair(pair: PlanVariantPair) {
   return buildBillingCatalogFromMinor(
     pair.minor,
     pair.labels.yearlySavingsLabel,
@@ -450,26 +450,26 @@ export type BetterAuthStripePlanConfig = {
  * gets a legacy `pro_*` lookup_key alias until Stripe rename completes.
  * Empty catalog falls back to the canonical sandbox basic Price ids.
  */
-export function buildBetterAuthStripePlansFromProVariantCatalog(
-  catalog: ProVariantCatalog,
+export function buildBetterAuthStripePlansFromPlanVariantCatalog(
+  catalog: PlanVariantCatalog,
   freePriceId: string = FREE_PLAN_PRICE_ID,
 ): BetterAuthStripePlanConfig[] {
   const pairs =
     catalog.variants.length > 0
       ? catalog.variants
-      : buildSandboxProVariantCatalog().variants
+      : buildSandboxPlanVariantCatalog().variants
 
   const proPlans: BetterAuthStripePlanConfig[] = []
   for (const pair of pairs) {
     const row: BetterAuthStripePlanConfig = {
-      name: PRO_SUBSCRIPTION_PLAN,
+      name: DEFAULT_SUBSCRIPTION_PLAN,
       priceId: pair.monthlyPriceId,
       annualDiscountPriceId: pair.yearlyPriceId,
       lookupKey: `${pair.name}_monthly`,
       annualDiscountLookupKey: `${pair.name}_yearly`,
     }
     proPlans.push(row)
-    if (pair.name === DEFAULT_ASSIGNED_PRO_VARIANT) {
+    if (pair.name === DEFAULT_ASSIGNED_PLAN_VARIANT) {
       proPlans.push({
         ...row,
         lookupKey: 'pro_monthly',

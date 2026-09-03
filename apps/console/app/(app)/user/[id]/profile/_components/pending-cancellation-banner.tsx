@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Warning notice while cancel-at-period-end is scheduled on the live Pro seat.
+ * Warning notice while cancel-at-period-end is scheduled on the live Default seat.
  */
 
 export function PendingCancellationBanner({ message }: { message: string }) {

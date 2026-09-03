@@ -14,7 +14,7 @@ import type {
 } from '@virtality/shared/utils'
 import {
   FREE_PLAN_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
 } from '@virtality/shared/utils'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
@@ -37,7 +37,7 @@ function snapshot(
     primaryPlan: null,
     primaryStatus: null,
     stripeSubscriptionId: null,
-    assignedProVariant: null,
+    assignedDefaultVariant: null,
     ...overrides,
   }
 }
@@ -141,7 +141,7 @@ function createRuntime(
     extensionStripe: createExtensionStripe(),
     rearm: createRearm(),
     freePlanPriceId: FREE_PLAN_PRICE_ID,
-    proPlanPriceId: PRO_PLAN_MONTHLY_PRICE_ID,
+    proPlanPriceId: DEFAULT_PLAN_MONTHLY_PRICE_ID,
     now: () => NOW,
     ...overrides,
   })
@@ -180,7 +180,7 @@ describe('createAdminEntitlementClockRuntimeFromPorts', () => {
     expect(rearm.rearmAfterExtension).not.toHaveBeenCalled()
   })
 
-  it('extends a live clock with the Pro price and rearms after Extension', async () => {
+  it('extends a live clock with the Default price and rearms after Extension', async () => {
     const previousTrialEnd = new Date('2026-08-20T12:00:00.000Z')
     const extensionStripe = createExtensionStripe()
     const rearm = createRearm()
@@ -214,7 +214,7 @@ describe('createAdminEntitlementClockRuntimeFromPorts', () => {
     expect(rearm.rearmForNewClock).not.toHaveBeenCalled()
   })
 
-  it('reduces a live clock with the Pro price and rearms after Extension', async () => {
+  it('reduces a live clock with the Default price and rearms after Extension', async () => {
     const previousTrialEnd = new Date('2026-08-20T12:00:00.000Z')
     const extensionStripe = createExtensionStripe()
     const rearm = createRearm()

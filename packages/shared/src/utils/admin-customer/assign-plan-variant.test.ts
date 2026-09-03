@@ -1,26 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_MONTHLY_PRICE_ID,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_MONTHLY_PRICE_ID,
 } from '../billing/billing-plans.ts'
 import {
-  ASSIGN_PRO_VARIANT_LIVE_PAID_BLOCK_MESSAGE,
-  assignProVariantForCustomer,
-  canChangeAssignedProVariant,
-  sparseAssignedProVariantWrite,
-  type AssignProVariantStore,
-} from './assign-pro-variant.ts'
+  ASSIGN_PLAN_VARIANT_LIVE_PAID_BLOCK_MESSAGE,
+  assignPlanVariantForCustomer,
+  canChangeAssignedPlanVariant,
+  sparseAssignedPlanVariantWrite,
+  type AssignPlanVariantStore,
+} from './assign-plan-variant.ts'
 import {
-  buildProVariantCatalogFromStripePrices,
-  type StripeProVariantPriceSnapshot,
-} from '../billing/pro-variant-catalog.ts'
+  buildPlanVariantCatalogFromStripePrices,
+  type StripePlanVariantPriceSnapshot,
+} from '../billing/plan-variant-catalog.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import type { AdminCustomerBillingSubscriptionRow } from './admin-customer-billing.ts'
 
 function price(
-  overrides: Partial<StripeProVariantPriceSnapshot> &
-    Pick<StripeProVariantPriceSnapshot, 'id' | 'lookup_key'>,
-): StripeProVariantPriceSnapshot {
+  overrides: Partial<StripePlanVariantPriceSnapshot> &
+    Pick<StripePlanVariantPriceSnapshot, 'id' | 'lookup_key'>,
+): StripePlanVariantPriceSnapshot {
   const interval = overrides.lookup_key?.endsWith('_yearly') ? 'year' : 'month'
   return {
     unit_amount: interval === 'year' ? 150_000 : 15_000,
@@ -31,10 +31,10 @@ function price(
   }
 }
 
-const catalog = buildProVariantCatalogFromStripePrices([
-  price({ id: PRO_PLAN_MONTHLY_PRICE_ID, lookup_key: 'basic_monthly' }),
+const catalog = buildPlanVariantCatalogFromStripePrices([
+  price({ id: DEFAULT_PLAN_MONTHLY_PRICE_ID, lookup_key: 'basic_monthly' }),
   price({
-    id: PRO_PLAN_ANNUAL_PRICE_ID,
+    id: DEFAULT_PLAN_ANNUAL_PRICE_ID,
     lookup_key: 'basic_yearly',
     unit_amount: 150_000,
     recurring: { interval: 'year' },
@@ -61,19 +61,19 @@ function snapshot(
     primaryPlan: null,
     primaryStatus: null,
     stripeSubscriptionId: null,
-    assignedProVariant: 'basic',
+    assignedDefaultVariant: 'basic',
     ...overrides,
   }
 }
 
 function createStore(input: {
-  assignedProVariant?: string | null
+  assignedDefaultVariant?: string | null
   subscriptions?: AdminCustomerBillingSubscriptionRow[]
-}): AssignProVariantStore & {
+}): AssignPlanVariantStore & {
   writes: Array<string | null>
   audits: unknown[]
 } {
-  let assigned = input.assignedProVariant ?? null
+  let assigned = input.assignedDefaultVariant ?? null
   const writes: Array<string | null> = []
   const audits: unknown[] = []
   return {
@@ -81,14 +81,14 @@ function createStore(input: {
     audits,
     findTargetUser: async () => ({
       id: 'user_1',
-      assignedProVariant: assigned,
+      assignedDefaultVariant: assigned,
     }),
     listSubscriptions: async () => input.subscriptions ?? [],
     summarizeBillingState: async () =>
       snapshot({
-        assignedProVariant: assigned == null ? 'basic' : assigned,
+        assignedDefaultVariant: assigned == null ? 'basic' : assigned,
       }),
-    updateAssignedProVariant: async (_userId, variantName) => {
+    updateAssignedPlanVariant: async (_userId, variantName) => {
       assigned = variantName
       writes.push(variantName)
     },
@@ -99,20 +99,20 @@ function createStore(input: {
   }
 }
 
-describe('sparseAssignedProVariantWrite', () => {
+describe('sparseAssignedPlanVariantWrite', () => {
   it('stores null for basic and the name otherwise', () => {
-    expect(sparseAssignedProVariantWrite('basic')).toBeNull()
-    expect(sparseAssignedProVariantWrite('early-bird')).toBe('early-bird')
+    expect(sparseAssignedPlanVariantWrite('basic')).toBeNull()
+    expect(sparseAssignedPlanVariantWrite('early-bird')).toBe('early-bird')
   })
 })
 
-describe('canChangeAssignedProVariant', () => {
-  it('blocks live paid Pro seats', () => {
+describe('canChangeAssignedPlanVariant', () => {
+  it('blocks live paid Default seats', () => {
     expect(
-      canChangeAssignedProVariant([
+      canChangeAssignedPlanVariant([
         {
           id: 'sub_1',
-          plan: 'pro',
+          plan: 'default',
           status: 'active',
           trialEnd: null,
           periodEnd: new Date(),
@@ -127,10 +127,10 @@ describe('canChangeAssignedProVariant', () => {
 
   it('allows past_due and absent seats', () => {
     expect(
-      canChangeAssignedProVariant([
+      canChangeAssignedPlanVariant([
         {
           id: 'sub_1',
-          plan: 'pro',
+          plan: 'default',
           status: 'past_due',
           trialEnd: null,
           periodEnd: new Date(),
@@ -141,30 +141,30 @@ describe('canChangeAssignedProVariant', () => {
         },
       ]),
     ).toBe(true)
-    expect(canChangeAssignedProVariant([])).toBe(true)
+    expect(canChangeAssignedPlanVariant([])).toBe(true)
   })
 })
 
-describe('assignProVariantForCustomer', () => {
+describe('assignPlanVariantForCustomer', () => {
   it('assigns early-bird and audits before/after', async () => {
     const store = createStore({})
-    const result = await assignProVariantForCustomer(store, catalog, {
+    const result = await assignPlanVariantForCustomer(store, catalog, {
       userId: 'user_1',
       actorUserId: 'admin_1',
       reason: 'Early bird campaign',
       variantName: 'early-bird',
     })
-    expect(result.assignedProVariant).toBe('early-bird')
+    expect(result.assignedDefaultVariant).toBe('early-bird')
     expect(store.writes).toEqual(['early-bird'])
     expect(store.audits).toHaveLength(1)
   })
 
-  it('refuses live paid Pro with the canonical message', async () => {
+  it('refuses live paid Default with the canonical message', async () => {
     const store = createStore({
       subscriptions: [
         {
           id: 'sub_1',
-          plan: 'pro',
+          plan: 'default',
           status: 'trialing',
           trialEnd: new Date(),
           periodEnd: new Date(),
@@ -176,19 +176,19 @@ describe('assignProVariantForCustomer', () => {
       ],
     })
     await expect(
-      assignProVariantForCustomer(store, catalog, {
+      assignPlanVariantForCustomer(store, catalog, {
         userId: 'user_1',
         actorUserId: 'admin_1',
         reason: 'Should fail',
         variantName: 'early-bird',
       }),
-    ).rejects.toThrow(ASSIGN_PRO_VARIANT_LIVE_PAID_BLOCK_MESSAGE)
+    ).rejects.toThrow(ASSIGN_PLAN_VARIANT_LIVE_PAID_BLOCK_MESSAGE)
   })
 
   it('rejects incomplete / unknown variants', async () => {
     const store = createStore({})
     await expect(
-      assignProVariantForCustomer(store, catalog, {
+      assignPlanVariantForCustomer(store, catalog, {
         userId: 'user_1',
         actorUserId: 'admin_1',
         reason: 'Unknown pair',

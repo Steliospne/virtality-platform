@@ -9,7 +9,7 @@
  */
 
 import {
-  PRO_PLAN_PRODUCT_ID,
+  DEFAULT_PLAN_PRODUCT_ID,
   type CouponLibraryRecord,
 } from './coupon-library.ts'
 
@@ -75,12 +75,16 @@ export function isCampaignWindowAttaching(
   return resolveCampaignWindowLifecycle(window ?? null, now) === 'live'
 }
 
+/** Empty `appliesToProductIds` means the Coupon applies store-wide (the norm since Coupons no longer set `applies_to` on create). */
 export function assessCampaignCouponHealth(
   coupon: CouponLibraryRecord | null,
 ): CampaignCouponHealth {
   if (!coupon) return 'deleted'
   if (coupon.archived) return 'archived'
-  if (!coupon.appliesToProductIds.includes(PRO_PLAN_PRODUCT_ID)) {
+  if (
+    coupon.appliesToProductIds.length > 0 &&
+    !coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)
+  ) {
     return 'applies_to_miss'
   }
   return 'healthy'
@@ -128,7 +132,8 @@ export function listCouponsForCampaignPicker(
   return coupons.filter(
     (coupon) =>
       !coupon.archived &&
-      coupon.appliesToProductIds.includes(PRO_PLAN_PRODUCT_ID),
+      (coupon.appliesToProductIds.length === 0 ||
+        coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)),
   )
 }
 

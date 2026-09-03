@@ -59,7 +59,7 @@ function assertCampaignCouponEligible(health: CampaignCouponHealth): void {
       )
     case 'applies_to_miss':
       throw new CampaignWindowValidationError(
-        'Campaign Window Coupon must apply to Pro',
+        'Campaign Window Coupon must apply to Default',
       )
   }
 }

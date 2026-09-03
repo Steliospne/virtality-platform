@@ -12,7 +12,9 @@ vi.mock('@/auth-client', () => ({
 }))
 
 vi.mock('@virtality/db', () => ({
-  prisma: { subscription: { findFirst: (...args: unknown[]) => findFirst(...args) } },
+  prisma: {
+    subscription: { findFirst: (...args: unknown[]) => findFirst(...args) },
+  },
 }))
 
 const { evaluateSessionGate } = await import('./session-gate')
@@ -57,13 +59,11 @@ describe('evaluateSessionGate', () => {
       data: { user: { role: 'user', stripeCustomerId: null } },
     })
     signOut.mockImplementation(async ({ fetchOptions }) => {
-      fetchOptions.onResponse(
-        {
-          response: fakeSetCookieResponse([
-            'better-auth.session_token=; Max-Age=0',
-          ]),
-        },
-      )
+      fetchOptions.onResponse({
+        response: fakeSetCookieResponse([
+          'better-auth.session_token=; Max-Age=0',
+        ]),
+      })
       return { data: null }
     })
 

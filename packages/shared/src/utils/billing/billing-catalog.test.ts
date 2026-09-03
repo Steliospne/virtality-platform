@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PRO_BILLING_CATALOG_SANDBOX,
-  PRO_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
+  DEFAULT_BILLING_CATALOG_SANDBOX,
+  DEFAULT_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
   buildBillingCatalogFromMinor,
   buildBillingCatalogFromStripePrices,
   buildBillingPlanPriceLabels,
@@ -12,8 +12,8 @@ describe('buildBillingPlanPriceLabels', () => {
   it('formats monthly and yearly list labels from minor units', () => {
     expect(
       buildBillingPlanPriceLabels(
-        PRO_BILLING_CATALOG_SANDBOX,
-        PRO_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
       ),
     ).toEqual({
       monthlyLabel: '€150 / month',
@@ -64,8 +64,8 @@ describe('buildBillingCatalogFromStripePrices', () => {
       ),
     ).toEqual(
       buildBillingCatalogFromMinor(
-        PRO_BILLING_CATALOG_SANDBOX,
-        PRO_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
+        DEFAULT_BILLING_CATALOG_SANDBOX,
+        DEFAULT_BILLING_CATALOG_SANDBOX_YEARLY_SAVINGS_LABEL,
       ),
     )
   })

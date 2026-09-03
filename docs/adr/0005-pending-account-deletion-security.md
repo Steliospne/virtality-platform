@@ -30,24 +30,24 @@ A first-class `PendingAccountDeletion` model makes the security state machine ex
 
 ## Lifecycle semantics
 
-| Property                                | Behavior                                                                                                                                                     |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **One active pending request per user** | Creating or resending a request supersedes older approval tokens.                                                                                             |
-| **Latest-request-wins**                 | Approval validates that the token's row is still the newest `PENDING` record for that user. Older tokens fail even if not yet expired.                        |
-| **30-minute expiry**                    | `expiresAt` is set to 30 minutes from creation or resend, matching pending password change.                                                                    |
-| **Token-only approval**                 | Inspect and approve procedures are public and accept only the approval token, so users can finish from a mail client on another device.                        |
-| **Resend**                              | Authenticated. Rotates the approval token and refreshes expiry. Invalidates prior email links.                                                                 |
-| **Cancel**                              | Authenticated. Marks the pending row `CANCELLED` so the email link cannot approve later.                                                                       |
-| **Invalid links**                       | Expired, cancelled, superseded, or unknown tokens all return the same generic failure message as pending password change so attackers cannot infer account state. |
+| Property                                | Behavior                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **One active pending request per user** | Creating or resending a request supersedes older approval tokens.                                                                                                                                                                                                                                                            |
+| **Latest-request-wins**                 | Approval validates that the token's row is still the newest `PENDING` record for that user. Older tokens fail even if not yet expired.                                                                                                                                                                                       |
+| **30-minute expiry**                    | `expiresAt` is set to 30 minutes from creation or resend, matching pending password change.                                                                                                                                                                                                                                  |
+| **Token-only approval**                 | Inspect and approve procedures are public and accept only the approval token, so users can finish from a mail client on another device.                                                                                                                                                                                      |
+| **Resend**                              | Authenticated. Rotates the approval token and refreshes expiry. Invalidates prior email links.                                                                                                                                                                                                                               |
+| **Cancel**                              | Authenticated. Marks the pending row `CANCELLED` so the email link cannot approve later.                                                                                                                                                                                                                                     |
+| **Invalid links**                       | Expired, cancelled, superseded, or unknown tokens all return the same generic failure message as pending password change so attackers cannot infer account state.                                                                                                                                                            |
 | **Approval**                            | Soft-deletes the `User` row: sets `deletedAt`, `banned: true`, frees the unique `email`/`image` columns (renamed to a `deleted+<userId>@…` placeholder so the address can be reused by a new sign-up), and revokes every `Session` row for the user. The row itself, and its history (billing, programs, etc.), is retained. |
 
 ## Rejected alternatives
 
-| Alternative                                        | Why rejected                                                                                              |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Keep Better Auth's built-in `deleteUser` email flow | A single GET link applies the deletion on open; no deliberate confirmation step for an irreversible action. |
+| Alternative                                         | Why rejected                                                                                                                                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keep Better Auth's built-in `deleteUser` email flow | A single GET link applies the deletion on open; no deliberate confirmation step for an irreversible action.                                                          |
 | Require current password to start the request       | The existing "Delete account" button already required no extra proof beyond an authenticated session; adding one is a separate UX decision outside this ADR's scope. |
-| Overload `Verification` rows                        | Cannot express supersede/cancel/resend without opaque encodings, same reasoning as ADR 0002.                |
+| Overload `Verification` rows                        | Cannot express supersede/cancel/resend without opaque encodings, same reasoning as ADR 0002.                                                                         |
 
 ## Consequences
 

@@ -28,7 +28,7 @@ describe('isExpiredFreeSeat', () => {
     ).toBe(false)
     expect(
       isExpiredFreeSeat({
-        plan: 'pro',
+        plan: 'default',
         status: 'active',
       }),
     ).toBe(false)
@@ -71,7 +71,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
         now: NOW,
         subscriptions: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'active',
             periodEnd: new Date('2026-09-10T12:00:00.000Z'),
           },
@@ -86,7 +86,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
         now: NOW,
         subscriptions: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'canceled',
             periodEnd: new Date('2026-08-01T12:00:00.000Z'),
           },
@@ -102,7 +102,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
           now: NOW,
           subscriptions: [
             {
-              plan: 'pro',
+              plan: 'default',
               status,
               periodEnd: new Date('2026-09-10T12:00:00.000Z'),
               cancelAtPeriodEnd: true,
@@ -119,7 +119,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
         now: NOW,
         subscriptions: [
           {
-            plan: 'pro',
+            plan: 'default',
             status: 'canceled',
             periodEnd: new Date('2026-08-01T12:00:00.000Z'),
             cancelAtPeriodEnd: true,

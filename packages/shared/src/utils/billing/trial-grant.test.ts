@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildEntitlementStanding } from './entitlement-clock.ts'
-import { PRO_SUBSCRIPTION_PLAN } from './billing-plans.ts'
+import { DEFAULT_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   adjustTrialGrantForCustomer,
   clockEndForEntitlementSource,
@@ -104,7 +104,7 @@ describe('resolveEntitlementFromSources', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd: SUBSCRIPTION_PERIOD_END,
         },
       ],
@@ -280,9 +280,9 @@ function createTrialGrantStore(input: {
       primaryPlan: null,
       primaryStatus: null,
       stripeSubscriptionId: null,
-      assignedProVariant: null,
+      assignedDefaultVariant: null,
     })),
-    userHasLiveProSubscription: vi.fn(async () => false),
+    userHasLiveDefaultSubscription: vi.fn(async () => false),
   }
 }
 
@@ -603,10 +603,10 @@ describe('revokeTrialGrantForCustomer', () => {
 })
 
 describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
-  it('accepts a live paid Pro Stripe subscription', () => {
+  it('accepts a live paid Default Stripe subscription', () => {
     expect(
       isPaidStripeSubscriptionForTrialGrantConversion({
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: 'sub_stripe_1',
       }),
     ).toBe(true)
@@ -621,7 +621,7 @@ describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
     ).toBe(false)
     expect(
       isPaidStripeSubscriptionForTrialGrantConversion({
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: null,
       }),
     ).toBe(false)
@@ -629,7 +629,7 @@ describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
 })
 
 describe('convertActiveTrialGrantOnPaidSubscription', () => {
-  it('marks an active grant converted when paid checkout creates a Pro subscription', async () => {
+  it('marks an active grant converted when paid checkout creates a Default subscription', async () => {
     const store = createTrialGrantStore({
       openGrant: {
         id: 'grant_1',
@@ -643,7 +643,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     const result = await convertActiveTrialGrantOnPaidSubscription(store, {
       userId: 'user_1',
       subscription: {
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: 'sub_stripe_1',
       },
     })
@@ -671,7 +671,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       convertActiveTrialGrantOnPaidSubscription(revokedStore, {
         userId: 'user_1',
         subscription: {
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           stripeSubscriptionId: 'sub_stripe_1',
         },
       }),
@@ -718,7 +718,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     await convertActiveTrialGrantOnPaidSubscription(store, {
       userId: 'user_1',
       subscription: {
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: 'sub_stripe_1',
       },
     })
@@ -752,7 +752,7 @@ describe('trial grant conversion entitlement handoff', () => {
     await convertActiveTrialGrantOnPaidSubscription(store, {
       userId: 'user_1',
       subscription: {
-        plan: PRO_SUBSCRIPTION_PLAN,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: 'sub_stripe_1',
       },
     })
@@ -763,7 +763,7 @@ describe('trial grant conversion entitlement handoff', () => {
       subscriptions: [
         {
           status: 'active',
-          plan: PRO_SUBSCRIPTION_PLAN,
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd: SUBSCRIPTION_PERIOD_END,
         },
       ],

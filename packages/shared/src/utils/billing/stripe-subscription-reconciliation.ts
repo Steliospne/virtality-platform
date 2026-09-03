@@ -1,7 +1,7 @@
 import {
   betterAuthStripePlansMatchPrice,
   type BetterAuthStripePlanConfig,
-} from './pro-variant-catalog.ts'
+} from './plan-variant-catalog.ts'
 
 export type ReconciliationStripeSubscriptionItem = {
   price: {

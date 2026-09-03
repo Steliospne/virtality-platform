@@ -42,13 +42,13 @@ import {
 } from '@virtality/shared/utils'
 import { stripeClient, FREE_PLAN_PRICE_ID } from './auth-instance.ts'
 import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
-import { readBillingCatalogForUser } from './lib/pro-variant-catalog.ts'
+import { readBillingCatalogForUser } from './lib/plan-variant-catalog.ts'
 
 export {
   auth,
   FREE_PLAN_PRICE_ID,
-  PRO_PLAN_ANNUAL_PRICE_ID,
-  PRO_PLAN_PRICE_ID,
+  DEFAULT_PLAN_ANNUAL_PRICE_ID,
+  DEFAULT_PLAN_PRICE_ID,
   stripeClient,
 } from './auth-instance.ts'
 export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
@@ -225,7 +225,7 @@ export function readConsoleSubscriptionDiscountAction(userId: string) {
   })
 }
 
-/** Console Billing: Pro catalog list prices from canonical Stripe Prices. */
+/** Console Billing: Default catalog list prices from canonical Stripe Prices. */
 export function readConsoleBillingCatalogAction() {
   return readConsoleBillingCatalogOrSandbox(stripeClient)
 }
@@ -234,25 +234,25 @@ export function readConsoleBillingCatalogAction() {
 export async function readBillingCatalogForUserAction(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { assignedProVariant: true },
+    select: { assignedDefaultVariant: true },
   })
   return readBillingCatalogForUser(
     stripeClient,
-    user?.assignedProVariant ?? null,
+    user?.assignedDefaultVariant ?? null,
   )
 }
 
 export {
-  assignProVariantAction,
-  listAssignableProVariantsAction,
-} from './lib/assign-pro-variant.ts'
+  assignPlanVariantAction,
+  listAssignablePlanVariantsAction,
+} from './lib/assign-plan-variant.ts'
 export {
-  clearProVariantCatalogCache,
+  clearPlanVariantCatalogCache,
   readBillingCatalogForUser,
-  readProVariantCatalogOrSandbox,
-  resolveAssignedProVariantChargePrice,
-  type AssignableProVariantOption,
-} from './lib/pro-variant-catalog.ts'
+  readPlanVariantCatalogOrSandbox,
+  resolveAssignedPlanVariantChargePrice,
+  type AssignablePlanVariantOption,
+} from './lib/plan-variant-catalog.ts'
 export { scheduleAssignedVariantCyclePlanChange } from './lib/assigned-variant-cycle-plan-change.ts'
 export {
   ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,

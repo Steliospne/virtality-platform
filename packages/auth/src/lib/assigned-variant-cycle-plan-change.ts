@@ -1,18 +1,18 @@
 /**
- * Period-end Pro interval switch using the clinician's Assigned Variant Price
+ * Period-end Default interval switch using the clinician's Assigned Variant Price
  * ids (Better Auth upgrade only knows the basic plan Price pair).
  */
 
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  PRO_SUBSCRIPTION_PLAN,
+  DEFAULT_SUBSCRIPTION_PLAN,
   isLiveEntitlementSubscriptionStatus,
-  isProSubscriptionPlan,
+  isDefaultSubscriptionPlan,
   type CyclePlanChangeResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { resolveAssignedProVariantChargePrice } from './pro-variant-catalog.ts'
+import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog.ts'
 
 export async function scheduleAssignedVariantCyclePlanChange(input: {
   stripeClient: Stripe
@@ -24,15 +24,15 @@ export async function scheduleAssignedVariantCyclePlanChange(input: {
 
   const user = await client.user.findFirst({
     where: { id: input.referenceId, deletedAt: null },
-    select: { id: true, assignedProVariant: true },
+    select: { id: true, assignedDefaultVariant: true },
   })
   if (!user) {
     return { ok: false, message: 'Customer not found.' }
   }
 
-  const priceResolved = await resolveAssignedProVariantChargePrice({
+  const priceResolved = await resolveAssignedPlanVariantChargePrice({
     stripeClient: input.stripeClient,
-    assignedProVariant: user.assignedProVariant,
+    assignedDefaultVariant: user.assignedDefaultVariant,
     annual: input.annual,
   })
   if (!priceResolved.ok) {
@@ -46,7 +46,7 @@ export async function scheduleAssignedVariantCyclePlanChange(input: {
   const subscription = await client.subscription.findFirst({
     where: {
       referenceId: user.id,
-      plan: PRO_SUBSCRIPTION_PLAN,
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
       status: { in: ['active', 'trialing'] },
       stripeSubscriptionId: { not: null },
     },
@@ -62,12 +62,12 @@ export async function scheduleAssignedVariantCyclePlanChange(input: {
 
   if (
     !subscription?.stripeSubscriptionId ||
-    !isProSubscriptionPlan(subscription.plan) ||
+    !isDefaultSubscriptionPlan(subscription.plan) ||
     !isLiveEntitlementSubscriptionStatus(subscription.status)
   ) {
     return {
       ok: false,
-      message: 'Cycle plan change requires a live paid Pro subscription.',
+      message: 'Cycle plan change requires a live paid Default subscription.',
     }
   }
 
@@ -82,7 +82,7 @@ export async function scheduleAssignedVariantCyclePlanChange(input: {
   if (planItem.price.id === priceResolved.priceId) {
     return {
       ok: false,
-      message: 'Customer is already on the selected paid Pro interval.',
+      message: 'Customer is already on the selected paid Default interval.',
     }
   }
 

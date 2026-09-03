@@ -7,7 +7,9 @@ import { runPromoHoldSweep } from './promo-hold-sweep.ts'
 // that window, while a signed-out user has nothing else that reverts it.
 const PROMO_HOLD_SWEEP_CRON = '* * * * *'
 
-export function schedulePromoHoldSweep(logger: AppLogger): ScheduledTask | null {
+export function schedulePromoHoldSweep(
+  logger: AppLogger,
+): ScheduledTask | null {
   if (process.env.PROMO_HOLD_SWEEP_ENABLED === 'false') {
     return null
   }

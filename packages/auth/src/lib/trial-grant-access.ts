@@ -3,8 +3,8 @@ import type { PrismaClient } from '@virtality/db'
 import {
   billingSnapshotFromSubscription,
   convertActiveTrialGrantOnPaidSubscription,
-  effectiveAssignedProVariant,
-  isProSubscriptionPlan,
+  effectiveAssignedPlanVariant,
+  isDefaultSubscriptionPlan,
   adjustTrialGrantForCustomer,
   issueTrialGrantToCustomer,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
@@ -110,9 +110,7 @@ export function createPrismaTrialGrantStore(
         TRIAL_GRANT_OPEN_STATUSES,
       )
       if (!openId) {
-        throw new Error(
-          `No open TrialGrant for user "${input.userId}".`,
-        )
+        throw new Error(`No open TrialGrant for user "${input.userId}".`)
       }
 
       const now = new Date()
@@ -154,7 +152,7 @@ export function createPrismaTrialGrantStore(
         select: {
           role: true,
           stripeCustomerId: true,
-          assignedProVariant: true,
+          assignedDefaultVariant: true,
         },
       })
       if (!user) {
@@ -164,7 +162,7 @@ export function createPrismaTrialGrantStore(
           primaryPlan: null,
           primaryStatus: null,
           stripeSubscriptionId: null,
-          assignedProVariant: null,
+          assignedDefaultVariant: null,
         }
       }
 
@@ -186,8 +184,8 @@ export function createPrismaTrialGrantStore(
       return billingSnapshotFromSubscription({
         role: user.role,
         stripeCustomerId: user.stripeCustomerId,
-        assignedProVariant: effectiveAssignedProVariant(
-          user.assignedProVariant,
+        assignedDefaultVariant: effectiveAssignedPlanVariant(
+          user.assignedDefaultVariant,
         ),
         subscription: primary,
       })
@@ -208,7 +206,7 @@ export function createPrismaTrialGrantStore(
       })
       return { id: row.id }
     },
-    userHasLiveProSubscription: async (userId) => {
+    userHasLiveDefaultSubscription: async (userId) => {
       const live = await client.subscription.findFirst({
         where: {
           referenceId: userId,
@@ -217,7 +215,7 @@ export function createPrismaTrialGrantStore(
         },
         select: { plan: true },
       })
-      return live != null && isProSubscriptionPlan(live.plan)
+      return live != null && isDefaultSubscriptionPlan(live.plan)
     },
   }
 }

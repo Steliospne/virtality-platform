@@ -43,11 +43,7 @@ async function main() {
   const existingUser = readEnvValue(content, 'SMTP_USER')
   const existingPass = readEnvValue(content, 'SMTP_PASS')
 
-  if (
-    existingHost === 'smtp.ethereal.email' &&
-    existingUser &&
-    existingPass
-  ) {
+  if (existingHost === 'smtp.ethereal.email' && existingUser && existingPass) {
     console.log(
       `[ethereal] Reusing persisted account "${existingUser}" / "${existingPass}". Log in at https://ethereal.email/login`,
     )

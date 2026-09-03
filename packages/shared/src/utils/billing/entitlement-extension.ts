@@ -142,9 +142,7 @@ export function isEntitlementExtensionDurationUnit(
 export function isEntitlementExtensionDirection(
   value: string,
 ): value is EntitlementExtensionDirection {
-  return (ENTITLEMENT_EXTENSION_DIRECTIONS as readonly string[]).includes(
-    value,
-  )
+  return (ENTITLEMENT_EXTENSION_DIRECTIONS as readonly string[]).includes(value)
 }
 
 export function isLiveEntitlementSubscriptionStatus(

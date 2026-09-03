@@ -24,7 +24,7 @@ export const CAMPAIGN_COUPON_HEALTH_LABELS: Record<
   healthy: 'Healthy',
   archived: 'Archived',
   deleted: 'Deleted in Stripe',
-  applies_to_miss: 'Missing Pro applies_to',
+  applies_to_miss: 'Missing Default applies_to',
 }
 
 export function formatCampaignAttachingStatus(attaching: boolean): string {
