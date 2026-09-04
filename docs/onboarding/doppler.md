@@ -56,7 +56,7 @@ Other repos later: `virtality-<other-repo>-…` so the dashboard groups by repo.
 
 ### 1.3 Create projects
 
-In the dashboard (or CLI after login):
+**Done** — all 7 projects exist in the Virtality workplace, each with `dev`/`stg`/`prd` configs (workplace default environments already match this convention, confirmed via the Doppler MCP). Kept here for reference / other repos:
 
 ```sh
 doppler projects create virtality-platform-db
@@ -67,8 +67,6 @@ doppler projects create virtality-platform-server
 doppler projects create virtality-platform-socket
 doppler projects create virtality-platform-shared
 ```
-
-Confirm each has configs `dev`, `stg`, `prd`.
 
 ### 1.4 Access model
 
@@ -116,6 +114,16 @@ Do this from a machine that already has working local `.env` files (or vault exp
 | `services/server` | `.env.example`                       | Auth, DB, Stripe, Google, SMTP, TURN, waitlist                                   |
 | `services/socket` | `.env.example`                       | `ENV`, `PORT`, optional `SIM`                                                    |
 | `.sandcastle`     | `.env.example` (optional / personal) | `CURSOR_API_KEY`, `GH_TOKEN`, `GH_REPO` (keep personal tokens out of team `dev`) |
+
+> **Note:** the `.env.example` files above are _not_ an exhaustive inventory — real local `.env`
+> files carry more keys than their `.example` counterparts (e.g. `apps/console` and
+> `services/server` also have AWS, CDN, Sentry, WhatsApp/Cal keys, `DATABASE_URL_REMOTE`;
+> `apps/website` also has social links and Slack webhooks; `services/socket` also has its own
+> `DATABASE_URL`; `packages/db` also has `DATABASE_URL_DEV`/`DATABASE_URL_PROD`). This is fine
+> functionally — §2.3 uploads the real `.env` file, not `.env.example` — but do not use this
+> table alone to decide what's "done" migrating; diff each `.env` against Doppler after upload.
+> Consider updating each `.env.example` to list every key currently in use (values blank) as a
+> follow-up so new teammates see the full shape before Doppler is wired up.
 
 Also migrate any filled local `.env` values that are **not** in the examples (SMTP, Stripe test keys, Google OAuth, real PostHog tokens).
 
@@ -173,7 +181,8 @@ doppler secrets upload services/socket/.env \
 
 ### 2.5 Commit a monorepo `doppler.yaml` (no secrets)
 
-At the repo root (committed):
+**Done** — `doppler.yaml` is committed at the repo root, pointing every path at its project's
+`dev` config. Shown below for reference:
 
 ```yaml
 # doppler.yaml — project/config pointers only; no secret values
@@ -356,7 +365,7 @@ doppler open                             # dashboard for current scope
 
 ## Follow-ups (not required for local `dev`)
 
-- Commit root `doppler.yaml` once projects exist.
 - Add a small `pnpm secrets:pull` script that runs the download loop.
 - Sync `stg` / `prd` to Vercel / GitHub Actions via Doppler integrations + service tokens.
 - Update [Onboarding § Env files](./README.md) to prefer Doppler over “ask a teammate for values.”
+- Refresh each `.env.example` to list every key actually in use (see note in §2.1).

@@ -1,0 +1,21 @@
+# doppler.yaml — project/config pointers only; no secret values.
+# See docs/onboarding/doppler.md
+setup:
+  - project: virtality-platform-db
+    config: dev
+    path: packages/db/
+  - project: virtality-platform-console
+    config: dev
+    path: apps/console/
+  - project: virtality-platform-adminboard
+    config: dev
+    path: apps/adminboard/
+  - project: virtality-platform-website
+    config: dev
+    path: apps/website/
+  - project: virtality-platform-server
+    config: dev
+    path: services/server/
+  - project: virtality-platform-socket
+    config: dev
+    path: services/socket/
