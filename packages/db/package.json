@@ -15,13 +15,13 @@
   "scripts": {
     "generate": "prisma generate --config ./prisma.config.ts",
     "build": "pnpm generate && rimraf ./dist && tsc",
-    "reset": "prisma migrate reset --config ./prisma.config.ts && prisma db seed --config ./prisma.config.ts",
-    "migrate:dev": "prisma migrate dev --config ./prisma.config.ts && prisma db seed --config ./prisma.config.ts",
+    "reset": "doppler run -- prisma migrate reset --config ./prisma.config.ts && doppler run -- prisma db seed --config ./prisma.config.ts",
+    "migrate:dev": "doppler run -- prisma migrate dev --config ./prisma.config.ts && doppler run -- prisma db seed --config ./prisma.config.ts",
     "migrate:deploy": "prisma migrate deploy --config ./prisma.config.ts",
-    "seed": "prisma db seed --config ./prisma.config.ts",
-    "studio": "prisma studio --config ./prisma.config.ts",
-    "migrate:programs-presets": "tsx scripts/migrate-programs-and-presets.ts",
-    "migrate:programs-presets:dry-run": "tsx scripts/migrate-programs-and-presets.ts --dry-run",
+    "seed": "doppler run -- prisma db seed --config ./prisma.config.ts",
+    "studio": "doppler run -- prisma studio --config ./prisma.config.ts",
+    "migrate:programs-presets": "doppler run -- tsx scripts/migrate-programs-and-presets.ts",
+    "migrate:programs-presets:dry-run": "doppler run -- tsx scripts/migrate-programs-and-presets.ts --dry-run",
     "test": "vitest run"
   },
   "dependencies": {

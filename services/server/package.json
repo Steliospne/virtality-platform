@@ -5,9 +5,9 @@
   "main": "./dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx --watch --env-file=.env ./src/index.ts",
+    "dev": "doppler run -- tsx --watch ./src/index.ts",
     "build": "rimraf dist && tsc",
-    "start": "node ./dist/index.js",
+    "start": "doppler run -- node ./dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "vitest run"
   },
