@@ -14,28 +14,31 @@ const POSTHOG_READY_TIMEOUT_MS = 5_000
  */
 export function usePostHogIdentifyOnSession(): void {
   const { data, isPending } = authClient.useSession()
-  const identifiedUserIdRef = useRef<string | null>(null)
+  const identifiedKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (isPending) return
 
     const user = data?.user
     if (!user) {
-      identifiedUserIdRef.current = null
+      identifiedKeyRef.current = null
       return
     }
 
-    if (identifiedUserIdRef.current === user.id) return
+    // Re-identify (and reload feature flags) whenever verification status
+    // changes for the same user, not just on first sign-in.
+    const key = `${user.id}:${user.emailVerified}`
+    if (identifiedKeyRef.current === key) return
 
     let cancelled = false
     let intervalId: ReturnType<typeof setInterval> | undefined
     const startedAt = Date.now()
 
     const identify = () => {
-      if (cancelled || identifiedUserIdRef.current === user.id) return
+      if (cancelled || identifiedKeyRef.current === key) return
       if (!posthog.__loaded) return
 
-      identifiedUserIdRef.current = user.id
+      identifiedKeyRef.current = key
       identifyPostHogUser(posthog, user)
     }
 

@@ -17,7 +17,7 @@ import {
 /**
  * In-app renew offset chrome for the seat holder. Hidden after Entitlement
  * Clock expiry, and dismissible per clock epoch until the next re-arm.
- * Gated by PostHog `billing_feature` (virtality.app only) with the Billing tab.
+ * Gated by `useBillingFeatureEnabled` (preview/local only) with the Billing tab.
  */
 export function RenewPromptBanner() {
   const { data: session } = authClient.useSession()

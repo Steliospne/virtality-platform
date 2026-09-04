@@ -55,7 +55,7 @@ const SignUp = () => {
     const { error } = await authClient.signUp.email({
       ...values,
       ...(testerCode?.trim() && { testerCode: testerCode.trim() }),
-      callbackURL: baseURL,
+      callbackURL: `${baseURL}/verify-email?email=${encodeURIComponent(values.email)}`,
       fetchOptions: {
         onSuccess: () => router.push(`/verify-email?email=${values.email}`),
       },

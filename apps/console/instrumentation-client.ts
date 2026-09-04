@@ -17,7 +17,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
   autocapture: { url_ignorelist: ['http:localhost:3001'] },
   loaded: async (posthogClient) => {
     try {
-      // Console defaults to opted-in so feature flags (e.g. billing_feature)
+      // Console defaults to opted-in so feature flags (e.g. rom_mode_feature)
       // and identify run without waiting on the cookie banner. Explicit
       // declines in localStorage are still respected.
       const consent = localStorage.getItem('analytics:consent')

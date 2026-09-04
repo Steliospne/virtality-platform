@@ -39,7 +39,7 @@ function ProfileTabLink({
 
 /**
  * Profile tabs with `?tab=` deep links (Billing CTA from sidebar / renew banner).
- * Billing is gated by PostHog `billing_feature` (virtality.app only).
+ * Billing is gated by `useBillingFeatureEnabled` (preview/local only).
  */
 export function ProfileTabs({
   requestedTab,

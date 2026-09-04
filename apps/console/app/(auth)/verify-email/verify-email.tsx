@@ -8,11 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@virtality/ui/components/card'
-import { Mail, CheckCircle2 } from 'lucide-react'
+import { Mail, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import posthog from 'posthog-js'
 import { authClient } from '@/auth-client'
-import { useIsUserVerified } from '@virtality/react-query'
+import {
+  useEntitlementStanding,
+  useIsUserVerified,
+} from '@virtality/react-query'
 import { getConsoleUrl } from '@virtality/shared/types'
 
 const COOKIE_NAME = 'verification_time'
@@ -30,6 +34,7 @@ const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
   const searchParams = useSearchParams()
   const email = searchParams.get('email')
   const { data: isVerified } = useIsUserVerified({ email })
+  const entitlementStanding = useEntitlementStanding()
 
   useEffect(() => {
     if (!remainingTime) setVerificationCookie()
@@ -37,8 +42,11 @@ const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
   }, [])
 
   useEffect(() => {
-    if (countdown % 5 === 0 && isVerified) {
+    if (isVerified) {
+      void entitlementStanding.refetch()
+      posthog.reloadFeatureFlags()
       router.push('/')
+      return
     }
 
     if (countdown > 0) {
@@ -47,7 +55,7 @@ const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
     } else {
       setCanResend(true)
     }
-  }, [countdown, isVerified, router])
+  }, [countdown, isVerified, router, entitlementStanding.refetch])
 
   const setVerificationCookie = () => {
     const now = Date.now()
@@ -59,7 +67,7 @@ const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
     setIsResending(true)
     await authClient.sendVerificationEmail({
       email,
-      callbackURL: baseURL,
+      callbackURL: `${baseURL}/verify-email?email=${encodeURIComponent(email)}`,
     })
 
     // Reset countdown + cookie
@@ -67,6 +75,28 @@ const VerifyEmail = ({ remainingTime }: { remainingTime?: number }) => {
     setCanResend(false)
     setVerificationCookie()
     setIsResending(false)
+  }
+
+  if (isVerified) {
+    return (
+      <div className='flex min-h-screen items-center justify-center p-4'>
+        <Card className='w-full max-w-md'>
+          <CardHeader className='space-y-4 text-center'>
+            <div className='bg-vital-blue-700/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full'>
+              <Loader2 className='text-vital-blue-700 h-8 w-8 animate-spin' />
+            </div>
+            <div className='space-y-2'>
+              <CardTitle className='text-2xl font-semibold text-balance'>
+                Email verified
+              </CardTitle>
+              <CardDescription className='text-base text-pretty'>
+                Redirecting you now...
+              </CardDescription>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    )
   }
 
   return (

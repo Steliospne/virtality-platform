@@ -17,8 +17,8 @@ import { cn } from '@/lib/utils'
 /**
  * Remaining Time from the Entitlement Clock during trials and cancel-at-period-
  * end seats, plus Subscribe / Renew CTA for trialing users and when not
- * entitled and Billing Path Established. Gated by PostHog `billing_feature`
- * (virtality.app only). CTA opens Profile → Billing.
+ * entitled and Billing Path Established. Gated by `useBillingFeatureEnabled`
+ * (preview/local only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
   const { state } = useSidebar()

@@ -1,21 +1,12 @@
-/** PostHog flag: Profile Billing + Remaining Time clock (virtality.app only). */
-export const BILLING_FEATURE_FLAG = 'billing_feature'
-
-type FeatureFlagResultLike =
-  | {
-      enabled?: boolean
-    }
-  | null
-  | undefined
-
 /**
- * SSR and the first client paint must agree. PostHog can already have
- * `billing_feature` on the client (bootstrapped / persisted) while SSR has no
- * flag, which would otherwise insert Remaining Time after hydration.
+ * Billing UI (Profile → Billing tab, Remaining Time sidebar, renew banner)
+ * is a preview/local-only feature: on for every non-production deploy, off
+ * on the live site. `NEXT_PUBLIC_ENV` is inlined at build time, so this
+ * agrees between server and client with no flag round-trip and no
+ * hydration mismatch.
  */
 export function resolveBillingFeatureEnabled(
-  mounted: boolean,
-  result: FeatureFlagResultLike,
+  env: string | undefined = process.env.NEXT_PUBLIC_ENV,
 ): boolean {
-  return mounted && result?.enabled === true
+  return env !== 'production'
 }
