@@ -22,6 +22,7 @@ import { useConsoleBillingAuth } from '@/hooks/use-console-billing-auth'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import {
   BILLING_DISCOUNT_TIMING_COPY,
+  DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   billingCatalogMinor,
   billingCatalogPrices,
   buildBillingCompareAtCardDisplay,
@@ -121,6 +122,10 @@ export function useBillingTab() {
 
   const prices = billingCatalogPrices(catalogQuery.data)
   const catalogMinor = billingCatalogMinor(catalogQuery.data)
+  const productName =
+    catalogQuery.data?.ok === true
+      ? catalogQuery.data.productName
+      : DEFAULT_PLAN_PRODUCT_NAME_FALLBACK
   const standing: BillingStandingView = {
     entitled: standingQuery.entitled,
     status: standingQuery.data?.status ?? null,
@@ -150,8 +155,10 @@ export function useBillingTab() {
   )
   const planCardActionFor = (interval: BillingInterval) =>
     resolveProfileBillingCardAction(standing, hasStripeCustomer, interval)
-  const pendingCancellationBanner =
-    profileBillingPendingCancellationBanner(standing)
+  const pendingCancellationBanner = profileBillingPendingCancellationBanner(
+    standing,
+    productName,
+  )
   const pendingPlanChangeBanner = pendingCancellationBanner
     ? null
     : profileBillingPendingPlanChangeBanner(standing)
@@ -406,6 +413,7 @@ export function useBillingTab() {
     isCatalogPending: catalogQuery.isPending,
     isCatalogUnavailable: catalogQuery.data != null && !catalogQuery.data.ok,
     standing,
+    productName,
     selectedInterval,
     setSelectedInterval,
     prices,

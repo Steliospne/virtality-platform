@@ -2,6 +2,7 @@ import {
   formatCustomerPlanLabel,
   formatCustomerSubscriptionDate,
 } from '@/lib/admin-customer-display'
+import { useAssignablePlanVariants } from '@virtality/react-query'
 import type { AdminCustomerProfile } from '@virtality/shared/utils'
 import startCase from 'lodash.startcase'
 
@@ -12,6 +13,9 @@ type CustomerProfileSubscriptionsProps = {
 export function CustomerProfileSubscriptions({
   profile,
 }: CustomerProfileSubscriptionsProps) {
+  const variantsQuery = useAssignablePlanVariants()
+  const productName = variantsQuery.data?.productName
+
   return (
     <section className='grid gap-3'>
       <h3 className='text-lg font-semibold'>Subscription history</h3>
@@ -36,7 +40,7 @@ export function CustomerProfileSubscriptions({
               {profile.subscriptionHistory.map((subscription) => (
                 <tr key={subscription.id} className='border-t'>
                   <td className='px-3 py-2'>
-                    {formatCustomerPlanLabel(subscription.plan)}
+                    {formatCustomerPlanLabel(subscription.plan, productName)}
                   </td>
                   <td className='px-3 py-2'>
                     {startCase(subscription.status)}

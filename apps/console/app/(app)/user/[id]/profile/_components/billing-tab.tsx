@@ -32,6 +32,7 @@ export function BillingTab() {
     isCatalogPending,
     isCatalogUnavailable,
     standing,
+    productName,
     selectedInterval,
     setSelectedInterval,
     prices,
@@ -124,10 +125,10 @@ export function BillingTab() {
               isExpiredFree && 'text-red-600 dark:text-red-500',
             )}
           >
-            {profileBillingStatusHeadline(standing)}
+            {profileBillingStatusHeadline(standing, productName)}
           </h2>
           <p className='text-sm text-zinc-500'>
-            {profileBillingStatusDetail(standing)}
+            {profileBillingStatusDetail(standing, productName)}
           </p>
         </header>
 

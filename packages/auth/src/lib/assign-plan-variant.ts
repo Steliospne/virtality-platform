@@ -6,6 +6,7 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   assignPlanVariantForCustomer,
+  DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   type AssignPlanVariantStore,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
@@ -62,6 +63,7 @@ export async function listAssignablePlanVariantsAction(
   return {
     variants: toAssignablePlanVariantOptions(catalog),
     basicPresent: catalog.basic != null,
+    productName: catalog.productName ?? DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   }
 }
 

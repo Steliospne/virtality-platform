@@ -6,6 +6,7 @@
 import {
   BILLING_DISCOUNT_TIMING_COPY,
   BILLING_SOFT_UNAVAILABLE_COPY,
+  DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   PROMO_REMOVE_NO_RESTORE_COPY,
   PROMO_REMOVE_SUCCESS_COPY,
   STAFF_REDEEM_BLOCK_COPY,
@@ -117,6 +118,7 @@ export function profileBillingCardActionConfirm(
 export {
   BILLING_DISCOUNT_TIMING_COPY,
   BILLING_SOFT_UNAVAILABLE_COPY,
+  DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   PROMO_REMOVE_NO_RESTORE_COPY,
   PROMO_REMOVE_SUCCESS_COPY,
   STAFF_REDEEM_BLOCK_COPY,
@@ -304,13 +306,14 @@ export function profileBillingPendingPlanChangeBanner(
 /** Warning banner while cancel-at-period-end is scheduled. */
 export function profileBillingPendingCancellationBanner(
   standing: BillingStandingView,
+  productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
 ): string | null {
   if (!standing.cancelAtPeriodEnd || !standing.entitled) return null
   if (standing.clockEnd) {
     const when = formatEntitlementClockEndLabel(new Date(standing.clockEnd))
-    return `Your subscription ends on ${when}. You'll keep Default access until then.`
+    return `Your subscription ends on ${when}. You'll keep ${productName} access until then.`
   }
-  return `Your subscription ends at the next billing cycle. You'll keep Default access until then.`
+  return `Your subscription ends at the next billing cycle. You'll keep ${productName} access until then.`
 }
 
 /** Confirm-dialog body for scheduling an interval switch. */
@@ -360,6 +363,7 @@ export function profileBillingIsExpiredFree(
 
 export function profileBillingStatusHeadline(
   standing: BillingStandingView,
+  productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
 ): string {
   if (isFreeSubscriptionPlan(standing.plan)) {
     if (standing.status === 'trialing' && standing.entitled) {
@@ -370,9 +374,9 @@ export function profileBillingStatusHeadline(
 
   if (standing.entitled) {
     if (standing.status === 'trialing') return 'Trial in progress'
-    if (standing.billingInterval === 'year') return 'Default · Yearly'
-    if (standing.billingInterval === 'month') return 'Default · Monthly'
-    return 'Default'
+    if (standing.billingInterval === 'year') return `${productName} · Yearly`
+    if (standing.billingInterval === 'month') return `${productName} · Monthly`
+    return productName
   }
 
   switch (standing.status) {
@@ -388,6 +392,7 @@ export function profileBillingStatusHeadline(
 
 export function profileBillingStatusDetail(
   standing: BillingStandingView,
+  productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
 ): string {
   if (standing.clockEnd) {
     const label = formatEntitlementClockEndLabel(new Date(standing.clockEnd))
@@ -402,13 +407,13 @@ export function profileBillingStatusDetail(
     return `Renews ${label}`
   }
 
-  if (standing.entitled) return 'Your Default access is active.'
+  if (standing.entitled) return `Your ${productName} access is active.`
 
   if (profileBillingIsExpiredFree(standing)) {
-    return 'Your Free plan has expired. Choose Monthly or Yearly Default to continue.'
+    return `Your Free plan has expired. Choose Monthly or Yearly ${productName} to continue.`
   }
 
-  return 'Choose Monthly or Yearly Default, then continue to Checkout.'
+  return `Choose Monthly or Yearly ${productName}, then continue to Checkout.`
 }
 
 export function profileBillingDiscountDisplay(

@@ -24,31 +24,33 @@ const CACHE_TTL_MS = 15 * 60 * 1000
 export const DEFAULT_PLAN_METADATA_KEY = 'virtality_plan' as const
 export const DEFAULT_PLAN_METADATA_VALUE = 'default' as const
 
+type DefaultPlanProduct = { id: string; name: string }
+
 let cachedCatalog: {
   readAtMs: number
   value: PlanVariantCatalog
 } | null = null
 
-let cachedProductId: {
+let cachedProduct: {
   readAtMs: number
-  value: string
+  value: DefaultPlanProduct
 } | null = null
 
 export function clearPlanVariantCatalogCache(): void {
   cachedCatalog = null
-  cachedProductId = null
+  cachedProduct = null
 }
 
 /**
- * Resolve the live Default plan Product id by Stripe metadata instead of a
+ * Resolve the live Default plan Product by Stripe metadata instead of a
  * hardcoded id, so swapping the underlying Product needs only a Stripe-side
  * metadata change, not a deploy. Billing supports exactly one plan today —
  * asserts exactly one active Product carries the tag, rather than silently
  * picking one of several.
  */
-async function fetchDefaultPlanProductId(
+async function fetchDefaultPlanProduct(
   stripeClient: Stripe,
-): Promise<string> {
+): Promise<DefaultPlanProduct> {
   const result = await stripeClient.products.search({
     query: `active:'true' AND metadata['${DEFAULT_PLAN_METADATA_KEY}']:'${DEFAULT_PLAN_METADATA_VALUE}'`,
     limit: 2,
@@ -65,30 +67,46 @@ async function fetchDefaultPlanProductId(
     )
   }
 
-  return result.data[0]!.id
+  const product = result.data[0]!
+  return { id: product.id, name: product.name }
+}
+
+async function resolveDefaultPlanProduct(
+  stripeClient: Stripe,
+): Promise<DefaultPlanProduct> {
+  if (cachedProduct && Date.now() - cachedProduct.readAtMs < CACHE_TTL_MS) {
+    return cachedProduct.value
+  }
+  const value = await fetchDefaultPlanProduct(stripeClient)
+  cachedProduct = { readAtMs: Date.now(), value }
+  return value
 }
 
 export async function resolveDefaultPlanProductId(
   stripeClient: Stripe,
 ): Promise<string> {
-  if (cachedProductId && Date.now() - cachedProductId.readAtMs < CACHE_TTL_MS) {
-    return cachedProductId.value
-  }
-  const value = await fetchDefaultPlanProductId(stripeClient)
-  cachedProductId = { readAtMs: Date.now(), value }
-  return value
+  const product = await resolveDefaultPlanProduct(stripeClient)
+  return product.id
+}
+
+/** Live Default plan Product display name, e.g. for Console/Adminboard copy. */
+export async function resolveDefaultPlanProductName(
+  stripeClient: Stripe,
+): Promise<string> {
+  const product = await resolveDefaultPlanProduct(stripeClient)
+  return product.name
 }
 
 async function listActiveRecurringDefaultPrices(
   stripeClient: Stripe,
-): Promise<StripePlanVariantPriceSnapshot[]> {
-  const productId = await resolveDefaultPlanProductId(stripeClient)
+): Promise<{ prices: StripePlanVariantPriceSnapshot[]; productName: string }> {
+  const product = await resolveDefaultPlanProduct(stripeClient)
   const prices: StripePlanVariantPriceSnapshot[] = []
   let startingAfter: string | undefined
 
   for (;;) {
     const page = await stripeClient.prices.list({
-      product: productId,
+      product: product.id,
       active: true,
       type: 'recurring',
       limit: 100,
@@ -114,7 +132,7 @@ async function listActiveRecurringDefaultPrices(
     if (!startingAfter) break
   }
 
-  return prices
+  return { prices, productName: product.name }
 }
 
 export async function readPlanVariantCatalog(
@@ -128,8 +146,9 @@ export async function readPlanVariantCatalog(
     return cachedCatalog.value
   }
 
-  const prices = await listActiveRecurringDefaultPrices(stripeClient)
-  const value = buildPlanVariantCatalogFromStripePrices(prices)
+  const { prices, productName } =
+    await listActiveRecurringDefaultPrices(stripeClient)
+  const value = buildPlanVariantCatalogFromStripePrices(prices, productName)
   if (value.basic != null) {
     cachedCatalog = { readAtMs: Date.now(), value }
   }

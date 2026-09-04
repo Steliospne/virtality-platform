@@ -1,6 +1,7 @@
 import {
   CUSTOMER_ACCESS_STATUS_LABELS,
   CUSTOMER_BILLING_STATUS_LABELS,
+  DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
   formatEntitlementClockEndLabel,
   formatRemainingTimeLabel,
   isFreeSubscriptionPlan,
@@ -55,8 +56,11 @@ export function formatCustomerSubscriptionDate(
   return formatEntitlementClockEndLabel(new Date(value))
 }
 
-export function formatCustomerPlanLabel(plan: string): string {
+export function formatCustomerPlanLabel(
+  plan: string,
+  productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
+): string {
   if (isFreeSubscriptionPlan(plan)) return 'Free'
-  if (isDefaultSubscriptionPlan(plan)) return 'Default'
+  if (isDefaultSubscriptionPlan(plan)) return productName
   return plan
 }

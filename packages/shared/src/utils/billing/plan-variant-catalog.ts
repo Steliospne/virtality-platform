@@ -53,7 +53,12 @@ export type PlanVariantCatalog = {
   variants: PlanVariantPair[]
   /** Complete `basic` pair when present. */
   basic: PlanVariantPair | null
+  /** Stripe Product display name for the Default plan, when known. */
+  productName: string | null
 }
+
+/** Display fallback when the Stripe Product name hasn't loaded. */
+export const DEFAULT_PLAN_PRODUCT_NAME_FALLBACK = 'Default' as const
 
 export type ResolvePlanVariantPairResult =
   | { ok: true; pair: PlanVariantPair }
@@ -143,6 +148,7 @@ type PartialLegs = {
  */
 export function buildPlanVariantCatalogFromStripePrices(
   prices: readonly StripePlanVariantPriceSnapshot[],
+  productName: string | null = null,
 ): PlanVariantCatalog {
   const byName = new Map<string, PartialLegs>()
 
@@ -180,15 +186,27 @@ export function buildPlanVariantCatalogFromStripePrices(
   }
 
   variants.sort((a, b) => {
-    if (a.name === DEFAULT_ASSIGNED_PLAN_VARIANT) return -1
-    if (b.name === DEFAULT_ASSIGNED_PLAN_VARIANT) return 1
+    const rankDiff = planVariantSortRank(a.name) - planVariantSortRank(b.name)
+    if (rankDiff !== 0) return rankDiff
     return a.name.localeCompare(b.name)
   })
 
   const basic =
-    variants.find((v) => v.name === DEFAULT_ASSIGNED_PLAN_VARIANT) ?? null
+    variants.find((v) => v.name.startsWith(DEFAULT_ASSIGNED_PLAN_VARIANT)) ??
+    null
 
-  return { variants, basic }
+  return { variants, basic, productName }
+}
+
+/**
+ * Sort rank for the `basic` pair: exact `basic` first, then any
+ * `basic`-prefixed name (e.g. `basic_v2`, `basic-2026` during a Stripe
+ * migration), then everything else alphabetically.
+ */
+function planVariantSortRank(name: string): number {
+  if (name === DEFAULT_ASSIGNED_PLAN_VARIANT) return 0
+  if (name.startsWith(DEFAULT_ASSIGNED_PLAN_VARIANT)) return 1
+  return 2
 }
 
 function shouldPreferIncomingPlanVariantLeg(
@@ -246,20 +264,18 @@ export function resolvePlanVariantPair(
 ): ResolvePlanVariantPairResult {
   const variantName = effectiveAssignedPlanVariant(assignedDefaultVariant)
 
-  if (variantName === DEFAULT_ASSIGNED_PLAN_VARIANT && catalog.basic == null) {
-    return { ok: false, reason: 'basic_missing', variantName }
+  if (variantName === DEFAULT_ASSIGNED_PLAN_VARIANT) {
+    if (catalog.basic == null) {
+      return { ok: false, reason: 'basic_missing', variantName }
+    }
+    // catalog.basic is already resolved by basic-prefix match (e.g.
+    // `basic-premium`), which may not equal `variantName` exactly.
+    return { ok: true, pair: catalog.basic }
   }
 
   const pair = catalog.variants.find((v) => v.name === variantName)
   if (!pair) {
-    return {
-      ok: false,
-      reason:
-        variantName === DEFAULT_ASSIGNED_PLAN_VARIANT
-          ? 'basic_missing'
-          : 'unknown_variant',
-      variantName,
-    }
+    return { ok: false, reason: 'unknown_variant', variantName }
   }
 
   return { ok: true, pair }
@@ -308,20 +324,21 @@ export function formatPlanVariantPriceLabel(
   catalog: PlanVariantCatalog,
   priceId: string,
 ): string {
+  const productName = catalog.productName ?? DEFAULT_PLAN_PRODUCT_NAME_FALLBACK
   for (const pair of catalog.variants) {
     if (pair.monthlyPriceId === priceId) {
       return pair.name === DEFAULT_ASSIGNED_PLAN_VARIANT
-        ? 'Default monthly'
-        : `Default monthly (${humanizePlanVariantName(pair.name)})`
+        ? `${productName} monthly`
+        : `${productName} monthly (${humanizePlanVariantName(pair.name)})`
     }
     if (pair.yearlyPriceId === priceId) {
       return pair.name === DEFAULT_ASSIGNED_PLAN_VARIANT
-        ? 'Default yearly'
-        : `Default yearly (${humanizePlanVariantName(pair.name)})`
+        ? `${productName} yearly`
+        : `${productName} yearly (${humanizePlanVariantName(pair.name)})`
     }
   }
-  if (priceId === DEFAULT_PLAN_MONTHLY_PRICE_ID) return 'Default monthly'
-  if (priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID) return 'Default yearly'
+  if (priceId === DEFAULT_PLAN_MONTHLY_PRICE_ID) return `${productName} monthly`
+  if (priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID) return `${productName} yearly`
   return priceId
 }
 
@@ -331,6 +348,8 @@ export type BillingCatalogForUserRead =
       ok: true
       assignedVariant: string
       showCompareAt: boolean
+      /** Stripe Product display name for the Default plan. */
+      productName: string
       assigned: {
         minor: BillingCatalogMinor
         labels: BillingPlanPriceLabels
@@ -379,6 +398,7 @@ export function buildBillingCatalogForUser(
     ok: true,
     assignedVariant,
     showCompareAt: assignedVariant !== DEFAULT_ASSIGNED_PLAN_VARIANT,
+    productName: catalog.productName ?? DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
     assigned: {
       minor: assigned.minor,
       labels: assigned.labels,
@@ -404,7 +424,11 @@ export function buildSandboxPlanVariantCatalog(): PlanVariantCatalog {
     minor,
     labels: buildBillingPlanPriceLabels(minor, 'Save ~2 months'),
   }
-  return { variants: [basic], basic }
+  return {
+    variants: [basic],
+    basic,
+    productName: DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
+  }
 }
 
 export function buildSandboxBillingCatalogForUser(
