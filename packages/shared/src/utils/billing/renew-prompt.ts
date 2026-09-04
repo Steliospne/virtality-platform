@@ -100,6 +100,16 @@ function liveClockEnd(
   return standing.clockEnd
 }
 
+/** Live clock start when entitled; otherwise null (mirrors {@link liveClockEnd}). */
+function liveClockStart(
+  standing: Pick<EntitlementClockStanding, 'entitled' | 'clockStart'>,
+): Date | null {
+  if (!standing.entitled || standing.clockStart == null) {
+    return null
+  }
+  return standing.clockStart
+}
+
 function renewPromptOffsetKey(
   channel: RenewTriggerChannel,
   daysBefore: number,
@@ -188,16 +198,27 @@ export async function rearmRenewPromptEpochForSubscription(
 /**
  * An offset is due when now is at or past (clockEnd - daysBefore days) and
  * still before clockEnd. Same rule for trialEnd or periodEnd as clockEnd.
+ *
+ * `epochStart` (trial/period start) gates catch-up: an offset whose fire
+ * point falls at or before the epoch start predates the entitlement period
+ * entirely (e.g. a trial shorter than the offset), so it never fires - as
+ * opposed to a valid window we simply missed checking mid-way through.
+ * `epochStart: null` means the start is unknown (e.g. unbackfilled legacy
+ * rows), in which case the window-fit check is skipped.
  */
 export function isRenewOffsetDue(input: {
   now: Date
   clockEnd: Date
   daysBefore: number
+  epochStart: Date | null
 }): boolean {
   const nowMs = input.now.getTime()
   const endMs = input.clockEnd.getTime()
   if (nowMs >= endMs) return false
   const fireAtMs = endMs - input.daysBefore * RENEW_PROMPT_MS_PER_DAY
+  if (input.epochStart != null && fireAtMs < input.epochStart.getTime()) {
+    return false
+  }
   return nowMs >= fireAtMs
 }
 
@@ -205,6 +226,7 @@ export function selectDueRenewPrompts(input: {
   now: Date
   entitled: boolean
   clockEnd: Date | null
+  clockStart: Date | null
   triggers: readonly {
     channel: RenewTriggerChannel
     daysBefore: number
@@ -216,6 +238,7 @@ export function selectDueRenewPrompts(input: {
   if (clockEnd == null) {
     return []
   }
+  const epochStart = liveClockStart(input)
 
   const epochKey = renewPromptEpochKey(clockEnd)
   const delivered = new Set(
@@ -232,6 +255,7 @@ export function selectDueRenewPrompts(input: {
         now: input.now,
         clockEnd,
         daysBefore: trigger.daysBefore,
+        epochStart,
       })
     ) {
       continue
@@ -278,6 +302,7 @@ export async function evaluateAndDeliverRenewPrompts(
     now,
     entitled: true,
     clockEnd,
+    clockStart: seat.standing.clockStart,
     triggers: [...emailTriggers, ...inAppTriggers],
     alreadyDelivered: existing,
   })

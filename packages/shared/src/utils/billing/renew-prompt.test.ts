@@ -32,6 +32,7 @@ describe('isRenewOffsetDue', () => {
         now: new Date(CLOCK_END.getTime() - 7 * MS_PER_DAY),
         clockEnd: CLOCK_END,
         daysBefore: 7,
+        epochStart: null,
       }),
     ).toBe(true)
 
@@ -40,6 +41,7 @@ describe('isRenewOffsetDue', () => {
         now: new Date(CLOCK_END.getTime() - 7 * MS_PER_DAY - 1),
         clockEnd: CLOCK_END,
         daysBefore: 7,
+        epochStart: null,
       }),
     ).toBe(false)
   })
@@ -55,6 +57,7 @@ describe('isRenewOffsetDue', () => {
         now: nowNearTrial,
         clockEnd: trialEnd,
         daysBefore: 3,
+        epochStart: null,
       }),
     ).toBe(true)
     expect(
@@ -62,6 +65,58 @@ describe('isRenewOffsetDue', () => {
         now: nowNearPaid,
         clockEnd: periodEnd,
         daysBefore: 3,
+        epochStart: null,
+      }),
+    ).toBe(true)
+  })
+
+  it('skips an offset whose fire point predates the epoch start (short trial)', () => {
+    // A trial granted with only 12h remaining: clockEnd - 7d and - 3d both
+    // land before the trial ever started.
+    const epochStart = new Date(CLOCK_END.getTime() - 12 * 60 * 60 * 1000)
+
+    expect(
+      isRenewOffsetDue({
+        now: epochStart,
+        clockEnd: CLOCK_END,
+        daysBefore: 7,
+        epochStart,
+      }),
+    ).toBe(false)
+    expect(
+      isRenewOffsetDue({
+        now: epochStart,
+        clockEnd: CLOCK_END,
+        daysBefore: 3,
+        epochStart,
+      }),
+    ).toBe(false)
+  })
+
+  it('fires when the offset window fits exactly at the epoch start boundary', () => {
+    const epochStart = new Date(CLOCK_END.getTime() - 3 * MS_PER_DAY)
+
+    expect(
+      isRenewOffsetDue({
+        now: epochStart,
+        clockEnd: CLOCK_END,
+        daysBefore: 3,
+        epochStart,
+      }),
+    ).toBe(true)
+  })
+
+  it('still fires a missed offset mid-window (catch-up), unaffected by epoch start', () => {
+    const epochStart = new Date(CLOCK_END.getTime() - 10 * MS_PER_DAY)
+    // Server was down through the 7-day fire point; caught up 2 days before end.
+    const now = new Date(CLOCK_END.getTime() - 2 * MS_PER_DAY)
+
+    expect(
+      isRenewOffsetDue({
+        now,
+        clockEnd: CLOCK_END,
+        daysBefore: 7,
+        epochStart,
       }),
     ).toBe(true)
   })
@@ -74,6 +129,7 @@ describe('selectDueRenewPrompts', () => {
         now: new Date('2026-08-18T12:00:00.000Z'),
         entitled: false,
         clockEnd: null,
+        clockStart: null,
         triggers: [
           { channel: 'email', daysBefore: 7, active: true },
           { channel: 'in_app', daysBefore: 7, active: true },
@@ -91,6 +147,7 @@ describe('selectDueRenewPrompts', () => {
       now,
       entitled: true,
       clockEnd: CLOCK_END,
+      clockStart: null,
       triggers: [
         { channel: 'email', daysBefore: 7, active: true },
         { channel: 'email', daysBefore: 3, active: true },
@@ -122,6 +179,7 @@ describe('selectDueRenewPrompts', () => {
         now,
         entitled: true,
         clockEnd: CLOCK_END,
+        clockStart: null,
         triggers: [{ channel: 'email', daysBefore: 1, active: true }],
         alreadyDelivered: [{ channel: 'email', daysBefore: 1, epochKey }],
       }),
@@ -138,12 +196,48 @@ describe('selectDueRenewPrompts', () => {
         now,
         entitled: true,
         clockEnd: CLOCK_END,
+        clockStart: null,
         triggers: [{ channel: 'email', daysBefore: 7, active: true }],
         alreadyDelivered: [
           { channel: 'email', daysBefore: 7, epochKey: priorEpoch },
         ],
       }),
     ).toEqual([{ channel: 'email', daysBefore: 7, epochKey }])
+  })
+
+  it('fires nothing for a trial shorter than the smallest configured offset', () => {
+    // Trial granted with only 12h remaining: both offsets predate epoch start.
+    const epochStart = new Date(CLOCK_END.getTime() - 12 * 60 * 60 * 1000)
+
+    expect(
+      selectDueRenewPrompts({
+        now: epochStart,
+        entitled: true,
+        clockEnd: CLOCK_END,
+        clockStart: epochStart,
+        triggers: [
+          { channel: 'email', daysBefore: 7, active: true },
+          { channel: 'email', daysBefore: 3, active: true },
+        ],
+        alreadyDelivered: [],
+      }),
+    ).toEqual([])
+  })
+
+  it('fires an offset that exactly matches the epoch start boundary', () => {
+    const epochKey = renewPromptEpochKey(CLOCK_END)
+    const epochStart = new Date(CLOCK_END.getTime() - 3 * MS_PER_DAY)
+
+    expect(
+      selectDueRenewPrompts({
+        now: epochStart,
+        entitled: true,
+        clockEnd: CLOCK_END,
+        clockStart: epochStart,
+        triggers: [{ channel: 'email', daysBefore: 3, active: true }],
+        alreadyDelivered: [],
+      }),
+    ).toEqual([{ channel: 'email', daysBefore: 3, epochKey }])
   })
 })
 
@@ -256,6 +350,7 @@ describe('rearmRenewPromptEpoch', () => {
         standing: {
           entitled: true,
           clockEnd: nextClockEnd,
+          clockStart: null,
           remainingMs: 7 * MS_PER_DAY,
           status: 'trialing',
         },
@@ -301,6 +396,7 @@ describe('rearmRenewPromptEpoch', () => {
       standing: {
         entitled: true,
         clockEnd: nextClockEnd,
+        clockStart: null,
         remainingMs: 7 * MS_PER_DAY,
         status: 'trialing' as const,
       },
@@ -345,6 +441,7 @@ describe('rearmRenewPromptEpoch', () => {
       standing: {
         entitled: true,
         clockEnd: nextClockEnd,
+        clockStart: null,
         remainingMs: MS_PER_DAY,
         status: 'active' as const,
       },
@@ -522,6 +619,7 @@ describe('evaluateAndDeliverRenewPrompts', () => {
         standing: {
           entitled: true,
           clockEnd: CLOCK_END,
+          clockStart: null,
           remainingMs: 3 * MS_PER_DAY,
           status: 'trialing',
         },
@@ -570,6 +668,7 @@ describe('evaluateAndDeliverRenewPrompts', () => {
         standing: {
           entitled: false,
           clockEnd: null,
+          clockStart: null,
           remainingMs: 0,
           status: 'canceled',
         },
@@ -603,6 +702,7 @@ describe('evaluateAndDeliverRenewPrompts', () => {
       standing: {
         entitled: true,
         clockEnd: CLOCK_END,
+        clockStart: null,
         remainingMs: MS_PER_DAY,
         status: 'active' as const,
       },
@@ -651,6 +751,7 @@ describe('listInAppRenewPromptsForSeat', () => {
         standing: {
           entitled: true,
           clockEnd: CLOCK_END,
+          clockStart: null,
           remainingMs: 7 * MS_PER_DAY,
           status: 'active',
         },
@@ -669,6 +770,7 @@ describe('listInAppRenewPromptsForSeat', () => {
         standing: {
           entitled: false,
           clockEnd: null,
+          clockStart: null,
           remainingMs: 0,
           status: 'canceled',
         },

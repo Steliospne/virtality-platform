@@ -195,6 +195,7 @@ describe('createRenewPromptLifecycle', () => {
       standing: {
         entitled: true,
         clockEnd: CLOCK_END,
+        clockStart: null,
         remainingMs: 3 * RENEW_PROMPT_MS_PER_DAY,
         status: 'trialing',
       },
@@ -250,6 +251,7 @@ describe('createRenewPromptLifecycle', () => {
       standing: {
         entitled: true,
         clockEnd: CLOCK_END,
+        clockStart: null,
         remainingMs: 7 * RENEW_PROMPT_MS_PER_DAY,
         status: 'trialing',
       },

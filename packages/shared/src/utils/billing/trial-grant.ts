@@ -47,6 +47,7 @@ function expiredTrialGrantStanding(
   return {
     entitled: false,
     clockEnd: null,
+    clockStart: null,
     remainingMs: 0,
     status,
   }
@@ -94,6 +95,7 @@ export function resolveTrialGrantClock(input: {
   return {
     entitled,
     clockEnd: entitled ? clockEnd : null,
+    clockStart: entitled ? grant.trialStart : null,
     remainingMs,
     status: entitled ? 'trialing' : 'active',
   }

@@ -33,7 +33,9 @@ export type EntitlementClockSubscription = {
   status: string
   /** Synced Better Auth plan (`free` | `pro`); Free active seats are not entitled. */
   plan?: string | null
+  trialStart?: Date | null
   trialEnd?: Date | null
+  periodStart?: Date | null
   periodEnd?: Date | null
   /** Synced Stripe/Better Auth interval when known (`month` / `year`). */
   billingInterval?: string | null
@@ -51,6 +53,12 @@ export type EntitlementClockStanding = {
   entitled: boolean
   /** End instant when live; null when there is no live clock. */
   clockEnd: Date | null
+  /**
+   * Epoch start (trial/period start) when live; null when there is no live
+   * clock. Used to tell "offset window fits inside this epoch" apart from
+   * "we missed checking it partway through a valid window" (renew prompts).
+   */
+  clockStart: Date | null
   /** Milliseconds until clockEnd, floored at 0 (never negative). */
   remainingMs: number
   /** Live status when entitled; otherwise the input status or null. */
@@ -67,6 +75,21 @@ export function clockEndForSubscriptionStatus(
       return trialEnd ?? null
     case 'active':
       return periodEnd ?? null
+    default:
+      return null
+  }
+}
+
+export function clockStartForSubscriptionStatus(
+  status: string,
+  trialStart: Date | null | undefined,
+  periodStart: Date | null | undefined,
+): Date | null {
+  switch (status) {
+    case 'trialing':
+      return trialStart ?? null
+    case 'active':
+      return periodStart ?? null
     default:
       return null
   }
@@ -98,6 +121,7 @@ function expiredClockStanding(status: string | null): EntitlementClockStanding {
   return {
     entitled: false,
     clockEnd: null,
+    clockStart: null,
     remainingMs: 0,
     status,
   }
@@ -132,12 +156,19 @@ export function resolveEntitlementClock(input: {
     return expiredClockStanding(subscription.status)
   }
 
+  const clockStart = clockStartForSubscriptionStatus(
+    subscription.status,
+    subscription.trialStart,
+    subscription.periodStart,
+  )
+
   const remainingMs = Math.max(0, clockEnd.getTime() - input.now.getTime())
   const entitled = remainingMs > 0
 
   return {
     entitled,
     clockEnd: entitled ? clockEnd : null,
+    clockStart: entitled ? clockStart : null,
     remainingMs,
     status: subscription.status,
   }
@@ -363,6 +394,7 @@ function emptyEntitlementStanding(): EntitlementStanding {
   return {
     entitled: false,
     clockEnd: null,
+    clockStart: null,
     remainingMs: 0,
     status: null,
     canLaunchVr: false,
