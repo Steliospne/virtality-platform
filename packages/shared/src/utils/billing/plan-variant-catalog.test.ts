@@ -159,6 +159,24 @@ describe('buildPlanVariantCatalogFromStripePrices', () => {
     ])
     expect(catalog.basic?.name).toBe('basic')
   })
+
+  it('treats a basic-prefixed name (e.g. basic-premium) as basic', () => {
+    const catalog = buildPlanVariantCatalogFromStripePrices([
+      price({
+        id: DEFAULT_PLAN_MONTHLY_PRICE_ID,
+        lookup_key: 'basic-premium_monthly',
+      }),
+      price({
+        id: DEFAULT_PLAN_ANNUAL_PRICE_ID,
+        lookup_key: 'basic-premium_yearly',
+        unit_amount: 150_000,
+        recurring: { interval: 'year' },
+      }),
+    ])
+
+    expect(catalog.basic?.name).toBe('basic-premium')
+    expect(catalog.basic?.monthlyPriceId).toBe(DEFAULT_PLAN_MONTHLY_PRICE_ID)
+  })
 })
 
 describe('resolvePlanVariantPair', () => {
@@ -201,6 +219,24 @@ describe('resolvePlanVariantPair', () => {
       reason: 'unknown_variant',
       variantName: 'vip',
     })
+  })
+
+  it('resolves null assignment to a basic-prefixed pair (e.g. basic-premium)', () => {
+    const prefixedCatalog = buildPlanVariantCatalogFromStripePrices([
+      price({
+        id: DEFAULT_PLAN_MONTHLY_PRICE_ID,
+        lookup_key: 'basic-premium_monthly',
+      }),
+      price({
+        id: DEFAULT_PLAN_ANNUAL_PRICE_ID,
+        lookup_key: 'basic-premium_yearly',
+        unit_amount: 150_000,
+        recurring: { interval: 'year' },
+      }),
+    ])
+
+    const result = resolvePlanVariantPair(prefixedCatalog, null)
+    expect(result).toEqual({ ok: true, pair: prefixedCatalog.basic })
   })
 
   it('resolves charge Price id from annual flag', () => {
