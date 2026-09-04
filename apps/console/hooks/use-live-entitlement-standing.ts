@@ -8,6 +8,7 @@ import {
 import { useEntitlementStanding } from '@virtality/react-query'
 import { authClient } from '@/auth-client'
 import { LIVE_ENTITLEMENT_STANDING_TICK_MS } from '@/lib/live-entitlement-standing-tick'
+import { resolveBillingFeatureEnabled } from '@/lib/billing-feature'
 
 /**
  * Live Entitlement Clock standing for Remaining Time, VR soft gate, and
@@ -15,6 +16,10 @@ import { LIVE_ENTITLEMENT_STANDING_TICK_MS } from '@/lib/live-entitlement-standi
  * interval from clockEnd so the sidebar counts down without refetching.
  *
  * Checkout success entitlement restore runs only on `/billing/success`.
+ *
+ * The VR soft gate follows billing UI availability: production has no
+ * Billing tab to subscribe from yet, so `canLaunchVr` stays true there
+ * rather than locking users out of VR with no way to resolve it.
  */
 export function useLiveEntitlementStanding() {
   const { data: session } = authClient.useSession()
@@ -52,7 +57,7 @@ export function useLiveEntitlementStanding() {
     ...query,
     remainingMs,
     entitled,
-    canLaunchVr,
+    canLaunchVr: canLaunchVr || !resolveBillingFeatureEnabled(),
     checkoutCta,
     checkoutCtaLabel,
     label,
