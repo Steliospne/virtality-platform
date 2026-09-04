@@ -48,6 +48,9 @@ export { useResetDeviceId } from './device/use-reset-device-id.js'
 // Waitlist mutations
 export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'
 
+// Bug report mutations
+export { useCreateBugReport } from './bug-report/use-create-bug-report.js'
+
 // Tester Code mutations
 export { useCreateTesterCode } from './tester-code/use-create-tester-code.js'
 export { useDeleteTesterCode } from './tester-code/use-delete-tester-code.js'

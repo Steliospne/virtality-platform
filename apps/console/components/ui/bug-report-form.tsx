@@ -32,8 +32,7 @@ import {
 } from '@/components/ui/form'
 import Image from 'next/image'
 import { CheckCircle, Loader2, Trash2 } from 'lucide-react'
-import { useMutation } from '@tanstack/react-query'
-import { createBugReport } from '@/lib/actions'
+import { useCreateBugReport } from '@virtality/react-query'
 import { type BugReportForm as BugReportFormType } from '@/lib/definitions'
 import { BugReportFormSchema } from '@/lib/definitions'
 import { useClientT } from '@/i18n/use-client-t'
@@ -56,8 +55,7 @@ export const BugReportForm = ({ children }: BugReportFormProps) => {
     isPending,
     isSuccess,
     reset,
-  } = useMutation({
-    mutationFn: createBugReport,
+  } = useCreateBugReport({
     onSuccess: () => handleClearForm(),
   })
 
@@ -114,8 +112,12 @@ export const BugReportForm = ({ children }: BugReportFormProps) => {
   }
 
   function onSubmit(values: BugReportFormType) {
-    const image = imageFiles.map((_file) => _file.file)
-    createReport({ ...values, image })
+    createReport({
+      title: values.title,
+      platform: values.platform,
+      description: values.description,
+      images: imageFiles.map((_file) => _file.file),
+    })
   }
 
   return (

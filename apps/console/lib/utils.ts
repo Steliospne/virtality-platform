@@ -1,10 +1,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import crypto from 'crypto'
 import { Exercise } from '@virtality/db'
 import { v4 as uuid } from 'uuid'
-import { deleteFile, uploadFile } from '@/S3'
-import { IMAGE_TYPE, ImageType } from '@/types/models'
 import { ParsePayload } from 'zod/v4/core'
 
 export function cn(...inputs: ClassValue[]) {
@@ -98,9 +95,6 @@ export function splitText(
   }
 }
 
-export const randomImageName = (bytes = 8) =>
-  crypto.randomBytes(bytes).toString('hex')
-
 export const getModelImage = (modelId: string) => {
   const modelMap: Record<string, string> = {
     'Meta Quest 3': '/meta_quest_3.avif',
@@ -117,39 +111,6 @@ export const getDisplayName = (
 
 export const getUUID = () => {
   return uuid()
-}
-
-export const createImage = async (
-  image: File,
-  resource: string,
-  prevImage?: string | null,
-) => {
-  const baseURL = process.env.NEXT_PUBLIC_CDN_URL
-
-  if (!baseURL) throw Error('CDN URL is missing.')
-
-  if (!image) return null
-
-  const ContentType = image.type as ImageType
-  const Key = `${randomImageName()}_${resource}${IMAGE_TYPE[ContentType]}`
-  const generatedURL = `${baseURL}/${Key}`
-  const buffer = Buffer.from(await image.arrayBuffer())
-
-  try {
-    await uploadFile({
-      Body: buffer,
-      ContentType,
-      Key,
-    })
-    if (prevImage) {
-      const Key = prevImage.split('/')[3]
-      deleteFile({ Key })
-    }
-    return generatedURL
-  } catch (error) {
-    console.log('Error uploading to S3: ', error)
-    return null
-  }
 }
 
 export const isValidNumber = (value: string | null | undefined) => {

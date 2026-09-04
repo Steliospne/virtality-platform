@@ -33,6 +33,7 @@ import { renewPrompt } from './procedures/renew-prompt.ts'
 import { entitlementExtension } from './procedures/entitlement-extension.ts'
 import { entitlementClock } from './procedures/entitlement-clock.ts'
 import { bucket } from './procedures/bucket.ts'
+import { bugReport } from './procedures/bug-report.ts'
 import { favoriteExercise } from './procedures/favorite-exercise.ts'
 import { dashboard } from './procedures/adminboard/dashboard.ts'
 import { adminCustomer } from './procedures/admin-customer.ts'
@@ -80,6 +81,7 @@ export const router = {
   entitlementExtension,
   entitlementClock,
   bucket,
+  bugReport,
   favoriteExercise,
   dashboard,
   adminCustomer,
