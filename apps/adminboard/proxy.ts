@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { auth } from '@virtality/auth'
+import { evaluateSessionGate } from '@/lib/session-gate'
 
 const { enabled } = process.env
 
@@ -11,15 +10,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  const data = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const decision = await evaluateSessionGate(request.headers)
 
-  if (!data) {
+  if (decision === 'sign-in') {
     return NextResponse.redirect(new URL('/log-in', request.url))
   }
 
-  if (data.user.role !== 'admin') {
+  if (decision === 'no-access') {
     return NextResponse.redirect(new URL('/no-access', request.url))
   }
 
