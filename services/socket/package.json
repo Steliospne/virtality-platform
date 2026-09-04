@@ -8,7 +8,7 @@
     "dev_sim": "SIM=true doppler run -- tsx watch ./src/app.ts",
     "test_client": "tsx watch --env-file=.env src/tests/test_client.ts ",
     "build": "tsc --build",
-    "start": "doppler run -- node ./dist/src/app.js",
+    "start": "node --env-file=.env ./dist/src/app.js",
     "type-check": "tsc --noEmit",
     "test": "vitest run"
   },
