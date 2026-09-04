@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { projectLiveEntitlementStanding } from '@virtality/shared/utils'
+import {
+  isPaidDefaultPortalEligible,
+  projectLiveEntitlementStanding,
+} from '@virtality/shared/utils'
 import { useEntitlementStanding } from '@virtality/react-query'
 import { authClient } from '@/auth-client'
 import { LIVE_ENTITLEMENT_STANDING_TICK_MS } from '@/lib/live-entitlement-standing-tick'
@@ -34,11 +37,16 @@ export function useLiveEntitlementStanding() {
     checkoutCtaLabel,
     label,
     showRemainingTime,
+    plan,
+    status,
+    cancelAtPeriodEnd,
   } = projectLiveEntitlementStanding({
     standing: query.data,
     now: nowMs,
     role: session?.user?.role,
   })
+
+  const subscribed = isPaidDefaultPortalEligible({ plan, entitled, status })
 
   return {
     ...query,
@@ -49,5 +57,7 @@ export function useLiveEntitlementStanding() {
     checkoutCtaLabel,
     label,
     showRemainingTime,
+    subscribed,
+    cancelAtPeriodEnd,
   }
 }

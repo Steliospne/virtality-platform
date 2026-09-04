@@ -24,19 +24,43 @@ export function RemainingTimeSidebar() {
   const { state } = useSidebar()
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
-  const { label, checkoutCtaLabel, isPending, showRemainingTime, entitled } =
-    useLiveEntitlementStanding()
+  const {
+    label,
+    checkoutCtaLabel,
+    isPending,
+    showRemainingTime,
+    entitled,
+    subscribed,
+    cancelAtPeriodEnd,
+  } = useLiveEntitlementStanding()
   const collapsed = state === 'collapsed'
   const display = isPending ? '…' : label
   const userId = session?.user?.id
   const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
   const isExpired = !isPending && !entitled
+  const showSubscribed = !isPending && subscribed
+  const isCanceled = showSubscribed && Boolean(cancelAtPeriodEnd)
 
   if (!billingEnabled) return null
-  if (!showCheckoutCta && !showRemainingTime) return null
+  if (!showCheckoutCta && !showRemainingTime && !showSubscribed) return null
 
   return (
     <SidebarMenu>
+      {showSubscribed ? (
+        <SidebarMenuItem>
+          <span
+            className={cn(
+              'block py-2 text-center text-base font-medium',
+              isCanceled
+                ? 'text-amber-700 dark:text-amber-300'
+                : 'text-green-700 dark:text-green-300',
+              collapsed && 'sr-only',
+            )}
+          >
+            {isCanceled ? 'Canceled' : 'Subscribed'}
+          </span>
+        </SidebarMenuItem>
+      ) : null}
       {showCheckoutCta ? (
         <SidebarMenuItem>
           <SidebarMenuButton
