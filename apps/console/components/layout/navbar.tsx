@@ -3,6 +3,7 @@ import Avatar from '@/components/layout/avatar'
 import { Button } from '@virtality/ui/components/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Sidebar } from 'lucide-react'
+import { SubscribeRenewBanner } from '@/components/layout/subscribe-renew-banner'
 
 const Navbar = () => {
   return (
@@ -11,6 +12,9 @@ const Navbar = () => {
         <SidebarTrigger>
           <Sidebar />
         </SidebarTrigger>
+
+        <SubscribeRenewBanner />
+
         <Button asChild variant='ghost' className='ml-auto max-lg:text-sm'>
           <Link href='/'>Dashboard</Link>
         </Button>
