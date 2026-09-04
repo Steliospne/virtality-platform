@@ -12,7 +12,7 @@ import {
   HERO_SUPPORTING_COPY,
 } from '../content'
 import { scrollToFinalCta } from '@/lib/scroll-to-cta'
-import { splitText } from '@/lib/utils'
+import { cn, splitText } from '@/lib/utils'
 import { animate, stagger } from 'motion/react'
 
 const fraunces = Fraunces({
@@ -90,9 +90,11 @@ const HeroTitle = ({
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col ${isLarge ? 'gap-5' : 'gap-5 sm:gap-7'} ${
-        isLeftAligned ? 'items-start text-left' : 'items-center text-center'
-      }`}
+      className={cn(
+        'flex flex-col',
+        isLarge ? 'gap-5' : 'gap-5 sm:gap-7',
+        isLeftAligned ? 'items-start text-left' : 'items-center text-center',
+      )}
     >
       {badge === 'logo' ? (
         <Image
@@ -116,20 +118,23 @@ const HeroTitle = ({
       )}
 
       <h1
-        className={`${fraunces.className} max-w-4xl leading-[1.02] font-medium tracking-tight text-slate-900 dark:text-white [&_.split-word:last-child]:text-vital-blue-700 [&_.split-word:last-child]:italic dark:[&_.split-word:last-child]:text-vital-blue-300 ${
+        className={cn(
+          fraunces.className,
+          'max-w-4xl leading-[1.02] font-medium tracking-tight text-slate-900 dark:text-white [&_.split-word:last-child]:text-vital-blue-700 [&_.split-word:last-child]:italic dark:[&_.split-word:last-child]:text-vital-blue-300',
           isLarge
             ? 'text-[4.125rem] sm:text-[5.625rem] md:text-[7.125rem]'
-            : 'text-[2.75rem] sm:text-6xl md:text-[4.75rem]'
-        }`}
+            : 'text-[2.75rem] sm:text-6xl md:text-[4.75rem]',
+        )}
       >
         {HERO_HEADLINE}
       </h1>
 
       {showSupportingCopy ? (
         <p
-          className={`relative text-base leading-relaxed text-slate-800 sm:text-lg sm:text-slate-700 md:text-xl dark:text-gray-200 ${
-            isLeftAligned ? 'max-w-md' : 'max-w-lg'
-          }`}
+          className={cn(
+            'relative text-base leading-relaxed text-slate-800 sm:text-lg sm:text-slate-700 md:text-xl dark:text-gray-200',
+            isLeftAligned ? 'max-w-md' : 'max-w-lg',
+          )}
         >
           <span
             aria-hidden
@@ -141,9 +146,11 @@ const HeroTitle = ({
 
       {showCtas ? (
         <div
-          className={`flex flex-col gap-5 sm:flex-row ${
-            showSupportingCopy ? 'pt-3' : 'pt-1'
-          } ${isLeftAligned ? 'items-start' : 'items-center'}`}
+          className={cn(
+            'flex flex-col gap-5 sm:flex-row',
+            showSupportingCopy ? 'pt-3' : 'pt-1',
+            isLeftAligned ? 'items-start' : 'items-center',
+          )}
         >
           <Button
             variant='primary'

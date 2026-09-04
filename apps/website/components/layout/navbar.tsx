@@ -42,24 +42,16 @@ const Navbar = async () => {
         <div className='hidden md:flex items-center gap-2'>
           <div className='flex justify-center gap-6 text-slate-600'>
             <Link href={FACEBOOK_URL} target='_blank'>
-              <SiFacebook
-                className={`size-4.5 hover:text-[#0866FF] hover:scale-110 transition-all`}
-              />
+              <SiFacebook className='size-4.5 hover:text-[#0866FF] hover:scale-110 transition-all' />
             </Link>
             <Link href={INSTAGRAM_URL} target='_blank'>
-              <SiInstagram
-                className={`size-4.5 hover:text-[#E4405F] hover:scale-110 transition-all`}
-              />
+              <SiInstagram className='size-4.5 hover:text-[#E4405F] hover:scale-110 transition-all' />
             </Link>
             <Link href={LINKEDIN_URL} target='_blank'>
-              <SiLinkedin
-                className={`size-4.5 hover:text-[#0A66C2] hover:scale-110 transition-all`}
-              />
+              <SiLinkedin className='size-4.5 hover:text-[#0A66C2] hover:scale-110 transition-all' />
             </Link>
             <Link href={X_URL} target='_blank'>
-              <SiX
-                className={`size-4.5 hover:text-[#000000] dark:hover:text-white hover:scale-110 transition-all`}
-              />
+              <SiX className='size-4.5 hover:text-[#000000] dark:hover:text-white hover:scale-110 transition-all' />
             </Link>
           </div>
 

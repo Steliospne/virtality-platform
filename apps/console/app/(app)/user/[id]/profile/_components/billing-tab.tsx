@@ -6,6 +6,7 @@
  */
 
 import { Button } from '@virtality/ui/components/button'
+import { cn } from '@/lib/utils'
 import {
   BILLING_SOFT_UNAVAILABLE_COPY,
   profileBillingCardActiveAction,
@@ -108,16 +109,20 @@ export function BillingTab() {
       <div className='space-y-6'>
         <header className='space-y-2'>
           <p
-            className={`text-xs font-medium tracking-wide uppercase ${
-              isExpiredFree ? 'text-red-600 dark:text-red-500' : 'text-zinc-500'
-            }`}
+            className={cn(
+              'text-xs font-medium tracking-wide uppercase',
+              isExpiredFree
+                ? 'text-red-600 dark:text-red-500'
+                : 'text-zinc-500',
+            )}
           >
             Billing
           </p>
           <h2
-            className={`text-2xl font-semibold tracking-tight ${
-              isExpiredFree ? 'text-red-600 dark:text-red-500' : ''
-            }`}
+            className={cn(
+              'text-2xl font-semibold tracking-tight',
+              isExpiredFree && 'text-red-600 dark:text-red-500',
+            )}
           >
             {profileBillingStatusHeadline(standing)}
           </h2>

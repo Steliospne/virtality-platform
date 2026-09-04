@@ -31,3 +31,7 @@ Multi-context monorepo — read `CONTEXT-MAP.md` at the repo root, then the rele
 ### Composition
 
 Compose UI from small files: one JSX component per file. Read `docs/agents/ui-composition.md` when creating or editing React components, pages, or feature UI.
+
+### Tailwind class names
+
+Build `className` with the `cn` helper, not template literals or string concatenation. Read `docs/agents/tailwind-classnames.md` when writing or editing a `className`.

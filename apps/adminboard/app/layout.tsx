@@ -8,6 +8,7 @@ import { QueryProvider, ORPCProvider } from '@virtality/react-query'
 import { Toaster } from '@/components/ui/sonner'
 import { getServerUrl, ORPC_PREFIX } from '@virtality/shared/types'
 import { SIDEBAR_COOKIE_NAME } from '@virtality/ui/components/sidebar'
+import { cn } from '@/lib/utils'
 
 const baseURL = getServerUrl()
 
@@ -38,7 +39,11 @@ const RootLayout = async ({
   return (
     <html lang='en' suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-svh antialiased`}
+        className={cn(
+          geistSans.variable,
+          geistMono.variable,
+          'min-h-svh antialiased',
+        )}
       >
         <QueryProvider>
           <ORPCProvider url={baseURL + ORPC_PREFIX} credentials='include'>

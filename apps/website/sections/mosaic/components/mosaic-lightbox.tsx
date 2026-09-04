@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import type { MosaicTileListItem } from '@virtality/shared/types'
 import { shouldBypassVercelImageOptimization } from '@virtality/shared/utils'
 import { MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS } from '../lib/mosaic-grid'
+import { cn } from '@/lib/utils'
 import {
   getMosaicLightboxContent,
   type MosaicLightboxContent,
@@ -29,7 +30,10 @@ const MosaicLightboxImage = ({
   content: MosaicLightboxImageContent
 }) => (
   <div
-    className={`relative flex ${MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS} items-center justify-center`}
+    className={cn(
+      'relative flex items-center justify-center',
+      MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS,
+    )}
   >
     <Image
       src={content.src}
@@ -38,7 +42,10 @@ const MosaicLightboxImage = ({
       height={1200}
       unoptimized={shouldBypassVercelImageOptimization(content.src)}
       sizes='90vw'
-      className={`h-auto ${MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS} w-auto max-w-full object-contain`}
+      className={cn(
+        'h-auto w-auto max-w-full object-contain',
+        MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS,
+      )}
     />
   </div>
 )
@@ -57,7 +64,7 @@ const MosaicLightboxVideo = ({
     preload='metadata'
     src={content.src}
     aria-label={content.alt}
-    className={`${MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS} w-full bg-black`}
+    className={cn(MOSAIC_LIGHTBOX_MAX_HEIGHT_CLASS, 'w-full bg-black')}
   />
 )
 

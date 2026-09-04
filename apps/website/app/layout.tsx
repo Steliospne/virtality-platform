@@ -12,6 +12,7 @@ import {
   ORPC_PREFIX,
 } from '@virtality/shared/types'
 import { ORPCProvider, QueryProvider } from '@virtality/react-query'
+import { cn } from '@/lib/utils'
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
@@ -63,7 +64,7 @@ export default function RootLayout({
       className='scroll-pt-15 scroll-smooth'
     >
       <body
-        className={`${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
+        className={cn(dmSans.variable, jetbrainsMono.variable, 'antialiased')}
       >
         <ThemeProvider
           storageKey='website-theme'

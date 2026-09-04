@@ -1,6 +1,7 @@
 import { Fraunces } from 'next/font/google'
 import { ShieldX } from 'lucide-react'
 import { BackToConsoleButton, BackToWebsiteButton } from './no-access-cta'
+import { cn } from '@/lib/utils'
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -38,7 +39,11 @@ export default function NoAccessPage() {
 
         {/* Headline */}
         <h1
-          className={`no-access-item ${fraunces.className} text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl`}
+          className={cn(
+            'no-access-item',
+            fraunces.className,
+            'text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl',
+          )}
           style={{ animationDelay: '80ms' }}
         >
           Access restricted

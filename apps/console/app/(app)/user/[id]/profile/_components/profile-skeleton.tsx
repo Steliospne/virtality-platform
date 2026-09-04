@@ -6,6 +6,7 @@ import {
 } from '@virtality/ui/components/card'
 import { Separator } from '@virtality/ui/components/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 function ProfileTabsSkeleton() {
   const tabs = ['Info', 'Billing', 'Sessions'] as const
@@ -38,7 +39,7 @@ function ProfileFieldSkeleton({
 }) {
   return (
     <div className='flex w-full flex-col gap-3'>
-      <Skeleton className={`h-7 ${labelWidth} rounded-md`} />
+      <Skeleton className={cn('h-7 rounded-md', labelWidth)} />
       <Skeleton className='h-4 w-full max-w-md rounded-md' />
       <Skeleton className='h-10 w-full rounded-md' />
       <Skeleton className='h-4 w-56 rounded-md' />

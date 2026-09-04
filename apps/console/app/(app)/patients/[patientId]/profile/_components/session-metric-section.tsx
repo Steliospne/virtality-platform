@@ -1,7 +1,7 @@
 'use client'
 
 import { Separator } from '@virtality/ui/components/separator'
-import { getDisplayName } from '@/lib/utils'
+import { cn, getDisplayName } from '@/lib/utils'
 import {
   getSessionDurationMinutes,
   getExerciseQualityScore,
@@ -56,14 +56,24 @@ const MetricSection = ({
                 <button
                   type='button'
                   onClick={() => setStabilityMode('cv')}
-                  className={`rounded px-2 py-0.5 font-medium ${stabilityMode === 'cv' ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={cn(
+                    'rounded px-2 py-0.5 font-medium',
+                    stabilityMode === 'cv'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
+                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                  )}
                 >
                   CV
                 </button>
                 <button
                   type='button'
                   onClick={() => setStabilityMode('sd')}
-                  className={`rounded px-2 py-0.5 font-medium ${stabilityMode === 'sd' ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={cn(
+                    'rounded px-2 py-0.5 font-medium',
+                    stabilityMode === 'sd'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
+                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                  )}
                 >
                   SD
                 </button>
@@ -73,14 +83,24 @@ const MetricSection = ({
                 <button
                   type='button'
                   onClick={() => setFatigueMode('across-exercise')}
-                  className={`rounded px-2 py-0.5 font-medium ${fatigueMode === 'across-exercise' ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={cn(
+                    'rounded px-2 py-0.5 font-medium',
+                    fatigueMode === 'across-exercise'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
+                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                  )}
                 >
                   Across
                 </button>
                 <button
                   type='button'
                   onClick={() => setFatigueMode('within-set')}
-                  className={`rounded px-2 py-0.5 font-medium ${fatigueMode === 'within-set' ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={cn(
+                    'rounded px-2 py-0.5 font-medium',
+                    fatigueMode === 'within-set'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
+                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                  )}
                 >
                   Within set
                 </button>

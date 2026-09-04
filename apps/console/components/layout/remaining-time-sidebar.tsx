@@ -12,6 +12,7 @@ import { authClient } from '@/auth-client'
 import { useBillingFeatureEnabled } from '@/hooks/use-billing-feature'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
+import { cn } from '@/lib/utils'
 
 /**
  * Remaining Time from the Entitlement Clock during trials and cancel-at-period-
@@ -53,9 +54,10 @@ export function RemainingTimeSidebar() {
       {showRemainingTime ? (
         <SidebarMenuItem className={showCheckoutCta ? 'mt-3' : undefined}>
           <SidebarMenuButton
-            className={`h-auto cursor-default justify-center gap-2 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current ${
-              isExpired ? 'text-red-600 dark:text-red-500' : ''
-            }`}
+            className={cn(
+              'h-auto cursor-default justify-center gap-2 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current',
+              isExpired && 'text-red-600 dark:text-red-500',
+            )}
             tooltip={`${display}`}
           >
             <Clock
