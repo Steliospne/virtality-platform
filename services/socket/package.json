@@ -17,14 +17,11 @@
   "license": "ISC",
   "dependencies": {
     "@virtality/shared": "workspace:*",
-    "cors": "2.8.5",
-    "dotenv": "17.0.0",
     "express": "5.1.0",
     "socket.io": "4.8.1",
     "socket.io-client": "4.8.1"
   },
   "devDependencies": {
-    "@types/cors": "2.8.19",
     "@types/express": "5.0.3",
     "@virtality/typescript-config": "workspace:*",
     "tsx": "4.20.6",

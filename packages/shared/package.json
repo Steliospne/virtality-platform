@@ -31,13 +31,13 @@
     "@opentelemetry/exporter-logs-otlp-http": "0.214.0",
     "@opentelemetry/resources": "2.6.1",
     "@opentelemetry/sdk-logs": "0.214.0",
-    "@opentelemetry/semantic-conventions": "1.40.0",
     "uuid": "11.1.0",
     "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/node": "20.19.43",
     "@virtality/typescript-config": "workspace:*",
+    "lucide-react": "0.544.0",
     "typescript": "7.0.2",
     "vitest": "3.2.4"
   }

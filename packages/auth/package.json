@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@better-auth/stripe": "1.5.5",
-    "@prisma/adapter-pg": "7.2.0",
     "@prisma/client": "7.2.0",
     "@virtality/db": "workspace:*",
     "@virtality/ui": "workspace:*",
