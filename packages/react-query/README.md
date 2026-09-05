@@ -65,8 +65,8 @@ Outside React (e.g. in callbacks after ORPCProvider has mounted on the client), 
 - **Config:** `configureORPC`, `getORPC`, `ORPCUtils`
 - **SSR:** `ORPCProvider`, `useORPC`, `ORPCProviderProps`
 - **Provider:** `getQueryClient`, `QueryProvider`
-- **Query hooks:** `useUserName`, `useIsUserVerified`, `usePreset`, `usePresets`, `usePresetsByUser`, `useAvatar`, `useExercise`, `useMap`, `useMedicalHistory`, `useSupplementalTherapyQuery`, `useCreateSupplementalTherapyRelMutation`, `usePatient`, `usePatients`, `usePatientSession`, `usePatientSessions`, `usePatientProgram`, `usePatientPrograms`, `useDeviceCore`
-- **Mutation hooks:** program, program-exercise, preset, preset-exercise, patient, patient-session, patient-session-data, patient-session-exercise, device (see `src/index.ts` for full list)
+- **Query hooks:** `useUserName`, `useIsUserVerified`, `useReusablePrograms`, `useStarterTemplates`, `useAvatar`, `useExercise`, `useMap`, `useMedicalHistory`, `useSupplementalTherapyQuery`, `useCreateSupplementalTherapyRelMutation`, `usePatient`, `usePatients`, `usePatientSession`, `usePatientSessions`, `useDeviceCore`, and others (see `src/hooks/queries/index.ts`)
+- **Mutation hooks:** reusable-program, reusable-program-exercise, patient, patient-session, patient-session-data, patient-session-exercise, device, and others (see `src/hooks/mutations/index.ts`)
 
 ## Device hook
 

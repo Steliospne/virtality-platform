@@ -10,15 +10,15 @@ function readOrpcFile(relativePath: string): string {
 }
 
 describe('oRPC router vocabulary', () => {
-  it('exposes reusable program procedures at the top level', () => {
+  it('routes reusable program procedures at the top level without legacy program or preset namespaces', () => {
     const routerSource = readOrpcFile('router.ts')
 
+    expect(routerSource).toMatch(/reusableProgram,/)
+    expect(routerSource).toMatch(/reusableProgramExercise,/)
     expect(routerSource).not.toMatch(/legacy,/)
     expect(routerSource).not.toMatch(/^\s+program,/m)
     expect(routerSource).not.toMatch(/^\s+preset,/m)
     expect(routerSource).not.toMatch(/^\s+programExercise,/m)
     expect(routerSource).not.toMatch(/^\s+presetExercise,/m)
-    expect(routerSource).toMatch(/reusableProgram,/)
-    expect(routerSource).toMatch(/reusableProgramExercise,/)
   })
 })

@@ -1,14 +1,5 @@
 import { z } from 'zod/v4'
 
-const isValidNumber = (value: string | null | undefined) => {
-  const isUndefined = value === undefined
-  const isValueNaN = isNaN(Number(value))
-  const isEmptyString = value === ''
-  const isPositive = Number(value) >= 0
-
-  return isEmptyString || (!isUndefined && !isValueNaN && isPositive)
-}
-
 export const ExerciseSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -100,18 +91,6 @@ export const NewUserFormSchema = NewUserFormBaseSchema.refine(
     },
   },
 )
-
-export const PresetFormSchema = z.object({
-  presetName: z.string().nonempty('Name cannot be empty.'),
-  pathology: z.string().nonempty('Pathology cannot be empty.'),
-  start: z.string().nullable().refine(isValidNumber, {
-    message: 'Must be a positive number',
-  }),
-  end: z.string().nullable().refine(isValidNumber, {
-    message: 'Must be a positive number',
-  }),
-  description: z.string().nullable(),
-})
 
 export const ImageUploadForm = z.object({
   image: z.file().or(z.string()).optional(),
