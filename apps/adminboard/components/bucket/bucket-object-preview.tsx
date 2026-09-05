@@ -5,16 +5,9 @@ import {
   shouldBypassVercelImageOptimization,
 } from '@virtality/shared/utils'
 import { FileIcon } from 'lucide-react'
+import { isImageContentType, isVideoContentType } from './bucket-content-type'
 import { BucketVideoPreview } from './bucket-video-preview'
 import Image from 'next/image'
-
-function isImageContentType(contentType: string): boolean {
-  return contentType.startsWith('image/')
-}
-
-function isVideoContentType(contentType: string): boolean {
-  return contentType.startsWith('video/')
-}
 
 export function ObjectPreview({ object }: { object: BucketObjectRow }) {
   if (isImageContentType(object.contentType)) {

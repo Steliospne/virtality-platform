@@ -12,9 +12,12 @@ import type { BucketFolderRow, BucketObjectRow } from '@virtality/shared/utils'
 import { Spinner } from '@virtality/ui/components/spinner'
 import { Folder } from 'lucide-react'
 import { format } from 'date-fns'
+import Link from 'next/link'
+import { isImageContentType, isVideoContentType } from './bucket-content-type'
 import { FolderActions } from './bucket-folder-actions'
 import { ObjectActions } from './bucket-object-actions'
 import { ObjectPreview } from './bucket-object-preview'
+import { buildBucketObjectPreviewHref } from './bucket-object-preview-href'
 
 function formatFileSize(size: number): string {
   if (size < 1024) {
@@ -138,42 +141,70 @@ export function BucketBrowserTable({
             </TableRow>
           ))}
 
-          {objects.map((object) => (
-            <TableRow key={object.objectKey}>
-              <TableCell>
-                <ObjectPreview object={object} />
-              </TableCell>
-              <TableCell>
-                <div
-                  className='max-w-48 truncate font-medium sm:max-w-xs'
-                  title={object.name}
-                >
-                  {object.name}
-                </div>
-              </TableCell>
-              <TableCell>{object.contentType}</TableCell>
-              <TableCell>{formatFileSize(object.size)}</TableCell>
-              <TableCell>{formatLastModified(object.lastModified)}</TableCell>
-              <TableCell>
-                <div
-                  className='max-w-48 truncate font-mono text-xs text-zinc-500 sm:max-w-xs'
-                  title={object.objectKey}
-                >
-                  {object.objectKey}
-                </div>
-              </TableCell>
-              <TableCell className='text-right'>
-                <ObjectActions
-                  object={object}
-                  onViewDetails={onViewObjectDetails}
-                  onRename={onRenameObject}
-                  onMove={onMoveObject}
-                  onReplace={onReplaceObject}
-                  onDelete={onDeleteObject}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
+          {objects.map((object) => {
+            const isPreviewable =
+              isImageContentType(object.contentType) ||
+              isVideoContentType(object.contentType)
+            const previewHref = isPreviewable
+              ? buildBucketObjectPreviewHref(object.objectKey)
+              : null
+
+            return (
+              <TableRow key={object.objectKey}>
+                <TableCell>
+                  {previewHref ? (
+                    <Link
+                      href={previewHref}
+                      aria-label={`Preview ${object.name}`}
+                    >
+                      <ObjectPreview object={object} />
+                    </Link>
+                  ) : (
+                    <ObjectPreview object={object} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {previewHref ? (
+                    <Link
+                      href={previewHref}
+                      className='block max-w-48 truncate font-medium hover:underline sm:max-w-xs'
+                      title={object.name}
+                    >
+                      {object.name}
+                    </Link>
+                  ) : (
+                    <div
+                      className='max-w-48 truncate font-medium sm:max-w-xs'
+                      title={object.name}
+                    >
+                      {object.name}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>{object.contentType}</TableCell>
+                <TableCell>{formatFileSize(object.size)}</TableCell>
+                <TableCell>{formatLastModified(object.lastModified)}</TableCell>
+                <TableCell>
+                  <div
+                    className='max-w-48 truncate font-mono text-xs text-zinc-500 sm:max-w-xs'
+                    title={object.objectKey}
+                  >
+                    {object.objectKey}
+                  </div>
+                </TableCell>
+                <TableCell className='text-right'>
+                  <ObjectActions
+                    object={object}
+                    onViewDetails={onViewObjectDetails}
+                    onRename={onRenameObject}
+                    onMove={onMoveObject}
+                    onReplace={onReplaceObject}
+                    onDelete={onDeleteObject}
+                  />
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
