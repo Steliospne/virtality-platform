@@ -87,15 +87,15 @@ A one-time bearer staff-issued code, formatted `TE-` plus ten alphanumeric chara
 _Avoid_: Referral Code, QA code, Testing Code, promo
 
 **Access Code**:
-A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, with mode **Free** (`permanent_free`) or **Trial** (`timed_trial`). At sign-up, Free mode creates permanent Free access; Trial mode starts a no-card **Trial Subscription** (default fourteen days with an optional per-code day override). Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, **Discount**, and from the Adminboard **Assign permanent Free** grant (which coexists). Adminboard issues and manages Access Codes under Billing.
-_Avoid_: Trial Redeem Code, Billing Code, Customer Redeem Code, `PAY-` prefix
+A one-time bearer code, formatted `GO-` plus ten alphanumeric characters, with mode **Free** or **Trial**. At sign-up, Free mode issues a Permanent **Access Gate**; Trial mode issues a Timed Access Gate (default fourteen days with an optional per-code day override). Unused codes expire one week after creation. Staff may copy the code or send it with a **System Email**; the send recipient is delivery-only, not a bind. Empty codes and well-formatted codes that are not in the store do not create an account and send the clinician to the website waitlist; Expired and Already used block with error copy. It is a separate system from a **Tester Code**; both use the same sign-up code field and the server routes by prefix. Distinct from **Coupon**, **Promotion Code**, and **Discount**. Adminboard issues and manages Access Codes under Billing.
+_Avoid_: Trial Redeem Code, Billing Code, Customer Redeem Code, `PAY-` prefix, permanent_free/timed_trial (internal mode keys, not product speak)
 
-**Trial Subscription**:
-A Subscription currently in its trial phase, started without requiring a card when configured that way.
-_Avoid_: free sub, trialing subscription (as the term), trial offer
+**Access Gate**:
+The app-owned record of Free or Trial access, independent of Stripe — no Stripe Subscription is created for it. Two modes: Permanent (no end date, replaces the old "Assign permanent Free") and Timed (has an end date). Statuses: active, converted (superseded once the clinician's paid Stripe Subscription reaches Active — Stripe takes over from there), revoked (staff pulls it). An expired, unconverted Timed Access Gate blocks VR launch until staff issues another Access Gate or the clinician subscribes; there is no fallback free tier. Renamed and consolidated from `TrialGrant` plan Free access. Staff assign a Permanent Access Gate from Adminboard the same way they previously assigned permanent Free.
+_Avoid_: TrialGrant (old name), Trial Subscription, Free Subscription, Free plan, trialing subscription, AccessPortal, OnboardingGate, Assign permanent Free (retired staff action name)
 
 **Entitlement Clock**:
-The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable. Stripe remains the source of truth for the underlying end time.
+The single clock that determines whether the clinician may launch VR programs. When it is expired, VR program launch is blocked and the app stays usable. Source of truth is the **Access Gate** before conversion, and Stripe once converted to a paid Subscription.
 _Avoid_: trial_end (as product speak), access window, license timer, Seat, org seat, multi-seat
 
 **Entitlement Standing**:
