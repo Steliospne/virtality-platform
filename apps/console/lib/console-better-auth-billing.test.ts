@@ -68,44 +68,6 @@ describe('createConsoleBetterAuthBilling', () => {
     ).resolves.toEqual({ ok: false, message: 'Already subscribed' })
   })
 
-  it('scheduleCycleChange upgrades with period-end flags', async () => {
-    const upgrade = vi.fn().mockResolvedValue({ data: {} })
-    const billing = createConsoleBetterAuthBilling(createPort({ upgrade }))
-
-    await expect(
-      billing.scheduleCycleChange({
-        annual: true,
-        returnUrl: `${consoleOrigin}/user/u1/profile?tab=billing`,
-      }),
-    ).resolves.toEqual({ ok: true })
-
-    expect(upgrade).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: 'default',
-        annual: true,
-        scheduleAtPeriodEnd: true,
-        disableRedirect: true,
-      }),
-    )
-  })
-
-  it('scheduleCycleChange surfaces Better Auth errors', async () => {
-    const billing = createConsoleBetterAuthBilling(
-      createPort({
-        upgrade: vi
-          .fn()
-          .mockResolvedValue({ error: { message: 'Schedule failed' } }),
-      }),
-    )
-
-    await expect(
-      billing.scheduleCycleChange({
-        annual: false,
-        returnUrl: '/billing',
-      }),
-    ).resolves.toEqual({ ok: false, message: 'Schedule failed' })
-  })
-
   it('restore clears pending change via Better Auth restore', async () => {
     const restore = vi.fn().mockResolvedValue({ data: {} })
     const billing = createConsoleBetterAuthBilling(createPort({ restore }))

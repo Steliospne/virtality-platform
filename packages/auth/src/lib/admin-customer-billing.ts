@@ -22,7 +22,7 @@ import {
 } from './admin-customer-billing-runtime.ts'
 import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle-plan-change.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
-import { createBetterAuthCyclePlanChangePort } from './cycle-plan-change.ts'
+import { createBetterAuthCyclePlanRestorePort } from './cycle-plan-change.ts'
 import {
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
@@ -286,33 +286,17 @@ export function createAdminCustomerBillingRuntime(deps: {
   headers: Headers
 }): AdminCustomerBillingRuntime {
   const client = deps.prisma ?? prisma
-  const betterAuthCycle = createBetterAuthCyclePlanChangePort(
-    deps.headers,
-    client,
-  )
+  const betterAuthRestore = createBetterAuthCyclePlanRestorePort(deps.headers)
 
   const cyclePlan: AdminCustomerCyclePlanPort = {
-    upgrade: async (input) => {
-      if (!input.referenceId) {
-        return {
-          error: { message: 'referenceId is required for Cycle plan change.' },
-        }
-      }
-      const scheduled = await scheduleAssignedVariantCyclePlanChange({
+    scheduleCyclePlanChange: (input) =>
+      scheduleAssignedVariantCyclePlanChange({
         stripeClient: deps.stripeClient,
         prisma: client,
         referenceId: input.referenceId,
         annual: input.annual,
-      })
-      if (!scheduled.ok) {
-        return { error: { message: scheduled.message } }
-      }
-      return {
-        data: {},
-        stripeScheduleId: scheduled.stripeScheduleId,
-      }
-    },
-    restore: betterAuthCycle.restore,
+      }),
+    restore: betterAuthRestore.restore,
   }
 
   const store = createPrismaAdminCustomerBillingStore(client)

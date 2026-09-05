@@ -1,15 +1,13 @@
 /**
- * Console → Better Auth billing seam: immediate Checkout, Cycle plan schedule,
- * restore, and Customer Portal. Profile Billing and related hooks call this
- * adapter only; Checkout never schedules at period end.
+ * Console → Better Auth billing seam: immediate Checkout, restore, and
+ * Customer Portal. Profile Billing and related hooks call this adapter only;
+ * Checkout never schedules at period end. Cycle plan change uses orpc instead.
  */
 
 import {
   restoreSubscription as restoreSubscriptionShared,
-  scheduleCyclePlanChange as scheduleCyclePlanChangeShared,
+  type CyclePlanChangeRestorePort,
   type CheckoutSuccessIntent,
-  type CyclePlanChangePort,
-  type CyclePlanChangeUpgradeInput,
 } from '@virtality/shared/utils'
 import {
   startDefaultBillingPortal,
@@ -21,16 +19,15 @@ import {
 } from './subscription-checkout'
 
 export type ConsoleBetterAuthBillingUpgradeFn = (
-  input: DefaultCheckoutUpgradeInput | CyclePlanChangeUpgradeInput,
+  input: DefaultCheckoutUpgradeInput,
 ) => Promise<{
   data?: unknown
   error?: { message?: string | null } | null
-  stripeScheduleId?: string | null
 }>
 
 export type ConsoleBetterAuthBillingPort = {
   upgrade: ConsoleBetterAuthBillingUpgradeFn
-  restore: CyclePlanChangePort['restore']
+  restore: CyclePlanChangeRestorePort['restore']
   billingPortal: DefaultSubscriptionBillingPortalFn
 }
 
@@ -43,11 +40,6 @@ export type ConsoleBetterAuthBilling = {
     returnUrl: string
     annual?: boolean
     checkoutSuccessIntent?: CheckoutSuccessIntent
-  }) => Promise<ConsoleBetterAuthBillingResult>
-  scheduleCycleChange: (input: {
-    returnUrl: string
-    annual: boolean
-    referenceId?: string
   }) => Promise<ConsoleBetterAuthBillingResult>
   restore: (input?: {
     referenceId?: string
@@ -119,16 +111,6 @@ export function createConsoleBetterAuthBilling(
         annual: input.annual,
         checkoutSuccessIntent: input.checkoutSuccessIntent,
       })
-    },
-
-    async scheduleCycleChange(input) {
-      const result = await scheduleCyclePlanChangeShared({
-        port: { upgrade: port.upgrade },
-        annual: input.annual,
-        returnUrl: input.returnUrl,
-        referenceId: input.referenceId,
-      })
-      return toConsoleBillingResult(result)
     },
 
     async restore(input) {

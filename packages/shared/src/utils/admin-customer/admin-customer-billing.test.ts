@@ -141,8 +141,8 @@ function createCyclePlanPort(
   overrides: Partial<AdminCustomerCyclePlanPort> = {},
 ): AdminCustomerCyclePlanPort {
   return {
-    upgrade: vi.fn(async () => ({
-      data: {},
+    scheduleCyclePlanChange: vi.fn(async () => ({
+      ok: true as const,
       stripeScheduleId: 'sub_sched_1',
     })),
     restore: vi.fn(async () => ({
@@ -305,15 +305,10 @@ describe('changePaidPlanForCustomer', () => {
       cancelUrl: CANCEL_URL,
     })
 
-    expect(cyclePlan.upgrade).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: 'default',
-        annual: true,
-        referenceId: 'user_paid',
-        scheduleAtPeriodEnd: true,
-        disableRedirect: true,
-      }),
-    )
+    expect(cyclePlan.scheduleCyclePlanChange).toHaveBeenCalledWith({
+      annual: true,
+      referenceId: 'user_paid',
+    })
     expect(result.pendingWebhookSync).toBe(true)
     expect(store.recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -768,12 +763,10 @@ describe('Assigned Variant target Prices', () => {
       },
     )
 
-    expect(cyclePlan.upgrade).toHaveBeenCalledWith(
-      expect.objectContaining({
-        annual: true,
-        referenceId: 'user_early',
-      }),
-    )
+    expect(cyclePlan.scheduleCyclePlanChange).toHaveBeenCalledWith({
+      annual: true,
+      referenceId: 'user_early',
+    })
   })
 
   it('labels early-bird previews from the catalog', () => {

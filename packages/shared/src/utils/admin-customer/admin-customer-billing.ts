@@ -20,14 +20,14 @@ import {
   annualFlagForDefaultPlanPriceId,
   hasPendingCyclePlanChange,
   restoreSubscription,
-  scheduleCyclePlanChange,
-  type CyclePlanChangePort,
+  type CyclePlanChangeRestorePort,
+  type CyclePlanChangeResult,
+  type CyclePlanChangeScheduleInput,
 } from '../billing/cycle-plan-change.ts'
 import {
   buildCheckoutCancelReturnUrl,
   buildCheckoutSuccessUrl,
 } from '../billing/checkout-success-url.ts'
-import { withCheckoutReturnIntent } from '../billing/checkout-return-url.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 import { hadPaidBillingHistory } from '../billing/paid-billing-history.ts'
 import {
@@ -144,8 +144,12 @@ export type AdminCustomerBillingStripeGateway = {
   }) => Promise<{ checkoutSessionId: string; checkoutUrl: string }>
 }
 
-/** Better Auth Cycle plan change / restore port for admin mutations. */
-export type AdminCustomerCyclePlanPort = CyclePlanChangePort
+/** Cycle plan schedule + Better Auth restore port for admin mutations. */
+export type AdminCustomerCyclePlanPort = CyclePlanChangeRestorePort & {
+  scheduleCyclePlanChange: (
+    input: CyclePlanChangeScheduleInput,
+  ) => Promise<CyclePlanChangeResult>
+}
 
 export type AdminCustomerBillingPreview = {
   action: AdminCustomerBillingAction
@@ -622,16 +626,11 @@ export async function changePaidPlanForCustomer(
       )
     }
 
-    const scheduled = await scheduleCyclePlanChange({
-      port: cyclePlan,
+    const scheduled = await cyclePlan.scheduleCyclePlanChange({
       referenceId: user.id,
       annual: annualFlagForTargetDefaultPriceId(
         input.targetPriceId,
         input.planVariantCatalog,
-      ),
-      returnUrl: withCheckoutReturnIntent(
-        profileBillingReturnUrl(user.id),
-        'success',
       ),
     })
     if (!scheduled.ok) {
