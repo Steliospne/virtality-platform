@@ -191,6 +191,26 @@ describe('buildEntitlementStanding with TrialGrant', () => {
     expect(standing.canLaunchVr).toBe(true)
     expect(standing.remainingMs).toBeGreaterThan(0)
   })
+
+  it('hides Subscribe/Renew and the expired-upgrade prompt while a grant is live, even with a stale expired-looking Stripe subscription row', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        {
+          status: 'active',
+          plan: 'free',
+          trialEnd: new Date('2026-07-01T12:00:00.000Z'),
+          periodEnd: new Date('2026-07-15T12:00:00.000Z'),
+        },
+      ],
+      trialGrant: activeGrant(),
+    })
+
+    expect(standing.entitled).toBe(true)
+    expect(standing.checkoutCta).toBeNull()
+    expect(standing.expiredFreeUpgradeQualifies).toBe(false)
+  })
 })
 
 describe('clockEndForEntitlementSource', () => {

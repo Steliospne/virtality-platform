@@ -10,8 +10,8 @@ import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
  * Navigation bar banner for Free plan and expired seats: prompts Subscribe or
- * Renew before VR programs are blocked. Hidden for live entitled seats (paid
- * Default and active trials), so it never overlaps RenewPromptBanner's
+ * Renew before VR programs are blocked. Hidden for any live entitlement (paid
+ * Default, Stripe trial, or TrialGrant), so it never overlaps RenewPromptBanner's
  * upcoming-renewal reminder. Gated by `useBillingFeatureEnabled` (preview/local only).
  */
 export function SubscribeRenewBanner() {

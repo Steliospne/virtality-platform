@@ -6,12 +6,20 @@
  * clock (including Checkout `incomplete` before webhook/success sync). Entitled
  * for VR: status ∈ {active, trialing} AND now < clockEnd.
  *
- * Checkout CTA: none while entitled paid Default (portal seats); Subscribe vs Renew
- * for soft-expired clinicians and live Free trials when Billing Path Established
- * (Renew if subscription history shows a paid period).
+ * Checkout CTA: none while entitled (any live source - paid Default, Stripe
+ * trial, or TrialGrant); Subscribe vs Renew for soft-expired clinicians when
+ * Billing Path Established (Renew if subscription history shows a paid period).
  * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
- * alone is enough). Abandon leaves soft-expired + CTA; only synced live
- * Subscriptions restore.
+ * alone is enough, and it keeps its own trial-vs-portal distinction). Abandon
+ * leaves soft-expired + CTA; only synced live Subscriptions or an active
+ * TrialGrant restore.
+ *
+ * Merged entitlement source of truth is `resolveEntitlementFromSources`
+ * (trial-grant.ts), reached via `buildEntitlementStanding` below. Any new
+ * feature or UI that needs to know "is this user currently entitled" must
+ * resolve it through that function - never re-derive entitlement from raw
+ * `Subscription.plan`/`status` rows or from a `TrialGrant` alone in a new
+ * consumer.
  */
 
 import {
@@ -202,8 +210,12 @@ export type CheckoutCta = 'subscribe' | 'renew'
 
 /**
  * Checkout CTA visibility for the sidebar: requires Billing Path Established,
- * hides the CTA for entitled non-trial seats, then defers Subscribe/Renew to
- * {@link resolveProfileBillingCheckoutCta}.
+ * hides the CTA for any live entitlement (paid, Stripe trial, or TrialGrant -
+ * whatever {@link resolveEntitlementFromSources} merged into `entitled`), then
+ * defers Subscribe/Renew to {@link resolveProfileBillingCheckoutCta} once not
+ * entitled. Never re-derives entitlement from raw `plan`/`status` here -
+ * Profile Billing's own trial-vs-portal distinction lives entirely inside
+ * {@link resolveProfileBillingCheckoutCta} and stays unaffected by this gate.
  */
 export function resolveCheckoutCta(input: {
   entitled: boolean
@@ -213,7 +225,7 @@ export function resolveCheckoutCta(input: {
   status?: string | null
 }): CheckoutCta | null {
   if (!input.billingPathEstablished) return null
-  if (input.entitled && input.status !== 'trialing') return null
+  if (input.entitled) return null
   return resolveProfileBillingCheckoutCta({
     entitled: input.entitled,
     hasStripeCustomer: true,
@@ -350,6 +362,7 @@ export function buildEntitlementStanding(input: {
     cancelAtPeriodEnd: Boolean(subscription?.cancelAtPeriodEnd),
     expiredFreeUpgradeQualifies: resolveExpiredFreeUpgradeQualifies({
       now: input.now,
+      entitled: clock.entitled,
       subscriptions: input.subscriptions,
     }),
   }

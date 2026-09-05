@@ -3,6 +3,11 @@
  * to Free, or after a paid seat reaches canceled, clinicians see a dismissible
  * upgrade dialog on each authenticated login and again every twelve hours
  * during a continuous Console session until paid entitlement is active.
+ *
+ * Entitlement is taken as given (the merged `entitled` from
+ * `resolveEntitlementFromSources` / `buildEntitlementStanding`), never
+ * recomputed here from raw Subscription rows - that would make this blind to
+ * non-Stripe entitlement sources like `TrialGrant`.
  */
 
 import {
@@ -11,10 +16,8 @@ import {
 } from './billing-plans.ts'
 import {
   pickEntitlementSubscription,
-  resolveEntitlementClock,
   type EntitlementClockSubscription,
 } from './entitlement-clock.ts'
-import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
 export const EXPIRED_FREE_UPGRADE_PROMPT_INTERVAL_MS = 12 * 60 * 60 * 1000
 
@@ -52,34 +55,20 @@ function hasPendingCancellationAccess(input: {
 }
 
 /**
- * Whether the seat should receive the upgrade prompt. Trialing, paid, and
+ * Whether the seat should receive the upgrade prompt. Any live entitlement
+ * (paid, trialing, or a TrialGrant - the merged `entitled` flag) and
  * cancel-at-period-end clinicians are excluded; expired Free and canceled
  * seats qualify once paid access has ended.
  */
 export function resolveExpiredFreeUpgradeQualifies(input: {
   now: Date
+  entitled: boolean
   subscriptions: readonly EntitlementClockSubscription[]
 }): boolean {
+  if (input.entitled) return false
   if (hasPendingCancellationAccess(input)) return false
 
   const picked = pickEntitlementSubscription(input.subscriptions)
-  const standing = resolveEntitlementClock({
-    now: input.now,
-    subscription: picked,
-  })
-  if (standing.entitled) return false
-
-  const live = input.subscriptions.filter((sub) =>
-    isLiveEntitlementSubscriptionStatus(sub.status),
-  )
-  if (
-    live.some(
-      (sub) => sub.status === 'trialing' || !isFreeSubscriptionPlan(sub.plan),
-    )
-  ) {
-    return false
-  }
-
   if (picked == null) return false
   return isExpiredFreeSeat(picked) || isCanceledUpgradeSeat(picked)
 }

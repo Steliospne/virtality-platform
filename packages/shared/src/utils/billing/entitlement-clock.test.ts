@@ -353,7 +353,7 @@ describe('buildEntitlementStanding', () => {
     expect(standing.hadPaidBilling).toBe(true)
   })
 
-  it('shows Subscribe for entitled Free trial seats', () => {
+  it('hides Subscribe for entitled Free trial seats (sidebar hides for any live entitlement)', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -366,7 +366,7 @@ describe('buildEntitlementStanding', () => {
       ],
     })
     expect(standing.entitled).toBe(true)
-    expect(standing.checkoutCta).toBe('subscribe')
+    expect(standing.checkoutCta).toBeNull()
     expect(standing.billingPathEstablished).toBe(true)
   })
 
@@ -601,10 +601,10 @@ describe('projectLiveEntitlementStanding', () => {
     })
     expect(beforeEnd.entitled).toBe(true)
     expect(beforeEnd.remainingMs).toBe(60 * 1000)
-    expect(beforeEnd.checkoutCta).toBe('subscribe')
+    expect(beforeEnd.checkoutCta).toBeNull()
     expect(beforeEnd.showRemainingTime).toBe(true)
     expect(beforeEnd.label).toBe(formatRemainingTimeLabel(60 * 1000))
-    expect(beforeEnd.checkoutCtaLabel).toBe('Subscribe')
+    expect(beforeEnd.checkoutCtaLabel).toBeNull()
 
     const afterEnd = projectLiveEntitlementStanding({
       standing,
@@ -762,7 +762,7 @@ describe('resolveCheckoutCta', () => {
     ).toBeNull()
   })
 
-  it('returns subscribe for entitled Free trial seats', () => {
+  it('returns null for entitled Free trial seats (sidebar hides for any live entitlement)', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,
@@ -771,7 +771,19 @@ describe('resolveCheckoutCta', () => {
         plan: FREE_SUBSCRIPTION_PLAN,
         status: 'trialing',
       }),
-    ).toBe('subscribe')
+    ).toBeNull()
+  })
+
+  it('returns null for a TrialGrant-shaped live entitlement (no Stripe plan at all)', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: true,
+        billingPathEstablished: true,
+        hadPaidBilling: false,
+        plan: null,
+        status: 'trialing',
+      }),
+    ).toBeNull()
   })
 
   it('returns null when Billing Path is not established', () => {

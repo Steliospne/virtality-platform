@@ -40,6 +40,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
+        entitled: false,
         subscriptions: [
           {
             plan: FREE_SUBSCRIPTION_PLAN,
@@ -56,6 +57,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
+        entitled: true,
         subscriptions: [
           {
             plan: FREE_SUBSCRIPTION_PLAN,
@@ -69,6 +71,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
+        entitled: true,
         subscriptions: [
           {
             plan: 'default',
@@ -80,10 +83,28 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     ).toBe(false)
   })
 
+  it('does not qualify while a TrialGrant provides live entitlement, even with a stale expired-looking subscription row', () => {
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        entitled: true,
+        subscriptions: [
+          {
+            plan: FREE_SUBSCRIPTION_PLAN,
+            status: 'active',
+            trialEnd: new Date('2026-08-01T12:00:00.000Z'),
+            periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+          },
+        ],
+      }),
+    ).toBe(false)
+  })
+
   it('qualifies canceled seats that are no longer entitled', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
+        entitled: false,
         subscriptions: [
           {
             plan: 'default',
@@ -96,27 +117,42 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
   })
 
   it('does not qualify while cancel-at-period-end access remains', () => {
-    for (const status of ['active', 'canceled'] as const) {
-      expect(
-        resolveExpiredFreeUpgradeQualifies({
-          now: NOW,
-          subscriptions: [
-            {
-              plan: 'default',
-              status,
-              periodEnd: new Date('2026-09-10T12:00:00.000Z'),
-              cancelAtPeriodEnd: true,
-            },
-          ],
-        }),
-      ).toBe(false)
-    }
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        entitled: true,
+        subscriptions: [
+          {
+            plan: 'default',
+            status: 'active',
+            periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+            cancelAtPeriodEnd: true,
+          },
+        ],
+      }),
+    ).toBe(false)
+
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        entitled: false,
+        subscriptions: [
+          {
+            plan: 'default',
+            status: 'canceled',
+            periodEnd: new Date('2026-09-10T12:00:00.000Z'),
+            cancelAtPeriodEnd: true,
+          },
+        ],
+      }),
+    ).toBe(false)
   })
 
   it('still qualifies after cancel-at-period-end access has ended', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
+        entitled: false,
         subscriptions: [
           {
             plan: 'default',
