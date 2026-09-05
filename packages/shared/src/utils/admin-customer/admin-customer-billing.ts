@@ -20,9 +20,7 @@ import {
   annualFlagForDefaultPlanPriceId,
   hasPendingCyclePlanChange,
   restoreSubscription,
-  type CyclePlanChangeRestorePort,
-  type CyclePlanChangeResult,
-  type CyclePlanChangeScheduleInput,
+  type CyclePlanChangePort,
 } from '../billing/cycle-plan-change.ts'
 import {
   buildCheckoutCancelReturnUrl,
@@ -145,11 +143,7 @@ export type AdminCustomerBillingStripeGateway = {
 }
 
 /** Cycle plan schedule + Better Auth restore port for admin mutations. */
-export type AdminCustomerCyclePlanPort = CyclePlanChangeRestorePort & {
-  scheduleCyclePlanChange: (
-    input: CyclePlanChangeScheduleInput,
-  ) => Promise<CyclePlanChangeResult>
-}
+export type AdminCustomerCyclePlanPort = CyclePlanChangePort
 
 export type AdminCustomerBillingPreview = {
   action: AdminCustomerBillingAction

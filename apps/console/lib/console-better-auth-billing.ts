@@ -25,9 +25,11 @@ export type ConsoleBetterAuthBillingUpgradeFn = (
   error?: { message?: string | null } | null
 }>
 
-export type ConsoleBetterAuthBillingPort = {
+export type ConsoleBetterAuthBillingPort = Pick<
+  CyclePlanChangeRestorePort,
+  'restore'
+> & {
   upgrade: ConsoleBetterAuthBillingUpgradeFn
-  restore: CyclePlanChangeRestorePort['restore']
   billingPortal: DefaultSubscriptionBillingPortalFn
 }
 
@@ -62,8 +64,8 @@ export const UNDO_CANCELLATION_RESTORE_TOAST =
   'Cancellation stopped. Your subscription will renew as usual.'
 
 /**
- * Maps shared Cycle plan change / restore results onto the Console billing
- * result shape (drops schedule / subscription ids callers do not use).
+ * Maps shared restore results onto the Console billing result shape (drops
+ * subscription ids callers do not use).
  */
 function toConsoleBillingResult(
   result: { ok: true } | { ok: false; message: string },
@@ -115,7 +117,7 @@ export function createConsoleBetterAuthBilling(
 
     async restore(input) {
       const result = await restoreSubscriptionShared({
-        port: { restore: port.restore },
+        port,
         referenceId: input?.referenceId,
       })
       return toConsoleBillingResult(result)

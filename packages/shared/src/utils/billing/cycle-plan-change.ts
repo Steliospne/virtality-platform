@@ -35,6 +35,13 @@ export type CyclePlanChangeResult =
   | { ok: true; stripeScheduleId: string | null }
   | { ok: false; message: string }
 
+/** Restore via Better Auth plus Stripe schedule for admin/customer interval switches. */
+export type CyclePlanChangePort = CyclePlanChangeRestorePort & {
+  scheduleCyclePlanChange: (
+    input: CyclePlanChangeScheduleInput,
+  ) => Promise<CyclePlanChangeResult>
+}
+
 export type CyclePlanRestoreResult =
   | { ok: true; stripeSubscriptionId: string | null }
   | { ok: false; message: string }

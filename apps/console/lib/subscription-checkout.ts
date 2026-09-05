@@ -71,7 +71,7 @@ export type DefaultCheckoutUpgradeInput = {
  * soft-expired and success can await webhook sync (no optimistic entitlement).
  *
  * Immediate Checkout only: paid Default monthly ↔ yearly period-end switches use
- * Cycle plan change (`scheduleCycleChange`), not this builder.
+ * orpc `consoleBilling.scheduleCyclePlanChange`, not this builder.
  * `annual` selects monthly vs yearly Price on the same `default` plan.
  * `successUrl` / `cancelUrl` / `returnUrl` are absolute console URLs.
  */
