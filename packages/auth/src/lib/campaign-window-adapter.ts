@@ -20,8 +20,8 @@ import {
   type UpsertCampaignWindowInput,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { retrieveLibraryCoupon } from './coupon-library.ts'
-import { registerCampaignCouponId } from './subscription-discount-read.ts'
+import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
+import { registerCampaignCouponId } from './subscription-discount-read-adapter.ts'
 
 type CampaignWindowRow = {
   id: string

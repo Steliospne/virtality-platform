@@ -15,7 +15,7 @@ import {
   type PromotionCodeLookup,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { retrieveLibraryCoupon } from './coupon-library.ts'
+import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
 import {
   armLivePromotionCodeHold,
   discardOpenPendingPromotionCodeHold,
@@ -23,7 +23,7 @@ import {
   savePendingPromotionCodeForCheckout,
   sweepExpiredPromotionCodeHoldsForUser,
 } from './pending-promotion-code.ts'
-import { readLiveSubscriptionDiscount } from './subscription-discount-read.ts'
+import { readLiveSubscriptionDiscount } from './subscription-discount-read-adapter.ts'
 
 type ConsolePromoDeps = {
   prisma?: PrismaClient

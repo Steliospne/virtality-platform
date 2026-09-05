@@ -17,10 +17,10 @@ import {
   type AssignedVariantSubscribeCheckoutResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { buildCampaignAwareCheckoutSessionParams } from './campaign-window.ts'
+import { buildCampaignAwareCheckoutSessionParams } from './campaign-window-adapter.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
-import { resolvePromotionCodeForNewCheckout } from './console-promo-redeem.ts'
-import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog.ts'
+import { resolvePromotionCodeForNewCheckout } from './console-promo-redeem-adapter.ts'
+import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog-adapter.ts'
 
 /** Stripe metadata: cancel the prior Free subscription after paid Checkout. */
 export const ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY =

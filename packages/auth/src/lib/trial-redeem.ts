@@ -15,7 +15,7 @@ import {
   type TrialRedeemTrialGrantIssuer,
 } from '@virtality/shared/utils'
 import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
-import { createAccessCodeVariantGateway } from './access-code-variant.ts'
+import { createAccessCodeVariantGateway } from './access-code-variant-adapter.ts'
 
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,

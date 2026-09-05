@@ -12,7 +12,7 @@ import {
   type CyclePlanChangeResult,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog.ts'
+import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog-adapter.ts'
 
 export async function scheduleAssignedVariantCyclePlanChange(input: {
   stripeClient: Stripe

@@ -4,13 +4,13 @@ vi.mock('@virtality/db', () => ({
   prisma: {},
 }))
 
-vi.mock('./campaign-window.ts', () => ({
+vi.mock('./campaign-window-adapter.ts', () => ({
   buildCampaignAwareCheckoutSessionParams: vi.fn(async () => ({
     params: { payment_method_collection: 'always' as const },
   })),
 }))
 
-vi.mock('./console-promo-redeem.ts', () => ({
+vi.mock('./console-promo-redeem-adapter.ts', () => ({
   resolvePromotionCodeForNewCheckout: vi.fn(async () => null),
 }))
 
