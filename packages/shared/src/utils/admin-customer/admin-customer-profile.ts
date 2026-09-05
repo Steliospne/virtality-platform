@@ -1,18 +1,20 @@
 import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
 import { hasPendingCyclePlanChange } from '../billing/cycle-plan-change.ts'
 import { effectiveAssignedPlanVariant } from '../billing/plan-variant-catalog.ts'
-import type { TrialGrantClock } from '../billing/trial-grant.ts'
-import type { AdminCustomerTrialGrantSummary } from '../billing/trial-grant.ts'
+import type {
+  AdminCustomerTrialGrantSummary,
+  TrialGrantClock,
+} from '../billing/trial-grant.ts'
 import {
-  buildStripeCustomerDashboardUrl,
-  buildStripeSubscriptionDashboardUrl,
+  buildAdminCustomerStripeLinks,
   deriveCustomerAccessStatus,
   deriveCustomerBillingStatus,
+  mapAdminCustomerSubscriptionHistoryItem,
   pickPrimaryCustomerSubscription,
   sortCustomerSubscriptionHistory,
   type AdminCustomerAuditHistoryItem,
   type AdminCustomerProfile,
-  type AdminCustomerSubscriptionHistoryItem,
+  type AdminCustomerSubscriptionRow,
   type StripeDashboardMode,
 } from './admin-customer.ts'
 import { canChangeAssignedPlanVariant } from './assign-plan-variant.ts'
@@ -28,78 +30,25 @@ export type AdminCustomerProfileUserRow = {
   createdAt: Date
 }
 
-export type AdminCustomerProfileSubscriptionRow = {
-  id: string
-  plan: string
-  referenceId: string
-  stripeCustomerId: string | null
-  stripeSubscriptionId: string | null
-  status: string
-  periodStart: Date | null
-  periodEnd: Date | null
-  cancelAtPeriodEnd: boolean | null
-  canceledAt: Date | null
-  endedAt: Date | null
-  trialStart: Date | null
-  trialEnd: Date | null
-  billingInterval: string | null
-  stripeScheduleId: string | null
-}
+export type AdminCustomerProfileSubscriptionRow = AdminCustomerSubscriptionRow
 
 export type AdminCustomerProfileTrialGrantContext = {
   openTrialGrantClock: TrialGrantClock | null
   trialGrant: AdminCustomerTrialGrantSummary | null
 }
 
-function mapSubscriptionHistoryItem(
-  subscription: AdminCustomerProfileSubscriptionRow,
-): AdminCustomerSubscriptionHistoryItem {
-  return {
-    id: subscription.id,
-    plan: subscription.plan,
-    status: subscription.status,
-    trialEnd: subscription.trialEnd,
-    periodEnd: subscription.periodEnd,
-    endedAt: subscription.endedAt,
-    canceledAt: subscription.canceledAt,
-    stripeSubscriptionId: subscription.stripeSubscriptionId,
-    billingInterval: subscription.billingInterval,
-    periodStart: subscription.periodStart,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    stripeScheduleId: subscription.stripeScheduleId ?? null,
-    stripeCustomerId: subscription.stripeCustomerId,
-  }
-}
-
-function buildStripeLinks(input: {
-  stripeCustomerId: string | null
-  primaryStripeSubscriptionId: string | null
-  stripeMode: StripeDashboardMode
-}) {
-  return {
-    customerUrl: input.stripeCustomerId
-      ? buildStripeCustomerDashboardUrl(
-          input.stripeCustomerId,
-          input.stripeMode,
-        )
-      : null,
-    primarySubscriptionUrl: input.primaryStripeSubscriptionId
-      ? buildStripeSubscriptionDashboardUrl(
-          input.primaryStripeSubscriptionId,
-          input.stripeMode,
-        )
-      : null,
-  }
-}
-
-export function buildAdminCustomerProfile(input: {
+export type BuildAdminCustomerProfileInput = {
   user: AdminCustomerProfileUserRow
-  subscriptions: readonly AdminCustomerProfileSubscriptionRow[]
+  subscriptions: readonly AdminCustomerSubscriptionRow[]
   trialGrantContext: AdminCustomerProfileTrialGrantContext
   auditHistory: AdminCustomerAuditHistoryItem[]
   stripeMode: StripeDashboardMode
   now: Date
-}): AdminCustomerProfile {
+}
+
+export function buildAdminCustomerProfile(
+  input: BuildAdminCustomerProfileInput,
+): AdminCustomerProfile {
   const {
     user,
     subscriptions,
@@ -111,7 +60,7 @@ export function buildAdminCustomerProfile(input: {
   const { openTrialGrantClock, trialGrant } = trialGrantContext
 
   const subscriptionHistory = sortCustomerSubscriptionHistory(
-    subscriptions.map(mapSubscriptionHistoryItem),
+    subscriptions.map(mapAdminCustomerSubscriptionHistoryItem),
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
   const livePaidDefault = findLivePaidDefaultSubscription(subscriptionHistory)
@@ -140,9 +89,8 @@ export function buildAdminCustomerProfile(input: {
       subscriptions: subscriptionHistory,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
-    hasPendingCyclePlanChange: livePaidDefault
-      ? hasPendingCyclePlanChange(livePaidDefault)
-      : false,
+    hasPendingCyclePlanChange:
+      livePaidDefault != null && hasPendingCyclePlanChange(livePaidDefault),
     entitlement: {
       entitled: standing.entitled,
       canLaunchVr: standing.canLaunchVr,
@@ -150,7 +98,7 @@ export function buildAdminCustomerProfile(input: {
       clockEnd: standing.clockEnd,
       billingPathEstablished: standing.billingPathEstablished,
     },
-    stripeLinks: buildStripeLinks({
+    stripeLinks: buildAdminCustomerStripeLinks({
       stripeCustomerId: user.stripeCustomerId,
       primaryStripeSubscriptionId: primary?.stripeSubscriptionId ?? null,
       stripeMode,

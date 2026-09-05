@@ -4,6 +4,7 @@ import {
   DEFAULT_SUBSCRIPTION_PLAN,
 } from '../billing/billing-plans.ts'
 import {
+  buildAdminCustomerStripeLinks,
   buildStripeCustomerDashboardUrl,
   buildStripeSubscriptionDashboardUrl,
   deriveCustomerAccessStatus,
@@ -252,6 +253,31 @@ describe('sortCustomerSubscriptionHistory', () => {
 })
 
 describe('Stripe dashboard links', () => {
+  it('builds nullable customer and subscription links from ids', () => {
+    expect(
+      buildAdminCustomerStripeLinks({
+        stripeCustomerId: 'cus_123',
+        primaryStripeSubscriptionId: 'sub_123',
+        stripeMode: 'test',
+      }),
+    ).toEqual({
+      customerUrl: 'https://dashboard.stripe.com/test/customers/cus_123',
+      primarySubscriptionUrl:
+        'https://dashboard.stripe.com/test/subscriptions/sub_123',
+    })
+
+    expect(
+      buildAdminCustomerStripeLinks({
+        stripeCustomerId: null,
+        primaryStripeSubscriptionId: null,
+        stripeMode: 'live',
+      }),
+    ).toEqual({
+      customerUrl: null,
+      primarySubscriptionUrl: null,
+    })
+  })
+
   it('builds test-mode customer and subscription URLs', () => {
     expect(buildStripeCustomerDashboardUrl('cus_123', 'test')).toBe(
       'https://dashboard.stripe.com/test/customers/cus_123',

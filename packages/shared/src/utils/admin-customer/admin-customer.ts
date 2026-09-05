@@ -91,6 +91,32 @@ export function buildStripeSubscriptionDashboardUrl(
   return `https://dashboard.stripe.com${prefix}/subscriptions/${stripeSubscriptionId}`
 }
 
+export type AdminCustomerStripeLinks = {
+  customerUrl: string | null
+  primarySubscriptionUrl: string | null
+}
+
+export function buildAdminCustomerStripeLinks(input: {
+  stripeCustomerId: string | null
+  primaryStripeSubscriptionId: string | null
+  stripeMode: StripeDashboardMode
+}): AdminCustomerStripeLinks {
+  return {
+    customerUrl: input.stripeCustomerId
+      ? buildStripeCustomerDashboardUrl(
+          input.stripeCustomerId,
+          input.stripeMode,
+        )
+      : null,
+    primarySubscriptionUrl: input.primaryStripeSubscriptionId
+      ? buildStripeSubscriptionDashboardUrl(
+          input.primaryStripeSubscriptionId,
+          input.stripeMode,
+        )
+      : null,
+  }
+}
+
 export function subscriptionHistorySortInstant(
   subscription: CustomerSubscriptionSummary,
 ): number {
@@ -210,6 +236,44 @@ export type AdminCustomerSubscriptionHistoryItem =
     stripeCustomerId: string | null
   }
 
+export type AdminCustomerSubscriptionRow = {
+  id: string
+  plan: string
+  referenceId: string
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  status: string
+  periodStart: Date | null
+  periodEnd: Date | null
+  cancelAtPeriodEnd: boolean | null
+  canceledAt: Date | null
+  endedAt: Date | null
+  trialStart: Date | null
+  trialEnd: Date | null
+  billingInterval: string | null
+  stripeScheduleId: string | null
+}
+
+export function mapAdminCustomerSubscriptionHistoryItem(
+  subscription: AdminCustomerSubscriptionRow,
+): AdminCustomerSubscriptionHistoryItem {
+  return {
+    id: subscription.id,
+    plan: subscription.plan,
+    status: subscription.status,
+    trialEnd: subscription.trialEnd,
+    periodEnd: subscription.periodEnd,
+    endedAt: subscription.endedAt,
+    canceledAt: subscription.canceledAt,
+    stripeSubscriptionId: subscription.stripeSubscriptionId,
+    billingInterval: subscription.billingInterval,
+    periodStart: subscription.periodStart,
+    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    stripeScheduleId: subscription.stripeScheduleId ?? null,
+    stripeCustomerId: subscription.stripeCustomerId,
+  }
+}
+
 export type AdminCustomerBillingSnapshotState = AdminCustomerBillingSnapshot
 
 export type AdminCustomerAuditHistoryItem = {
@@ -281,10 +345,7 @@ export type AdminCustomerProfile = {
     clockEnd: Date | null
     billingPathEstablished: boolean
   }
-  stripeLinks: {
-    customerUrl: string | null
-    primarySubscriptionUrl: string | null
-  }
+  stripeLinks: AdminCustomerStripeLinks
   subscriptionHistory: AdminCustomerSubscriptionHistoryItem[]
   auditHistory: AdminCustomerAuditHistoryItem[]
   /** Latest trial grant for display; open grants drive lifecycle actions. */
