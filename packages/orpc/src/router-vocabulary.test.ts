@@ -10,24 +10,15 @@ function readOrpcFile(relativePath: string): string {
 }
 
 describe('oRPC router vocabulary', () => {
-  it('nests patient-program and preset procedures under legacy in the router', () => {
+  it('routes reusable program procedures at the top level without legacy program or preset namespaces', () => {
     const routerSource = readOrpcFile('router.ts')
 
-    expect(routerSource).toMatch(/legacy,/)
+    expect(routerSource).toMatch(/reusableProgram,/)
+    expect(routerSource).toMatch(/reusableProgramExercise,/)
+    expect(routerSource).not.toMatch(/legacy,/)
     expect(routerSource).not.toMatch(/^\s+program,/m)
     expect(routerSource).not.toMatch(/^\s+preset,/m)
     expect(routerSource).not.toMatch(/^\s+programExercise,/m)
     expect(routerSource).not.toMatch(/^\s+presetExercise,/m)
-    expect(routerSource).toMatch(/reusableProgram,/)
-    expect(routerSource).toMatch(/reusableProgramExercise,/)
-  })
-
-  it('documents the legacy boundary in the legacy module', () => {
-    const legacySource = readOrpcFile('procedures/legacy/index.ts')
-
-    expect(legacySource).toMatch(/Pre–Reusable Program API/)
-    expect(legacySource).toMatch(/reusableProgram/)
-    expect(legacySource).toMatch(/program,/)
-    expect(legacySource).toMatch(/preset,/)
   })
 })

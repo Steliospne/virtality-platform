@@ -42,7 +42,6 @@ describe('adminboard table kit migration', () => {
   })
 
   it.each([
-    ['preset', 'components/resources/preset/preset-table.tsx'],
     ['exercises', 'components/resources/exercises/exercise-table.tsx'],
     ['tester-code', 'components/tester-code/tester-code-table.tsx'],
     [
@@ -68,26 +67,4 @@ describe('adminboard table kit migration', () => {
       expect(tableSource).not.toMatch(/Loading\.\.\./)
     },
   )
-
-  it('wires row navigation only on the preset resource table', () => {
-    const presetSource = readAdminboardFile(
-      'components/resources/preset/preset-table.tsx',
-    )
-    const exerciseSource = readAdminboardFile(
-      'components/resources/exercises/exercise-table.tsx',
-    )
-
-    expect(presetSource).toMatch(/rowNavigation=\{rowNavigation\}/)
-    expect(exerciseSource).not.toMatch(/rowNavigation/)
-  })
-
-  it('keeps preset exercise editor table free of fetch loading skeleton', () => {
-    const tableSource = readAdminboardFile(
-      'components/resources/preset/edit/preset-exercise-table.tsx',
-    )
-
-    expectSharedDataTableKit(tableSource)
-    expectSharedTableConfiguration(tableSource)
-    expect(tableSource).not.toMatch(/isLoading=/)
-  })
 })

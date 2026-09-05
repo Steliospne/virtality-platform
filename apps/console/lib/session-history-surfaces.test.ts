@@ -17,8 +17,6 @@ describe('patient session history surfaces', () => {
 
     expect(columnsSource).toMatch(/getSessionSourceProgramDisplayName/)
     expect(columnsSource).toMatch(/header: \(\) => 'Program'/)
-    expect(columnsSource).not.toMatch(/usePatientPrograms/)
-    expect(columnsSource).not.toMatch(/usePatientProgram/)
   })
 
   it('shows stored source program context in the session detail card', () => {
@@ -27,8 +25,6 @@ describe('patient session history surfaces', () => {
     )
 
     expect(cardSource).toMatch(/getSessionSourceProgramDisplayName/)
-    expect(cardSource).not.toMatch(/usePatientPrograms/)
-    expect(cardSource).not.toMatch(/usePatientProgram/)
     expect(cardSource).not.toMatch(/programs\?\.find/)
   })
 
@@ -48,7 +44,6 @@ describe('patient session history surfaces', () => {
 
     expect(tabSource).toMatch(/usePatientSessions/)
     expect(tabSource).toMatch(/usePatientSessionDateRange/)
-    expect(tabSource).not.toMatch(/usePatientPrograms/)
     expect(tabSource).not.toMatch(/programId/)
   })
 

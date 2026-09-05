@@ -14,7 +14,7 @@ function readConsoleFile(relativePath: string): string {
   return readFileSync(join(consoleRoot, relativePath), 'utf8')
 }
 
-const LEGACY_HOOK_NAMES = [
+const REMOVED_PROGRAM_AND_PRESET_HOOKS = [
   'usePatientProgram',
   'usePatientPrograms',
   'usePreset',
@@ -26,10 +26,10 @@ const LEGACY_HOOK_NAMES = [
   'useCreatePreset',
   'useUpdatePreset',
   'useDeletePreset',
-]
+] as const
 
 describe('clinician API vocabulary cleanup', () => {
-  it('does not export legacy patient-program or preset hooks from the main react-query entry', () => {
+  it('does not re-export removed patient-program or preset hooks from the main react-query entry', () => {
     const queryExports = readRepoFile(
       'packages/react-query/src/hooks/queries/index.ts',
     )
@@ -38,35 +38,27 @@ describe('clinician API vocabulary cleanup', () => {
     )
     const mainIndex = readRepoFile('packages/react-query/src/index.ts')
 
-    for (const hookName of LEGACY_HOOK_NAMES) {
+    for (const hookName of REMOVED_PROGRAM_AND_PRESET_HOOKS) {
       expect(queryExports).not.toMatch(new RegExp(`export \\{ ${hookName}`))
       expect(mutationExports).not.toMatch(new RegExp(`export \\{ ${hookName}`))
       expect(mainIndex).not.toMatch(new RegExp(`export \\{ ${hookName}`))
     }
   })
 
-  it('keeps legacy hooks available from the react-query legacy entry', () => {
-    const legacyIndex = readRepoFile('packages/react-query/src/legacy/index.ts')
-
-    for (const hookName of LEGACY_HOOK_NAMES) {
-      expect(legacyIndex).toMatch(new RegExp(hookName))
-    }
-  })
-
-  it('does not reference legacy hooks anywhere in the console app source', () => {
+  it('does not reference removed program or preset hooks in console program surfaces', () => {
     const appSource = readConsoleFile('app/(app)/programs/page.tsx')
     const dashboardSource = readConsoleFile(
       'app/(app)/patients/[patientId]/patient-dashboard/_components/program-selector.tsx',
     )
 
     for (const source of [appSource, dashboardSource]) {
-      for (const hookName of LEGACY_HOOK_NAMES) {
+      for (const hookName of REMOVED_PROGRAM_AND_PRESET_HOOKS) {
         expect(source).not.toMatch(new RegExp(hookName))
       }
     }
   })
 
-  it('removes unused preset and patient-program form types from console definitions', () => {
+  it('does not define preset or patient-program form types in console models', () => {
     const definitionsSource = readConsoleFile('lib/definitions.ts')
     const modelsSource = readConsoleFile('types/models.ts')
 
