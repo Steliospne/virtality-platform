@@ -14,7 +14,7 @@ import { createPrismaAdminCustomerBillingStore } from './admin-customer-billing.
 import {
   readPlanVariantCatalogFresh,
   toAssignablePlanVariantOptions,
-} from './plan-variant-catalog.ts'
+} from './plan-variant-catalog-adapter.ts'
 
 export function createPrismaAssignPlanVariantStore(
   client: PrismaClient = prisma,

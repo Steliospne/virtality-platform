@@ -1,24 +1,28 @@
-import { createStripeCouponLibraryGateway } from './lib/coupon-library.ts'
-import { createStripePromotionCodeGateway } from './lib/promotion-code.ts'
+import { createStripeCouponLibraryGateway } from './lib/coupon-library-adapter.ts'
+import { createStripePromotionCodeGateway } from './lib/promotion-code-adapter.ts'
 import {
   buildCampaignAwareCheckoutSessionParams,
   closeCampaignWindowForAdminboard,
+  createPrismaCampaignWindowStore,
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
-} from './lib/campaign-window.ts'
+} from './lib/campaign-window-adapter.ts'
 import {
+  createConsolePromoReadGateway,
+  createPrismaConsolePromoStore,
+  createStripeConsolePromoGateway,
   loadConsolePromoRedeemPreflightForUser,
   readConsoleSubscriptionDiscountForUser,
   redeemPromotionCodeForUser,
   removePromoDiscountForUser,
-} from './lib/console-promo-redeem.ts'
+} from './lib/console-promo-redeem-adapter.ts'
 import {
   cancelPendingPromotionCodeForCheckout,
   readOpenPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
   sweepAllExpiredPromotionCodeHolds,
 } from './lib/pending-promotion-code.ts'
-import { redeemAccessCodeForUser } from './lib/console-access-code-redeem.ts'
+import { redeemAccessCodeForUser } from './lib/console-access-code-redeem-adapter.ts'
 import { prisma } from '@virtality/db'
 import Stripe from 'stripe'
 import {
@@ -41,8 +45,13 @@ import {
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 import { stripeClient, FREE_PLAN_PRICE_ID } from './auth-instance.ts'
-import { readConsoleBillingCatalogOrSandbox } from './lib/billing-catalog.ts'
-import { readBillingCatalogForUser } from './lib/plan-variant-catalog.ts'
+import {
+  readBillingCatalogForUser,
+  clearPlanVariantCatalogCache,
+  readPlanVariantCatalogOrSandbox,
+  resolveAssignedPlanVariantChargePrice,
+  type AssignablePlanVariantOption,
+} from './lib/plan-variant-catalog-adapter.ts'
 
 export {
   auth,
@@ -73,7 +82,7 @@ export type { TrialGrantRuntime } from './lib/trial-grant-access.ts'
 export {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,
-} from './lib/entitlement-extension.ts'
+} from './lib/entitlement-extension-adapter.ts'
 export {
   createPrismaRenewPromptDeliveryStore,
   createPrismaRenewTriggerStore,
@@ -89,14 +98,14 @@ export {
   isCampaignCouponId,
   readLiveSubscriptionDiscount,
   registerCampaignCouponId,
-} from './lib/subscription-discount-read.ts'
+} from './lib/subscription-discount-read-adapter.ts'
 export {
   buildCampaignAwareCheckoutSessionParams,
   closeCampaignWindowForAdminboard,
   createPrismaCampaignWindowStore,
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
-} from './lib/campaign-window.ts'
+}
 export {
   createConsolePromoReadGateway,
   createPrismaConsolePromoStore,
@@ -105,7 +114,7 @@ export {
   readConsoleSubscriptionDiscountForUser,
   redeemPromotionCodeForUser,
   removePromoDiscountForUser,
-} from './lib/console-promo-redeem.ts'
+}
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
 export type {
@@ -225,11 +234,6 @@ export function readConsoleSubscriptionDiscountAction(userId: string) {
   })
 }
 
-/** Console Billing: Default catalog list prices from canonical Stripe Prices. */
-export function readConsoleBillingCatalogAction() {
-  return readConsoleBillingCatalogOrSandbox(stripeClient)
-}
-
 /** Console Billing: user-scoped Assigned Variant catalog (+ basic compare-at). */
 export async function readBillingCatalogForUserAction(userId: string) {
   const user = await prisma.user.findFirst({
@@ -249,14 +253,14 @@ export {
 export {
   AccessCodeVariantNameInvalidError,
   resolveAccessCodeVariantName,
-} from './lib/access-code-variant.ts'
+} from './lib/access-code-variant-adapter.ts'
 export {
   clearPlanVariantCatalogCache,
   readBillingCatalogForUser,
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
   type AssignablePlanVariantOption,
-} from './lib/plan-variant-catalog.ts'
+}
 export { scheduleAssignedVariantCyclePlanChange } from './lib/assigned-variant-cycle-plan-change.ts'
 export {
   ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,

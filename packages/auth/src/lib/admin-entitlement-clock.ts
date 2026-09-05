@@ -9,7 +9,7 @@ import {
 import {
   createPrismaEntitlementExtensionStore,
   createStripeEntitlementExtensionGateway,
-} from './entitlement-extension.ts'
+} from './entitlement-extension-adapter.ts'
 import {
   createAdminEntitlementClockRuntimeFromPorts,
   type AdminEntitlementClockRuntime,

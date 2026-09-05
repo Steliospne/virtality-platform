@@ -8,7 +8,7 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { createPrismaAssignPlanVariantStore } from './assign-plan-variant.ts'
-import { readPlanVariantCatalogFresh } from './plan-variant-catalog.ts'
+import { readPlanVariantCatalogFresh } from './plan-variant-catalog-adapter.ts'
 
 export class AccessCodeVariantNameInvalidError extends Error {
   constructor(variantName: string) {

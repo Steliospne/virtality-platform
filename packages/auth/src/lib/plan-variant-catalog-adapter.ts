@@ -1,4 +1,5 @@
 /**
+ * Auth-side adapter for `@virtality/shared` plan-variant-catalog builders.
  * Stripe-backed Assigned Variant catalog: list Default Product Prices, cache ~15m,
  * resolve pairs for charge paths and Adminboard picker.
  */

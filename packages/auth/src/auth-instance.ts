@@ -7,18 +7,18 @@ import {
   readSignUpCodeFromUnknown,
   redeemTrialCodeForCustomer,
 } from './lib/trial-redeem.ts'
-import { redeemAccessCodeForUser } from './lib/console-access-code-redeem.ts'
+import { redeemAccessCodeForUser } from './lib/console-access-code-redeem-adapter.ts'
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
 import { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
-import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window.ts'
+import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window-adapter.ts'
 import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
-import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem.ts'
+import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem-adapter.ts'
 import { markPendingPromotionCodeAppliedForCheckout } from './lib/pending-promotion-code.ts'
 import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
-} from './lib/plan-variant-catalog.ts'
+} from './lib/plan-variant-catalog-adapter.ts'
 import { updateUserRole } from './data/user.ts'
 import { prisma } from '@virtality/db'
 import { prismaAdapter } from 'better-auth/adapters/prisma'

@@ -8,7 +8,7 @@ import {
   redeemPromotionCodeForUser,
   removePromoDiscountForUser,
   resolvePromotionCodeForNewCheckout,
-} from './console-promo-redeem.ts'
+} from './console-promo-redeem-adapter.ts'
 
 const USER_ID = 'user_1'
 const LIVE_SUB_ID = 'sub_live'

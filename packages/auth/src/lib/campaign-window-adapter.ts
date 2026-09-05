@@ -1,3 +1,7 @@
+/**
+ * Auth-side adapter for `@virtality/shared` campaign-window builders.
+ * Prisma + Stripe wiring for the singleton Campaign Window.
+ */
 import type { PrismaClient } from '@virtality/db'
 import { prisma } from '@virtality/db'
 import {
@@ -20,8 +24,8 @@ import {
   type UpsertCampaignWindowInput,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { retrieveLibraryCoupon } from './coupon-library.ts'
-import { registerCampaignCouponId } from './subscription-discount-read.ts'
+import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
+import { registerCampaignCouponId } from './subscription-discount-read-adapter.ts'
 
 type CampaignWindowRow = {
   id: string

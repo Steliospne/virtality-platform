@@ -6,7 +6,7 @@ import type {
   PendingPromotionCodeCouponTerms,
 } from '@virtality/shared/types'
 import type Stripe from 'stripe'
-import { retrieveLibraryCoupon } from './coupon-library.ts'
+import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
 
 export const PENDING_PROMOTION_CODE_TTL_MS = 2 * 60 * 1000
 

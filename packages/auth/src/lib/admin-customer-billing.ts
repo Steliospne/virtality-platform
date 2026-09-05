@@ -22,11 +22,11 @@ import {
 } from './admin-customer-billing-runtime.ts'
 import { scheduleAssignedVariantCyclePlanChange } from './assigned-variant-cycle-plan-change.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
-import { createBetterAuthCyclePlanRestorePort } from './cycle-plan-change.ts'
+import { createBetterAuthCyclePlanRestorePort } from './cycle-plan-change-adapter.ts'
 import {
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
-} from './plan-variant-catalog.ts'
+} from './plan-variant-catalog-adapter.ts'
 
 export type { AdminCustomerBillingRuntime }
 
