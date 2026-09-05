@@ -52,9 +52,9 @@ const Testimonials = () => {
           backgroundSize: '48px 48px',
         }}
       />
-      <div className='absolute top-1/2 left-1/2 size-144 -translate-x-1/2 -translate-y-1/2 rounded-full bg-vital-blue-400/10 blur-3xl' />
+      <div className='bg-vital-blue-400/10 absolute top-1/2 left-1/2 size-144 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl' />
 
-      <div className='container relative z-10 m-auto px-4 md:px-8'>
+      <div className='relative z-10 container m-auto px-4 md:px-8'>
         <div className='mb-8 lg:mb-12'>
           <h2 className='text-3xl font-bold tracking-tight text-slate-900 md:text-4xl'>
             What they say <span className='text-vital-blue-700'>about us</span>
@@ -77,7 +77,7 @@ const Testimonials = () => {
                 >
                   <figure
                     className={cn(
-                      'flex h-full min-h-0 flex-col justify-between gap-5 border border-vital-blue-100/80 bg-white/90 p-5 shadow-[0_20px_50px_-28px_rgba(8,137,154,0.35)] transition-[opacity,transform] duration-500 select-none sm:gap-6 sm:p-6 lg:min-h-70 lg:gap-8 lg:p-8',
+                      'border-vital-blue-100/80 flex h-full min-h-0 flex-col justify-between gap-5 border bg-white/90 p-5 shadow-[0_20px_50px_-28px_rgba(8,137,154,0.35)] transition-[opacity,transform] duration-500 select-none sm:gap-6 sm:p-6 lg:min-h-70 lg:gap-8 lg:p-8',
                       isActive
                         ? 'scale-100 opacity-100'
                         : 'scale-[0.96] opacity-35',
@@ -86,7 +86,7 @@ const Testimonials = () => {
                     <div className='flex flex-col gap-3 sm:gap-4 lg:gap-5'>
                       <span
                         aria-hidden
-                        className='inline-flex text-vital-blue-700'
+                        className='text-vital-blue-700 inline-flex'
                       >
                         <svg
                           viewBox='0 0 24 24'
@@ -103,7 +103,7 @@ const Testimonials = () => {
                         </p>
                       </blockquote>
                     </div>
-                    <figcaption className='border-t border-vital-blue-100 pt-3 sm:pt-4 lg:pt-5'>
+                    <figcaption className='border-vital-blue-100 border-t pt-3 sm:pt-4 lg:pt-5'>
                       <cite className='text-xs font-semibold text-slate-900 not-italic sm:text-sm'>
                         {item.saidBy}
                       </cite>
@@ -115,12 +115,12 @@ const Testimonials = () => {
           </CarouselContent>
           <div className='mt-6 flex items-center justify-center gap-2 lg:mt-10'>
             <CarouselPrevious
-              className='static translate-none border-vital-blue-200'
+              className='border-vital-blue-200 static translate-none'
               disabled={false}
               onClick={() => scrollCarouselWithWrap(api, 'prev')}
             />
             <CarouselNext
-              className='static translate-none border-vital-blue-200'
+              className='border-vital-blue-200 static translate-none'
               disabled={false}
               onClick={() => scrollCarouselWithWrap(api, 'next')}
             />

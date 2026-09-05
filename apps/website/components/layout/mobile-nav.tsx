@@ -44,7 +44,7 @@ const MobileNav = ({
         <Button
           variant='ghost'
           size='icon'
-          className='md:hidden text-slate-600 dark:text-gray-300'
+          className='text-slate-600 md:hidden dark:text-gray-300'
           aria-label='Open menu'
         >
           <MenuIcon />
@@ -71,13 +71,13 @@ const MobileNav = ({
           </div>
 
           <div className='flex flex-col gap-3'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-400'>
+            <p className='text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-zinc-400'>
               Media
             </p>
             <div className='flex items-center gap-6 text-slate-600'>
               <SheetClose asChild>
                 <Link href={facebookUrl} target='_blank' aria-label='Facebook'>
-                  <SiFacebook className='size-4.5 hover:text-[#0866FF] hover:scale-110 transition-all' />
+                  <SiFacebook className='size-4.5 transition-all hover:scale-110 hover:text-[#0866FF]' />
                 </Link>
               </SheetClose>
               <SheetClose asChild>
@@ -86,17 +86,17 @@ const MobileNav = ({
                   target='_blank'
                   aria-label='Instagram'
                 >
-                  <SiInstagram className='size-4.5 hover:text-[#E4405F] hover:scale-110 transition-all' />
+                  <SiInstagram className='size-4.5 transition-all hover:scale-110 hover:text-[#E4405F]' />
                 </Link>
               </SheetClose>
               <SheetClose asChild>
                 <Link href={linkedinUrl} target='_blank' aria-label='LinkedIn'>
-                  <SiLinkedin className='size-4.5 hover:text-[#0A66C2] hover:scale-110 transition-all' />
+                  <SiLinkedin className='size-4.5 transition-all hover:scale-110 hover:text-[#0A66C2]' />
                 </Link>
               </SheetClose>
               <SheetClose asChild>
                 <Link href={xUrl} target='_blank' aria-label='X'>
-                  <SiX className='size-4.5 hover:text-[#000000] dark:hover:text-white hover:scale-110 transition-all' />
+                  <SiX className='size-4.5 transition-all hover:scale-110 hover:text-[#000000] dark:hover:text-white' />
                 </Link>
               </SheetClose>
             </div>

@@ -27,8 +27,8 @@ if (!X_URL || !LINKEDIN_URL || !FACEBOOK_URL || !INSTAGRAM_URL) {
 
 const Navbar = async () => {
   return (
-    <NavigationMenu className='h-15 max-w-full sticky top-0 z-20 backdrop-blur-md backdrop-saturate-180 bg-white/80 dark:bg-zinc-900/80 flex justify-between px-4 border-b border-vital-blue-100/50 dark:border-zinc-800'>
-      <Link href='/' className='hover:opacity-80 transition-opacity'>
+    <NavigationMenu className='border-vital-blue-100/50 sticky top-0 z-20 flex h-15 max-w-full justify-between border-b bg-white/80 px-4 backdrop-blur-md backdrop-saturate-180 dark:border-zinc-800 dark:bg-zinc-900/80'>
+      <Link href='/' className='transition-opacity hover:opacity-80'>
         <Image
           src='/virtality_small_rounded.png'
           alt='Virtality Logo'
@@ -39,23 +39,23 @@ const Navbar = async () => {
       </Link>
 
       <div className='flex items-center gap-2'>
-        <div className='hidden md:flex items-center gap-2'>
+        <div className='hidden items-center gap-2 md:flex'>
           <div className='flex justify-center gap-6 text-slate-600'>
             <Link href={FACEBOOK_URL} target='_blank'>
-              <SiFacebook className='size-4.5 hover:text-[#0866FF] hover:scale-110 transition-all' />
+              <SiFacebook className='size-4.5 transition-all hover:scale-110 hover:text-[#0866FF]' />
             </Link>
             <Link href={INSTAGRAM_URL} target='_blank'>
-              <SiInstagram className='size-4.5 hover:text-[#E4405F] hover:scale-110 transition-all' />
+              <SiInstagram className='size-4.5 transition-all hover:scale-110 hover:text-[#E4405F]' />
             </Link>
             <Link href={LINKEDIN_URL} target='_blank'>
-              <SiLinkedin className='size-4.5 hover:text-[#0A66C2] hover:scale-110 transition-all' />
+              <SiLinkedin className='size-4.5 transition-all hover:scale-110 hover:text-[#0A66C2]' />
             </Link>
             <Link href={X_URL} target='_blank'>
-              <SiX className='size-4.5 hover:text-[#000000] dark:hover:text-white hover:scale-110 transition-all' />
+              <SiX className='size-4.5 transition-all hover:scale-110 hover:text-[#000000] dark:hover:text-white' />
             </Link>
           </div>
 
-          <Separator orientation='vertical' className='h-6! ml-4' />
+          <Separator orientation='vertical' className='ml-4 h-6!' />
 
           <Button
             asChild
@@ -74,7 +74,7 @@ const Navbar = async () => {
         </ScrollToCtaButton>
         <Button
           asChild
-          className='bg-vital-blue-700 hover:bg-vital-blue-800 text-white font-semibold shadow-md shadow-vital-blue-700/20'
+          className='bg-vital-blue-700 hover:bg-vital-blue-800 shadow-vital-blue-700/20 font-semibold text-white shadow-md'
         >
           <Link href={consoleURL}>Login</Link>
         </Button>

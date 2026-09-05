@@ -65,8 +65,8 @@ const ContactUs = () => {
     return (
       <Card>
         <CardContent className='pt-6'>
-          <div className='text-center space-y-4'>
-            <div className='size-16 bg-green-100 rounded-full flex items-center justify-center mx-auto'>
+          <div className='space-y-4 text-center'>
+            <div className='mx-auto flex size-16 items-center justify-center rounded-full bg-green-100'>
               <Mail className='size-8 text-green-600' />
             </div>
             <h3 className='text-xl font-semibold text-gray-900'>
@@ -95,36 +95,36 @@ const ContactUs = () => {
   return (
     <section className='min-h-screen-with-nav flex justify-center bg-linear-to-br from-slate-50 to-white max-lg:py-10'>
       <div className='m-auto'>
-        <div className='text-center mb-6'>
-          <div className='inline-block bg-vital-blue-700/10 text-vital-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6'>
+        <div className='mb-6 text-center'>
+          <div className='bg-vital-blue-700/10 text-vital-blue-700 mb-6 inline-block rounded-full px-4 py-2 text-sm font-medium'>
             Get In Touch
           </div>
-          <h1 className='text-4xl md:text-5xl font-bold text-gray-900 mb-6'>
+          <h1 className='mb-6 text-4xl font-bold text-gray-900 md:text-5xl'>
             Contact <span className='text-vital-blue-700'>Virtality</span>
           </h1>
-          <p className='text-lg text-gray-600 max-w-2xl mx-auto'>
+          <p className='mx-auto max-w-2xl text-lg text-gray-600'>
             {
               "Ready to transform patient recovery with VR technology? We'd love to hear from you. Reach out to learn more about our innovative rehabilitation solutions."
             }
           </p>
         </div>
-        <div className='grid lg:grid-cols-3 gap-8'>
+        <div className='grid gap-8 lg:grid-cols-3'>
           {/* Contact Form */}
           <div className='lg:col-span-2'>
             <Card className='border-vital-blue-700/20 h-full'>
               <CardHeader>
-                <CardTitle className='text-2xl text-gray-900 flex items-center gap-2'>
-                  <MessageSquare className='size-6 text-vital-blue-700' />
+                <CardTitle className='flex items-center gap-2 text-2xl text-gray-900'>
+                  <MessageSquare className='text-vital-blue-700 size-6' />
                   Send us a Message
                 </CardTitle>
               </CardHeader>
-              <CardContent className='space-y-6 flex flex-col h-full'>
+              <CardContent className='flex h-full flex-col space-y-6'>
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
                     className='space-y-4'
                   >
-                    <div className='grid md:grid-cols-2 gap-4'>
+                    <div className='grid gap-4 md:grid-cols-2'>
                       <FormField
                         control={form.control}
                         name='firstName'
@@ -159,7 +159,7 @@ const ContactUs = () => {
                       />
                     </div>
 
-                    <div className='grid md:grid-cols-2 gap-4'>
+                    <div className='grid gap-4 md:grid-cols-2'>
                       <FormField
                         control={form.control}
                         name='email'
@@ -199,7 +199,7 @@ const ContactUs = () => {
                       />
                     </div>
 
-                    <div className='space-y-2 flex-1'>
+                    <div className='flex-1 space-y-2'>
                       <FormField
                         control={form.control}
                         name='message'
@@ -219,7 +219,7 @@ const ContactUs = () => {
                         )}
                       />
                     </div>
-                    <Button className='w-full bg-vital-blue-700 hover:bg-[#077a89] text-white py-3'>
+                    <Button className='bg-vital-blue-700 w-full py-3 text-white hover:bg-[#077a89]'>
                       <Send className='mr-2' />
                       Send Message
                     </Button>
@@ -240,7 +240,7 @@ const ContactUs = () => {
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='flex items-start gap-3'>
-                  <Mail className='size-5 text-vital-blue-700 mt-1' />
+                  <Mail className='text-vital-blue-700 mt-1 size-5' />
                   <div>
                     <p className='font-medium text-gray-900'>Email</p>
                     <p className='text-gray-600'>info@virtality.app</p>

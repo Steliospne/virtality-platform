@@ -151,7 +151,7 @@ const HeroVideoBackdropCtaCenter = () => {
         <div className='pointer-events-auto flex flex-col items-center gap-4 sm:flex-row sm:gap-5'>
           <Button
             variant='primary'
-            className='h-auto rounded-full px-7 py-4 text-base font-semibold shadow-lg shadow-vital-blue-700/25 transition-all hover:shadow-xl hover:shadow-vital-blue-700/30'
+            className='shadow-vital-blue-700/25 hover:shadow-vital-blue-700/30 h-auto rounded-full px-7 py-4 text-base font-semibold shadow-lg transition-all hover:shadow-xl'
             onClick={scrollToFinalCta}
           >
             <span className='flex items-center gap-2'>

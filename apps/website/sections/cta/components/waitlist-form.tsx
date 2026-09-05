@@ -77,7 +77,7 @@ const WaitlistForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className='flex flex-row overflow-hidden rounded-xl border-2 border-vital-blue-100 focus-within:border-vital-blue-700 focus-within:ring-2 focus-within:ring-vital-blue-700/20'>
+                  <div className='border-vital-blue-100 focus-within:border-vital-blue-700 focus-within:ring-vital-blue-700/20 flex flex-row overflow-hidden rounded-xl border-2 focus-within:ring-2'>
                     <Input
                       type='email'
                       placeholder='Enter your email'
@@ -88,10 +88,10 @@ const WaitlistForm = ({
                     <Button
                       type='submit'
                       variant='primary'
-                      className='h-14 shrink-0 rounded-none px-6 text-base font-semibold shadow-none group'
+                      className='group h-14 shrink-0 rounded-none px-6 text-base font-semibold shadow-none'
                     >
                       {isCreating || isSending ? 'Submitting...' : submitLabel}
-                      <ArrowRight className='size-4 ml-2 group-hover:translate-x-1 transition-transform' />
+                      <ArrowRight className='ml-2 size-4 transition-transform group-hover:translate-x-1' />
                     </Button>
                   </div>
                 </FormControl>

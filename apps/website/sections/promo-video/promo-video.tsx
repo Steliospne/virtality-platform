@@ -35,7 +35,7 @@ const PromoVideo = () => {
   return (
     <section
       id='promo-section'
-      className='relative min-h-screen-with-nav items-center justify-center flex py-20 overflow-hidden'
+      className='min-h-screen-with-nav relative flex items-center justify-center overflow-hidden py-20'
     >
       {/* Background */}
       <div className='absolute inset-0 bg-slate-900'></div>
@@ -50,30 +50,30 @@ const PromoVideo = () => {
       ></div>
 
       {/* Gradient orbs */}
-      <div className='absolute top-1/4 left-1/4 w-96 h-96 bg-vital-blue-600/20 rounded-full blur-3xl'></div>
-      <div className='absolute bottom-1/4 right-1/4 w-96 h-96 bg-vital-blue-500/20 rounded-full blur-3xl'></div>
+      <div className='bg-vital-blue-600/20 absolute top-1/4 left-1/4 h-96 w-96 rounded-full blur-3xl'></div>
+      <div className='bg-vital-blue-500/20 absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full blur-3xl'></div>
 
-      <div className='container relative z-10 m-auto px-4 md:px-8'>
-        <div className='max-w-5xl mx-auto'>
+      <div className='relative z-10 container m-auto px-4 md:px-8'>
+        <div className='mx-auto max-w-5xl'>
           {/* Section header */}
-          <div className='text-center mb-12'>
-            <div className='inline-flex items-center gap-2 rounded-full bg-vital-blue-700/20 px-4 py-2 text-sm font-semibold text-vital-blue-300 mb-6'>
+          <div className='mb-12 text-center'>
+            <div className='bg-vital-blue-700/20 text-vital-blue-300 mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold'>
               <span>Product Demonstration</span>
             </div>
-            <h2 className='text-3xl md:text-4xl font-bold text-white mb-4'>
+            <h2 className='mb-4 text-3xl font-bold text-white md:text-4xl'>
               Virtality in Action
             </h2>
-            <p className='text-lg text-slate-300 max-w-2xl mx-auto'>
+            <p className='mx-auto max-w-2xl text-lg text-slate-300'>
               Retrain the brain. Restore physical movement.
             </p>
           </div>
 
           {/* Video container */}
-          <div className='relative aspect-video rounded-2xl overflow-hidden shadow-2xl border-2 border-vital-blue-700/30 group'>
+          <div className='border-vital-blue-700/30 group relative aspect-video overflow-hidden rounded-2xl border-2 shadow-2xl'>
             {/* Video frame decoration */}
-            <div className='absolute -inset-1 bg-linear-to-r from-vital-blue-600 to-vital-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity'></div>
+            <div className='from-vital-blue-600 to-vital-blue-500 absolute -inset-1 rounded-2xl bg-linear-to-r opacity-0 blur transition-opacity group-hover:opacity-100'></div>
 
-            <div className='relative bg-black rounded-xl overflow-hidden'>
+            <div className='relative overflow-hidden rounded-xl bg-black'>
               <video
                 ref={videoRef}
                 controls
@@ -84,18 +84,18 @@ const PromoVideo = () => {
               />
               {!isPlaying && (
                 <div
-                  className='absolute inset-0 bg-linear-to-br from-vital-blue-900/40 to-slate-900/60 backdrop-blur-[2px] flex items-center justify-center cursor-pointer group/play'
+                  className='from-vital-blue-900/40 group/play absolute inset-0 flex cursor-pointer items-center justify-center bg-linear-to-br to-slate-900/60 backdrop-blur-[2px]'
                   role='button'
                   onClick={handleVideoPlayback}
                 >
                   <div className='relative'>
                     {/* Pulse rings */}
-                    <div className='absolute inset-0 bg-vital-blue-600/30 rounded-full animate-ping'></div>
-                    <div className='absolute inset-0 bg-vital-blue-600/20 rounded-full animate-pulse'></div>
+                    <div className='bg-vital-blue-600/30 absolute inset-0 animate-ping rounded-full'></div>
+                    <div className='bg-vital-blue-600/20 absolute inset-0 animate-pulse rounded-full'></div>
 
                     {/* Play button */}
-                    <div className='relative bg-linear-to-br from-vital-blue-700 to-vital-blue-600 rounded-full w-20 h-20 flex items-center justify-center text-white shadow-2xl shadow-vital-blue-700/50 group-hover/play:scale-110 transition-transform'>
-                      <Play className='w-8 h-8 ml-1' />
+                    <div className='from-vital-blue-700 to-vital-blue-600 shadow-vital-blue-700/50 relative flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br text-white shadow-2xl transition-transform group-hover/play:scale-110'>
+                      <Play className='ml-1 h-8 w-8' />
                     </div>
                   </div>
                 </div>
@@ -104,27 +104,27 @@ const PromoVideo = () => {
           </div>
 
           {/* Video stats */}
-          <div className='mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center'>
+          <div className='mt-12 grid grid-cols-2 gap-6 text-center md:grid-cols-4'>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
+              <div className='text-vital-blue-400 mb-1 text-2xl font-bold'>
                 100+
               </div>
               <div className='text-sm text-slate-400'>Exercises</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
+              <div className='text-vital-blue-400 mb-1 text-2xl font-bold'>
                 Real-time
               </div>
               <div className='text-sm text-slate-400'>Biofeedback</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
+              <div className='text-vital-blue-400 mb-1 text-2xl font-bold'>
                 Cloud
               </div>
               <div className='text-sm text-slate-400'>Data Analytics</div>
             </div>
             <div>
-              <div className='text-2xl font-bold text-vital-blue-400 mb-1'>
+              <div className='text-vital-blue-400 mb-1 text-2xl font-bold'>
                 Custom
               </div>
               <div className='text-sm text-slate-400'>Treatment Plans</div>

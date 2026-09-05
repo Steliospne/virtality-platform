@@ -111,7 +111,7 @@ const HeroTitle = ({
           }
         />
       ) : (
-        <div className='inline-flex items-center gap-2 rounded-full border border-vital-blue-700/25 bg-white/70 px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-vital-blue-800 uppercase shadow-sm shadow-vital-blue-900/5 backdrop-blur-sm dark:bg-white/10 dark:text-vital-blue-200'>
+        <div className='border-vital-blue-700/25 text-vital-blue-800 shadow-vital-blue-900/5 dark:text-vital-blue-200 inline-flex items-center gap-2 rounded-full border bg-white/70 px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] uppercase shadow-sm backdrop-blur-sm dark:bg-white/10'>
           <Activity className='size-3.5' />
           <span>{HERO_BADGE_LABEL}</span>
         </div>
@@ -120,7 +120,7 @@ const HeroTitle = ({
       <h1
         className={cn(
           fraunces.className,
-          'max-w-4xl leading-[1.02] font-medium tracking-tight text-slate-900 dark:text-white [&_.split-word:last-child]:text-vital-blue-700 [&_.split-word:last-child]:italic dark:[&_.split-word:last-child]:text-vital-blue-300',
+          '[&_.split-word:last-child]:text-vital-blue-700 dark:[&_.split-word:last-child]:text-vital-blue-300 max-w-4xl leading-[1.02] font-medium tracking-tight text-slate-900 dark:text-white [&_.split-word:last-child]:italic',
           isLarge
             ? 'text-[4.125rem] sm:text-[5.625rem] md:text-[7.125rem]'
             : 'text-[2.75rem] sm:text-6xl md:text-[4.75rem]',
@@ -154,7 +154,7 @@ const HeroTitle = ({
         >
           <Button
             variant='primary'
-            className='h-auto rounded-full px-7 py-4 text-base font-semibold shadow-lg shadow-vital-blue-700/25 transition-all hover:shadow-xl hover:shadow-vital-blue-700/30'
+            className='shadow-vital-blue-700/25 hover:shadow-vital-blue-700/30 h-auto rounded-full px-7 py-4 text-base font-semibold shadow-lg transition-all hover:shadow-xl'
             onClick={scrollToFinalCta}
           >
             <span className='flex items-center gap-2'>

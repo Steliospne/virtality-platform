@@ -16,7 +16,7 @@ const BlogPostView = ({ post }: BlogPostViewProps) => {
         <aside className='space-y-6 md:sticky md:top-24 md:self-start'>
           <Link
             href='/blog'
-            className='font-mono text-xs tracking-[0.18em] text-slate-500 uppercase transition-colors hover:text-vital-blue-700'
+            className='hover:text-vital-blue-700 font-mono text-xs tracking-[0.18em] text-slate-500 uppercase transition-colors'
           >
             ← Journal
           </Link>
@@ -40,11 +40,11 @@ const BlogPostView = ({ post }: BlogPostViewProps) => {
               />
             ) : null}
             <div>
-              <p className='text-sm font-medium normal-case tracking-normal'>
+              <p className='text-sm font-medium tracking-normal normal-case'>
                 {post.author.name}
               </p>
               {post.author.role ? (
-                <p className='text-xs font-sans tracking-normal text-slate-500 normal-case'>
+                <p className='font-sans text-xs tracking-normal text-slate-500 normal-case'>
                   {post.author.role}
                 </p>
               ) : null}
@@ -56,7 +56,7 @@ const BlogPostView = ({ post }: BlogPostViewProps) => {
           <h1 className='text-4xl font-medium tracking-tight text-balance md:text-5xl'>
             {post.title}
           </h1>
-          <p className='mt-6 text-xl text-slate-600 text-pretty dark:text-slate-300'>
+          <p className='mt-6 text-xl text-pretty text-slate-600 dark:text-slate-300'>
             {post.excerpt}
           </p>
           <BodyBlocks blocks={post.body} className='mt-10 space-y-8' />

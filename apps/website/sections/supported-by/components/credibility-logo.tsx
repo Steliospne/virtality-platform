@@ -49,7 +49,7 @@ const CredibilityLogo = ({
         )}
       />
       {size === 'primary' ? (
-        <div className='pointer-events-none absolute inset-x-0 -bottom-2 mx-auto h-0.5 w-2/3 rounded-full bg-linear-to-r from-transparent via-vital-blue-400 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-70' />
+        <div className='via-vital-blue-400 pointer-events-none absolute inset-x-0 -bottom-2 mx-auto h-0.5 w-2/3 rounded-full bg-linear-to-r from-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-70' />
       ) : null}
     </div>
   )

@@ -16,7 +16,7 @@ const LegalPdfViewer = ({ title, pdfPath, pageImages }: LegalDocument) => {
           </p>
           <Link
             href={pdfPath}
-            className='inline-flex items-center gap-2 text-sm font-medium text-vital-blue-700 hover:text-[#077a89]'
+            className='text-vital-blue-700 inline-flex items-center gap-2 text-sm font-medium hover:text-[#077a89]'
           >
             <ExternalLink className='size-4' aria-hidden='true' />
             Open {title} (PDF)
@@ -24,7 +24,7 @@ const LegalPdfViewer = ({ title, pdfPath, pageImages }: LegalDocument) => {
         </div>
         <div
           aria-label={title}
-          className='h-[min(80vh,1100px)] overflow-y-auto rounded-lg border border-vital-blue-700/20 bg-gray-100 p-4 shadow-sm'
+          className='border-vital-blue-700/20 h-[min(80vh,1100px)] overflow-y-auto rounded-lg border bg-gray-100 p-4 shadow-sm'
         >
           <div className='mx-auto flex max-w-4xl flex-col gap-4'>
             {pageImages.map((pageImage, index) => (

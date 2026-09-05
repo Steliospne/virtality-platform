@@ -31,9 +31,9 @@ const ThankYouPage = () => {
   }, [])
 
   return (
-    <section className='min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-slate-50 to-teal-50 px-4 py-16'>
+    <section className='flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-slate-50 to-teal-50 px-4 py-16'>
       <div
-        className='absolute inset-0 opacity-[0.02] pointer-events-none'
+        className='pointer-events-none absolute inset-0 opacity-[0.02]'
         style={{
           backgroundImage: `
             linear-gradient(to right, #08899a 1px, transparent 1px),
@@ -44,27 +44,27 @@ const ThankYouPage = () => {
       />
       {/* Soft orbs */}
       <div
-        className='absolute top-1/4 right-0 w-100 h-100 rounded-full bg-vital-blue-400/10 blur-3xl pointer-events-none'
+        className='bg-vital-blue-400/10 pointer-events-none absolute top-1/4 right-0 h-100 w-100 rounded-full blur-3xl'
         style={{ animation: 'pulse 5s ease-in-out infinite' }}
       />
       <div
-        className='absolute bottom-1/4 left-0 w-87.5 h-87.5 rounded-full bg-vital-blue-600/8 blur-3xl pointer-events-none'
+        className='bg-vital-blue-600/8 pointer-events-none absolute bottom-1/4 left-0 h-87.5 w-87.5 rounded-full blur-3xl'
         style={{ animation: 'pulse 6s ease-in-out infinite 0.5s' }}
       />
 
       <div
-        className='relative z-10 w-full max-w-2xl mx-auto'
+        className='relative z-10 mx-auto w-full max-w-2xl'
         ref={containerRef}
       >
-        <Card className='border-0 shadow-xl bg-white/90 backdrop-blur-sm overflow-hidden'>
+        <Card className='overflow-hidden border-0 bg-white/90 shadow-xl backdrop-blur-sm'>
           {/* Accent bar – same as CTA */}
-          <div className='h-2 bg-linear-to-r from-vital-blue-700 via-vital-blue-600 to-vital-blue-700' />
+          <div className='from-vital-blue-700 via-vital-blue-600 to-vital-blue-700 h-2 bg-linear-to-r' />
 
-          <CardContent className='p-8 md:p-12 text-center'>
+          <CardContent className='p-8 text-center md:p-12'>
             {/* Success icon */}
             <div
               data-thank-you-item
-              className='inline-flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-r from-vital-blue-700 to-vital-blue-600 shadow-lg shadow-vital-blue-600/25 mb-6'
+              className='from-vital-blue-700 to-vital-blue-600 shadow-vital-blue-600/25 mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-r shadow-lg'
               aria-hidden
             >
               <Check className='size-10 text-white' />
@@ -72,13 +72,13 @@ const ThankYouPage = () => {
 
             <h1
               data-thank-you-item
-              className='text-3xl md:text-4xl font-bold text-slate-800 mb-3'
+              className='mb-3 text-3xl font-bold text-slate-800 md:text-4xl'
             >
               You&apos;re all set! Welcome to Virtality. 🚀
             </h1>
             <p
               data-thank-you-item
-              className='text-lg text-slate-600 mb-8 max-w-[45ch] mx-auto'
+              className='mx-auto mb-8 max-w-[45ch] text-lg text-slate-600'
             >
               We just sent an email to your inbox with everything you need to
               get started.
@@ -87,21 +87,21 @@ const ThankYouPage = () => {
             {/* What's next */}
             <div
               data-thank-you-item
-              className='grid sm:grid-cols-2 gap-4 mb-8 text-left'
+              className='mb-8 grid gap-4 text-left sm:grid-cols-2'
             >
-              <div className='flex items-center gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
-                <div className='shrink-0 w-10 h-10 rounded-lg bg-vital-blue-100 flex items-center justify-center'>
-                  <CalendarCheck className='size-5 text-vital-blue-700' />
+              <div className='border-vital-blue-100/60 flex items-center gap-3 rounded-xl border bg-slate-50/80 p-4'>
+                <div className='bg-vital-blue-100 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
+                  <CalendarCheck className='text-vital-blue-700 size-5' />
                 </div>
-                <p className='font-semibold text-slate-800 text-sm'>
+                <p className='text-sm font-semibold text-slate-800'>
                   Book your 1-on-1 onboarding session to get instant access.
                 </p>
               </div>
-              <div className='flex items-center gap-3 p-4 rounded-xl bg-slate-50/80 border border-vital-blue-100/60'>
-                <div className='shrink-0 w-10 h-10 rounded-lg bg-vital-blue-100 flex items-center justify-center'>
-                  <Gift className='size-5 text-vital-blue-700' />
+              <div className='border-vital-blue-100/60 flex items-center gap-3 rounded-xl border bg-slate-50/80 p-4'>
+                <div className='bg-vital-blue-100 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
+                  <Gift className='text-vital-blue-700 size-5' />
                 </div>
-                <p className='font-semibold text-slate-800 text-sm'>
+                <p className='text-sm font-semibold text-slate-800'>
                   As an early member, you&apos;ll receive special pricing and
                   personalized support.
                 </p>
@@ -110,23 +110,23 @@ const ThankYouPage = () => {
 
             <p
               data-thank-you-item
-              className='flex items-center justify-center gap-2 text-sm text-slate-500 mb-6'
+              className='mb-6 flex items-center justify-center gap-2 text-sm text-slate-500'
             >
-              <Sparkles className='size-4 text-vital-blue-500' aria-hidden />
+              <Sparkles className='text-vital-blue-500 size-4' aria-hidden />
               Because every move matters.
             </p>
 
             <div data-thank-you-item>
               <Button
                 asChild
-                className='h-12 px-6 text-base font-semibold bg-vital-blue-700 hover:bg-vital-blue-800 shadow-lg shadow-vital-blue-700/25 hover:shadow-xl hover:shadow-vital-blue-700/30 transition-all rounded-xl group'
+                className='bg-vital-blue-700 hover:bg-vital-blue-800 shadow-vital-blue-700/25 hover:shadow-vital-blue-700/30 group h-12 rounded-xl px-6 text-base font-semibold shadow-lg transition-all hover:shadow-xl'
               >
                 <Link
                   href='/'
-                  className='inline-flex items-center gap-2 group/link'
+                  className='group/link inline-flex items-center gap-2'
                 >
                   Back to home
-                  <ArrowRight className='size-4 group-hover/link:translate-x-1 transition-transform' />
+                  <ArrowRight className='size-4 transition-transform group-hover/link:translate-x-1' />
                 </Link>
               </Button>
             </div>

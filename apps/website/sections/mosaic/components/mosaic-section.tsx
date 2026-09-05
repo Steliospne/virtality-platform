@@ -66,11 +66,11 @@ const MosaicSection = () => {
         className='absolute inset-0 opacity-[0.03]'
         style={GRID_BACKDROP_STYLE}
       />
-      <div className='absolute top-1/2 left-1/2 size-144 -translate-x-1/2 -translate-y-1/2 rounded-full bg-vital-blue-400/10 blur-3xl' />
+      <div className='bg-vital-blue-400/10 absolute top-1/2 left-1/2 size-144 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl' />
 
-      <div className='container relative z-10 m-auto px-4 md:px-8'>
+      <div className='relative z-10 container m-auto px-4 md:px-8'>
         <div className='mx-auto mb-12 max-w-2xl text-center'>
-          <div className='mb-6 inline-flex items-center gap-2 rounded-full border border-vital-blue-100 bg-vital-blue-50 px-4 py-2 text-sm font-semibold text-vital-blue-700'>
+          <div className='border-vital-blue-100 bg-vital-blue-50 text-vital-blue-700 mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold'>
             {MOSAIC_SECTION_CONTENT.eyebrow}
           </div>
           <h2 className='text-3xl font-bold tracking-tight text-slate-900 md:text-4xl dark:text-gray-100'>

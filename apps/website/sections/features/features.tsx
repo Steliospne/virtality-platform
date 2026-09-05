@@ -13,7 +13,7 @@ const Features = () => {
       id='features'
       className='relative flex overflow-hidden py-14 md:py-24 dark:bg-zinc-900'
     >
-      <div className='absolute inset-0 bg-linear-to-b from-slate-50 via-white to-vital-blue-50/20'></div>
+      <div className='to-vital-blue-50/20 absolute inset-0 bg-linear-to-b from-slate-50 via-white'></div>
       <div
         className='absolute inset-0 opacity-[0.02]'
         style={{
@@ -24,14 +24,14 @@ const Features = () => {
         }}
       ></div>
 
-      <div className='container relative z-10 m-auto px-4 py-8 md:px-8 md:py-16'>
+      <div className='relative z-10 container m-auto px-4 py-8 md:px-8 md:py-16'>
         <div className='mx-auto mb-10 max-w-3xl text-center md:mb-16'>
-          <div className='mb-4 inline-flex items-center gap-2 rounded-full bg-vital-blue-700/10 px-4 py-2 text-sm font-semibold text-vital-blue-700 md:mb-6'>
+          <div className='bg-vital-blue-700/10 text-vital-blue-700 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold md:mb-6'>
             <span>{FEATURES_SECTION_CONTENT.eyebrow}</span>
           </div>
           <h2 className='mb-4 text-3xl font-bold text-slate-900 md:mb-6 md:text-5xl dark:text-white'>
             {FEATURES_SECTION_CONTENT.titleLead}{' '}
-            <span className='bg-linear-to-r from-vital-blue-700 to-vital-blue-600 bg-clip-text text-transparent'>
+            <span className='from-vital-blue-700 to-vital-blue-600 bg-linear-to-r bg-clip-text text-transparent'>
               {FEATURES_SECTION_CONTENT.titleAccent}
             </span>
           </h2>

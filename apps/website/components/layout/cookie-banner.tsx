@@ -42,7 +42,7 @@ export default function CookieBanner() {
 
   return (
     <section className='pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-end sm:inset-x-6 sm:bottom-6'>
-      <div className='pointer-events-auto w-full max-w-sm rounded-2xl border border-vital-blue-100/80 bg-white/90 px-4 py-3 shadow-lg backdrop-blur-md sm:max-w-md'>
+      <div className='border-vital-blue-100/80 pointer-events-auto w-full max-w-sm rounded-2xl border bg-white/90 px-4 py-3 shadow-lg backdrop-blur-md sm:max-w-md'>
         <div className='flex flex-col gap-3'>
           <div className='space-y-1'>
             <p className='text-vital-blue-700 text-[11px] font-semibold tracking-[0.2em] uppercase'>

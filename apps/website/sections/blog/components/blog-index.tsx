@@ -17,7 +17,7 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
         <div className='container mx-auto grid gap-8 px-4 py-16 md:grid-cols-[180px_1fr] md:px-8 md:py-20'>
           <p className='font-mono text-xs tracking-[0.18em] text-slate-500 uppercase'></p>
           <div>
-            <h1 className='max-w-3xl text-vital-blue-700 text-4xl font-medium tracking-tight text-balance md:text-5xl'>
+            <h1 className='text-vital-blue-700 max-w-3xl text-4xl font-medium tracking-tight text-balance md:text-5xl'>
               Our latest news and updates
             </h1>
           </div>
@@ -44,10 +44,10 @@ const BlogIndex = ({ posts, featured }: BlogIndexProps) => {
                   ) : null}
                 </div>
                 <div>
-                  <h2 className='text-2xl font-medium text-balance transition-colors group-hover:text-vital-blue-700 md:text-3xl'>
+                  <h2 className='group-hover:text-vital-blue-700 text-2xl font-medium text-balance transition-colors md:text-3xl'>
                     {post.title}
                   </h2>
-                  <p className='mt-3 max-w-2xl text-slate-600 text-pretty dark:text-slate-400'>
+                  <p className='mt-3 max-w-2xl text-pretty text-slate-600 dark:text-slate-400'>
                     {post.excerpt}
                   </p>
                   <p className='mt-4 text-sm text-slate-500'>
