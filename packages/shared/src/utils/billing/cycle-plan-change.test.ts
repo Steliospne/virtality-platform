@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getConsoleUrl } from '../../types/index.ts'
 import {
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
   DEFAULT_PLAN_MONTHLY_PRICE_ID,
@@ -7,23 +6,15 @@ import {
 import {
   annualFlagForDefaultPlanPriceId,
   authorizeAdminCyclePlanReference,
-  buildCyclePlanChangeUpgradeInput,
   hasPendingCyclePlanChange,
   restoreSubscription,
-  scheduleCyclePlanChange,
-  type CyclePlanChangePort,
+  type CyclePlanChangeRestorePort,
 } from './cycle-plan-change.ts'
 
-const consoleOrigin = getConsoleUrl()
-
-function createFakePort(
-  overrides: Partial<CyclePlanChangePort> = {},
-): CyclePlanChangePort {
+function createFakeRestorePort(
+  overrides: Partial<CyclePlanChangeRestorePort> = {},
+): CyclePlanChangeRestorePort {
   return {
-    upgrade: vi.fn(async () => ({
-      data: {},
-      stripeScheduleId: 'sub_sched_fake',
-    })),
     restore: vi.fn(async () => ({
       data: {},
       stripeSubscriptionId: 'sub_pro_1',
@@ -65,7 +56,7 @@ describe('authorizeAdminCyclePlanReference', () => {
 })
 
 describe('annualFlagForDefaultPlanPriceId', () => {
-  it('maps yearly vs monthly Default Prices to the Better Auth annual flag', () => {
+  it('maps yearly vs monthly Default Prices to the yearly interval flag', () => {
     expect(annualFlagForDefaultPlanPriceId(DEFAULT_PLAN_ANNUAL_PRICE_ID)).toBe(
       true,
     )
@@ -85,75 +76,9 @@ describe('hasPendingCyclePlanChange', () => {
   })
 })
 
-describe('buildCyclePlanChangeUpgradeInput', () => {
-  it('always schedules at period end with redirect disabled', () => {
-    const input = buildCyclePlanChangeUpgradeInput({
-      annual: true,
-      returnUrl: '/user/u1/profile?tab=billing',
-      referenceId: 'user_customer',
-    })
-
-    expect(input.plan).toBe('default')
-    expect(input.annual).toBe(true)
-    expect(input.referenceId).toBe('user_customer')
-    expect(input.scheduleAtPeriodEnd).toBe(true)
-    expect(input.disableRedirect).toBe(true)
-    expect(new URL(input.returnUrl).origin).toBe(new URL(consoleOrigin).origin)
-    expect(new URL(input.successUrl).searchParams.get('checkoutReturn')).toBe(
-      'success',
-    )
-    expect(new URL(input.cancelUrl).searchParams.get('checkoutReturn')).toBe(
-      'cancel',
-    )
-  })
-})
-
-describe('scheduleCyclePlanChange', () => {
-  it('schedules through the injected Better Auth port', async () => {
-    const port = createFakePort()
-
-    const result = await scheduleCyclePlanChange({
-      port,
-      referenceId: 'user_customer',
-      annual: true,
-      returnUrl: `${consoleOrigin}/user/user_customer/profile?tab=billing`,
-    })
-
-    expect(result).toEqual({ ok: true, stripeScheduleId: 'sub_sched_fake' })
-    expect(port.upgrade).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: 'default',
-        annual: true,
-        referenceId: 'user_customer',
-        scheduleAtPeriodEnd: true,
-        disableRedirect: true,
-      }),
-    )
-  })
-
-  it('surfaces Better Auth upgrade errors', async () => {
-    const port = createFakePort({
-      upgrade: vi.fn(async () => ({
-        error: { message: 'Already scheduled' },
-      })),
-    })
-
-    await expect(
-      scheduleCyclePlanChange({
-        port,
-        annual: false,
-        returnUrl: '/billing',
-      }),
-    ).resolves.toEqual({
-      ok: false,
-      message: 'Already scheduled',
-    })
-  })
-})
-
 describe('restoreSubscription', () => {
   it('restores through the injected Better Auth port', async () => {
-    const port = createFakePort()
+    const port = createFakeRestorePort()
 
     const result = await restoreSubscription({
       port,
@@ -170,7 +95,7 @@ describe('restoreSubscription', () => {
   })
 
   it('omits referenceId for self-serve restore', async () => {
-    const port = createFakePort()
+    const port = createFakeRestorePort()
 
     await restoreSubscription({ port })
 
@@ -178,7 +103,7 @@ describe('restoreSubscription', () => {
   })
 
   it('surfaces Better Auth restore errors', async () => {
-    const port = createFakePort({
+    const port = createFakeRestorePort({
       restore: vi.fn(async () => ({
         error: { message: 'No pending change' },
       })),

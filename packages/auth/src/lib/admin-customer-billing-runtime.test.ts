@@ -144,8 +144,8 @@ function createCyclePlanPort(
   overrides: Partial<AdminCustomerCyclePlanPort> = {},
 ): AdminCustomerCyclePlanPort {
   return {
-    upgrade: vi.fn(async () => ({
-      data: {},
+    scheduleCyclePlanChange: vi.fn(async () => ({
+      ok: true as const,
       stripeScheduleId: 'sub_sched_1',
     })),
     restore: vi.fn(async () => ({
@@ -176,7 +176,7 @@ function createRuntime(
 }
 
 describe('createAdminCustomerBillingRuntimeFromPorts', () => {
-  it('schedules a paid interval change at period end with checkout return URLs', async () => {
+  it('schedules a paid interval change at period end', async () => {
     const cyclePlan = createCyclePlanPort()
     const runtime = createRuntime({ cyclePlan })
 
@@ -187,18 +187,10 @@ describe('createAdminCustomerBillingRuntimeFromPorts', () => {
       targetPriceId: DEFAULT_PLAN_ANNUAL_PRICE_ID,
     })
 
-    expect(cyclePlan.upgrade).toHaveBeenCalledWith(
-      expect.objectContaining({
-        plan: 'default',
-        annual: true,
-        referenceId: PAID_USER.id,
-        scheduleAtPeriodEnd: true,
-        disableRedirect: true,
-        returnUrl: CYCLE_PLAN_SUCCESS_URL,
-        successUrl: CYCLE_PLAN_SUCCESS_URL,
-        cancelUrl: CYCLE_PLAN_CANCEL_URL,
-      }),
-    )
+    expect(cyclePlan.scheduleCyclePlanChange).toHaveBeenCalledWith({
+      annual: true,
+      referenceId: PAID_USER.id,
+    })
     expect(result.pendingWebhookSync).toBe(true)
   })
 

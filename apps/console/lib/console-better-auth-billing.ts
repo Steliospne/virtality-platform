@@ -1,15 +1,13 @@
 /**
- * Console → Better Auth billing seam: immediate Checkout, Cycle plan schedule,
- * restore, and Customer Portal. Profile Billing and related hooks call this
- * adapter only; Checkout never schedules at period end.
+ * Console → Better Auth billing seam: immediate Checkout, restore, and
+ * Customer Portal. Profile Billing and related hooks call this adapter only;
+ * Checkout never schedules at period end. Cycle plan change uses orpc instead.
  */
 
 import {
   restoreSubscription as restoreSubscriptionShared,
-  scheduleCyclePlanChange as scheduleCyclePlanChangeShared,
+  type CyclePlanChangeRestorePort,
   type CheckoutSuccessIntent,
-  type CyclePlanChangePort,
-  type CyclePlanChangeUpgradeInput,
 } from '@virtality/shared/utils'
 import {
   startDefaultBillingPortal,
@@ -21,16 +19,17 @@ import {
 } from './subscription-checkout'
 
 export type ConsoleBetterAuthBillingUpgradeFn = (
-  input: DefaultCheckoutUpgradeInput | CyclePlanChangeUpgradeInput,
+  input: DefaultCheckoutUpgradeInput,
 ) => Promise<{
   data?: unknown
   error?: { message?: string | null } | null
-  stripeScheduleId?: string | null
 }>
 
-export type ConsoleBetterAuthBillingPort = {
+export type ConsoleBetterAuthBillingPort = Pick<
+  CyclePlanChangeRestorePort,
+  'restore'
+> & {
   upgrade: ConsoleBetterAuthBillingUpgradeFn
-  restore: CyclePlanChangePort['restore']
   billingPortal: DefaultSubscriptionBillingPortalFn
 }
 
@@ -43,11 +42,6 @@ export type ConsoleBetterAuthBilling = {
     returnUrl: string
     annual?: boolean
     checkoutSuccessIntent?: CheckoutSuccessIntent
-  }) => Promise<ConsoleBetterAuthBillingResult>
-  scheduleCycleChange: (input: {
-    returnUrl: string
-    annual: boolean
-    referenceId?: string
   }) => Promise<ConsoleBetterAuthBillingResult>
   restore: (input?: {
     referenceId?: string
@@ -70,8 +64,8 @@ export const UNDO_CANCELLATION_RESTORE_TOAST =
   'Cancellation stopped. Your subscription will renew as usual.'
 
 /**
- * Maps shared Cycle plan change / restore results onto the Console billing
- * result shape (drops schedule / subscription ids callers do not use).
+ * Maps shared restore results onto the Console billing result shape (drops
+ * subscription ids callers do not use).
  */
 function toConsoleBillingResult(
   result: { ok: true } | { ok: false; message: string },
@@ -121,19 +115,9 @@ export function createConsoleBetterAuthBilling(
       })
     },
 
-    async scheduleCycleChange(input) {
-      const result = await scheduleCyclePlanChangeShared({
-        port: { upgrade: port.upgrade },
-        annual: input.annual,
-        returnUrl: input.returnUrl,
-        referenceId: input.referenceId,
-      })
-      return toConsoleBillingResult(result)
-    },
-
     async restore(input) {
       const result = await restoreSubscriptionShared({
-        port: { restore: port.restore },
+        port,
         referenceId: input?.referenceId,
       })
       return toConsoleBillingResult(result)

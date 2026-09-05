@@ -1,46 +1,24 @@
 /**
- * Cycle plan change: paid Default monthly ↔ yearly at period end via Better Auth
- * `subscription.upgrade({ scheduleAtPeriodEnd })`, released with
- * `subscription.restore`. Shared orchestration with an injected Better Auth
- * port so Console (browser client) and Adminboard (auth.api) share one path.
+ * Cycle plan change: paid Default monthly ↔ yearly at period end, released with
+ * Better Auth `subscription.restore`. Scheduling uses Assigned Variant prices
+ * (see auth `scheduleAssignedVariantCyclePlanChange`); restore goes through an
+ * injected Better Auth port for Console (browser client) and Adminboard (auth.api).
  */
 
 import {
-  toAbsoluteConsoleReturnUrl,
-  withCheckoutReturnIntent,
-} from './checkout-return-url.ts'
-import {
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
-  DEFAULT_SUBSCRIPTION_PLAN,
   isDefaultPlanPriceId,
 } from './billing-plans.ts'
-
-export type CyclePlanChangeUpgradeInput = {
-  plan: typeof DEFAULT_SUBSCRIPTION_PLAN
-  annual: boolean
-  referenceId?: string
-  scheduleAtPeriodEnd: true
-  disableRedirect: true
-  successUrl: string
-  cancelUrl: string
-  returnUrl: string
-}
 
 export type CyclePlanChangeRestoreInput = {
   referenceId?: string
 }
 
 /**
- * Better Auth upgrade/restore boundary. Browser client and server `auth.api`
- * adapters both map into this shape (including optional schedule id after
- * server-side upgrade).
+ * Better Auth restore boundary. Browser client and server `auth.api` adapters
+ * both map into this shape.
  */
-export type CyclePlanChangePort = {
-  upgrade: (input: CyclePlanChangeUpgradeInput) => Promise<{
-    data?: unknown
-    error?: { message?: string | null } | null
-    stripeScheduleId?: string | null
-  }>
+export type CyclePlanChangeRestorePort = {
   restore: (input: CyclePlanChangeRestoreInput) => Promise<{
     data?: unknown
     error?: { message?: string | null } | null
@@ -48,9 +26,21 @@ export type CyclePlanChangePort = {
   }>
 }
 
+export type CyclePlanChangeScheduleInput = {
+  referenceId: string
+  annual: boolean
+}
+
 export type CyclePlanChangeResult =
   | { ok: true; stripeScheduleId: string | null }
   | { ok: false; message: string }
+
+/** Restore via Better Auth plus Stripe schedule for admin/customer interval switches. */
+export type CyclePlanChangePort = CyclePlanChangeRestorePort & {
+  scheduleCyclePlanChange: (
+    input: CyclePlanChangeScheduleInput,
+  ) => Promise<CyclePlanChangeResult>
+}
 
 export type CyclePlanRestoreResult =
   | { ok: true; stripeSubscriptionId: string | null }
@@ -93,8 +83,8 @@ export function isAnnualDefaultPlanPriceId(priceId: string): boolean {
 }
 
 /**
- * Map a supported Default Price id to Better Auth `annual` for Cycle plan change.
- * Throws when the id is not a supported Default Price.
+ * Map a supported Default Price id to the yearly interval flag for Cycle plan
+ * change. Throws when the id is not a supported Default Price.
  */
 export function annualFlagForDefaultPlanPriceId(priceId: string): boolean {
   if (!isDefaultPlanPriceId(priceId)) {
@@ -113,64 +103,11 @@ export function hasPendingCyclePlanChange(subscription: {
 }
 
 /**
- * Builds Better Auth upgrade params for a period-end Default interval switch.
- * Always sets `scheduleAtPeriodEnd` and `disableRedirect`.
- */
-export function buildCyclePlanChangeUpgradeInput(input: {
-  annual: boolean
-  returnUrl: string
-  referenceId?: string
-}): CyclePlanChangeUpgradeInput {
-  const absoluteReturn = toAbsoluteConsoleReturnUrl(input.returnUrl)
-  return {
-    plan: DEFAULT_SUBSCRIPTION_PLAN,
-    annual: input.annual,
-    ...(input.referenceId ? { referenceId: input.referenceId } : {}),
-    scheduleAtPeriodEnd: true,
-    disableRedirect: true,
-    returnUrl: absoluteReturn,
-    successUrl: withCheckoutReturnIntent(input.returnUrl, 'success'),
-    cancelUrl: withCheckoutReturnIntent(input.returnUrl, 'cancel'),
-  }
-}
-
-/**
- * Schedules a paid Default monthly ↔ yearly switch at period end through the
- * injected Better Auth port.
- */
-export async function scheduleCyclePlanChange(input: {
-  port: Pick<CyclePlanChangePort, 'upgrade'>
-  referenceId?: string
-  annual: boolean
-  returnUrl: string
-}): Promise<CyclePlanChangeResult> {
-  const { error, stripeScheduleId } = await input.port.upgrade(
-    buildCyclePlanChangeUpgradeInput({
-      annual: input.annual,
-      returnUrl: input.returnUrl,
-      referenceId: input.referenceId,
-    }),
-  )
-
-  if (error) {
-    return {
-      ok: false,
-      message: portErrorMessage(error, 'Failed to schedule Cycle plan change'),
-    }
-  }
-
-  return {
-    ok: true,
-    stripeScheduleId: stripeScheduleId ?? null,
-  }
-}
-
-/**
  * Releases a pending Cycle plan change schedule and/or undoes
  * cancel-at-period-end via Better Auth restore.
  */
 export async function restoreSubscription(input: {
-  port: Pick<CyclePlanChangePort, 'restore'>
+  port: CyclePlanChangeRestorePort
   referenceId?: string
 }): Promise<CyclePlanRestoreResult> {
   const { error, stripeSubscriptionId } = await input.port.restore(
