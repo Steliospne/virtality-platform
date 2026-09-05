@@ -7,7 +7,6 @@ import { exercise } from './procedures/exercise.ts'
 import { patientSession } from './procedures/patient-session.ts'
 import { device } from './procedures/device.ts'
 import { supplementalTherapy } from './procedures/supplemental-therapy.ts'
-import { legacy } from './procedures/legacy/index.ts'
 import { reusableProgram } from './procedures/reusable-program.ts'
 import { reusableProgramExercise } from './procedures/reusable-program-exercise.ts'
 import { patientSessionData } from './procedures/patient-session-data.ts'
@@ -56,7 +55,6 @@ export const router = {
   exercise,
   device,
   supplementalTherapy,
-  legacy,
   reusableProgram,
   reusableProgramExercise,
   patientSessionData,

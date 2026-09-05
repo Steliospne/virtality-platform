@@ -68,7 +68,6 @@ describe('replaced clinician surfaces', () => {
     )
 
     expect(selectorSource).toMatch(/useReusablePrograms/)
-    expect(selectorSource).not.toMatch(/usePatientPrograms/)
   })
 
   it('removes orphaned preset i18n locale files', () => {

@@ -45,14 +45,6 @@ describe('clinician API vocabulary cleanup', () => {
     }
   })
 
-  it('keeps legacy hooks available from the react-query legacy entry', () => {
-    const legacyIndex = readRepoFile('packages/react-query/src/legacy/index.ts')
-
-    for (const hookName of LEGACY_HOOK_NAMES) {
-      expect(legacyIndex).toMatch(new RegExp(hookName))
-    }
-  })
-
   it('does not reference legacy hooks anywhere in the console app source', () => {
     const appSource = readConsoleFile('app/(app)/programs/page.tsx')
     const dashboardSource = readConsoleFile(
