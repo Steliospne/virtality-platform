@@ -1,18 +1,8 @@
 import type { PrismaClient } from '@virtality/db'
 import {
-  buildEntitlementStanding,
-  buildStripeCustomerDashboardUrl,
-  buildStripeSubscriptionDashboardUrl,
-  canChangeAssignedPlanVariant,
-  deriveCustomerAccessStatus,
-  deriveCustomerBillingStatus,
-  effectiveAssignedPlanVariant,
-  findLivePaidDefaultSubscription,
-  hasPendingCyclePlanChange,
+  buildAdminCustomerProfile,
   mapAdminCustomerTrialGrantSummary,
-  pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
-  sortCustomerSubscriptionHistory,
   TRIAL_GRANT_OPEN_STATUSES,
   mapAdminCustomerAuditHistoryItem,
   type AdminCustomerAuditHistoryItem,
@@ -23,6 +13,9 @@ import {
   type AdminCustomerTrialGrantSummary,
   type StripeDashboardMode,
   type TrialGrantClock,
+  deriveCustomerAccessStatus,
+  deriveCustomerBillingStatus,
+  pickPrimaryCustomerSubscription,
 } from '@virtality/shared/utils'
 
 type CustomerUserRow = {
@@ -100,27 +93,6 @@ function mapSubscriptionHistoryItem(
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
     stripeScheduleId: subscription.stripeScheduleId ?? null,
     stripeCustomerId: subscription.stripeCustomerId,
-  }
-}
-
-function buildStripeLinks(input: {
-  stripeCustomerId: string | null
-  primaryStripeSubscriptionId: string | null
-  stripeMode: StripeDashboardMode
-}) {
-  return {
-    customerUrl: input.stripeCustomerId
-      ? buildStripeCustomerDashboardUrl(
-          input.stripeCustomerId,
-          input.stripeMode,
-        )
-      : null,
-    primarySubscriptionUrl: input.primaryStripeSubscriptionId
-      ? buildStripeSubscriptionDashboardUrl(
-          input.primaryStripeSubscriptionId,
-          input.stripeMode,
-        )
-      : null,
   }
 }
 
@@ -275,59 +247,21 @@ export async function getAdminCustomerProfile(
     where: { referenceId: user.id },
   })
 
-  const subscriptionHistory = sortCustomerSubscriptionHistory(
-    subscriptions.map(mapSubscriptionHistoryItem),
-  )
-  const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
-  const livePaidDefault = findLivePaidDefaultSubscription(subscriptionHistory)
-  const { openTrialGrantClock, trialGrant } =
-    await loadAdminCustomerTrialGrantContext(prisma, user.id, now)
-  const standing = buildEntitlementStanding({
+  const trialGrantContext = await loadAdminCustomerTrialGrantContext(
+    prisma,
+    user.id,
     now,
-    role: user.role,
-    subscriptions: subscriptionHistory,
-    trialGrant: openTrialGrantClock,
-  })
-
+  )
   const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)
 
-  return {
-    userId: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    stripeCustomerId: user.stripeCustomerId,
-    assignedDefaultVariant: effectiveAssignedPlanVariant(
-      user.assignedDefaultVariant,
-    ),
-    canChangeAssignedPlanVariant:
-      canChangeAssignedPlanVariant(subscriptionHistory),
-    createdAt: user.createdAt,
-    accessStatus: deriveCustomerAccessStatus({
-      now,
-      role: user.role,
-      subscriptions: subscriptionHistory,
-    }),
-    billingStatus: deriveCustomerBillingStatus(primary),
-    hasPendingCyclePlanChange: livePaidDefault
-      ? hasPendingCyclePlanChange(livePaidDefault)
-      : false,
-    entitlement: {
-      entitled: standing.entitled,
-      canLaunchVr: standing.canLaunchVr,
-      remainingMs: standing.remainingMs,
-      clockEnd: standing.clockEnd,
-      billingPathEstablished: standing.billingPathEstablished,
-    },
-    stripeLinks: buildStripeLinks({
-      stripeCustomerId: user.stripeCustomerId,
-      primaryStripeSubscriptionId: primary?.stripeSubscriptionId ?? null,
-      stripeMode: input.stripeMode,
-    }),
-    subscriptionHistory,
+  return buildAdminCustomerProfile({
+    user,
+    subscriptions,
+    trialGrantContext,
     auditHistory,
-    trialGrant,
-  }
+    stripeMode: input.stripeMode,
+    now,
+  })
 }
 
 export function resolveAdminCustomerStripeMode(
