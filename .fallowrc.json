@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": ["src/index.{js,jsx,mjs}", "src/main.{js,jsx,mjs}"],
+  "workspaces": {
+    "packages": ["apps/*", "services/*", "packages/*", "tooling/*"]
+  },
+  "ignorePatterns": [
+    // pnpm reads this by convention (readPackage hook); never imported by source.
+    ".pnpmfile.cjs",
+    // Imported by every app's app/layout.tsx via a cross-package CSS import,
+    // which fallow's JS/TS import graph doesn't trace.
+    "packages/ui/src/globals.css"
+  ],
+  "ignoreDependencies": [
+    // Loaded by Next.js because next.config.ts sets reactCompiler: true;
+    // no source import is needed for Next to pick it up.
+    "babel-plugin-react-compiler",
+    // Actually imported in packages/db/src/client.ts (`new PrismaPg(...)`);
+    // fallow can't trace the edge through the generated Prisma client re-export.
+    "@prisma/adapter-pg",
+    // Consumed by prisma-zod-generator's generated schemas under
+    // packages/db/prisma/generated/zod/, not by hand-written source.
+    "zod"
+  ],
+  "duplicates": {
+    // Hide pair-only clones; focus on widespread copy-paste
+    // worth refactoring. Lower to 2 to report every duplicate pair.
+    "minOccurrences": 3
+    // Common additions (uncomment to enable):
+    // "ignore": [
+    //   "**/lib/**",          // for repos that publish transpiled output to lib/
+    //   "**/legacy/**",       // for repos with legacy-build artifacts
+    //   "**/__generated__/**", // Relay, GraphQL Code Generator
+    //   "**/generated/**"     // OpenAPI, Protobuf codegen
+    // ]
+  },
+  "rules": {}
+}
