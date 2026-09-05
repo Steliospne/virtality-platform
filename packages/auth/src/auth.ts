@@ -3,10 +3,14 @@ import { createStripePromotionCodeGateway } from './lib/promotion-code-adapter.t
 import {
   buildCampaignAwareCheckoutSessionParams,
   closeCampaignWindowForAdminboard,
+  createPrismaCampaignWindowStore,
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
 } from './lib/campaign-window-adapter.ts'
 import {
+  createConsolePromoReadGateway,
+  createPrismaConsolePromoStore,
+  createStripeConsolePromoGateway,
   loadConsolePromoRedeemPreflightForUser,
   readConsoleSubscriptionDiscountForUser,
   redeemPromotionCodeForUser,
@@ -41,7 +45,13 @@ import {
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
 import { stripeClient, FREE_PLAN_PRICE_ID } from './auth-instance.ts'
-import { readBillingCatalogForUser } from './lib/plan-variant-catalog-adapter.ts'
+import {
+  readBillingCatalogForUser,
+  clearPlanVariantCatalogCache,
+  readPlanVariantCatalogOrSandbox,
+  resolveAssignedPlanVariantChargePrice,
+  type AssignablePlanVariantOption,
+} from './lib/plan-variant-catalog-adapter.ts'
 
 export {
   auth,
@@ -95,7 +105,7 @@ export {
   createPrismaCampaignWindowStore,
   loadCampaignWindowView,
   upsertCampaignWindowForAdminboard,
-} from './lib/campaign-window-adapter.ts'
+}
 export {
   createConsolePromoReadGateway,
   createPrismaConsolePromoStore,
@@ -104,7 +114,7 @@ export {
   readConsoleSubscriptionDiscountForUser,
   redeemPromotionCodeForUser,
   removePromoDiscountForUser,
-} from './lib/console-promo-redeem-adapter.ts'
+}
 export { createStripeCouponLibraryGateway }
 export { createStripePromotionCodeGateway }
 export type {
@@ -250,7 +260,7 @@ export {
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
   type AssignablePlanVariantOption,
-} from './lib/plan-variant-catalog-adapter.ts'
+}
 export { scheduleAssignedVariantCyclePlanChange } from './lib/assigned-variant-cycle-plan-change.ts'
 export {
   ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY,

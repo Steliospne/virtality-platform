@@ -1,3 +1,7 @@
+/**
+ * Auth-side adapter for `@virtality/shared` campaign-window builders.
+ * Prisma + Stripe wiring for the singleton Campaign Window.
+ */
 import type { PrismaClient } from '@virtality/db'
 import { prisma } from '@virtality/db'
 import {
