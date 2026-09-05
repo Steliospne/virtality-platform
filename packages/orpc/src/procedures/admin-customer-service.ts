@@ -1,25 +1,19 @@
 import type { PrismaClient } from '@virtality/db'
 import {
-  buildEntitlementStanding,
-  buildStripeCustomerDashboardUrl,
-  buildStripeSubscriptionDashboardUrl,
-  canChangeAssignedPlanVariant,
-  deriveCustomerAccessStatus,
-  deriveCustomerBillingStatus,
-  effectiveAssignedPlanVariant,
-  findLivePaidDefaultSubscription,
-  hasPendingCyclePlanChange,
+  buildAdminCustomerProfile,
   mapAdminCustomerTrialGrantSummary,
-  pickPrimaryCustomerSubscription,
   resolveStripeDashboardMode,
-  sortCustomerSubscriptionHistory,
   TRIAL_GRANT_OPEN_STATUSES,
   mapAdminCustomerAuditHistoryItem,
+  deriveCustomerAccessStatus,
+  deriveCustomerBillingStatus,
+  mapAdminCustomerSubscriptionHistoryItem,
+  pickPrimaryCustomerSubscription,
   type AdminCustomerAuditHistoryItem,
   type AdminCustomerBillingSnapshot,
   type AdminCustomerListItem,
   type AdminCustomerProfile,
-  type AdminCustomerSubscriptionHistoryItem,
+  type AdminCustomerSubscriptionRow,
   type AdminCustomerTrialGrantSummary,
   type StripeDashboardMode,
   type TrialGrantClock,
@@ -32,24 +26,6 @@ type CustomerUserRow = {
   role: string | null
   stripeCustomerId: string | null
   createdAt: Date
-}
-
-type CustomerSubscriptionRow = {
-  id: string
-  plan: string
-  referenceId: string
-  stripeCustomerId: string | null
-  stripeSubscriptionId: string | null
-  status: string
-  periodStart: Date | null
-  periodEnd: Date | null
-  cancelAtPeriodEnd: boolean | null
-  canceledAt: Date | null
-  endedAt: Date | null
-  trialStart: Date | null
-  trialEnd: Date | null
-  billingInterval: string | null
-  stripeScheduleId: string | null
 }
 
 async function listAdminCustomerAuditHistory(
@@ -83,54 +59,13 @@ async function listAdminCustomerAuditHistory(
   )
 }
 
-function mapSubscriptionHistoryItem(
-  subscription: CustomerSubscriptionRow,
-): AdminCustomerSubscriptionHistoryItem {
-  return {
-    id: subscription.id,
-    plan: subscription.plan,
-    status: subscription.status,
-    trialEnd: subscription.trialEnd,
-    periodEnd: subscription.periodEnd,
-    endedAt: subscription.endedAt,
-    canceledAt: subscription.canceledAt,
-    stripeSubscriptionId: subscription.stripeSubscriptionId,
-    billingInterval: subscription.billingInterval,
-    periodStart: subscription.periodStart,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    stripeScheduleId: subscription.stripeScheduleId ?? null,
-    stripeCustomerId: subscription.stripeCustomerId,
-  }
-}
-
-function buildStripeLinks(input: {
-  stripeCustomerId: string | null
-  primaryStripeSubscriptionId: string | null
-  stripeMode: StripeDashboardMode
-}) {
-  return {
-    customerUrl: input.stripeCustomerId
-      ? buildStripeCustomerDashboardUrl(
-          input.stripeCustomerId,
-          input.stripeMode,
-        )
-      : null,
-    primarySubscriptionUrl: input.primaryStripeSubscriptionId
-      ? buildStripeSubscriptionDashboardUrl(
-          input.primaryStripeSubscriptionId,
-          input.stripeMode,
-        )
-      : null,
-  }
-}
-
 function buildCustomerListItem(input: {
   user: CustomerUserRow
-  subscriptions: readonly CustomerSubscriptionRow[]
+  subscriptions: readonly AdminCustomerSubscriptionRow[]
   now: Date
 }): AdminCustomerListItem {
   const subscriptionSummaries = input.subscriptions.map(
-    mapSubscriptionHistoryItem,
+    mapAdminCustomerSubscriptionHistoryItem,
   )
   const primary = pickPrimaryCustomerSubscription(subscriptionSummaries)
 
@@ -177,7 +112,7 @@ export async function listAdminCustomers(
     where: { referenceId: { in: userIds } },
   })
 
-  const subscriptionsByUser = new Map<string, CustomerSubscriptionRow[]>()
+  const subscriptionsByUser = new Map<string, AdminCustomerSubscriptionRow[]>()
   for (const subscription of subscriptions) {
     const existing = subscriptionsByUser.get(subscription.referenceId) ?? []
     existing.push(subscription)
@@ -275,59 +210,21 @@ export async function getAdminCustomerProfile(
     where: { referenceId: user.id },
   })
 
-  const subscriptionHistory = sortCustomerSubscriptionHistory(
-    subscriptions.map(mapSubscriptionHistoryItem),
-  )
-  const primary = pickPrimaryCustomerSubscription(subscriptionHistory)
-  const livePaidDefault = findLivePaidDefaultSubscription(subscriptionHistory)
-  const { openTrialGrantClock, trialGrant } =
-    await loadAdminCustomerTrialGrantContext(prisma, user.id, now)
-  const standing = buildEntitlementStanding({
+  const trialGrantContext = await loadAdminCustomerTrialGrantContext(
+    prisma,
+    user.id,
     now,
-    role: user.role,
-    subscriptions: subscriptionHistory,
-    trialGrant: openTrialGrantClock,
-  })
-
+  )
   const auditHistory = await listAdminCustomerAuditHistory(prisma, user.id)
 
-  return {
-    userId: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    stripeCustomerId: user.stripeCustomerId,
-    assignedDefaultVariant: effectiveAssignedPlanVariant(
-      user.assignedDefaultVariant,
-    ),
-    canChangeAssignedPlanVariant:
-      canChangeAssignedPlanVariant(subscriptionHistory),
-    createdAt: user.createdAt,
-    accessStatus: deriveCustomerAccessStatus({
-      now,
-      role: user.role,
-      subscriptions: subscriptionHistory,
-    }),
-    billingStatus: deriveCustomerBillingStatus(primary),
-    hasPendingCyclePlanChange: livePaidDefault
-      ? hasPendingCyclePlanChange(livePaidDefault)
-      : false,
-    entitlement: {
-      entitled: standing.entitled,
-      canLaunchVr: standing.canLaunchVr,
-      remainingMs: standing.remainingMs,
-      clockEnd: standing.clockEnd,
-      billingPathEstablished: standing.billingPathEstablished,
-    },
-    stripeLinks: buildStripeLinks({
-      stripeCustomerId: user.stripeCustomerId,
-      primaryStripeSubscriptionId: primary?.stripeSubscriptionId ?? null,
-      stripeMode: input.stripeMode,
-    }),
-    subscriptionHistory,
+  return buildAdminCustomerProfile({
+    user,
+    subscriptions,
+    trialGrantContext,
     auditHistory,
-    trialGrant,
-  }
+    stripeMode: input.stripeMode,
+    now,
+  })
 }
 
 export function resolveAdminCustomerStripeMode(

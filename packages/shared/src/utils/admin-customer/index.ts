@@ -1,4 +1,5 @@
 export * from './admin-customer.ts'
 export * from './admin-customer-access.ts'
 export * from './admin-customer-billing.ts'
+export * from './admin-customer-profile.ts'
 export * from './assign-plan-variant.ts'
