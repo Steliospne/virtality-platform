@@ -16,15 +16,18 @@ export function BillingPlanCardCheckoutButton({
   pending: boolean
   onCheckout: () => void
 }) {
+  const isActive = kind === 'active'
+
   return (
     <Button
       type='button'
-      variant={kind === 'cancel_schedule' ? 'outline' : 'primary'}
+      variant={kind === 'cancel_schedule' || isActive ? 'outline' : 'primary'}
       className='w-full'
       size='lg'
-      disabled={pending}
+      disabled={pending || isActive}
       onClick={(event) => {
         event.stopPropagation()
+        if (isActive) return
         onCheckout()
       }}
     >

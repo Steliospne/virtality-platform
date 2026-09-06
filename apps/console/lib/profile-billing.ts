@@ -32,21 +32,52 @@ import {
 } from '@virtality/shared/utils'
 
 /** Section heading and input label for the unified billing code field. */
-export const PROFILE_BILLING_CODE_FIELD_LABEL =
-  'Promotion or Access Code' as const
+export const PROFILE_BILLING_CODE_FIELD_LABEL = 'Discount Code' as const
 
 export type BillingInterval = EntitlementBillingInterval
 
 export type BillingPlanPrices = BillingPlanPriceLabels
 
-/** Plan-card CTA when a live paid Default seat switches monthly ↔ yearly. */
+/** Plan-card CTA when a live paid Default seat switches to the Yearly interval. */
 export const PAID_INTERVAL_UPGRADE_LABEL = 'Upgrade' as const
 
-/** Plan-card CTA when a period-end interval switch is already scheduled. */
-export const PAID_INTERVAL_CANCEL_LABEL = 'Cancel' as const
+/** Plan-card CTA when a live paid Default seat switches to the Monthly interval. */
+export const PAID_INTERVAL_DOWNGRADE_LABEL = 'Downgrade' as const
+
+/** Plan-card CTA when a scheduled switch to Yearly is released. */
+export const PAID_INTERVAL_CANCEL_UPGRADE_LABEL = 'Cancel Upgrade' as const
+
+/** Plan-card CTA when a scheduled switch to Monthly is released. */
+export const PAID_INTERVAL_CANCEL_DOWNGRADE_LABEL = 'Cancel Downgrade' as const
 
 /** Plan-card CTA to undo cancel-at-period-end on the current Default interval. */
 export const PAID_CANCELLATION_UNDO_LABEL = "Don't cancel" as const
+
+/** Inert plan-card CTA on the live Default interval. */
+export const PAID_ACTIVE_LABEL = 'Active' as const
+
+/** Upgrade/Downgrade label for switching to the given interval. */
+function profileBillingIntervalSwitchLabel(target: BillingInterval): string {
+  return target === 'year'
+    ? PAID_INTERVAL_UPGRADE_LABEL
+    : PAID_INTERVAL_DOWNGRADE_LABEL
+}
+
+/** Pending-label copy for switching to the given interval. */
+function profileBillingIntervalSwitchPendingLabel(
+  target: BillingInterval,
+): string {
+  return target === 'year' ? 'Upgrading…' : 'Downgrading…'
+}
+
+/** Cancel Upgrade/Cancel Downgrade label for releasing a scheduled switch. */
+function profileBillingIntervalCancelSwitchLabel(
+  target: BillingInterval,
+): string {
+  return target === 'year'
+    ? PAID_INTERVAL_CANCEL_UPGRADE_LABEL
+    : PAID_INTERVAL_CANCEL_DOWNGRADE_LABEL
+}
 
 export type ProfileBillingCardActionConfirm = {
   title: string
@@ -56,6 +87,11 @@ export type ProfileBillingCardActionConfirm = {
 
 export type ProfileBillingCardAction =
   | { kind: 'none'; label: null; pendingLabel: null }
+  | {
+      kind: 'active'
+      label: string
+      pendingLabel: string
+    }
   | {
       kind: 'checkout'
       label: string
@@ -229,11 +265,17 @@ export function resolveProfileBillingCardAction(
       }
       return {
         kind: 'checkout',
-        label: PAID_INTERVAL_UPGRADE_LABEL,
-        pendingLabel: 'Upgrading…',
+        label: profileBillingIntervalSwitchLabel(interval),
+        pendingLabel: profileBillingIntervalSwitchPendingLabel(interval),
       }
     }
-    if (standing.billingInterval === interval) return NONE_ACTION
+    if (standing.billingInterval === interval) {
+      return {
+        kind: 'active',
+        label: PAID_ACTIVE_LABEL,
+        pendingLabel: PAID_ACTIVE_LABEL,
+      }
+    }
     const pendingTarget = profileBillingPendingTargetInterval(standing)
     if (pendingTarget != null) {
       if (pendingTarget !== interval) return NONE_ACTION
@@ -241,15 +283,15 @@ export function resolveProfileBillingCardAction(
       if (confirm == null) return NONE_ACTION
       return {
         kind: 'cancel_schedule',
-        label: PAID_INTERVAL_CANCEL_LABEL,
+        label: profileBillingIntervalCancelSwitchLabel(interval),
         pendingLabel: 'Canceling…',
         confirm,
       }
     }
     return {
       kind: 'schedule',
-      label: PAID_INTERVAL_UPGRADE_LABEL,
-      pendingLabel: 'Upgrading…',
+      label: profileBillingIntervalSwitchLabel(interval),
+      pendingLabel: profileBillingIntervalSwitchPendingLabel(interval),
       confirm: profileBillingIntervalUpgradeConfirmCopy(standing, interval),
     }
   }
@@ -260,10 +302,7 @@ export function resolveProfileBillingCardAction(
   )
   if (cta == null) return NONE_ACTION
 
-  const label =
-    !standing.billingPathEstablished && hasStripeCustomer
-      ? 'Become a paying customer'
-      : formatCheckoutCtaLabel(cta)
+  const label = formatCheckoutCtaLabel(cta)
   if (label == null) return NONE_ACTION
 
   return {
@@ -334,7 +373,7 @@ function profileBillingIntervalUpgradeConfirmCopy(
     body: when
       ? `Payment starts at your next billing cycle on ${when}. Keep using ${currentTitle} until then.`
       : `Payment starts at your next billing cycle. Keep using ${currentTitle} until then.`,
-    confirmLabel: PAID_INTERVAL_UPGRADE_LABEL,
+    confirmLabel: profileBillingIntervalSwitchLabel(targetInterval),
   }
 }
 
@@ -348,7 +387,7 @@ function profileBillingIntervalCancelConfirmCopy(
   return {
     title: `Cancel switch to ${targetTitle}?`,
     body: `You'll stay on your current plan and renew as usual.`,
-    confirmLabel: PAID_INTERVAL_CANCEL_LABEL,
+    confirmLabel: profileBillingIntervalCancelSwitchLabel(target),
   }
 }
 
@@ -426,7 +465,7 @@ export function splitCatalogPriceLabel(label: string): {
   amount: string
   interval: string
 } {
-  const match = label.match(/^(.+?)\s+(\/.+)$/)
+  const match = label.match(/^(€[\d.,]+)\s*(.*)$/)
   if (!match) return { amount: label, interval: '' }
   const amount = match[1]
   const interval = match[2]
@@ -498,7 +537,8 @@ export type BillingCompareAtPriceGroup = {
 
 export type BillingCompareAtMonthlyDiscountLine = {
   discounted: string
-  current: string
+  /** Omitted while a separate struck basic row already shows the comparison. */
+  current?: string
   interval: string
 }
 
@@ -509,7 +549,8 @@ export type BillingCompareAtMonthlyRow =
 
 export type BillingCompareAtYearlyDiscountLine = {
   discounted: string
-  current: string
+  /** Omitted while a separate struck basic row already shows the comparison. */
+  current?: string
   interval: string
 }
 
@@ -539,18 +580,40 @@ function yearlyGroupLines(
 function buildMonthlyDiscountLine(
   discounted: DiscountedBillingPriceLabels,
   current: BillingPlanPriceLabels,
+  includeCurrent: boolean,
 ): BillingCompareAtMonthlyDiscountLine {
   const { amount, interval } = splitCatalogPriceLabel(current.monthlyLabel)
   return {
     discounted: discounted.monthlyAmount,
-    current: amount,
+    current: includeCurrent ? amount : undefined,
     interval,
   }
 }
 
+/** Same list price either side — comparing basic to itself is a no-op. */
+function samePlanPriceLabels(
+  a: BillingPlanPriceLabels,
+  b: BillingPlanPriceLabels,
+): boolean {
+  return (
+    a.monthlyLabel === b.monthlyLabel &&
+    a.yearlyAsMonthlyLabel === b.yearlyAsMonthlyLabel &&
+    a.yearlyTotalMutedLabel === b.yearlyTotalMutedLabel
+  )
+}
+
 /**
- * Variant A stacked groups: assigned (optionally discounted) then struck basic
- * when `showCompareAt`. Pass `discountPrices` already computed on assigned minor.
+ * Assigned-variant rows (optionally discounted), plus a struck basic
+ * compare-at row when actually comparing against a different plan —
+ * `showCompareAt` signals the assigned variant differs from basic, but the
+ * live prices are re-checked here too so a seat that has reverted to basic
+ * never ends up struck against itself. Pass `discountPrices` already
+ * computed on assigned minor.
+ *
+ * While actively comparing against basic, the inline discount line drops
+ * its own struck "current" amount — the separate struck-basic row below it
+ * already carries that comparison, so showing both would strike the
+ * assigned price twice.
  */
 export function buildBillingCompareAtCardDisplay(input: {
   assigned: BillingPlanPriceLabels
@@ -559,15 +622,22 @@ export function buildBillingCompareAtCardDisplay(input: {
   discountPrices?: DiscountedBillingPriceLabels | null
 }): BillingCompareAtCardDisplay {
   const { assigned, basic, showCompareAt, discountPrices } = input
+  const comparesToBasic = showCompareAt && !samePlanPriceLabels(assigned, basic)
 
   if (discountPrices) {
+    const includeCurrent = !comparesToBasic
+
     const monthlyRows: BillingCompareAtMonthlyRow[] = [
       {
         kind: 'discount-inline',
-        line: buildMonthlyDiscountLine(discountPrices, assigned),
+        line: buildMonthlyDiscountLine(
+          discountPrices,
+          assigned,
+          includeCurrent,
+        ),
       },
     ]
-    if (showCompareAt) {
+    if (comparesToBasic) {
       monthlyRows.push({ kind: 'struck', price: basic.monthlyLabel })
     }
 
@@ -580,24 +650,24 @@ export function buildBillingCompareAtCardDisplay(input: {
         kind: 'discount-inline',
         primary: {
           discounted: discountPrices.yearlyAsMonthlyAmount,
-          current: yearlyAsMonthly.amount,
+          current: includeCurrent ? yearlyAsMonthly.amount : undefined,
           interval: yearlyAsMonthly.interval,
         },
         secondary: {
           discounted: discountPrices.yearlyTotalAmount,
-          current: yearlyTotal.amount,
+          current: includeCurrent ? yearlyTotal.amount : undefined,
           interval: yearlyTotal.interval,
         },
       },
     ]
-    if (showCompareAt) {
+    if (comparesToBasic) {
       yearlyRows.push({ kind: 'struck', lines: yearlyGroupLines(basic) })
     }
 
     return { monthlyRows, yearlyRows }
   }
 
-  if (!showCompareAt) {
+  if (!comparesToBasic) {
     return {
       monthlyRows: [{ kind: 'catalog', price: assigned.monthlyLabel }],
       yearlyRows: [{ kind: 'catalog', lines: yearlyGroupLines(assigned) }],

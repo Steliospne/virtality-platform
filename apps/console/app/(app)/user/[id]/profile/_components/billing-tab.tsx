@@ -106,6 +106,7 @@ export function BillingTab() {
   const yearlyCheckout = showPlanCardCheckout
     ? profileBillingCardActiveAction(planCardActionFor('year'))
     : null
+  const activeInterval = standing.entitled ? standing.billingInterval : null
 
   return (
     <div className='rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950'>
@@ -147,10 +148,10 @@ export function BillingTab() {
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
           <PlanCard
             title='Monthly'
-            selected={selectedInterval === 'month'}
             disabled={standing.billingInterval === 'month'}
             onSelect={() => setSelectedInterval('month')}
             monthlyRows={cardDisplay.monthlyRows}
+            accent={activeInterval === 'month'}
             checkoutAction={monthlyCheckout}
             checkoutPending={planCardCheckoutPending === 'month'}
             onCheckout={
@@ -162,13 +163,12 @@ export function BillingTab() {
             }
           />
           <PlanCard
-            title='Yearly'
-            selected={selectedInterval === 'year'}
+            title='Annual'
             disabled={standing.billingInterval === 'year'}
             onSelect={() => setSelectedInterval('year')}
             yearlyRows={cardDisplay.yearlyRows}
             badge={prices.yearlySavingsLabel ?? undefined}
-            accent
+            accent={activeInterval === 'year'}
             checkoutAction={yearlyCheckout}
             checkoutPending={planCardCheckoutPending === 'year'}
             onCheckout={

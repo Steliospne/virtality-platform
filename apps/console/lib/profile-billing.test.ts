@@ -19,8 +19,9 @@ import {
   resolveProfileBillingCardAction,
   splitCatalogPriceLabel,
   type BillingStandingView,
+  PAID_ACTIVE_LABEL,
   PAID_CANCELLATION_UNDO_LABEL,
-  PAID_INTERVAL_CANCEL_LABEL,
+  PAID_INTERVAL_CANCEL_UPGRADE_LABEL,
   PAID_INTERVAL_UPGRADE_LABEL,
   profileBillingPendingCancellationBanner,
   profileBillingPendingPlanChangeBanner,
@@ -134,10 +135,10 @@ describe('profileBillingShowsPlanCardCheckout', () => {
 })
 
 describe('resolveProfileBillingCardAction', () => {
-  it('uses Become a paying customer checkout when a Customer exists without Billing Path', () => {
+  it('uses Subscribe checkout when a Customer exists without Billing Path', () => {
     expect(resolveProfileBillingCardAction(base, true, 'month')).toEqual({
       kind: 'checkout',
-      label: 'Become a paying customer',
+      label: 'Subscribe',
       pendingLabel: 'Starting Checkout…',
     })
   })
@@ -192,9 +193,9 @@ describe('resolveProfileBillingCardAction', () => {
       clockEnd: '2026-09-10T12:00:00.000Z',
     }
     expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
-      kind: 'none',
-      label: null,
-      pendingLabel: null,
+      kind: 'active',
+      label: PAID_ACTIVE_LABEL,
+      pendingLabel: PAID_ACTIVE_LABEL,
     })
     const year = resolveProfileBillingCardAction(standing, true, 'year')
     expect(year.kind).toBe('schedule')
@@ -222,18 +223,55 @@ describe('resolveProfileBillingCardAction', () => {
       clockEnd: '2026-09-10T12:00:00.000Z',
     }
     expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
-      kind: 'none',
-      label: null,
-      pendingLabel: null,
+      kind: 'active',
+      label: PAID_ACTIVE_LABEL,
+      pendingLabel: PAID_ACTIVE_LABEL,
     })
     expect(resolveProfileBillingCardAction(standing, true, 'year')).toEqual({
       kind: 'cancel_schedule',
-      label: PAID_INTERVAL_CANCEL_LABEL,
+      label: PAID_INTERVAL_CANCEL_UPGRADE_LABEL,
       pendingLabel: 'Canceling…',
       confirm: {
         title: 'Cancel switch to Yearly?',
         body: "You'll stay on your current plan and renew as usual.",
-        confirmLabel: PAID_INTERVAL_CANCEL_LABEL,
+        confirmLabel: PAID_INTERVAL_CANCEL_UPGRADE_LABEL,
+      },
+    })
+  })
+
+  it('schedules Downgrade on the other paid Default interval from a Yearly seat', () => {
+    const standing: BillingStandingView = {
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
+      billingInterval: 'year',
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    }
+    const month = resolveProfileBillingCardAction(standing, true, 'month')
+    expect(month.kind).toBe('schedule')
+    expect(month.label).toBe('Downgrade')
+    expect(month.pendingLabel).toBe('Downgrading…')
+  })
+
+  it('cancels a scheduled Downgrade with direction-aware copy', () => {
+    const standing: BillingStandingView = {
+      ...base,
+      entitled: true,
+      status: 'active',
+      plan: DEFAULT_SUBSCRIPTION_PLAN,
+      billingInterval: 'year',
+      hasPendingPlanChange: true,
+      clockEnd: '2026-09-10T12:00:00.000Z',
+    }
+    expect(resolveProfileBillingCardAction(standing, true, 'month')).toEqual({
+      kind: 'cancel_schedule',
+      label: 'Cancel Downgrade',
+      pendingLabel: 'Canceling…',
+      confirm: {
+        title: 'Cancel switch to Monthly?',
+        body: "You'll stay on your current plan and renew as usual.",
+        confirmLabel: 'Cancel Downgrade',
       },
     })
   })
@@ -546,6 +584,13 @@ describe('splitCatalogPriceLabel', () => {
       interval: '/ month',
     })
   })
+
+  it('keeps "billed annually" outside the struck yearly total amount', () => {
+    expect(splitCatalogPriceLabel('€1500 billed annually')).toEqual({
+      amount: '€1500',
+      interval: 'billed annually',
+    })
+  })
 })
 
 describe('buildBillingCompareAtCardDisplay', () => {
@@ -588,7 +633,51 @@ describe('buildBillingCompareAtCardDisplay', () => {
     })
   })
 
-  it('applies discount to assigned only and leaves basic struck unchanged', () => {
+  it('never strikes basic against itself even when showCompareAt is stale', () => {
+    const card = buildBillingCompareAtCardDisplay({
+      assigned: basic,
+      basic,
+      showCompareAt: true,
+    })
+    expect(card.monthlyRows).toEqual([
+      { kind: 'catalog', price: basic.monthlyLabel },
+    ])
+    expect(card.yearlyRows).toEqual([
+      {
+        kind: 'catalog',
+        lines: {
+          primary: basic.yearlyAsMonthlyLabel,
+          secondary: basic.yearlyTotalMutedLabel,
+        },
+      },
+    ])
+  })
+
+  it('never strikes a discounted basic seat against itself even when showCompareAt is stale', () => {
+    const discountPrices = {
+      monthlyAmount: '€120',
+      yearlyAsMonthlyAmount: '€100',
+      yearlyTotalAmount: '€1200',
+    }
+    const card = buildBillingCompareAtCardDisplay({
+      assigned: basic,
+      basic,
+      showCompareAt: true,
+      discountPrices,
+    })
+    expect(card.monthlyRows).toEqual([
+      {
+        kind: 'discount-inline',
+        line: {
+          discounted: discountPrices.monthlyAmount,
+          current: splitCatalogPriceLabel(basic.monthlyLabel).amount,
+          interval: splitCatalogPriceLabel(basic.monthlyLabel).interval,
+        },
+      },
+    ])
+  })
+
+  it('drops the inline struck current price while showCompareAt, keeping the separate struck basic row', () => {
     const discountPrices = {
       monthlyAmount: '€79.20',
       yearlyAsMonthlyAmount: '€66',
@@ -600,16 +689,51 @@ describe('buildBillingCompareAtCardDisplay', () => {
       showCompareAt: true,
       discountPrices,
     })
-    expect(card.monthlyRows[0]?.kind).toBe('discount-inline')
+    expect(card.monthlyRows[0]).toMatchObject({
+      kind: 'discount-inline',
+      line: {
+        discounted: discountPrices.monthlyAmount,
+        current: undefined,
+      },
+    })
     expect(card.monthlyRows[1]).toEqual({
       kind: 'struck',
       price: basic.monthlyLabel,
+    })
+    expect(card.yearlyRows[0]).toMatchObject({
+      kind: 'discount-inline',
+      secondary: {
+        discounted: discountPrices.yearlyTotalAmount,
+        current: undefined,
+      },
     })
     expect(card.yearlyRows[1]).toMatchObject({
       kind: 'struck',
       lines: {
         primary: basic.yearlyAsMonthlyLabel,
         secondary: basic.yearlyTotalMutedLabel,
+      },
+    })
+  })
+
+  it('keeps the inline struck current price when not showCompareAt', () => {
+    const discountPrices = {
+      monthlyAmount: '€79.20',
+      yearlyAsMonthlyAmount: '€66',
+      yearlyTotalAmount: '€792',
+    }
+    const card = buildBillingCompareAtCardDisplay({
+      assigned,
+      basic,
+      showCompareAt: false,
+      discountPrices,
+    })
+    expect(card.monthlyRows).toHaveLength(1)
+    expect(card.monthlyRows[0]).toMatchObject({
+      kind: 'discount-inline',
+      line: {
+        discounted: discountPrices.monthlyAmount,
+        current: splitCatalogPriceLabel(assigned.monthlyLabel).amount,
       },
     })
   })

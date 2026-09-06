@@ -31,14 +31,28 @@ export function BillingCompareAtYearlyPrice({
                 <BillingInlinePriceLine
                   parts={[
                     { amount: row.primary.discounted, tone: 'discounted' },
-                    { amount: row.primary.current, tone: 'struck' },
+                    ...(row.primary.current != null
+                      ? [
+                          {
+                            amount: row.primary.current,
+                            tone: 'struck' as const,
+                          },
+                        ]
+                      : []),
                   ]}
                   interval={row.primary.interval}
                 />
                 <BillingInlinePriceLine
                   parts={[
                     { amount: row.secondary.discounted, tone: 'discounted' },
-                    { amount: row.secondary.current, tone: 'struck' },
+                    ...(row.secondary.current != null
+                      ? [
+                          {
+                            amount: row.secondary.current,
+                            tone: 'struck' as const,
+                          },
+                        ]
+                      : []),
                   ]}
                   interval={row.secondary.interval}
                   size='secondary'

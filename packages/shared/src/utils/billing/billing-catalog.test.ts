@@ -18,7 +18,7 @@ describe('buildBillingPlanPriceLabels', () => {
     ).toEqual({
       monthlyLabel: '€150 / month',
       yearlyAsMonthlyLabel: '€125 / month',
-      yearlyTotalMutedLabel: '€1500 / year',
+      yearlyTotalMutedLabel: '€1500 billed annually',
       yearlySavingsLabel: 'Save ~2 months',
     })
   })

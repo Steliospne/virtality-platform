@@ -4,7 +4,6 @@
  * Monthly/Yearly Default plan card with Assigned Variant compare-at rows.
  */
 
-import { Check } from 'lucide-react'
 import { Badge } from '@virtality/ui/components/badge'
 import { cn } from '@/lib/utils'
 import type {
@@ -18,7 +17,6 @@ import { BillingCompareAtYearlyPrice } from './billing-compare-at-yearly-price'
 
 export function PlanCard({
   title,
-  selected,
   disabled,
   onSelect,
   monthlyRows,
@@ -30,7 +28,6 @@ export function PlanCard({
   onCheckout,
 }: {
   title: string
-  selected: boolean
   disabled: boolean
   onSelect: () => void
   monthlyRows?: BillingCompareAtMonthlyRow[]
@@ -42,18 +39,13 @@ export function PlanCard({
   onCheckout?: () => void
 }) {
   const hasCheckout = checkoutAction != null && onCheckout != null
-  // Active interval (`disabled`): not selectable and not "Selected"; just inert.
+  // Active interval (`disabled`): not selectable; just inert.
   const interactive = !hasCheckout && !disabled
-  const showSelected = selected && !disabled
   const className = cn(
     'flex h-full min-h-56 flex-col rounded-xl border-2 p-6 text-left transition sm:min-h-64 sm:p-7',
     accent
-      ? showSelected
-        ? 'border-vital-blue-600 bg-vital-blue-50 dark:border-vital-blue-400 dark:bg-vital-blue-950/40'
-        : 'border-vital-blue-200 bg-vital-blue-50/60 dark:border-vital-blue-800 dark:bg-vital-blue-950/20'
-      : showSelected
-        ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900'
-        : 'border-zinc-200 dark:border-zinc-800',
+      ? 'border-vital-blue-600 bg-vital-blue-50 dark:border-vital-blue-400 dark:bg-vital-blue-950/40'
+      : 'border-zinc-200 dark:border-zinc-800',
   )
   const body = (
     <>
@@ -79,22 +71,6 @@ export function PlanCard({
           <BillingCompareAtYearlyPrice rows={yearlyRows} />
         ) : null}
       </div>
-      {showSelected && !hasCheckout ? (
-        <p
-          className={cn(
-            'mt-auto flex items-center gap-1.5 pt-5 text-sm font-medium',
-            accent && 'text-vital-blue-800 dark:text-vital-blue-200',
-          )}
-        >
-          <Check
-            className={cn(
-              'size-4',
-              accent && 'text-vital-blue-700 dark:text-vital-blue-300',
-            )}
-          />
-          Selected
-        </p>
-      ) : null}
       {hasCheckout ? (
         <div className='mt-auto pt-5'>
           <BillingPlanCardCheckoutButton

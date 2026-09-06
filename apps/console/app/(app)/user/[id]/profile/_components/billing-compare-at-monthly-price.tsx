@@ -31,7 +31,9 @@ export function BillingCompareAtMonthlyPrice({
                 key={`discount-${index}`}
                 parts={[
                   { amount: row.line.discounted, tone: 'discounted' },
-                  { amount: row.line.current, tone: 'struck' },
+                  ...(row.line.current != null
+                    ? [{ amount: row.line.current, tone: 'struck' as const }]
+                    : []),
                 ]}
                 interval={row.line.interval}
               />

@@ -4,16 +4,21 @@
  * Catalog yearly price group (monthly-equivalent + yearly total).
  */
 
+import { splitCatalogPriceLabel } from '@/lib/profile-billing'
+import { BillingInlinePriceLine } from './billing-inline-price-line'
+
 export function BillingCatalogYearlyPriceGroup({
   lines,
 }: {
   lines: { primary: string; secondary: string }
 }) {
+  const { amount, interval } = splitCatalogPriceLabel(lines.primary)
   return (
     <div className='space-y-0.5'>
-      <p className='text-xl font-semibold tabular-nums sm:text-2xl'>
-        {lines.primary}
-      </p>
+      <BillingInlinePriceLine
+        parts={[{ amount, tone: 'catalog' }]}
+        interval={interval}
+      />
       <p className='text-sm text-zinc-400 tabular-nums'>{lines.secondary}</p>
     </div>
   )

@@ -71,7 +71,7 @@ export function buildBillingPlanPriceLabels(
   return {
     monthlyLabel: `${formatEurFromMinor(minor.monthly)} / month`,
     yearlyAsMonthlyLabel: `${formatEurFromMinor(yearlyAsMonthlyMinor)} / month`,
-    yearlyTotalMutedLabel: `${formatEurFromMinor(minor.yearly)} / year`,
+    yearlyTotalMutedLabel: `${formatEurFromMinor(minor.yearly)} billed annually`,
     yearlySavingsLabel,
   }
 }

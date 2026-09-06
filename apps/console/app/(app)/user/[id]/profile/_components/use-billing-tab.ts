@@ -254,6 +254,7 @@ export function useBillingTab() {
       case 'checkout':
         void runPlanCardCheckout(interval)
         return
+      case 'active':
       case 'none':
         return
     }
