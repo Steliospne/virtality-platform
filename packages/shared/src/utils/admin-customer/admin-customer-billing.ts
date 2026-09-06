@@ -33,7 +33,8 @@ import {
   type PlanVariantCatalog,
 } from '../billing/plan-variant-catalog.ts'
 import {
-  StaffAccessGateConvertedError,
+  assertStaffActionsAllowed,
+  demoteTesterIfNeeded,
   upsertPermanentAccessGate,
   type StaffAccessGateStore,
 } from '../billing/staff-access-gate.ts'
@@ -325,9 +326,10 @@ export function findLivePaidDefaultSubscription(
 }
 
 /**
- * Assign Free after cancellation: Paid billing history, or a live Default seat
- * (`active`/`trialing`) so staff can cancel immediately and create Free.
- * Trialing Default alone is not Paid billing history; the live-seat arm covers it.
+ * Assign restricted access after cancellation: paid billing history, or a live
+ * Default seat (`active`/`trialing`) so staff can cancel immediately and issue
+ * an Access Gate. Trialing Default alone is not paid billing history; the
+ * live-seat arm covers it.
  */
 export function qualifiesForAssignFreeAfterCancellation(
   subscriptions: readonly AdminCustomerBillingSubscriptionRow[],
@@ -893,22 +895,18 @@ export async function assignFreeAfterCancellationForCustomer(
     )
   }
 
-  if (await accessGateStore.userHasConvertedAccessGate(user.id)) {
-    throw new StaffAccessGateConvertedError(user.id)
-  }
+  await assertStaffActionsAllowed(accessGateStore, user.id)
 
-  let stripeOperationId = ''
-  if (livePaidDefault?.stripeSubscriptionId) {
-    const canceled = await stripe.cancelSubscriptionImmediately(
-      livePaidDefault.stripeSubscriptionId,
-    )
-    stripeOperationId = canceled.stripeSubscriptionId
-  }
+  const stripeOperationId = livePaidDefault?.stripeSubscriptionId
+    ? (
+        await stripe.cancelSubscriptionImmediately(
+          livePaidDefault.stripeSubscriptionId,
+        )
+      ).stripeSubscriptionId
+    : ''
 
   const accessGate = await upsertPermanentAccessGate(accessGateStore, user.id)
-  if (user.role === 'tester') {
-    await accessGateStore.updateRoleToUser(user.id)
-  }
+  await demoteTesterIfNeeded(accessGateStore, user)
 
   const afterBillingState = await store.summarizeBillingState(user.id)
   const audit = await store.recordAudit({

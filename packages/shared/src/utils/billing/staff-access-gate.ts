@@ -186,7 +186,7 @@ function resolveTrialDirection(
   return resolved
 }
 
-async function assertStaffActionsAllowed(
+export async function assertStaffActionsAllowed(
   store: StaffAccessGateStore,
   userId: string,
 ): Promise<void> {
@@ -202,9 +202,9 @@ function extensionBaseFromAccessGate(now: Date, gate: AccessGateRecord): Date {
   return now
 }
 
-async function demoteTesterIfNeeded(
+export async function demoteTesterIfNeeded(
   store: StaffAccessGateStore,
-  user: StaffAccessGateTargetUser,
+  user: Pick<StaffAccessGateTargetUser, 'id' | 'role'>,
 ): Promise<boolean> {
   if (user.role !== 'tester') return false
   await store.updateRoleToUser(user.id)

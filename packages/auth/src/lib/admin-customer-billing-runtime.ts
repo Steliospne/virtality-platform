@@ -77,7 +77,7 @@ export type AdminCustomerBillingRuntime = {
     input: CancelCyclePlanChangeInput,
   ) => ReturnType<typeof cancelCyclePlanChangeForCustomer>
   assignFreeAfterCancellation: (
-    input: Omit<AssignFreeAfterCancellationInput, 'priceId'>,
+    input: AssignFreeAfterCancellationInput,
   ) => ReturnType<typeof assignFreeAfterCancellationForCustomer>
   sendPaidCheckoutLink: (
     input: SendPaidCheckoutLinkRuntimeInput,
