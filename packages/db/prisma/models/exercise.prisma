@@ -16,8 +16,8 @@ model Exercise {
   programExercise         ProgramExercise[]
   reusableProgramExercise ReusableProgramExercise[]
   sessionExercise         SessionExercise[]
-  presetExercise   PresetExercise[]
-  favoriteExercise FavoriteExercise[]
+  presetExercise          PresetExercise[]
+  favoriteExercise        FavoriteExercise[]
 }
 
 model Preset {

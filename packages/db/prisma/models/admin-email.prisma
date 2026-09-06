@@ -23,12 +23,12 @@ model AdminEmailDraft {
   createdAt              DateTime  @default(now()) @db.Timestamp(6)
   updatedAt              DateTime  @updatedAt @db.Timestamp(6)
 
-  createdBy            User                  @relation("AdminEmailDraftCreator", fields: [createdById], references: [id])
-  archivedBy           User?                 @relation("AdminEmailDraftArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
-  restoredBy           User?                 @relation("AdminEmailDraftRestoredBy", fields: [restoredById], references: [id], onDelete: SetNull)
-  clonedFromDraft      AdminEmailDraft?      @relation("AdminEmailDraftClone", fields: [clonedFromDraftId], references: [id], onDelete: SetNull)
-  clonedFromSentRecord AdminEmailSentRecord? @relation("AdminEmailDraftClonedFromSent", fields: [clonedFromSentRecordId], references: [id], onDelete: SetNull)
-  draftClones          AdminEmailDraft[]     @relation("AdminEmailDraftClone")
+  createdBy            User                   @relation("AdminEmailDraftCreator", fields: [createdById], references: [id])
+  archivedBy           User?                  @relation("AdminEmailDraftArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
+  restoredBy           User?                  @relation("AdminEmailDraftRestoredBy", fields: [restoredById], references: [id], onDelete: SetNull)
+  clonedFromDraft      AdminEmailDraft?       @relation("AdminEmailDraftClone", fields: [clonedFromDraftId], references: [id], onDelete: SetNull)
+  clonedFromSentRecord AdminEmailSentRecord?  @relation("AdminEmailDraftClonedFromSent", fields: [clonedFromSentRecordId], references: [id], onDelete: SetNull)
+  draftClones          AdminEmailDraft[]      @relation("AdminEmailDraftClone")
   sentRecords          AdminEmailSentRecord[]
 
   @@index([createdById])

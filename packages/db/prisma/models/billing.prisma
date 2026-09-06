@@ -59,14 +59,14 @@ model CampaignRegistryCoupon {
 /// In-app Promotion Code notify write path. One open row per user + Stripe
 /// Promotion Code id. Console delivery chrome is out of scope for Adminboard.
 model PromotionCodeDelivery {
-  id              String                       @id @default(cuid())
+  id              String                      @id @default(cuid())
   userId          String
   promotionCodeId String
   code            String
   couponId        String
-  status          PromotionCodeDeliveryStatus  @default(open)
-  createdAt       DateTime                     @db.Timestamp(6)
-  updatedAt       DateTime                     @db.Timestamp(6)
+  status          PromotionCodeDeliveryStatus @default(open)
+  createdAt       DateTime                    @db.Timestamp(6)
+  updatedAt       DateTime                    @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -77,19 +77,19 @@ model PromotionCodeDelivery {
 /// Promotion Code entered before first paid Checkout. Open rows are short-lived
 /// and used to attach a Promotion Code to the upcoming Stripe Checkout Session.
 model PendingPromotionCode {
-  id                  String                     @id @default(cuid())
-  userId              String
-  code                String
-  promotionCodeId     String
-  couponId            String
+  id                 String                     @id @default(cuid())
+  userId             String
+  code               String
+  promotionCodeId    String
+  couponId           String
   /// Set only when this hold governs a Discount already live on a
   /// Subscription (mid-cycle redeem); null for a pre-Checkout hold. The
   /// live Discount is force-reverted via Stripe when this hold expires.
-  liveSubscriptionId  String?
-  status              PendingPromotionCodeStatus @default(open)
-  expiresAt           DateTime                   @db.Timestamp(6)
-  createdAt           DateTime                   @db.Timestamp(6)
-  updatedAt           DateTime                   @db.Timestamp(6)
+  liveSubscriptionId String?
+  status             PendingPromotionCodeStatus @default(open)
+  expiresAt          DateTime                   @db.Timestamp(6)
+  createdAt          DateTime                   @db.Timestamp(6)
+  updatedAt          DateTime                   @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

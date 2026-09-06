@@ -17,23 +17,23 @@ model MarketingBlogAuthor {
 }
 
 model MarketingBlogPost {
-  id                 String                   @id
-  status             MarketingBlogPostStatus
-  slug               String                   @unique
-  title              String
-  excerpt            String
-  cover              String
-  coverFocusY        Int?
-  authorId           String
-  author             MarketingBlogAuthor      @relation(fields: [authorId], references: [id])
-  publishedAt        String?
-  featured           Boolean                  @default(false)
-  body               Json
-  publishedSnapshot  Json?
-  slugLocked         Boolean                  @default(false)
-  version            Int                      @default(1)
-  createdAt          DateTime                 @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime                 @updatedAt @db.Timestamp(6)
+  id                String                  @id
+  status            MarketingBlogPostStatus
+  slug              String                  @unique
+  title             String
+  excerpt           String
+  cover             String
+  coverFocusY       Int?
+  authorId          String
+  author            MarketingBlogAuthor     @relation(fields: [authorId], references: [id])
+  publishedAt       String?
+  featured          Boolean                 @default(false)
+  body              Json
+  publishedSnapshot Json?
+  slugLocked        Boolean                 @default(false)
+  version           Int                     @default(1)
+  createdAt         DateTime                @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime                @updatedAt @db.Timestamp(6)
 
   @@index([status, publishedAt])
   @@index([status, featured])

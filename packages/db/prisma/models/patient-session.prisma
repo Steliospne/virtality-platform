@@ -1,20 +1,20 @@
 // Patient Session Domain
 
 model PatientSession {
-  id                      String                @id
+  id                      String                                 @id
   patientId               String
   programId               String?
-  status                  PatientSessionStatus  @default(ACTIVE)
+  status                  PatientSessionStatus                   @default(ACTIVE)
   sourceReusableProgramId String?
   sourceProgramName       String?
   nprs                    String?
   notes                   String?
-  createdAt               DateTime              @default(now()) @db.Timestamp(6)
-  completedAt             DateTime?             @db.Timestamp(6)
-  deletedAt               DateTime?             @db.Timestamp(6)
-  patient                 Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  program                 PatientProgram?       @relation(fields: [programId], references: [id], onDelete: SetNull)
-  sourceReusableProgram   ReusableProgram?      @relation(fields: [sourceReusableProgramId], references: [id], onDelete: SetNull)
+  createdAt               DateTime                               @default(now()) @db.Timestamp(6)
+  completedAt             DateTime?                              @db.Timestamp(6)
+  deletedAt               DateTime?                              @db.Timestamp(6)
+  patient                 Patient                                @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  program                 PatientProgram?                        @relation(fields: [programId], references: [id], onDelete: SetNull)
+  sourceReusableProgram   ReusableProgram?                       @relation(fields: [sourceReusableProgramId], references: [id], onDelete: SetNull)
   sessionExercise         SessionExercise[]
   sessionData             SessionData[]
   supplementalTherapy     PatientSessionSupplementalTherapyRel[]

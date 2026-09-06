@@ -9,9 +9,9 @@ model ReusableProgram {
   updatedAt DateTime            @default(now()) @db.Timestamp(6)
   retiredAt DateTime?           @db.Timestamp(6)
 
-  user            User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  exercises       ReusableProgramExercise[]
-  sourceSessions  PatientSession[]
+  user           User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises      ReusableProgramExercise[]
+  sourceSessions PatientSession[]
 
   @@index([userId, kind, retiredAt])
 }

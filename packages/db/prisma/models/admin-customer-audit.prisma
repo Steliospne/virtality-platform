@@ -8,7 +8,7 @@ model AdminCustomerAudit {
   outcome            String
   stripeOperationId  String?
   beforeBillingState Json?
-  afterBillingState    Json?
+  afterBillingState  Json?
   createdAt          DateTime @db.Timestamp(6)
 
   targetUser User @relation("AdminCustomerAuditTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
