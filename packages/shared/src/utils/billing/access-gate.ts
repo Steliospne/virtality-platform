@@ -27,6 +27,19 @@ export function isAccessGateOpenStatus(
   return (ACCESS_GATE_OPEN_STATUSES as readonly string[]).includes(value)
 }
 
+/** Narrow open set for self-serve Access Code redemption blocking. */
+export function isOpenTimedAccessGate(
+  accessGate: AccessGateClock | null | undefined,
+): boolean {
+  return accessGate?.status === 'trialing'
+}
+
+export function isOpenGrantedAccessGate(
+  accessGate: AccessGateClock | null | undefined,
+): boolean {
+  return accessGate?.status === 'granted'
+}
+
 export type AccessGateClock = {
   status: AccessGateStatus
   trialStart: Date | null

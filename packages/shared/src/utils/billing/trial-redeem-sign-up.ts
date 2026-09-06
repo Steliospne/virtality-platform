@@ -62,7 +62,7 @@ export function isTrialRedeemWaitlistRedirect(
  * empty → waitlist (no account);
  * invalid format / TE- → ignore (TE- consume stays elsewhere; invalid stays open);
  * well-formatted GO- lookup miss → waitlist (no account);
- * terminal → Already used; derived Expired → Expired; else proceed to Stripe.
+ * terminal → Already used; derived Expired → Expired; else proceed to issuance.
  */
 export async function evaluateTrialRedeemAtSignUp(
   store: Pick<TrialRedeemCodeStore, 'findByCode'>,
@@ -123,6 +123,7 @@ export type TrialRedeemConsumeStore = Pick<
     userId: string,
     variantName: string,
   ) => Promise<AccessCodeVariantOutcome>
+  userHasLiveDefaultSubscription: (userId: string) => Promise<boolean>
 }
 
 /** Stripe Subscription statuses treated as already entitled (PRD #41). */
@@ -131,57 +132,45 @@ export const TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES = [
   'active',
 ] as const
 
-export type TrialRedeemStripeGateway = {
-  /** True when the Customer already has a trialing or active Subscription. */
-  customerHasEntitledSubscription: (customerId: string) => Promise<boolean>
-  createPermanentFreeSubscription: (input: {
-    customerId: string
-    priceId: string
-    metadata: { trialRedeemCodeId: string }
-  }) => Promise<{ stripeSubscriptionId: string }>
-}
-
 /**
- * Issues the owned entitlement clock for `timed_trial` mode codes. Active
- * immediately - no pending step.
+ * Issues Access Gates for Access Code redemption at sign-up.
  */
-export type TrialRedeemTrialGrantIssuer = {
+export type TrialRedeemAccessGateIssuer = {
+  issueFreeGrant: (input: {
+    userId: string
+  }) => Promise<{ accessGateId: string }>
   grantActiveTrial: (input: {
     userId: string
     trialDays: number
-  }) => Promise<{ trialGrantId: string }>
+  }) => Promise<{ accessGateId: string }>
 }
+
+/** @deprecated Use `TrialRedeemAccessGateIssuer`. */
+export type TrialRedeemTrialGrantIssuer = TrialRedeemAccessGateIssuer
 
 export type RedeemTrialCodeInput = {
   code: string
   userId: string
-  stripeCustomerId: string
-  priceId: string
 }
 
 export type RedeemTrialCodeResult =
   | { status: 'ignored' }
   | {
       status: 'redeemed'
-      stripeSubscriptionId: string
       codeId: number
-      trialGrantId?: string
+      accessGateId: string
     }
   | { status: 'already_entitled'; codeId: number }
   | { status: 'failed' }
 
 /**
- * Stripe-first redeem: entitled Customers consume as already_entitled without a
- * second Subscription; otherwise ensure a Free Subscription exists (permanent
- * Free, no trial on the Stripe row) then, for `timed_trial` mode, issue an
- * active TrialGrant as the owned entitlement clock. Does not write a local
- * Subscription row (webhook-only). Does not set the tester role. On Stripe
- * failure the code stays unused.
+ * Access-Gate-native redeem: live paid Default subscription consumes as
+ * already_entitled; otherwise issue a new Permanent or Timed Access Gate row.
+ * Brand-new sign-up accounts cannot yet have a pre-existing Access Gate.
  */
 export async function redeemTrialCodeAfterSignUp(
   store: TrialRedeemConsumeStore,
-  stripe: TrialRedeemStripeGateway,
-  trialGrant: TrialRedeemTrialGrantIssuer,
+  accessGate: TrialRedeemAccessGateIssuer,
   input: RedeemTrialCodeInput,
   runtime: { now?: () => Date } = {},
 ): Promise<RedeemTrialCodeResult> {
@@ -196,8 +185,8 @@ export async function redeemTrialCodeAfterSignUp(
     if (variantOutcome !== 'applied') return { status: 'failed' }
   }
 
-  const alreadyEntitled = await stripe.customerHasEntitledSubscription(
-    input.stripeCustomerId,
+  const alreadyEntitled = await store.userHasLiveDefaultSubscription(
+    input.userId,
   )
   if (alreadyEntitled) {
     const consumed = await store.consumeAsAlreadyEntitled(
@@ -209,29 +198,20 @@ export async function redeemTrialCodeAfterSignUp(
     return { status: 'already_entitled', codeId }
   }
 
-  let stripeSubscriptionId: string
+  let accessGateId: string
   try {
-    const created = await stripe.createPermanentFreeSubscription({
-      customerId: input.stripeCustomerId,
-      priceId: input.priceId,
-      metadata: { trialRedeemCodeId: String(codeId) },
-    })
-    stripeSubscriptionId = created.stripeSubscriptionId
-  } catch {
-    return { status: 'failed' }
-  }
-
-  let trialGrantId: string | undefined
-  if (mode !== 'permanent_free') {
-    try {
-      const granted = await trialGrant.grantActiveTrial({
+    if (mode === 'permanent_free') {
+      const issued = await accessGate.issueFreeGrant({ userId: input.userId })
+      accessGateId = issued.accessGateId
+    } else {
+      const issued = await accessGate.grantActiveTrial({
         userId: input.userId,
         trialDays,
       })
-      trialGrantId = granted.trialGrantId
-    } catch {
-      return { status: 'failed' }
+      accessGateId = issued.accessGateId
     }
+  } catch {
+    return { status: 'failed' }
   }
 
   const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
@@ -239,8 +219,7 @@ export async function redeemTrialCodeAfterSignUp(
 
   return {
     status: 'redeemed',
-    stripeSubscriptionId,
     codeId,
-    ...(trialGrantId ? { trialGrantId } : {}),
+    accessGateId,
   }
 }

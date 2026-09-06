@@ -106,7 +106,7 @@ async function redeemTrialCodeOnSignInIfPresent(
 
   await redeemAccessCodeForUser(
     { userId, code: routed.code },
-    { stripeClient, priceId: FREE_PLAN_PRICE_ID },
+    { stripeClient },
   ).catch(() => undefined)
 }
 
@@ -199,15 +199,13 @@ export const auth = betterAuth({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
             createCustomerOnSignUp: true,
-            onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
+            onCustomerCreate: async ({ user }, ctx) => {
               await redeemTrialCodeForCustomer({
                 rawCode: await resolveSignUpCodeForCustomerCreate(
                   ctx.body,
                   ctx.path,
                 ),
                 userId: user.id,
-                stripeCustomerId: stripeCustomer.id,
-                priceId: FREE_PLAN_PRICE_ID,
                 stripeClient,
               })
             },

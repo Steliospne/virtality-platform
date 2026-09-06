@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FREE_PLAN_PRICE_ID } from './billing-plans.ts'
 import {
   DEFAULT_TRIAL_REDEEM_DAYS,
   TRIAL_REDEEM_CODE_TTL_MS,
@@ -13,9 +12,8 @@ import {
   isTrialRedeemWaitlistRedirect,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
+  type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
-  type TrialRedeemStripeGateway,
-  type TrialRedeemTrialGrantIssuer,
 } from './trial-redeem-sign-up.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
@@ -40,7 +38,10 @@ function record(
 
 function createMemoryStore(
   initial: TrialRedeemCodeRecord[] = [],
-  applyVariant: TrialRedeemConsumeStore['applyVariant'] = async () => 'applied',
+  options: {
+    hasLivePaidSub?: boolean
+    applyVariant?: TrialRedeemConsumeStore['applyVariant']
+  } = {},
 ): TrialRedeemConsumeStore & {
   rows: TrialRedeemCodeRecord[]
 } {
@@ -61,27 +62,17 @@ function createMemoryStore(
     findByCode: async (code) => rows.find((row) => row.code === code) ?? null,
     consumeAsRedeemed: consumeUnusedAs('redeemed'),
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
-    applyVariant,
+    applyVariant: options.applyVariant ?? (async () => 'applied'),
+    userHasLiveDefaultSubscription: async () => options.hasLivePaidSub ?? false,
   }
 }
 
-function stripeGateway(
-  overrides: Partial<TrialRedeemStripeGateway> = {},
-): TrialRedeemStripeGateway {
+function accessGateIssuer(
+  overrides: Partial<TrialRedeemAccessGateIssuer> = {},
+): TrialRedeemAccessGateIssuer {
   return {
-    customerHasEntitledSubscription: async () => false,
-    createPermanentFreeSubscription: async () => ({
-      stripeSubscriptionId: 'sub_permanent_free',
-    }),
-    ...overrides,
-  }
-}
-
-function trialGrantIssuer(
-  overrides: Partial<TrialRedeemTrialGrantIssuer> = {},
-): TrialRedeemTrialGrantIssuer {
-  return {
-    grantActiveTrial: async () => ({ trialGrantId: 'grant_default' }),
+    issueFreeGrant: async () => ({ accessGateId: 'gate_free' }),
+    grantActiveTrial: async () => ({ accessGateId: 'gate_trial' }),
     ...overrides,
   }
 }
@@ -216,51 +207,30 @@ describe('evaluateTrialRedeemAtSignUp', () => {
 })
 
 describe('redeemTrialCodeAfterSignUp', () => {
-  it('creates a permanent Free subscription then grants an active trial for timed_trial codes', async () => {
+  it('issues a timed Access Gate for timed_trial codes', async () => {
     const store = createMemoryStore([
       record({ id: 42, trialDays: 14, status: 'unused' }),
     ])
-    const stripeCalls: unknown[] = []
-    const stripe = stripeGateway({
-      createPermanentFreeSubscription: async (input) => {
-        stripeCalls.push(input)
-        return { stripeSubscriptionId: 'sub_free_1' }
-      },
-    })
     const grantCalls: unknown[] = []
-    const trialGrant = trialGrantIssuer({
+    const accessGate = accessGateIssuer({
       grantActiveTrial: async (input) => {
         grantCalls.push(input)
-        return { trialGrantId: 'grant_42' }
+        return { accessGateId: 'gate_42' }
       },
     })
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_1',
-        stripeCustomerId: 'cus_1',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_1' },
       { now: () => NOW },
     )
 
     expect(result).toEqual({
       status: 'redeemed',
-      stripeSubscriptionId: 'sub_free_1',
       codeId: 42,
-      trialGrantId: 'grant_42',
+      accessGateId: 'gate_42',
     })
-    expect(stripeCalls).toEqual([
-      {
-        customerId: 'cus_1',
-        priceId: FREE_PLAN_PRICE_ID,
-        metadata: { trialRedeemCodeId: '42' },
-      },
-    ])
     expect(grantCalls).toEqual([{ userId: 'user_1', trialDays: 14 }])
     expect(store.rows[0]).toMatchObject({
       status: 'redeemed',
@@ -273,31 +243,24 @@ describe('redeemTrialCodeAfterSignUp', () => {
     const store = createMemoryStore([
       record({ id: 7, trialDays: 30, status: 'unused' }),
     ])
-    const stripe = stripeGateway()
-    const trialGrant = trialGrantIssuer({
+    const accessGate = accessGateIssuer({
       grantActiveTrial: async (input) => {
         expect(input.trialDays).toBe(30)
-        return { trialGrantId: 'grant_7' }
+        return { accessGateId: 'gate_7' }
       },
     })
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_2',
-        stripeCustomerId: 'cus_2',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_2' },
       { now: () => NOW },
     )
 
-    expect(result).toMatchObject({ status: 'redeemed' })
+    expect(result).toMatchObject({ status: 'redeemed', accessGateId: 'gate_7' })
   })
 
-  it('creates a permanent Free subscription without granting a trial for permanent_free mode codes', async () => {
+  it('issues a permanent Access Gate for permanent_free mode codes', async () => {
     const store = createMemoryStore([
       record({
         id: 99,
@@ -306,41 +269,26 @@ describe('redeemTrialCodeAfterSignUp', () => {
         code: 'GO-PERMFREE01',
       }),
     ])
-    const stripeCalls: unknown[] = []
-    const stripe = stripeGateway({
-      createPermanentFreeSubscription: async (input) => {
-        stripeCalls.push(input)
-        return { stripeSubscriptionId: 'sub_permanent_free' }
-      },
-    })
+    const issueFreeGrant = vi.fn(async () => ({ accessGateId: 'gate_perm' }))
     const grantActiveTrial = vi.fn()
-    const trialGrant = trialGrantIssuer({ grantActiveTrial })
+    const accessGate = accessGateIssuer({
+      issueFreeGrant,
+      grantActiveTrial,
+    })
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-PERMFREE01',
-        userId: 'user_free',
-        stripeCustomerId: 'cus_free',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-PERMFREE01', userId: 'user_free' },
       { now: () => NOW },
     )
 
     expect(result).toEqual({
       status: 'redeemed',
-      stripeSubscriptionId: 'sub_permanent_free',
       codeId: 99,
+      accessGateId: 'gate_perm',
     })
-    expect(stripeCalls).toEqual([
-      {
-        customerId: 'cus_free',
-        priceId: FREE_PLAN_PRICE_ID,
-        metadata: { trialRedeemCodeId: '99' },
-      },
-    ])
+    expect(issueFreeGrant).toHaveBeenCalledWith({ userId: 'user_free' })
     expect(grantActiveTrial).not.toHaveBeenCalled()
     expect(store.rows[0]).toMatchObject({
       status: 'redeemed',
@@ -349,31 +297,22 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
   })
 
-  it('consumes as already_entitled without creating a Subscription or trial', async () => {
-    const store = createMemoryStore([
-      record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' }),
-    ])
-    const createPermanentFreeSubscription = vi.fn()
+  it('consumes as already_entitled for live paid Default without issuing a gate', async () => {
+    const store = createMemoryStore(
+      [record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' })],
+      { hasLivePaidSub: true },
+    )
+    const issueFreeGrant = vi.fn()
     const grantActiveTrial = vi.fn()
-    const stripe = stripeGateway({
-      customerHasEntitledSubscription: async (customerId) => {
-        expect(customerId).toBe('cus_entitled')
-        return true
-      },
-      createPermanentFreeSubscription,
+    const accessGate = accessGateIssuer({
+      issueFreeGrant,
+      grantActiveTrial,
     })
-    const trialGrant = trialGrantIssuer({ grantActiveTrial })
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ENTITLED01',
-        userId: 'user_entitled',
-        stripeCustomerId: 'cus_entitled',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-ENTITLED01', userId: 'user_entitled' },
       { now: () => NOW },
     )
 
@@ -381,7 +320,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
       status: 'already_entitled',
       codeId: 55,
     })
-    expect(createPermanentFreeSubscription).not.toHaveBeenCalled()
+    expect(issueFreeGrant).not.toHaveBeenCalled()
     expect(grantActiveTrial).not.toHaveBeenCalled()
     expect(store.rows[0]).toMatchObject({
       status: 'already_entitled',
@@ -391,24 +330,15 @@ describe('redeemTrialCodeAfterSignUp', () => {
   })
 
   it('blocks reuse of a bearer after already-entitled consume', async () => {
-    const store = createMemoryStore([
-      record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' }),
-    ])
-    const stripe = stripeGateway({
-      customerHasEntitledSubscription: async () => true,
-    })
-    const trialGrant = trialGrantIssuer()
+    const store = createMemoryStore(
+      [record({ id: 55, status: 'unused', code: 'GO-ENTITLED01' })],
+      { hasLivePaidSub: true },
+    )
 
     await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ENTITLED01',
-        userId: 'user_entitled',
-        stripeCustomerId: 'cus_entitled',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGateIssuer(),
+      { code: 'GO-ENTITLED01', userId: 'user_entitled' },
       { now: () => NOW },
     )
 
@@ -420,40 +350,9 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
   })
 
-  it('leaves the code unused when Stripe create fails', async () => {
+  it('leaves the code unused when Access Gate issuance fails', async () => {
     const store = createMemoryStore([record({ status: 'unused' })])
-    const stripe = stripeGateway({
-      createPermanentFreeSubscription: async () => {
-        throw new Error('stripe down')
-      },
-    })
-    const trialGrant = trialGrantIssuer()
-
-    const result = await redeemTrialCodeAfterSignUp(
-      store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_3',
-        stripeCustomerId: 'cus_3',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
-      { now: () => NOW },
-    )
-
-    expect(result).toEqual({ status: 'failed' })
-    expect(store.rows[0]).toMatchObject({
-      status: 'unused',
-      usedAt: null,
-      usedBy: null,
-    })
-  })
-
-  it('leaves the code unused when granting the trial fails', async () => {
-    const store = createMemoryStore([record({ status: 'unused' })])
-    const stripe = stripeGateway()
-    const trialGrant = trialGrantIssuer({
+    const accessGate = accessGateIssuer({
       grantActiveTrial: async () => {
         throw new Error('grant failed')
       },
@@ -461,14 +360,8 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_3',
-        stripeCustomerId: 'cus_3',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_3' },
       { now: () => NOW },
     )
 
@@ -480,25 +373,18 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
   })
 
-  it('keeps the bearer reusable after Stripe failure', async () => {
+  it('keeps the bearer reusable after issuance failure', async () => {
     const store = createMemoryStore([record({ status: 'unused' })])
-    const stripe = stripeGateway({
-      createPermanentFreeSubscription: async () => {
-        throw new Error('stripe down')
+    const accessGate = accessGateIssuer({
+      grantActiveTrial: async () => {
+        throw new Error('grant failed')
       },
     })
-    const trialGrant = trialGrantIssuer()
 
     await redeemTrialCodeAfterSignUp(
       store,
-      stripe,
-      trialGrant,
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_3',
-        stripeCustomerId: 'cus_3',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGate,
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_3' },
       { now: () => NOW },
     )
 
@@ -510,45 +396,36 @@ describe('redeemTrialCodeAfterSignUp', () => {
     })
   })
 
-  it('ignores non-proceed codes without calling Stripe', async () => {
+  it('ignores non-proceed codes without issuing a gate', async () => {
     const store = createMemoryStore([record({ status: 'redeemed' })])
-    const createPermanentFreeSubscription = vi.fn()
-    const customerHasEntitledSubscription = vi.fn()
-    const stripe = stripeGateway({
-      createPermanentFreeSubscription,
-      customerHasEntitledSubscription,
+    const issueFreeGrant = vi.fn()
+    const grantActiveTrial = vi.fn()
+    const accessGate = accessGateIssuer({
+      issueFreeGrant,
+      grantActiveTrial,
     })
-    const trialGrant = trialGrantIssuer()
 
-    const result = await redeemTrialCodeAfterSignUp(store, stripe, trialGrant, {
+    const result = await redeemTrialCodeAfterSignUp(store, accessGate, {
       code: 'GO-ABCDEFGHIJ',
       userId: 'user_4',
-      stripeCustomerId: 'cus_4',
-      priceId: FREE_PLAN_PRICE_ID,
     })
 
     expect(result).toEqual({ status: 'ignored' })
-    expect(createPermanentFreeSubscription).not.toHaveBeenCalled()
-    expect(customerHasEntitledSubscription).not.toHaveBeenCalled()
+    expect(issueFreeGrant).not.toHaveBeenCalled()
+    expect(grantActiveTrial).not.toHaveBeenCalled()
   })
 
   it('applies the baked-in variant before consuming the code', async () => {
     const applyVariant = vi.fn(async () => 'applied' as const)
     const store = createMemoryStore(
       [record({ id: 60, mode: 'permanent_free', variant: 'early-bird' })],
-      applyVariant,
+      { applyVariant },
     )
 
     await redeemTrialCodeAfterSignUp(
       store,
-      stripeGateway(),
-      trialGrantIssuer(),
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_60',
-        stripeCustomerId: 'cus_60',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGateIssuer(),
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_60' },
       { now: () => NOW },
     )
 
@@ -559,19 +436,13 @@ describe('redeemTrialCodeAfterSignUp', () => {
   it('fails and leaves the code unused when the variant is blocked', async () => {
     const store = createMemoryStore(
       [record({ id: 61, mode: 'permanent_free', variant: 'early-bird' })],
-      async () => 'blocked',
+      { applyVariant: async () => 'blocked' },
     )
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripeGateway(),
-      trialGrantIssuer(),
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_61',
-        stripeCustomerId: 'cus_61',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGateIssuer(),
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_61' },
       { now: () => NOW },
     )
 
@@ -582,19 +453,13 @@ describe('redeemTrialCodeAfterSignUp', () => {
   it('fails and leaves the code unused when the variant no longer resolves', async () => {
     const store = createMemoryStore(
       [record({ id: 62, mode: 'permanent_free', variant: 'retired-tier' })],
-      async () => 'unavailable',
+      { applyVariant: async () => 'unavailable' },
     )
 
     const result = await redeemTrialCodeAfterSignUp(
       store,
-      stripeGateway(),
-      trialGrantIssuer(),
-      {
-        code: 'GO-ABCDEFGHIJ',
-        userId: 'user_62',
-        stripeCustomerId: 'cus_62',
-        priceId: FREE_PLAN_PRICE_ID,
-      },
+      accessGateIssuer(),
+      { code: 'GO-ABCDEFGHIJ', userId: 'user_62' },
       { now: () => NOW },
     )
 

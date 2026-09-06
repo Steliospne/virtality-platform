@@ -1,24 +1,19 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
-  CONSOLE_PROMO_ELIGIBLE_STATUSES,
   grantActiveTrialToUser,
+  issueFreeGrantToUser,
   redeemAccessCodeOnProfile,
+  type ConsoleAccessCodeAccessGateIssuer,
   type ConsoleAccessCodeStore,
-  type ConsoleAccessCodeStripeGateway,
-  type ConsoleAccessCodeTrialGrantIssuer,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import {
-  createPrismaTrialRedeemConsumeStore,
-  createStripeTrialRedeemGateway,
-} from './trial-redeem.ts'
+import { createPrismaTrialRedeemConsumeStore } from './trial-redeem.ts'
 import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
 
 type ConsoleAccessCodeDeps = {
   prisma?: PrismaClient
-  stripeClient: Stripe
-  priceId: string
+  stripeClient: Stripe | null
 }
 
 function createPrismaConsoleAccessCodeStore(
@@ -26,46 +21,24 @@ function createPrismaConsoleAccessCodeStore(
   stripeClient: Stripe | null = null,
 ): ConsoleAccessCodeStore {
   const consumeStore = createPrismaTrialRedeemConsumeStore(client, stripeClient)
+  const trialGrantStore = createPrismaTrialGrantStore(client)
   return {
     ...consumeStore,
-    findBillingSeatByUserId: async (userId) => {
-      const row = await client.subscription.findFirst({
-        where: {
-          referenceId: userId,
-          status: { in: [...CONSOLE_PROMO_ELIGIBLE_STATUSES] },
-          stripeSubscriptionId: { not: null },
-        },
-        orderBy: { id: 'desc' },
-        select: {
-          status: true,
-          plan: true,
-          stripeSubscriptionId: true,
-        },
-      })
-      if (!row?.stripeSubscriptionId) return null
-      return {
-        status: row.status,
-        plan: row.plan,
-        stripeSubscriptionId: row.stripeSubscriptionId,
-      }
-    },
-    findStripeCustomerIdByUserId: async (userId) => {
-      const user = await client.user.findFirst({
-        where: { id: userId, deletedAt: null },
-        select: { stripeCustomerId: true },
-      })
-      return user?.stripeCustomerId ?? null
-    },
+    userHasLiveDefaultSubscription: (userId) =>
+      trialGrantStore.userHasLiveDefaultSubscription(userId),
   }
 }
 
-function createConsoleAccessCodeTrialGrantIssuer(
+function createConsoleAccessCodeAccessGateIssuer(
   client: PrismaClient = prisma,
-): ConsoleAccessCodeTrialGrantIssuer {
+): ConsoleAccessCodeAccessGateIssuer {
   const store = createPrismaTrialGrantStore(client)
   return {
-    hasOpenTrialGrant: async (userId) =>
-      (await store.findOpenTrialGrantByUserId(userId)) != null,
+    hasOpenGrantedAccessGate: async (userId) =>
+      (await store.findOpenGrantedAccessGateByUserId(userId)) != null,
+    hasOpenTimedAccessGate: async (userId) =>
+      (await store.findOpenTimedAccessGateByUserId(userId)) != null,
+    issueFreeGrant: (input) => issueFreeGrantToUser(store, input),
     grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
   }
 }
@@ -76,15 +49,10 @@ export async function redeemAccessCodeForUser(
 ) {
   const client = deps.prisma ?? prisma
   const store = createPrismaConsoleAccessCodeStore(client, deps.stripeClient)
-  const stripe = createStripeTrialRedeemGateway(deps.stripeClient)
-  const trialGrant = createConsoleAccessCodeTrialGrantIssuer(client)
-  const stripeCustomerId =
-    (await store.findStripeCustomerIdByUserId(input.userId)) ?? ''
+  const accessGate = createConsoleAccessCodeAccessGateIssuer(client)
 
-  return redeemAccessCodeOnProfile(store, stripe, trialGrant, {
+  return redeemAccessCodeOnProfile(store, accessGate, {
     userId: input.userId,
     code: input.code,
-    stripeCustomerId,
-    priceId: deps.priceId,
   })
 }
