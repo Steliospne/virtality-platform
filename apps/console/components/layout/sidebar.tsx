@@ -25,6 +25,10 @@ import { RemainingTimeSidebar } from './remaining-time-sidebar'
 const RootSidebar = () => {
   const { isMobile, setOpenMobile } = useSidebar()
 
+  const capitalizeTooltip = (title: string) => {
+    return title.charAt(0).toUpperCase() + title.slice(1)
+  }
+
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader className='flex h-15 justify-center gap-2 rounded-none border-b border-zinc-200'>
@@ -53,7 +57,7 @@ const RootSidebar = () => {
                 <SidebarMenuButton
                   asChild
                   className='text-base'
-                  tooltip={item.title}
+                  tooltip={capitalizeTooltip(item.title)}
                   onClick={() => {
                     trackAnalyticsEvent('nav_item_clicked', {
                       item: item.title as AnalyticsEventProps<'nav_item_clicked'>['item'],
