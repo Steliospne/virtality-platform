@@ -13,6 +13,10 @@ import { ChangeEvent, useState } from 'react'
 import { authClient } from '@/auth-client'
 import useIsAuthed from '@/hooks/use-is-authed'
 import useMounted from '@/hooks/use-mounted'
+import {
+  setForceRenewPrompt,
+  useForceRenewPrompt,
+} from '@/lib/dev-force-renew-prompt'
 
 const AdminTool = ({ isImpersonating }: { isImpersonating?: boolean }) => {
   const { data, isPending } = useIsAuthed()
@@ -20,6 +24,7 @@ const AdminTool = ({ isImpersonating }: { isImpersonating?: boolean }) => {
   const user = data?.user
   const [open, setOpen] = useState(false)
   const [host, setHost] = useState('')
+  const forceRenewPrompt = useForceRenewPrompt()
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const target = e.currentTarget
@@ -91,6 +96,11 @@ const AdminTool = ({ isImpersonating }: { isImpersonating?: boolean }) => {
           <Button onClick={handleStopImpersonate}>Stop Impersonate</Button>
           <Button disabled onClick={testVerificationEmail}>
             Send Email
+          </Button>
+          <Button onClick={() => setForceRenewPrompt(!forceRenewPrompt)}>
+            {forceRenewPrompt
+              ? 'Hide Renew Prompt Banner'
+              : 'Force Renew Prompt Banner'}
           </Button>
         </div>
       </PopoverContent>

@@ -13,6 +13,11 @@ import {
   isRenewPromptDismissed,
   profileBillingHref,
 } from '@/lib/renew-prompt-dismiss'
+import {
+  setForceRenewPrompt,
+  useForceRenewPrompt,
+} from '@/lib/dev-force-renew-prompt'
+import { useRenewBannerHeight } from '@/components/layout/use-renew-banner-height'
 
 /**
  * In-app renew offset chrome for the seat holder. Hidden after Entitlement
@@ -23,6 +28,8 @@ export function RenewPromptBanner() {
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
   const { prompts } = useRenewPromptSession()
+  const forced = useForceRenewPrompt()
+  const bannerRef = useRenewBannerHeight()
   const userId = session?.user?.id ?? null
 
   const nearestDaysBefore = useMemo(() => {
@@ -46,25 +53,31 @@ export function RenewPromptBanner() {
   }, [userId, epochKey])
 
   const visible =
-    billingEnabled &&
-    hydrated &&
-    userId != null &&
-    epochKey != null &&
-    nearestDaysBefore != null &&
-    !dismissed
+    forced ||
+    (billingEnabled &&
+      hydrated &&
+      userId != null &&
+      epochKey != null &&
+      nearestDaysBefore != null &&
+      !dismissed)
+
+  const effectiveUserId = userId ?? (forced ? 'dev-preview' : null)
+  const effectiveEpochKey = epochKey ?? (forced ? 'dev-preview-epoch' : null)
+  const effectiveDaysBefore = nearestDaysBefore ?? (forced ? 5 : null)
 
   const title =
-    nearestDaysBefore === 1
+    effectiveDaysBefore === 1
       ? 'Your access renews tomorrow'
-      : nearestDaysBefore != null
-        ? `Your access renews in ${nearestDaysBefore} days`
+      : effectiveDaysBefore != null
+        ? `Your access renews in ${effectiveDaysBefore} days`
         : null
 
   return (
     <AnimatePresence initial={false}>
-      {visible && userId && epochKey && nearestDaysBefore != null && title ? (
+      {visible && effectiveUserId && effectiveEpochKey && title ? (
         <motion.div
-          key={`${userId}:${epochKey}`}
+          ref={bannerRef}
+          key={`${effectiveUserId}:${effectiveEpochKey}`}
           role='status'
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
@@ -93,7 +106,7 @@ export function RenewPromptBanner() {
                 size='sm'
                 className='hidden sm:inline-flex'
               >
-                <Link href={profileBillingHref(userId)}>
+                <Link href={profileBillingHref(effectiveUserId)}>
                   <CreditCard />
                   Manage billing
                 </Link>
@@ -105,7 +118,7 @@ export function RenewPromptBanner() {
                 className='sm:hidden'
                 aria-label='Manage billing'
               >
-                <Link href={profileBillingHref(userId)}>
+                <Link href={profileBillingHref(effectiveUserId)}>
                   <CreditCard />
                 </Link>
               </Button>
@@ -116,6 +129,11 @@ export function RenewPromptBanner() {
                 aria-label='Dismiss renewal reminder'
                 className='text-amber-900/70 hover:bg-amber-100/80 hover:text-amber-950 dark:text-amber-100/70 dark:hover:bg-amber-900/50 dark:hover:text-amber-50'
                 onClick={() => {
+                  if (forced) {
+                    setForceRenewPrompt(false)
+                    return
+                  }
+                  if (!userId || !epochKey) return
                   dismissRenewPrompt(userId, epochKey)
                   setDismissed(true)
                 }}

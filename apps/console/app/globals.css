@@ -7,8 +7,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --spacing-screen-with-header: calc(100svh - 60px);
-  --spacing-screen-with-nav: calc(100svh - 100px);
+  --spacing-screen-with-header: calc(
+    100svh - 60px - var(--renew-banner-height, 0px)
+  );
+  --spacing-screen-with-nav: calc(
+    100svh - 100px - var(--renew-banner-height, 0px)
+  );
 
   --color-vital-blue-50: #e9fbfe;
   --color-vital-blue-100: #bdf4fc;
