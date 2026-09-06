@@ -29,8 +29,7 @@ export type BillingDiscountDisplay =
 export const BILLING_SOFT_UNAVAILABLE_COPY =
   'Discount details unavailable right now. Showing catalog list prices only; check Manage in portal or try again shortly.'
 
-export const BILLING_DISCOUNT_TIMING_COPY =
-  'Takes effect on the next invoice. Discount-only changes are not prorated.'
+export const BILLING_DISCOUNT_TIMING_COPY = 'Takes effect on the next invoice.'
 
 export const STAFF_REDEEM_BLOCK_COPY =
   'A staff-applied Discount is already on this subscription, so a Promotion Code cannot be applied. Contact support if you expected a change.'

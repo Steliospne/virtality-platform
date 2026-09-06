@@ -28,7 +28,7 @@ export function AppliedPromoRow({
           {appliedCode ?? 'Applied'}
         </Badge>
         <span className='text-sm text-zinc-600 dark:text-zinc-400'>
-          Promotion Code on your subscription
+          Discount Code applied on your subscription
         </span>
       </div>
       <div className='flex flex-wrap items-center gap-2'>
