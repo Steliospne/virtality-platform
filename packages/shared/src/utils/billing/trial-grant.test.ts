@@ -7,6 +7,7 @@ import {
   clockEndForEntitlementSource,
   convertActiveTrialGrantOnPaidSubscription,
   grantActiveTrialToUser,
+  issueFreeGrantToUser,
   issueTrialGrantToCustomer,
   isPaidStripeSubscriptionForTrialGrantConversion,
   mapAdminCustomerTrialGrantSummary,
@@ -232,50 +233,69 @@ function isOpenAccessGate(status: TrialGrantClock['status']): boolean {
 function createTrialGrantStore(input: {
   user?: { id: string; name: string; email: string; role: string | null }
   openGrant?: TrialGrantClock & { id: string; userId: string }
+  grants?: Array<TrialGrantClock & { id: string; userId: string }>
 }): TrialGrantStore {
-  const grants = new Map<
+  const grantsByUser = new Map<
     string,
-    TrialGrantClock & { id: string; userId: string }
+    Array<TrialGrantClock & { id: string; userId: string }>
   >()
-  if (input.openGrant) {
-    grants.set(input.openGrant.userId, input.openGrant)
+  const seed = input.grants ?? (input.openGrant ? [input.openGrant] : [])
+  for (const grant of seed) {
+    const list = grantsByUser.get(grant.userId) ?? []
+    list.push(grant)
+    grantsByUser.set(grant.userId, list)
+  }
+  let grantCounter = 0
+
+  const findOpen = (
+    userId: string,
+    predicate: (row: TrialGrantClock) => boolean,
+  ) => {
+    const rows = grantsByUser.get(userId) ?? []
+    return rows.find(predicate) ?? null
   }
 
   return {
     findTargetUser: async (userId) =>
       input.user && input.user.id === userId ? input.user : null,
-    findOpenTrialGrantByUserId: async (userId) => {
-      const row = grants.get(userId)
-      if (!row || !isOpenAccessGate(row.status)) {
-        return null
-      }
-      return row
-    },
+    findOpenTrialGrantByUserId: async (userId) =>
+      findOpen(userId, (row) => isOpenAccessGate(row.status)),
+    findOpenTimedAccessGateByUserId: async (userId) =>
+      findOpen(userId, (row) => row.status === 'trialing'),
+    findOpenGrantedAccessGateByUserId: async (userId) =>
+      findOpen(userId, (row) => row.status === 'granted'),
     createTrialGrant: vi.fn(async (data) => {
+      grantCounter += 1
       const row = {
-        id: 'grant_1',
+        id: `grant_${grantCounter}`,
         userId: data.userId,
         status: data.status,
         trialStart: data.trialStart,
         trialEnd: data.trialEnd,
       }
-      grants.set(data.userId, row)
+      const list = grantsByUser.get(data.userId) ?? []
+      list.push(row)
+      grantsByUser.set(data.userId, list)
       return row
     }),
     adjustTrialGrant: vi.fn(async (data) => {
-      const existing = grants.get(data.userId)
-      if (!existing || existing.status !== 'trialing') {
+      const existing = findOpen(data.userId, (row) => row.status === 'trialing')
+      if (!existing || existing.trialEnd == null) {
         throw new TrialGrantNotActiveError(data.userId)
       }
       const row = {
         ...existing,
         trialEnd: data.trialEnd,
       }
-      grants.set(data.userId, row)
+      const list = grantsByUser.get(data.userId) ?? []
+      const index = list.findIndex((item) => item.id === existing.id)
+      if (index >= 0) list[index] = row
       return row
     }),
     revokeTrialGrant: vi.fn(async (data) => {
-      const existing = grants.get(data.userId)
+      const existing = findOpen(data.userId, (row) =>
+        isOpenAccessGate(row.status),
+      )
       if (!existing) {
         throw new TrialGrantOpenNotFoundError(data.userId)
       }
@@ -283,19 +303,23 @@ function createTrialGrantStore(input: {
         ...existing,
         status: 'revoked' as const,
       }
-      grants.set(data.userId, row)
+      const list = grantsByUser.get(data.userId) ?? []
+      const index = list.findIndex((item) => item.id === existing.id)
+      if (index >= 0) list[index] = row
       return row
     }),
     convertActiveTrialGrantByUserId: vi.fn(async (userId) => {
-      const existing = grants.get(userId)
-      if (!existing || !isOpenAccessGate(existing.status)) {
+      const existing = findOpen(userId, (row) => isOpenAccessGate(row.status))
+      if (!existing) {
         return null
       }
       const row = {
         ...existing,
         status: 'converted' as const,
       }
-      grants.set(userId, row)
+      const list = grantsByUser.get(userId) ?? []
+      const index = list.findIndex((item) => item.id === existing.id)
+      if (index >= 0) list[index] = row
       return row
     }),
     recordAudit: vi.fn(async (record) => ({ id: 'audit_1', record })),
@@ -405,7 +429,7 @@ describe('grantActiveTrialToUser', () => {
     })
   })
 
-  it('rejects when the user already has an open grant', () => {
+  it('rejects when the user already has an open timed gate', () => {
     const store = createTrialGrantStore({
       openGrant: {
         id: 'grant_existing',
@@ -419,6 +443,55 @@ describe('grantActiveTrialToUser', () => {
     return expect(
       grantActiveTrialToUser(store, { userId: 'user_1', trialDays: 7 }),
     ).rejects.toBeInstanceOf(TrialGrantAlreadyOpenError)
+  })
+
+  it('allows a timed gate when only a permanent granted gate exists', () => {
+    const store = createTrialGrantStore({
+      grants: [
+        {
+          id: 'grant_granted',
+          userId: 'user_1',
+          status: 'granted',
+          trialStart: NOW,
+          trialEnd: null,
+        },
+      ],
+    })
+
+    return grantActiveTrialToUser(
+      store,
+      { userId: 'user_1', trialDays: 7 },
+      { now: () => NOW },
+    ).then((result) => {
+      expect(result).toMatchObject({
+        accessGateId: 'grant_1',
+        status: 'trialing',
+      })
+    })
+  })
+})
+
+describe('issueFreeGrantToUser', () => {
+  it('creates a granted Access Gate row with no trial end', () => {
+    const store = createTrialGrantStore({})
+
+    return issueFreeGrantToUser(
+      store,
+      { userId: 'user_1' },
+      { now: () => NOW },
+    ).then((result) => {
+      expect(store.createTrialGrant).toHaveBeenCalledWith({
+        userId: 'user_1',
+        trialStart: NOW,
+        trialEnd: null,
+        status: 'granted',
+      })
+      expect(result).toMatchObject({
+        accessGateId: 'grant_1',
+        status: 'granted',
+        trialEnd: null,
+      })
+    })
   })
 })
 

@@ -298,7 +298,6 @@ export function redeemAccessCodeAction(input: {
   return redeemAccessCodeForUser(input, {
     prisma,
     stripeClient: requireStripeForConsolePromo(),
-    priceId: FREE_PLAN_PRICE_ID,
   })
 }
 

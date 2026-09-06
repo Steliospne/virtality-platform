@@ -44,6 +44,18 @@ async function findLatestTrialGrantId(
   return row?.id ?? null
 }
 
+async function findLatestAccessGateByUserId(
+  client: PrismaClient,
+  userId: string,
+  status: 'trialing' | 'granted',
+) {
+  return client.trialGrant.findFirst({
+    where: { userId, status },
+    orderBy: { createdAt: 'desc' },
+    select: trialGrantRecordSelect,
+  })
+}
+
 export function createPrismaTrialGrantStore(
   client: PrismaClient = prisma,
 ): TrialGrantStore {
@@ -71,6 +83,10 @@ export function createPrismaTrialGrantStore(
       })
       return row
     },
+    findOpenTimedAccessGateByUserId: async (userId) =>
+      findLatestAccessGateByUserId(client, userId, 'trialing'),
+    findOpenGrantedAccessGateByUserId: async (userId) =>
+      findLatestAccessGateByUserId(client, userId, 'granted'),
     createTrialGrant: async (input) => {
       const now = new Date()
       return client.trialGrant.create({

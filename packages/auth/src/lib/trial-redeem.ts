@@ -3,19 +3,41 @@ import type { PrismaClient } from '@virtality/db'
 import { APIError } from 'better-auth/api'
 import type Stripe from 'stripe'
 import {
-  buildPermanentFreeSubscriptionCreateParams,
   evaluateTrialRedeemAtSignUp,
   grantActiveTrialToUser,
+  issueFreeGrantToUser,
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
-  TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES,
   TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
+  type ConsoleAccessCodeAccessGateIssuer,
+  type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
-  type TrialRedeemStripeGateway,
-  type TrialRedeemTrialGrantIssuer,
 } from '@virtality/shared/utils'
 import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
 import { createAccessCodeVariantGateway } from './access-code-variant-adapter.ts'
+
+type TrialGrantStore = ReturnType<typeof createPrismaTrialGrantStore>
+
+export function createAccessGateIssuerFromTrialGrantStore(
+  store: TrialGrantStore,
+): TrialRedeemAccessGateIssuer {
+  return {
+    issueFreeGrant: (input) => issueFreeGrantToUser(store, input),
+    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
+  }
+}
+
+export function createProfileAccessGateIssuerFromTrialGrantStore(
+  store: TrialGrantStore,
+): ConsoleAccessCodeAccessGateIssuer {
+  return {
+    ...createAccessGateIssuerFromTrialGrantStore(store),
+    hasOpenGrantedAccessGate: async (userId) =>
+      (await store.findOpenGrantedAccessGateByUserId(userId)) != null,
+    hasOpenTimedAccessGate: async (userId) =>
+      (await store.findOpenTimedAccessGateByUserId(userId)) != null,
+  }
+}
 
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,
@@ -36,6 +58,7 @@ export function createPrismaTrialRedeemConsumeStore(
     }
 
   const variantGateway = createAccessCodeVariantGateway(client, stripeClient)
+  const trialGrantStore = createPrismaTrialGrantStore(client)
 
   return {
     findByCode: (code) =>
@@ -45,50 +68,21 @@ export function createPrismaTrialRedeemConsumeStore(
     consumeAsRedeemed: consumeUnusedAs('redeemed'),
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
     applyVariant: variantGateway.applyVariant,
+    userHasLiveDefaultSubscription: (userId) =>
+      trialGrantStore.userHasLiveDefaultSubscription(userId),
   }
 }
 
-export function createStripeTrialRedeemGateway(
-  stripeClient: Stripe,
-): TrialRedeemStripeGateway {
-  return {
-    customerHasEntitledSubscription: async (customerId) => {
-      const results = await Promise.all(
-        TRIAL_REDEEM_ENTITLED_SUBSCRIPTION_STATUSES.map((status) =>
-          stripeClient.subscriptions.list({
-            customer: customerId,
-            status,
-            limit: 1,
-          }),
-        ),
-      )
-      return results.some((page) => page.data.length > 0)
-    },
-    createPermanentFreeSubscription: async ({
-      customerId,
-      priceId,
-      metadata,
-    }) => {
-      const subscription = await stripeClient.subscriptions.create(
-        buildPermanentFreeSubscriptionCreateParams({
-          customerId,
-          priceId,
-          metadata,
-        }),
-      )
-      return { stripeSubscriptionId: subscription.id }
-    },
-  }
-}
-
-export function createTrialGrantIssuer(
+export function createTrialRedeemAccessGateIssuer(
   client: PrismaClient = prisma,
-): TrialRedeemTrialGrantIssuer {
-  const store = createPrismaTrialGrantStore(client)
-  return {
-    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
-  }
+): TrialRedeemAccessGateIssuer {
+  return createAccessGateIssuerFromTrialGrantStore(
+    createPrismaTrialGrantStore(client),
+  )
 }
+
+/** @deprecated Use `createTrialRedeemAccessGateIssuer`. */
+export const createTrialGrantIssuer = createTrialRedeemAccessGateIssuer
 
 /** Reads the shared sign-up code field from email body or OAuth additionalData. */
 export function readSignUpCodeFromUnknown(source: unknown): string | undefined {
@@ -117,22 +111,17 @@ export async function assertTrialRedeemAllowedAtSignUp(
 export async function redeemTrialCodeForCustomer(input: {
   rawCode: string | null | undefined
   userId: string
-  stripeCustomerId: string
-  priceId: string
-  stripeClient: Stripe
+  stripeClient?: Stripe | null
 }): Promise<void> {
   const routed = routeSignUpCode(input.rawCode)
   if (routed.kind !== 'trial_redeem') return
 
   await redeemTrialCodeAfterSignUp(
-    createPrismaTrialRedeemConsumeStore(prisma, input.stripeClient),
-    createStripeTrialRedeemGateway(input.stripeClient),
-    createTrialGrantIssuer(),
+    createPrismaTrialRedeemConsumeStore(prisma, input.stripeClient ?? null),
+    createTrialRedeemAccessGateIssuer(),
     {
       code: routed.code,
       userId: input.userId,
-      stripeCustomerId: input.stripeCustomerId,
-      priceId: input.priceId,
     },
   )
 }

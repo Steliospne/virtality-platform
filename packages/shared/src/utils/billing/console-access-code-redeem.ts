@@ -1,15 +1,10 @@
 /**
- * Console Profile → Billing Access Code redeem (#204 / #207).
+ * Console Profile → Billing Access Code redeem (#204 / #207 / #257).
  *
  * Prefix route: well-formed `GO-` codes use the Access path; Promotion Codes
- * stay in `console-promo-redeem.ts`. Implements the state × mode matrix with
- * existing Stripe create / attach-trial shapes only.
+ * stay in `console-promo-redeem.ts`. Redemption issues Access Gates only.
  */
 
-import {
-  isFreeSubscriptionPlan,
-  isDefaultSubscriptionPlan,
-} from './billing-plans.ts'
 import {
   TRIAL_REDEEM_CODE_PATTERN,
   getTrialRedeemDisplayStatus,
@@ -20,9 +15,9 @@ import {
 import {
   TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
   TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
+  issueAccessGateForCodeMode,
+  type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
-  type TrialRedeemStripeGateway,
-  type TrialRedeemTrialGrantIssuer,
 } from './trial-redeem-sign-up.ts'
 import { type AccessCodeVariantOutcome } from './access-code-variant.ts'
 
@@ -49,45 +44,11 @@ export function isProfileBillingAccessCode(raw: string): boolean {
   return routeProfileBillingCode(raw).kind === 'access_code'
 }
 
-export type ProfileBillingSeat = {
-  status: string
-  plan: string
-  stripeSubscriptionId: string
-} | null
+export type ConsoleAccessCodeStore = TrialRedeemConsumeStore
 
-export type ProfileBillingSeatKind =
-  | 'no_live_seat'
-  | 'active_free_no_trial'
-  | 'trialing'
-  | 'paid_pro_active'
-
-export function classifyProfileBillingSeat(
-  seat: ProfileBillingSeat,
-): ProfileBillingSeatKind {
-  if (!seat) return 'no_live_seat'
-  if (seat.status === 'trialing') return 'trialing'
-  if (
-    (seat.status === 'active' || seat.status === 'past_due') &&
-    isDefaultSubscriptionPlan(seat.plan)
-  ) {
-    return 'paid_pro_active'
-  }
-  if (seat.status === 'active' && isFreeSubscriptionPlan(seat.plan)) {
-    return 'active_free_no_trial'
-  }
-  return 'no_live_seat'
-}
-
-export type ConsoleAccessCodeStore = Pick<TrialRedeemCodeStore, 'findByCode'> &
-  TrialRedeemConsumeStore & {
-    findBillingSeatByUserId: (userId: string) => Promise<ProfileBillingSeat>
-    findStripeCustomerIdByUserId: (userId: string) => Promise<string | null>
-  }
-
-export type ConsoleAccessCodeStripeGateway = TrialRedeemStripeGateway
-
-export type ConsoleAccessCodeTrialGrantIssuer = TrialRedeemTrialGrantIssuer & {
-  hasOpenTrialGrant: (userId: string) => Promise<boolean>
+export type ConsoleAccessCodeAccessGateIssuer = TrialRedeemAccessGateIssuer & {
+  hasOpenGrantedAccessGate: (userId: string) => Promise<boolean>
+  hasOpenTimedAccessGate: (userId: string) => Promise<boolean>
 }
 
 export type AccessCodeProfileBlockReason = 'expired' | 'already_used'
@@ -127,19 +88,17 @@ export async function evaluateAccessCodeAtProfile(
 export type RedeemAccessCodeOnProfileInput = {
   userId: string
   code: string
-  stripeCustomerId: string
-  priceId: string
 }
 
 export type RedeemAccessCodeEffect =
-  | 'permanent_free_created'
-  | 'trial_granted'
+  | 'free_grant_created'
+  | 'trial_grant_created'
   | 'already_entitled'
 
 export type RedeemAccessCodeOnProfileResult = {
   codeId: number
   effect: RedeemAccessCodeEffect
-  stripeSubscriptionId?: string
+  accessGateId?: string
 }
 
 export class ConsoleAccessCodeValidationError extends Error {
@@ -170,13 +129,6 @@ export class ConsoleAccessCodeAlreadyUsedError extends Error {
   }
 }
 
-export class ConsoleAccessCodeMissingCustomerError extends Error {
-  constructor() {
-    super('A Stripe Customer is required before redeeming an Access Code.')
-    this.name = 'ConsoleAccessCodeMissingCustomerError'
-  }
-}
-
 export class ConsoleAccessCodeFailedError extends Error {
   constructor() {
     super('Could not apply that Access Code. Try again shortly.')
@@ -201,41 +153,32 @@ export class ConsoleAccessCodeVariantUnavailableError extends Error {
 }
 
 function profileMatrixAlreadyEntitled(input: {
-  seatKind: ProfileBillingSeatKind
+  hasLivePaidSub: boolean
+  hasOpenGrantedGate: boolean
+  hasOpenTimedGate: boolean
   mode: TrialRedeemCodeMode
-  hasOpenTrialGrant: boolean
 }): boolean {
-  if (input.seatKind === 'trialing' || input.seatKind === 'paid_pro_active') {
+  if (input.hasLivePaidSub || input.hasOpenTimedGate) {
     return true
   }
-  if (
-    input.seatKind === 'active_free_no_trial' &&
-    input.mode === 'permanent_free'
-  ) {
-    return true
-  }
-  if (input.mode === 'timed_trial' && input.hasOpenTrialGrant) {
+  if (input.hasOpenGrantedGate && input.mode === 'permanent_free') {
     return true
   }
   return false
 }
 
 /**
- * Redeem an Access Code on Profile Billing. Stripe-first; webhook-only local
- * sync. No admin audit / reason on this path.
+ * Redeem an Access Code on Profile Billing. Access-Gate-native; no Stripe
+ * subscription create. No admin audit / reason on this path.
  */
 export async function redeemAccessCodeOnProfile(
   store: ConsoleAccessCodeStore,
-  stripe: ConsoleAccessCodeStripeGateway,
-  trialGrant: ConsoleAccessCodeTrialGrantIssuer,
+  accessGate: ConsoleAccessCodeAccessGateIssuer,
   input: RedeemAccessCodeOnProfileInput,
   runtime: { now?: () => Date } = {},
 ): Promise<RedeemAccessCodeOnProfileResult> {
   if (!input.userId.trim()) {
     throw new ConsoleAccessCodeValidationError('userId is required')
-  }
-  if (!input.stripeCustomerId.trim()) {
-    throw new ConsoleAccessCodeMissingCustomerError()
   }
 
   const now = runtime.now?.() ?? new Date()
@@ -258,12 +201,21 @@ export async function redeemAccessCodeOnProfile(
     }
   }
 
-  const seat = await store.findBillingSeatByUserId(input.userId)
-  const seatKind = classifyProfileBillingSeat(seat)
-  const metadata = { trialRedeemCodeId: String(codeId) }
-  const hasOpenTrialGrant = await trialGrant.hasOpenTrialGrant(input.userId)
+  const [hasLivePaidSub, hasOpenGrantedGate, hasOpenTimedGate] =
+    await Promise.all([
+      store.userHasLiveDefaultSubscription(input.userId),
+      accessGate.hasOpenGrantedAccessGate(input.userId),
+      accessGate.hasOpenTimedAccessGate(input.userId),
+    ])
 
-  if (profileMatrixAlreadyEntitled({ seatKind, mode, hasOpenTrialGrant })) {
+  if (
+    profileMatrixAlreadyEntitled({
+      hasLivePaidSub,
+      hasOpenGrantedGate,
+      hasOpenTimedGate,
+      mode,
+    })
+  ) {
     const consumed = await store.consumeAsAlreadyEntitled(
       codeId,
       input.userId,
@@ -273,43 +225,19 @@ export async function redeemAccessCodeOnProfile(
     return { codeId, effect: 'already_entitled' }
   }
 
-  if (seatKind === 'active_free_no_trial' && mode === 'timed_trial') {
-    if (!seat) throw new ConsoleAccessCodeFailedError()
-    try {
-      await trialGrant.grantActiveTrial({ userId: input.userId, trialDays })
-    } catch {
-      throw new ConsoleAccessCodeFailedError()
-    }
-    const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
-    if (!consumed) throw new ConsoleAccessCodeFailedError()
-    return {
-      codeId,
-      effect: 'trial_granted',
-      stripeSubscriptionId: seat.stripeSubscriptionId,
-    }
-  }
-
-  const subscriptionInput = {
-    customerId: input.stripeCustomerId,
-    priceId: input.priceId,
-    metadata,
-  }
-
-  let stripeSubscriptionId: string
+  let accessGateId: string
+  let effect: RedeemAccessCodeEffect
   try {
-    const created =
-      await stripe.createPermanentFreeSubscription(subscriptionInput)
-    stripeSubscriptionId = created.stripeSubscriptionId
+    const issued = await issueAccessGateForCodeMode(accessGate, {
+      userId: input.userId,
+      mode,
+      trialDays,
+    })
+    accessGateId = issued.accessGateId
+    effect =
+      mode === 'permanent_free' ? 'free_grant_created' : 'trial_grant_created'
   } catch {
     throw new ConsoleAccessCodeFailedError()
-  }
-
-  if (mode === 'timed_trial') {
-    try {
-      await trialGrant.grantActiveTrial({ userId: input.userId, trialDays })
-    } catch {
-      throw new ConsoleAccessCodeFailedError()
-    }
   }
 
   const consumed = await store.consumeAsRedeemed(codeId, input.userId, now)
@@ -317,15 +245,14 @@ export async function redeemAccessCodeOnProfile(
 
   return {
     codeId,
-    effect:
-      mode === 'permanent_free' ? 'permanent_free_created' : 'trial_granted',
-    stripeSubscriptionId,
+    effect,
+    accessGateId,
   }
 }
 
 const ACCESS_CODE_EFFECT_COPY: Record<RedeemAccessCodeEffect, string> = {
-  permanent_free_created: 'You now have permanent Free access.',
-  trial_granted: 'Your free trial has started.',
+  free_grant_created: 'You now have permanent Free access.',
+  trial_grant_created: 'Your free trial has started.',
   already_entitled: "You're already on a qualifying plan.",
 }
 

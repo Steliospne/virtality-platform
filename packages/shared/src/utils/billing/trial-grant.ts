@@ -99,6 +99,12 @@ export type TrialGrantStore = {
   findOpenTrialGrantByUserId: (
     userId: string,
   ) => Promise<TrialGrantRecord | null>
+  findOpenTimedAccessGateByUserId: (
+    userId: string,
+  ) => Promise<TrialGrantRecord | null>
+  findOpenGrantedAccessGateByUserId: (
+    userId: string,
+  ) => Promise<TrialGrantRecord | null>
   createTrialGrant: (input: {
     userId: string
     trialStart: Date
@@ -151,10 +157,23 @@ export type GrantActiveTrialInput = {
 }
 
 export type GrantActiveTrialResult = {
+  accessGateId: string
+  /** @deprecated Use `accessGateId`. */
   trialGrantId: string
   status: TrialGrantStatus
   trialStart: Date
   trialEnd: Date
+}
+
+export type IssueFreeGrantInput = {
+  userId: string
+}
+
+export type IssueFreeGrantResult = {
+  accessGateId: string
+  status: TrialGrantStatus
+  trialStart: Date
+  trialEnd: null
 }
 
 export type AdjustTrialGrantInput = {
@@ -343,7 +362,7 @@ export async function issueTrialGrantToCustomer(
 export async function grantActiveTrialToUser(
   store: Pick<
     TrialGrantStore,
-    | 'findOpenTrialGrantByUserId'
+    | 'findOpenTimedAccessGateByUserId'
     | 'createTrialGrant'
     | 'userHasLiveDefaultSubscription'
   >,
@@ -359,8 +378,10 @@ export async function grantActiveTrialToUser(
     )
   }
 
-  const existing = await store.findOpenTrialGrantByUserId(input.userId)
-  if (existing) {
+  const existingTimed = await store.findOpenTimedAccessGateByUserId(
+    input.userId,
+  )
+  if (existingTimed) {
     throw new TrialGrantAlreadyOpenError(input.userId)
   }
 
@@ -379,10 +400,48 @@ export async function grantActiveTrialToUser(
   })
 
   return {
+    accessGateId: created.id,
     trialGrantId: created.id,
     status: created.status,
     trialStart: created.trialStart ?? now,
     trialEnd: created.trialEnd ?? trialEnd,
+  }
+}
+
+/**
+ * Self-serve Permanent Access Gate issuance for Access Code redemption. Always
+ * creates a new row; callers enforce the profile redemption matrix.
+ */
+export async function issueFreeGrantToUser(
+  store: Pick<
+    TrialGrantStore,
+    'createTrialGrant' | 'userHasLiveDefaultSubscription'
+  >,
+  input: IssueFreeGrantInput,
+  runtime: { now?: () => Date } = {},
+): Promise<IssueFreeGrantResult> {
+  if (!input.userId.trim()) {
+    throw new TrialGrantValidationError('userId is required.')
+  }
+
+  const entitled = await store.userHasLiveDefaultSubscription(input.userId)
+  if (entitled) {
+    throw new TrialGrantCustomerAlreadyEntitledError(input.userId)
+  }
+
+  const now = runtime.now?.() ?? new Date()
+  const created = await store.createTrialGrant({
+    userId: input.userId,
+    trialStart: now,
+    trialEnd: null,
+    status: 'granted',
+  })
+
+  return {
+    accessGateId: created.id,
+    status: created.status,
+    trialStart: created.trialStart ?? now,
+    trialEnd: null,
   }
 }
 

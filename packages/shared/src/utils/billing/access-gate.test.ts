@@ -3,6 +3,8 @@ import { DEFAULT_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   accessGateStatusForIssue,
   clockEndForEntitlementSource,
+  isOpenGrantedAccessGate,
+  isOpenTimedAccessGate,
   resolveAccessGateClock,
   resolveEntitlementFromSources,
   type AccessGateClock,
@@ -30,6 +32,27 @@ describe('accessGateStatusForIssue', () => {
 
   it('uses granted for permanent access with no trial end', () => {
     expect(accessGateStatusForIssue(null)).toBe('granted')
+  })
+})
+
+describe('open Access Gate status helpers', () => {
+  it('identifies open timed and granted gates narrowly', () => {
+    expect(isOpenTimedAccessGate(trialingGate())).toBe(true)
+    expect(
+      isOpenTimedAccessGate({
+        status: 'granted',
+        trialStart: NOW,
+        trialEnd: null,
+      }),
+    ).toBe(false)
+    expect(
+      isOpenGrantedAccessGate({
+        status: 'granted',
+        trialStart: NOW,
+        trialEnd: null,
+      }),
+    ).toBe(true)
+    expect(isOpenGrantedAccessGate(trialingGate())).toBe(false)
   })
 })
 

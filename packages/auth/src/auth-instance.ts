@@ -61,7 +61,6 @@ const googleEnabled = Boolean(googleClientId && googleClientSecret)
  * Canonical sandbox `pro` monthly Price (`prod_SaYNooLgBNvYvA` default;
  * lookup_key `pro_monthly`). Checkout subscribe/renew only. Retired inactive
  * auth price: `price_1RfNGh4Fc2DAAhEfvoXDrDMw` (€80).
- * Access Code redeem uses {@link FREE_PLAN_PRICE_ID} instead.
  * Alias for {@link DEFAULT_PLAN_MONTHLY_PRICE_ID} in `@virtality/shared`.
  */
 export const DEFAULT_PLAN_PRICE_ID = DEFAULT_PLAN_MONTHLY_PRICE_ID
@@ -93,9 +92,8 @@ async function consumeTesterCodeIfPresent(
 
 /**
  * Best-effort Access Code redemption for an existing user's sign-in (email
- * or OAuth). Auto-assigns a Free Stripe plan when the user doesn't already
- * have one, then grants an active TrialGrant. Never throws - a stale,
- * already-used, or missing code must not block sign-in.
+ * or OAuth). Issues Access Gates only; never throws. A stale, already-used,
+ * or missing code must not block sign-in.
  */
 async function redeemTrialCodeOnSignInIfPresent(
   rawCode: string | null | undefined,
@@ -106,7 +104,7 @@ async function redeemTrialCodeOnSignInIfPresent(
 
   await redeemAccessCodeForUser(
     { userId, code: routed.code },
-    { stripeClient, priceId: FREE_PLAN_PRICE_ID },
+    { stripeClient },
   ).catch(() => undefined)
 }
 
@@ -199,15 +197,13 @@ export const auth = betterAuth({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
             createCustomerOnSignUp: true,
-            onCustomerCreate: async ({ stripeCustomer, user }, ctx) => {
+            onCustomerCreate: async ({ user }, ctx) => {
               await redeemTrialCodeForCustomer({
                 rawCode: await resolveSignUpCodeForCustomerCreate(
                   ctx.body,
                   ctx.path,
                 ),
                 userId: user.id,
-                stripeCustomerId: stripeCustomer.id,
-                priceId: FREE_PLAN_PRICE_ID,
                 stripeClient,
               })
             },
