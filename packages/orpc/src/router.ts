@@ -29,7 +29,6 @@ import { consoleAccessCode } from './procedures/console-access-code.ts'
 import { consoleBilling } from './procedures/console-billing.ts'
 import { renewTrigger } from './procedures/renew-trigger.ts'
 import { renewPrompt } from './procedures/renew-prompt.ts'
-import { entitlementExtension } from './procedures/entitlement-extension.ts'
 import { entitlementClock } from './procedures/entitlement-clock.ts'
 import { bucket } from './procedures/bucket.ts'
 import { bugReport } from './procedures/bug-report.ts'
@@ -76,7 +75,6 @@ export const router = {
   consoleBilling,
   renewTrigger,
   renewPrompt,
-  entitlementExtension,
   entitlementClock,
   bucket,
   bugReport,

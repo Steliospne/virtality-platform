@@ -11,24 +11,24 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
-import { useRevokeTrialGrant } from '@virtality/react-query'
+import { useRevokeAccessGate } from '@virtality/react-query'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { formatRevokeAccessGateSuccessMessage } from '@/lib/access-gate-actions'
 import { formatMutationErrorMessage } from '@/lib/admin-customer-actions'
-import { formatRevokeTrialGrantSuccessMessage } from '@/lib/trial-grant-actions'
 
-type CustomerProfileRevokeTrialGrantDialogProps = {
+type CustomerProfileRevokeAccessGateDialogProps = {
   userId: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function CustomerProfileRevokeTrialGrantDialog({
+export function CustomerProfileRevokeAccessGateDialog({
   userId,
   open,
   onOpenChange,
-}: CustomerProfileRevokeTrialGrantDialogProps) {
-  const { mutate, isPending } = useRevokeTrialGrant()
+}: CustomerProfileRevokeAccessGateDialogProps) {
+  const { mutate, isPending } = useRevokeAccessGate()
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
 
@@ -42,14 +42,14 @@ export function CustomerProfileRevokeTrialGrantDialog({
       { userId, reason: reason.trim() },
       {
         onSuccess: (result) => {
-          toast.success(formatRevokeTrialGrantSuccessMessage(result))
+          toast.success(formatRevokeAccessGateSuccessMessage(result))
           setReason('')
           setConfirmed(false)
           onOpenChange(false)
         },
         onError: (error) => {
           toast.error(
-            formatMutationErrorMessage(error, 'Failed to revoke trial grant'),
+            formatMutationErrorMessage(error, 'Failed to revoke Access Gate'),
           )
         },
       },
@@ -61,18 +61,18 @@ export function CustomerProfileRevokeTrialGrantDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Revoke trial grant</DialogTitle>
+            <DialogTitle>Revoke Access Gate</DialogTitle>
             <DialogDescription>
-              Ends the pending or active owned trial immediately. The customer
-              keeps history, but entitlement from this grant stops.
+              Closes the customer&apos;s open Access Gate. This action is
+              terminal for that row.
             </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-4'>
             <div>
-              <Label htmlFor='revoke-trial-grant-reason'>Reason</Label>
+              <Label htmlFor='revoke-access-gate-reason'>Reason</Label>
               <Input
-                id='revoke-trial-grant-reason'
+                id='revoke-access-gate-reason'
                 className='mt-1'
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -87,7 +87,8 @@ export function CustomerProfileRevokeTrialGrantDialog({
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
               <span>
-                I confirm this trial grant should be revoked before conversion.
+                I confirm this customer&apos;s open Access Gate should be
+                revoked.
               </span>
             </label>
           </div>
@@ -101,7 +102,7 @@ export function CustomerProfileRevokeTrialGrantDialog({
               Cancel
             </Button>
             <Button type='submit' variant='destructive' disabled={!canSubmit}>
-              {isPending ? 'Revoking...' : 'Revoke grant'}
+              {isPending ? 'Revoking...' : 'Revoke gate'}
             </Button>
           </DialogFooter>
         </form>

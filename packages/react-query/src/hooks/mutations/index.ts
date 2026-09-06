@@ -85,15 +85,11 @@ export { useRemovePromoDiscount } from './console-promo/use-remove-promo-discoun
 export { useScheduleConsoleCyclePlanChange } from './console-billing/use-schedule-console-cycle-plan-change.js'
 export { useStartConsoleSubscribeCheckout } from './console-billing/use-start-console-subscribe-checkout.js'
 
-// Entitlement Extension mutations
-export { useExtendEntitlementClock } from './entitlement-extension/use-extend-entitlement-clock.js'
-
 // Admin customer mutations
 export {
-  useAdjustTrialGrant,
-  useAssignPermanentFree,
-  useIssueTrialGrant,
-  useRevokeTrialGrant,
+  useAssignPermanentAccessGate,
+  useRevokeAccessGate,
+  useSetAccessGateTrial,
 } from './admin-customer/use-admin-customer-access-mutations.js'
 export {
   useAssignablePlanVariants,
