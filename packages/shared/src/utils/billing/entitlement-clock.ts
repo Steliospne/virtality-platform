@@ -381,8 +381,9 @@ export function buildEntitlementStanding(input: {
 /**
  * Console sidebar Remaining Time: live trialing seats and entitled seats
  * scheduled to cancel at period end (paid active still inside the period),
- * plus Free seats — always shown as expired (0d, red) since Free never
- * carries a live clock. Renewing paid active and other expired seats hide it.
+ * plus Free seats and granted Access Gates — always shown as expired (0d,
+ * red) since neither carries a live clock. Renewing paid active and other
+ * expired seats hide it.
  */
 export function showsRemainingTimeSidebar(input: {
   entitled: boolean
@@ -391,6 +392,7 @@ export function showsRemainingTimeSidebar(input: {
   plan?: string | null
 }): boolean {
   if (isFreeSubscriptionPlan(input.plan)) return true
+  if (input.status === 'granted') return true
   if (!input.entitled) return false
 
   const isTrialing = input.status === 'trialing'

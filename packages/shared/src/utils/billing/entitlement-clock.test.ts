@@ -246,6 +246,12 @@ describe('showsRemainingTimeSidebar', () => {
     )
   })
 
+  it('always shows for granted Access Gates, even though never entitled', () => {
+    expect(
+      showsRemainingTimeSidebar({ entitled: false, status: 'granted' }),
+    ).toBe(true)
+  })
+
   it('always shows for Free plan, even when expired', () => {
     expect(
       showsRemainingTimeSidebar({
