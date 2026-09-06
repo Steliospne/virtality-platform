@@ -28,21 +28,30 @@ export type TrialRedeemCodeEmailMode = 'permanent_free' | 'timed_trial'
 
 export type TrialRedeemCodeEmailCtaVariant = 'no_account' | 'existing_account'
 
+const TRIAL_REDEEM_CODE_EMAIL_SUBJECT = 'Your Virtality Access Code'
+const TRIAL_REDEEM_CODE_EMAIL_PREVIEW =
+  'Redeem your Access Code to explore Virtality.'
+const WELCOME_HEADING = 'Welcome to Virtality'
+const VR_EXCLUSION_FOOTER =
+  "This code doesn't include VR programs or a paid Default subscription."
+const TRIAL_END_FOOTER =
+  'When your trial ends, you can subscribe to keep going.'
+
 /** Delivery-only Access Code System Email. */
 export const TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: 'Your Virtality Access Code',
-  timed_trial: 'Your Virtality Access Code',
+  permanent_free: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  timed_trial: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
 }
 
 export const TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: 'Redeem your Access Code to explore Virtality.',
-  timed_trial: 'Redeem your Access Code to explore Virtality.',
+  permanent_free: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
+  timed_trial: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
 }
 
 export interface TrialRedeemCodeEmailProps {
@@ -55,12 +64,23 @@ export interface TrialRedeemCodeEmailProps {
   companyName?: string
 }
 
+function explorePlatformIntro(
+  existingAccount: boolean,
+  trialDays?: number,
+): string {
+  const duration = trialDays != null ? ` for ${trialDays} days` : ''
+  if (existingAccount) {
+    return `Open Profile, then Billing, and apply the code below to unlock access to explore the platform${duration}.`
+  }
+  return `Use the code below when you create your account. Redeeming it gives you access to explore the platform${duration}.`
+}
+
 function existingAccountEmailCopy(
   mode: TrialRedeemCodeEmailMode,
   trialDays: number,
 ) {
   const shared = {
-    heading: 'Welcome to Virtality',
+    heading: WELCOME_HEADING,
     instructions:
       'Enter this code in the Access Code field on the Billing tab. The code is one-time use and expires one week after it was issued if unused.',
     cta: 'Go to Billing',
@@ -70,16 +90,14 @@ function existingAccountEmailCopy(
     case 'permanent_free':
       return {
         ...shared,
-        intro:
-          'Open Profile, then Billing, and apply the code below to unlock access to explore the platform.',
-        footer:
-          "This code doesn't include VR programs or a paid Default subscription.",
+        intro: explorePlatformIntro(true),
+        footer: VR_EXCLUSION_FOOTER,
       }
     case 'timed_trial':
       return {
         ...shared,
-        intro: `Open Profile, then Billing, and apply the code below to unlock access to explore the platform for ${trialDays} days.`,
-        footer: 'When your trial ends, you can subscribe to keep going.',
+        intro: explorePlatformIntro(true, trialDays),
+        footer: TRIAL_END_FOOTER,
       }
   }
 }
@@ -94,21 +112,19 @@ function newAccountEmailCopy(
   switch (mode) {
     case 'permanent_free':
       return {
-        heading: 'Welcome to Virtality',
-        intro:
-          'Use the code below when you create your account. Redeeming it gives you access to explore the platform.',
+        heading: WELCOME_HEADING,
+        intro: explorePlatformIntro(false),
         instructions,
         cta: 'Create account and redeem',
-        footer:
-          "This code doesn't include VR programs or a paid Default subscription.",
+        footer: VR_EXCLUSION_FOOTER,
       }
     case 'timed_trial':
       return {
-        heading: 'Welcome to Virtality',
-        intro: `Use the code below when you create your account. Redeeming it gives you access to explore the platform for ${trialDays} days.`,
+        heading: WELCOME_HEADING,
+        intro: explorePlatformIntro(false, trialDays),
         instructions,
         cta: 'Create account and start trial',
-        footer: 'When your trial ends, you can subscribe to keep going.',
+        footer: TRIAL_END_FOOTER,
       }
   }
 }

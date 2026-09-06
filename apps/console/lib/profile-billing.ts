@@ -352,18 +352,27 @@ function profileBillingIntervalCancelConfirmCopy(
   }
 }
 
+/** Access Gate trial whose clock has ended: Billing shows expired styling. */
+export function profileBillingIsLapsedAccessGateTrial(
+  standing: Pick<BillingStandingView, 'entitled' | 'status'>,
+): boolean {
+  return standing.status === 'trialing' && !standing.entitled
+}
+
 export function profileBillingStatusHeadline(
   standing: BillingStandingView,
   productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
 ): string {
   if (standing.status === 'trialing') {
-    return standing.entitled ? 'Trial in progress' : 'Expired'
+    return profileBillingIsLapsedAccessGateTrial(standing)
+      ? 'Expired'
+      : 'Trial in progress'
   }
 
   if (
     standing.status === 'granted' ||
     standing.status === 'revoked' ||
-    standing.status == null
+    standing.status === null
   ) {
     return 'No plan'
   }

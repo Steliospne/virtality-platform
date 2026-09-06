@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import {
   BILLING_SOFT_UNAVAILABLE_COPY,
   profileBillingCardActiveAction,
+  profileBillingIsLapsedAccessGateTrial,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
 } from '@/lib/profile-billing'
@@ -97,7 +98,8 @@ export function BillingTab() {
 
   const showPortalCta = cta != null
   const isLapsedAccessGateTrial =
-    standing.status === 'trialing' && !standing.entitled
+    profileBillingIsLapsedAccessGateTrial(standing)
+  const lapsedTrialAccent = 'text-red-600 dark:text-red-500'
   const monthlyCheckout = showPlanCardCheckout
     ? profileBillingCardActiveAction(planCardActionFor('month'))
     : null
@@ -112,9 +114,7 @@ export function BillingTab() {
           <p
             className={cn(
               'text-xs font-medium tracking-wide uppercase',
-              isLapsedAccessGateTrial
-                ? 'text-red-600 dark:text-red-500'
-                : 'text-zinc-500',
+              isLapsedAccessGateTrial ? lapsedTrialAccent : 'text-zinc-500',
             )}
           >
             Billing
@@ -122,7 +122,7 @@ export function BillingTab() {
           <h2
             className={cn(
               'text-2xl font-semibold tracking-tight',
-              isLapsedAccessGateTrial && 'text-red-600 dark:text-red-500',
+              isLapsedAccessGateTrial && lapsedTrialAccent,
             )}
           >
             {profileBillingStatusHeadline(standing, productName)}

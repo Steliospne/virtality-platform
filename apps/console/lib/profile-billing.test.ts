@@ -13,6 +13,7 @@ import {
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
+  profileBillingIsLapsedAccessGateTrial,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   resolveProfileBillingCardAction,
@@ -334,6 +335,38 @@ describe('profileBillingSchedulesAtPeriodEnd', () => {
   })
 })
 
+describe('profileBillingIsLapsedAccessGateTrial', () => {
+  it('is true when an Access Gate trial clock has ended', () => {
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: 'trialing',
+      }),
+    ).toBe(true)
+  })
+
+  it('is false for live trials and non-trial standings', () => {
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: true,
+        status: 'trialing',
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: 'active',
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: null,
+      }),
+    ).toBe(false)
+  })
+})
+
 describe('profileBillingStatusHeadline', () => {
   it('describes active, trial, and empty seats', () => {
     expect(
@@ -390,22 +423,15 @@ describe('profileBillingStatusDetail', () => {
   })
 
   it('uses the generic checkout prompt for lapsed Access Gate trials', () => {
-    expect(
-      profileBillingStatusDetail({
-        ...base,
-        entitled: false,
-        status: 'trialing',
-        plan: null,
-      }),
-    ).toMatch(/Monthly or Yearly/)
-    expect(
-      profileBillingStatusDetail({
-        ...base,
-        entitled: false,
-        status: 'trialing',
-        plan: null,
-      }),
-    ).not.toMatch(/Free plan/)
+    const detail = profileBillingStatusDetail({
+      ...base,
+      entitled: false,
+      status: 'trialing',
+      plan: null,
+    })
+
+    expect(detail).toMatch(/Monthly or Yearly/)
+    expect(detail).not.toMatch(/Free plan/)
   })
 
   it('mentions the scheduled target plan beside the renewal date', () => {
