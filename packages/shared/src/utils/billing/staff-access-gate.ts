@@ -186,7 +186,7 @@ function resolveTrialDirection(
   return resolved
 }
 
-async function assertStaffActionsAllowed(
+export async function assertStaffActionsAllowed(
   store: StaffAccessGateStore,
   userId: string,
 ): Promise<void> {
@@ -202,13 +202,36 @@ function extensionBaseFromAccessGate(now: Date, gate: AccessGateRecord): Date {
   return now
 }
 
-async function demoteTesterIfNeeded(
+export async function demoteTesterIfNeeded(
   store: StaffAccessGateStore,
-  user: StaffAccessGateTargetUser,
+  user: Pick<StaffAccessGateTargetUser, 'id' | 'role'>,
 ): Promise<boolean> {
   if (user.role !== 'tester') return false
   await store.updateRoleToUser(user.id)
   return true
+}
+
+/** Upsert a permanent (`granted`, no trial end) Access Gate row without audit. */
+export async function upsertPermanentAccessGate(
+  store: StaffAccessGateStore,
+  userId: string,
+  runtime: { now?: () => Date } = {},
+): Promise<AccessGateRecord> {
+  const now = runtime.now?.() ?? new Date()
+  const open = await store.findOpenAccessGateByUserId(userId)
+  if (open) {
+    return store.updateAccessGate({
+      accessGateId: open.id,
+      status: 'granted',
+      trialEnd: null,
+    })
+  }
+  return store.createAccessGate({
+    userId,
+    trialStart: now,
+    trialEnd: null,
+    status: 'granted',
+  })
 }
 
 export async function assignPermanentAccessGateToCustomer(
@@ -229,20 +252,9 @@ export async function assignPermanentAccessGateToCustomer(
   const beforeBillingState = await store.summarizeBillingState(user.id)
   const testerDemoted = await demoteTesterIfNeeded(store, user)
   const now = runtime.now?.() ?? new Date()
-  const open = await store.findOpenAccessGateByUserId(user.id)
-
-  const saved = open
-    ? await store.updateAccessGate({
-        accessGateId: open.id,
-        status: 'granted',
-        trialEnd: null,
-      })
-    : await store.createAccessGate({
-        userId: user.id,
-        trialStart: now,
-        trialEnd: null,
-        status: 'granted',
-      })
+  const saved = await upsertPermanentAccessGate(store, user.id, {
+    now: () => now,
+  })
 
   const afterBillingState = await store.summarizeBillingState(user.id)
   const audit = await store.recordAudit({

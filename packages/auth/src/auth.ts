@@ -44,7 +44,7 @@ import {
   type SendPromotionCodeEmailRuntime,
   type UpdateLibraryCouponNameInput,
 } from '@virtality/shared/utils'
-import { stripeClient, FREE_PLAN_PRICE_ID } from './auth-instance.ts'
+import { stripeClient } from './auth-instance.ts'
 import {
   readBillingCatalogForUser,
   clearPlanVariantCatalogCache,
@@ -55,7 +55,6 @@ import {
 
 export {
   auth,
-  FREE_PLAN_PRICE_ID,
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
   DEFAULT_PLAN_PRICE_ID,
   stripeClient,

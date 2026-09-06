@@ -7,14 +7,12 @@ import {
   buildCheckoutCancelReturnUrl,
   buildCheckoutSuccessUrl,
   buildPaidDefaultSubscriptionCreateParams,
-  buildPermanentFreeAfterCancellationStripeParams,
   effectiveAssignedPlanVariant,
   type AdminCustomerBillingStore,
   type AdminCustomerBillingStripeGateway,
   type AdminCustomerCyclePlanPort,
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
-import { FREE_PLAN_PRICE_ID } from '../auth-instance.ts'
 import {
   createAdminCustomerBillingRuntimeFromPorts,
   type AdminCustomerBillingCheckoutReturnUrls,
@@ -27,6 +25,7 @@ import {
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
 } from './plan-variant-catalog-adapter.ts'
+import { createPrismaStaffAccessGateStore } from './staff-access-gate-access.ts'
 
 export type { AdminCustomerBillingRuntime }
 
@@ -242,16 +241,6 @@ export function createStripeAdminCustomerBillingGateway(
       )
       return { stripeSubscriptionId: updated.id }
     },
-    createPermanentFreeSubscription: async (input) => {
-      const subscription = await stripeClient.subscriptions.create(
-        buildPermanentFreeAfterCancellationStripeParams({
-          customerId: input.customerId,
-          priceId: input.priceId,
-          actorUserId: input.metadata.adminCustomerActorUserId ?? '',
-        }),
-      )
-      return { stripeSubscriptionId: subscription.id }
-    },
     createPaidCheckoutSession: async (input) => {
       const session = await stripeClient.checkout.sessions.create({
         customer: input.customerId,
@@ -305,7 +294,7 @@ export function createAdminCustomerBillingRuntime(deps: {
     store,
     stripe,
     cyclePlan,
-    freePlanPriceId: FREE_PLAN_PRICE_ID,
+    accessGateStore: createPrismaStaffAccessGateStore(client),
     checkoutReturnUrls: buildAdminCheckoutReturnUrls,
     resolvePlanVariantCatalog: () =>
       readPlanVariantCatalogOrSandbox(deps.stripeClient),
