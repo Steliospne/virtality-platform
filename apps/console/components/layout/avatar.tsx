@@ -34,6 +34,7 @@ import capitalize from 'lodash.capitalize'
 import { useClientT } from '@/i18n/use-client-t'
 import AvatarSkeleton from './avatar-skeleton'
 import useMounted from '@/hooks/use-mounted'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useStore } from 'tinybase/ui-react'
 import { useRouter } from 'next/navigation'
 import posthog from 'posthog-js'
@@ -57,6 +58,7 @@ const Avatar = () => {
   const { state, setState } = useTour()
   const { t, i18n } = useClientT(['avatar', 'glossary'])
   const store = useStore()
+  const isMobile = useIsMobile()
 
   const handleSignOut = async () => {
     const consentStatus = posthog.get_explicit_consent_status()
@@ -90,9 +92,11 @@ const Avatar = () => {
           id='avatar'
           className='flex cursor-pointer justify-center gap-2'
         >
-          <div className='m-auto max-lg:text-sm'>
-            <span className='underline-effect'>{`${user?.name}`}</span>
-          </div>
+          {!isMobile && (
+            <div className='m-auto'>
+              <span className='underline-effect'>{`${user?.name}`}</span>
+            </div>
+          )}
           <div className='size-12 items-center overflow-hidden rounded-full border-2 border-black hover:scale-105 dark:border-white'>
             <Image
               alt='User avatar.'
