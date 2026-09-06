@@ -3,8 +3,11 @@ import {
   isFreeSubscriptionPlan,
   isDefaultSubscriptionPlan,
 } from '../billing/billing-plans.ts'
-import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
-import type { AdminCustomerTrialGrantSummary } from '../billing/trial-grant.ts'
+import { resolveEntitlementFromSources } from '../billing/access-gate.ts'
+import type {
+  AdminCustomerTrialGrantSummary,
+  TrialGrantClock,
+} from '../billing/trial-grant.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 
 export type CustomerSubscriptionSummary = {
@@ -193,19 +196,23 @@ export function deriveCustomerAccessStatus(input: {
   now: Date
   role: string | null | undefined
   subscriptions: readonly CustomerSubscriptionSummary[]
+  accessGate?: TrialGrantClock | null
+  /** @deprecated Use `accessGate`. */
+  trialGrant?: TrialGrantClock | null
 }): CustomerAccessStatus {
   if (input.role === 'admin') return 'admin'
   if (input.role === 'tester') return 'tester'
 
-  const standing = buildEntitlementStanding({
+  const accessGate = input.accessGate ?? input.trialGrant ?? null
+  const { entitled } = resolveEntitlementFromSources({
     now: input.now,
-    role: input.role,
     subscriptions: input.subscriptions,
+    accessGate,
   })
   const primary = pickPrimaryCustomerSubscription(input.subscriptions)
 
-  if (standing.entitled) {
-    return primary?.status === 'trialing' ? 'trialing' : 'paid'
+  if (entitled) {
+    return accessGate?.status === 'trialing' ? 'trialing' : 'paid'
   }
 
   if (

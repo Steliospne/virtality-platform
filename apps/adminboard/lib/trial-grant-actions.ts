@@ -24,7 +24,7 @@ export function canIssueTrialGrant(profile: AdminCustomerProfile): boolean {
 }
 
 export function canAdjustTrialGrant(profile: AdminCustomerProfile): boolean {
-  return openTrialGrant(profile)?.status === 'active'
+  return openTrialGrant(profile)?.status === 'trialing'
 }
 
 export function canRevokeTrialGrant(profile: AdminCustomerProfile): boolean {

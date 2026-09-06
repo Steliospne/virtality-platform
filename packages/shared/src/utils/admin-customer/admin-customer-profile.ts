@@ -68,7 +68,8 @@ export function buildAdminCustomerProfile(
     now,
     role: user.role,
     subscriptions: subscriptionHistory,
-    trialGrant: openTrialGrantClock,
+    accessGate: openTrialGrantClock,
+    accessGateEverIssued: trialGrant != null,
   })
 
   return {
@@ -87,6 +88,7 @@ export function buildAdminCustomerProfile(
       now,
       role: user.role,
       subscriptions: subscriptionHistory,
+      accessGate: openTrialGrantClock,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
     hasPendingCyclePlanChange:

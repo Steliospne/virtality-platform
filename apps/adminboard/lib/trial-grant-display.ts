@@ -12,7 +12,7 @@ export function formatTrialGrantStatusSummary(
 ): string {
   const statusLabel = TRIAL_GRANT_STATUS_LABELS[grant.status]
 
-  if (grant.status === 'active') {
+  if (grant.status === 'trialing') {
     const clock = formatCustomerEntitlementSummary({
       entitled: grant.entitled,
       remainingMs: grant.remainingMs,

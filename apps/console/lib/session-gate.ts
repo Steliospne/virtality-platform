@@ -31,17 +31,23 @@ export async function evaluateSessionGate(
       user: { stripeCustomerId, role },
     } = data
 
-    // Existence only: Billing Path Established is any synced row, any status.
-    const subscription = stripeCustomerId
-      ? await prisma.subscription.findFirst({
-          where: { stripeCustomerId },
-          select: { status: true },
-        })
-      : null
+    const [subscription, accessGateHistoryRow] = await Promise.all([
+      stripeCustomerId
+        ? prisma.subscription.findFirst({
+            where: { stripeCustomerId },
+            select: { status: true },
+          })
+        : null,
+      prisma.trialGrant.findFirst({
+        where: { userId: data.user.id },
+        select: { id: true },
+      }),
+    ])
 
     const decision = decideConsoleSessionGate({
       role,
       subscriptions: subscription ? [subscription] : [],
+      accessGateEverIssued: accessGateHistoryRow != null,
     })
 
     if (decision === 'waitlist') {

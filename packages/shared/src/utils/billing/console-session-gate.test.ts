@@ -5,13 +5,19 @@ import {
 } from './console-session-gate.ts'
 
 describe('hasBillingPathEstablished', () => {
-  it('is false with no synced Subscription rows', () => {
+  it('is false with no synced Subscription rows or Access Gate history', () => {
     expect(hasBillingPathEstablished([])).toBe(false)
   })
 
-  it('is true for any status including expired history', () => {
+  it('is true for any subscription status including expired history', () => {
     expect(hasBillingPathEstablished([{ status: 'canceled' }])).toBe(true)
     expect(hasBillingPathEstablished([{ status: 'active' }])).toBe(true)
+  })
+
+  it('is true when an Access Gate has ever been issued', () => {
+    expect(hasBillingPathEstablished([], { accessGateEverIssued: true })).toBe(
+      true,
+    )
   })
 })
 
@@ -39,6 +45,16 @@ describe('decideConsoleSessionGate', () => {
       ).toBe('allow')
     },
   )
+
+  it('allows when only an Access Gate has been issued', () => {
+    expect(
+      decideConsoleSessionGate({
+        role: 'user',
+        subscriptions: [],
+        accessGateEverIssued: true,
+      }),
+    ).toBe('allow')
+  })
 
   it('waitlists when not admin/tester and no synced Subscription', () => {
     expect(decideConsoleSessionGate({ role: 'user', subscriptions: [] })).toBe(

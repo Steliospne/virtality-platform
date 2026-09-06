@@ -1,181 +1,72 @@
 import {
   computeExtensionTrialEnd,
   isEntitlementExtensionDurationUnit,
-  isLiveEntitlementSubscriptionStatus,
   type EntitlementExtensionDurationUnit,
   type EntitlementExtensionDirection,
   isEntitlementExtensionDirection,
 } from './entitlement-extension.ts'
 import type { EntitlementClockStanding } from './entitlement-clock.ts'
-import {
-  clockEndForSubscriptionStatus,
-  pickEntitlementSubscription,
-  resolveEntitlementClock,
-  type EntitlementClockSubscription,
-} from './entitlement-clock.ts'
-import { isDefaultSubscriptionPlan } from './billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from '../admin-customer/admin-customer-access.ts'
+import { isDefaultSubscriptionPlan } from './billing-plans.ts'
+import {
+  accessGateStatusForIssue,
+  resolveAccessGateClock,
+  type AccessGateClock,
+  type AccessGateOpenStatus,
+  type AccessGateRecord,
+  type AccessGateStatus,
+} from './access-gate.ts'
 
-export const TRIAL_GRANT_STATUSES = ['active', 'converted', 'revoked'] as const
+export {
+  ACCESS_GATE_OPEN_STATUSES,
+  ACCESS_GATE_STATUSES,
+  accessGateStatusForIssue,
+  clockEndForAccessGate,
+  clockEndForEntitlementSource,
+  isAccessGateOpenStatus,
+  resolveAccessGateClock,
+  resolveEntitlementFromSources,
+  toAccessGateClock,
+  type AccessGateClock,
+  type AccessGateOpenStatus,
+  type AccessGateRecord,
+  type AccessGateStatus,
+} from './access-gate.ts'
 
-export type TrialGrantStatus = (typeof TRIAL_GRANT_STATUSES)[number]
+/** @deprecated Use `ACCESS_GATE_STATUSES`. */
+export { ACCESS_GATE_STATUSES as TRIAL_GRANT_STATUSES } from './access-gate.ts'
 
-export const TRIAL_GRANT_OPEN_STATUSES = ['active'] as const
+/** @deprecated Use `AccessGateStatus`. */
+export type TrialGrantStatus = AccessGateStatus
 
-export type TrialGrantOpenStatus = (typeof TRIAL_GRANT_OPEN_STATUSES)[number]
+/** @deprecated Use `ACCESS_GATE_OPEN_STATUSES`. */
+export { ACCESS_GATE_OPEN_STATUSES as TRIAL_GRANT_OPEN_STATUSES } from './access-gate.ts'
 
-export function isTrialGrantOpenStatus(
-  value: string,
-): value is TrialGrantOpenStatus {
-  return (TRIAL_GRANT_OPEN_STATUSES as readonly string[]).includes(value)
-}
+/** @deprecated Use `AccessGateOpenStatus`. */
+export type TrialGrantOpenStatus = AccessGateOpenStatus
 
-export type TrialGrantClock = {
-  status: TrialGrantStatus
-  trialStart: Date | null
-  trialEnd: Date | null
-}
+/** @deprecated Use `isAccessGateOpenStatus`. */
+export { isAccessGateOpenStatus as isTrialGrantOpenStatus } from './access-gate.ts'
 
-export type TrialGrantRecord = TrialGrantClock & {
-  id: string
-  userId: string
-}
+/** @deprecated Use `AccessGateClock`. */
+export type TrialGrantClock = AccessGateClock
 
-function expiredTrialGrantStanding(
-  status: string | null,
-): EntitlementClockStanding {
-  return {
-    entitled: false,
-    clockEnd: null,
-    clockStart: null,
-    remainingMs: 0,
-    status,
-  }
-}
+/** @deprecated Use `AccessGateRecord`. */
+export type TrialGrantRecord = AccessGateRecord
 
-export function userHasStripeSubscriptionForEntitlement(
-  subscriptions: readonly EntitlementClockSubscription[],
-): boolean {
-  return subscriptions.length > 0
-}
-
-/**
- * A live, paid (non-free) Stripe subscription - the only Stripe state that
- * should preempt an owned TrialGrant clock. A synced `free` plan row (e.g.
- * from "assign permanent Free") must not shadow an active trial.
- */
-function userHasLivePaidSubscriptionForEntitlement(
-  subscriptions: readonly EntitlementClockSubscription[],
-): boolean {
-  const subscription = pickEntitlementSubscription(subscriptions)
-  if (!subscription) return false
-  return (
-    isLiveEntitlementSubscriptionStatus(subscription.status) &&
-    isDefaultSubscriptionPlan(subscription.plan)
-  )
-}
-
+/** @deprecated Use `resolveAccessGateClock`. */
 export function resolveTrialGrantClock(input: {
   now: Date
-  trialGrant: TrialGrantClock | null
+  trialGrant: AccessGateClock | null
 }): EntitlementClockStanding {
-  const grant = input.trialGrant
-  if (!grant || grant.status !== 'active') {
-    return expiredTrialGrantStanding(grant?.status ?? null)
-  }
-
-  if (grant.trialStart == null || grant.trialEnd == null) {
-    return expiredTrialGrantStanding('active')
-  }
-
-  const clockEnd = grant.trialEnd
-  const remainingMs = Math.max(0, clockEnd.getTime() - input.now.getTime())
-  const entitled = remainingMs > 0
-
-  return {
-    entitled,
-    clockEnd: entitled ? clockEnd : null,
-    clockStart: entitled ? grant.trialStart : null,
-    remainingMs,
-    status: entitled ? 'trialing' : 'active',
-  }
-}
-
-export function clockEndForTrialGrant(
-  trialGrant: TrialGrantClock | null | undefined,
-): Date | null {
-  if (!trialGrant || trialGrant.status !== 'active') return null
-  return trialGrant.trialEnd ?? null
-}
-
-export function resolveEntitlementFromSources(input: {
-  now: Date
-  subscriptions: readonly EntitlementClockSubscription[]
-  trialGrant?: TrialGrantClock | null
-}): EntitlementClockStanding {
-  // A live paid Stripe subscription always wins. Otherwise a currently-live
-  // TrialGrant wins even when the customer also has an inert Stripe row
-  // (e.g. a synced `free` plan subscription from "assign permanent Free") -
-  // otherwise that row would shadow the trial clock and the customer would
-  // never show as entitled/trialing.
-  if (userHasLivePaidSubscriptionForEntitlement(input.subscriptions)) {
-    const subscription = pickEntitlementSubscription(input.subscriptions)
-    return resolveEntitlementClock({
-      now: input.now,
-      subscription,
-    })
-  }
-
-  const trialStanding = resolveTrialGrantClock({
+  return resolveAccessGateClock({
     now: input.now,
-    trialGrant: input.trialGrant ?? null,
+    accessGate: input.trialGrant,
   })
-  if (trialStanding.entitled) {
-    return trialStanding
-  }
-
-  if (userHasStripeSubscriptionForEntitlement(input.subscriptions)) {
-    const subscription = pickEntitlementSubscription(input.subscriptions)
-    return resolveEntitlementClock({
-      now: input.now,
-      subscription,
-    })
-  }
-
-  return trialStanding
 }
 
-export function clockEndForEntitlementSource(input: {
-  subscriptions: readonly EntitlementClockSubscription[]
-  trialGrant?: TrialGrantClock | null
-}): Date | null {
-  if (userHasLivePaidSubscriptionForEntitlement(input.subscriptions)) {
-    const subscription = pickEntitlementSubscription(input.subscriptions)
-    if (!subscription) return null
-    return clockEndForSubscriptionStatus(
-      subscription.status,
-      subscription.trialEnd,
-      subscription.periodEnd,
-    )
-  }
-
-  const trialClockEnd = clockEndForTrialGrant(input.trialGrant ?? null)
-  if (trialClockEnd != null) {
-    return trialClockEnd
-  }
-
-  if (userHasStripeSubscriptionForEntitlement(input.subscriptions)) {
-    const subscription = pickEntitlementSubscription(input.subscriptions)
-    if (!subscription) return null
-    return clockEndForSubscriptionStatus(
-      subscription.status,
-      subscription.trialEnd,
-      subscription.periodEnd,
-    )
-  }
-
-  return trialClockEnd
-}
+/** @deprecated Use `clockEndForAccessGate`. */
+export { clockEndForAccessGate as clockEndForTrialGrant } from './access-gate.ts'
 
 export type TrialGrantTargetUser = {
   id: string
@@ -211,7 +102,8 @@ export type TrialGrantStore = {
   createTrialGrant: (input: {
     userId: string
     trialStart: Date
-    trialEnd: Date
+    trialEnd: Date | null
+    status: AccessGateOpenStatus
   }) => Promise<TrialGrantRecord>
   adjustTrialGrant: (input: {
     userId: string
@@ -418,6 +310,7 @@ export async function issueTrialGrantToCustomer(
     userId: user.id,
     trialStart: now,
     trialEnd,
+    status: accessGateStatusForIssue(trialEnd),
   })
 
   const afterBillingState = await store.summarizeBillingState(user.id)
@@ -482,6 +375,7 @@ export async function grantActiveTrialToUser(
     userId: input.userId,
     trialStart: now,
     trialEnd,
+    status: accessGateStatusForIssue(trialEnd),
   })
 
   return {
@@ -493,7 +387,6 @@ export async function grantActiveTrialToUser(
 }
 
 function extensionBaseFromTrialGrant(now: Date, grant: TrialGrantClock): Date {
-  // Use the current trial end when it is still in the future; otherwise now.
   if (grant.trialEnd != null && grant.trialEnd.getTime() > now.getTime()) {
     return grant.trialEnd
   }
@@ -517,7 +410,7 @@ export async function adjustTrialGrantForCustomer(
 
   const beforeBillingState = await store.summarizeBillingState(user.id)
   const active = await store.findOpenTrialGrantByUserId(user.id)
-  if (!active || active.status !== 'active' || active.trialEnd == null) {
+  if (!active || active.status !== 'trialing' || active.trialEnd == null) {
     throw new TrialGrantNotActiveError(user.id)
   }
 
@@ -634,7 +527,8 @@ export type AdminCustomerTrialGrantAction =
   (typeof ADMIN_CUSTOMER_TRIAL_GRANT_ACTIONS)[number]
 
 export const TRIAL_GRANT_STATUS_LABELS: Record<TrialGrantStatus, string> = {
-  active: 'Active',
+  granted: 'Granted',
+  trialing: 'Trialing',
   converted: 'Converted to paid',
   revoked: 'Revoked',
 }
@@ -653,9 +547,9 @@ export function mapAdminCustomerTrialGrantSummary(input: {
   now: Date
   grant: TrialGrantRecord & { createdAt: Date }
 }): AdminCustomerTrialGrantSummary {
-  const standing = resolveTrialGrantClock({
+  const standing = resolveAccessGateClock({
     now: input.now,
-    trialGrant: input.grant,
+    accessGate: input.grant,
   })
 
   return {

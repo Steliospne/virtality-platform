@@ -1,19 +1,19 @@
 import type { PrismaClient } from '@virtality/db'
 import {
   buildEntitlementStanding,
-  TRIAL_GRANT_OPEN_STATUSES,
+  ACCESS_GATE_OPEN_STATUSES,
   type EntitlementStanding,
 } from '@virtality/shared/utils'
 import { authed } from '../middleware/auth.ts'
 
-export async function loadTrialGrantClockForUser(
+export async function loadAccessGateClockForUser(
   prisma: PrismaClient,
   userId: string,
 ) {
   return prisma.trialGrant.findFirst({
     where: {
       userId,
-      status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
+      status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
     },
     orderBy: { createdAt: 'desc' },
     select: {
@@ -23,6 +23,20 @@ export async function loadTrialGrantClockForUser(
     },
   })
 }
+
+export async function userHasAccessGateHistory(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<boolean> {
+  const row = await prisma.trialGrant.findFirst({
+    where: { userId },
+    select: { id: true },
+  })
+  return row != null
+}
+
+/** @deprecated Use `loadAccessGateClockForUser`. */
+export const loadTrialGrantClockForUser = loadAccessGateClockForUser
 
 export async function loadEntitlementStandingForSession(input: {
   prisma: PrismaClient
@@ -38,7 +52,7 @@ export async function loadEntitlementStandingForSession(input: {
     orFilters.push({ stripeCustomerId: input.stripeCustomerId })
   }
 
-  const [subscriptions, trialGrant] = await Promise.all([
+  const [subscriptions, accessGate, accessGateEverIssued] = await Promise.all([
     input.prisma.subscription.findMany({
       where: { OR: orFilters },
       select: {
@@ -53,14 +67,16 @@ export async function loadEntitlementStandingForSession(input: {
         cancelAtPeriodEnd: true,
       },
     }),
-    loadTrialGrantClockForUser(input.prisma, input.userId),
+    loadAccessGateClockForUser(input.prisma, input.userId),
+    userHasAccessGateHistory(input.prisma, input.userId),
   ])
 
   return buildEntitlementStanding({
     now: input.now ?? new Date(),
     role: input.role,
     subscriptions,
-    trialGrant,
+    accessGate,
+    accessGateEverIssued,
   })
 }
 

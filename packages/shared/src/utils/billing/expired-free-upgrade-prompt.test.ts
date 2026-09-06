@@ -2,45 +2,19 @@ import { describe, expect, it } from 'vitest'
 import { FREE_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   EXPIRED_FREE_UPGRADE_PROMPT_INTERVAL_MS,
-  isExpiredFreeSeat,
   resolveExpiredFreeUpgradeQualifies,
   shouldShowExpiredFreeUpgradePrompt,
 } from './expired-free-upgrade-prompt.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
 
-describe('isExpiredFreeSeat', () => {
-  it('is true for an active Free subscription after trial expiry', () => {
-    expect(
-      isExpiredFreeSeat({
-        plan: FREE_SUBSCRIPTION_PLAN,
-        status: 'active',
-      }),
-    ).toBe(true)
-  })
-
-  it('is false for trialing Free and paid seats', () => {
-    expect(
-      isExpiredFreeSeat({
-        plan: FREE_SUBSCRIPTION_PLAN,
-        status: 'trialing',
-      }),
-    ).toBe(false)
-    expect(
-      isExpiredFreeSeat({
-        plan: 'default',
-        status: 'active',
-      }),
-    ).toBe(false)
-  })
-})
-
 describe('resolveExpiredFreeUpgradeQualifies', () => {
-  it('qualifies expired Free clinicians after trial conversion', () => {
+  it('qualifies non-entitled clinicians with an established billing path', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: false,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: FREE_SUBSCRIPTION_PLAN,
@@ -53,11 +27,23 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     ).toBe(true)
   })
 
+  it('qualifies when only an Access Gate established the billing path', () => {
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        entitled: false,
+        billingPathEstablished: true,
+        subscriptions: [],
+      }),
+    ).toBe(true)
+  })
+
   it('does not qualify trialing or paid clinicians', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: true,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: FREE_SUBSCRIPTION_PLAN,
@@ -72,6 +58,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: true,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: 'default',
@@ -83,11 +70,12 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     ).toBe(false)
   })
 
-  it('does not qualify while a TrialGrant provides live entitlement, even with a stale expired-looking subscription row', () => {
+  it('does not qualify while a live Access Gate provides entitlement', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: true,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: FREE_SUBSCRIPTION_PLAN,
@@ -105,6 +93,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: false,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: 'default',
@@ -116,11 +105,23 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
     ).toBe(true)
   })
 
+  it('does not qualify without an established billing path', () => {
+    expect(
+      resolveExpiredFreeUpgradeQualifies({
+        now: NOW,
+        entitled: false,
+        billingPathEstablished: false,
+        subscriptions: [],
+      }),
+    ).toBe(false)
+  })
+
   it('does not qualify while cancel-at-period-end access remains', () => {
     expect(
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: true,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: 'default',
@@ -136,6 +137,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: false,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: 'default',
@@ -153,6 +155,7 @@ describe('resolveExpiredFreeUpgradeQualifies', () => {
       resolveExpiredFreeUpgradeQualifies({
         now: NOW,
         entitled: false,
+        billingPathEstablished: true,
         subscriptions: [
           {
             plan: 'default',

@@ -72,7 +72,8 @@ enum PendingPromotionCodeStatus {
 }
 
 enum TrialGrantStatus {
-  active
+  granted
+  trialing
   converted
   revoked
 }

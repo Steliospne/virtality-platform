@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 const getSession = vi.fn()
 const signOut = vi.fn()
 const findFirst = vi.fn()
+const findTrialGrantFirst = vi.fn()
 
 vi.mock('@/auth-client', () => ({
   authClient: {
@@ -14,6 +15,9 @@ vi.mock('@/auth-client', () => ({
 vi.mock('@virtality/db', () => ({
   prisma: {
     subscription: { findFirst: (...args: unknown[]) => findFirst(...args) },
+    trialGrant: {
+      findFirst: (...args: unknown[]) => findTrialGrantFirst(...args),
+    },
   },
 }))
 
@@ -30,6 +34,8 @@ describe('evaluateSessionGate', () => {
     getSession.mockReset()
     signOut.mockReset()
     findFirst.mockReset()
+    findTrialGrantFirst.mockReset()
+    findTrialGrantFirst.mockResolvedValue(null)
   })
 
   it('sends unauthenticated requests to sign-in', async () => {
@@ -56,7 +62,7 @@ describe('evaluateSessionGate', () => {
 
   it('signs out over HTTP and relays the Set-Cookie for a clinician with no established billing path', async () => {
     getSession.mockResolvedValue({
-      data: { user: { role: 'user', stripeCustomerId: null } },
+      data: { user: { id: 'user_1', role: 'user', stripeCustomerId: null } },
     })
     signOut.mockImplementation(async ({ fetchOptions }) => {
       fetchOptions.onResponse({
@@ -73,9 +79,24 @@ describe('evaluateSessionGate', () => {
     })
   })
 
+  it('keeps a clinician in console once an Access Gate has been issued', async () => {
+    getSession.mockResolvedValue({
+      data: { user: { id: 'user_1', role: 'user', stripeCustomerId: null } },
+    })
+    findTrialGrantFirst.mockResolvedValue({ id: 'grant_1' })
+
+    await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
+      decision: 'ok',
+      setCookies: [],
+    })
+    expect(signOut).not.toHaveBeenCalled()
+  })
+
   it('keeps a clinician in console once a Subscription row is synced', async () => {
     getSession.mockResolvedValue({
-      data: { user: { role: 'user', stripeCustomerId: 'cus_123' } },
+      data: {
+        user: { id: 'user_1', role: 'user', stripeCustomerId: 'cus_123' },
+      },
     })
     findFirst.mockResolvedValue({ status: 'canceled' })
 

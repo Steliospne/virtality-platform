@@ -3,7 +3,7 @@ import { FREE_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
 
 describe('hadPaidBillingHistory', () => {
-  it('is false for canceled trial-only seats where period ended with trial', () => {
+  it('is true for canceled seats that reached a period end, even when trial ended together', () => {
     expect(
       hadPaidBillingHistory([
         {
@@ -12,7 +12,7 @@ describe('hadPaidBillingHistory', () => {
           periodEnd: new Date('2026-08-01T12:00:00.000Z'),
         },
       ]),
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('is false for active Free seats after trial expiry', () => {
@@ -28,7 +28,7 @@ describe('hadPaidBillingHistory', () => {
     ).toBe(false)
   })
 
-  it('is true when a paid period continued past trial end', () => {
+  it('is true when a paid period ended after trial', () => {
     expect(
       hadPaidBillingHistory([
         {

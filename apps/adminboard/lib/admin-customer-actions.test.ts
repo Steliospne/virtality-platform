@@ -135,7 +135,7 @@ describe('paid billing administration eligibility', () => {
     ).toBe(true)
   })
 
-  it('rejects assign Free after cancellation for trial-only canceled seats', () => {
+  it('allows assign Free after cancellation once a billing period ended', () => {
     expect(
       canAssignFreeAfterCancellation({
         role: 'user',
@@ -151,7 +151,7 @@ describe('paid billing administration eligibility', () => {
           },
         ],
       } as AdminCustomerProfile),
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('rejects assign Free after cancellation for never-subscribed Free seats', () => {

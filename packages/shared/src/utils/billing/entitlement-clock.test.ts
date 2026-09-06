@@ -284,17 +284,16 @@ describe('buildEntitlementStanding', () => {
     expect(admin.canLaunchVr).toBe(true)
   })
 
-  it('allows VR while a Free Trial Subscription clock is live', () => {
+  it('allows VR while an Access Gate trialing clock is live', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
-      subscriptions: [
-        {
-          plan: FREE_SUBSCRIPTION_PLAN,
-          status: 'trialing',
-          trialEnd: new Date('2026-08-17T12:00:00.000Z'),
-        },
-      ],
+      subscriptions: [],
+      accessGate: {
+        status: 'trialing',
+        trialStart: NOW,
+        trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+      },
     })
     expect(standing.entitled).toBe(true)
     expect(standing.canLaunchVr).toBe(true)
@@ -321,14 +320,15 @@ describe('buildEntitlementStanding', () => {
     expect(standing.checkoutCta).toBe('subscribe')
   })
 
-  it('allows VR while the Entitlement Clock is live', () => {
+  it('allows VR while a paid Default subscription is active', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
       subscriptions: [
         {
-          status: 'trialing',
-          trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+          status: 'active',
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
+          periodEnd: new Date('2026-09-10T12:00:00.000Z'),
         },
       ],
     })
@@ -343,6 +343,7 @@ describe('buildEntitlementStanding', () => {
       subscriptions: [
         {
           status: 'active',
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd: new Date('2026-09-10T12:00:00.000Z'),
         },
       ],
@@ -353,24 +354,23 @@ describe('buildEntitlementStanding', () => {
     expect(standing.hadPaidBilling).toBe(true)
   })
 
-  it('hides Subscribe for entitled Free trial seats (sidebar hides for any live entitlement)', () => {
+  it('hides Subscribe for entitled Access Gate trials (sidebar hides for any live entitlement)', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
-      subscriptions: [
-        {
-          plan: FREE_SUBSCRIPTION_PLAN,
-          status: 'trialing',
-          trialEnd: new Date('2026-08-17T12:00:00.000Z'),
-        },
-      ],
+      subscriptions: [],
+      accessGate: {
+        status: 'trialing',
+        trialStart: NOW,
+        trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+      },
     })
     expect(standing.entitled).toBe(true)
     expect(standing.checkoutCta).toBeNull()
     expect(standing.billingPathEstablished).toBe(true)
   })
 
-  it('shows Subscribe after trial-style history with no paid path', () => {
+  it('shows Renew after canceled history that reached a period end', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -383,7 +383,7 @@ describe('buildEntitlementStanding', () => {
       ],
     })
     expect(standing.entitled).toBe(false)
-    expect(standing.checkoutCta).toBe('subscribe')
+    expect(standing.checkoutCta).toBe('renew')
   })
 
   it('shows Renew after a previously paid billing Subscription', () => {
@@ -494,7 +494,7 @@ describe('buildEntitlementStanding', () => {
     expect(clear.cancelAtPeriodEnd).toBe(false)
   })
 
-  it('keeps soft-expired Subscribe CTA after abandoned Checkout incomplete row', () => {
+  it('keeps soft-expired Renew CTA after abandoned Checkout incomplete row with period-end history', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -511,7 +511,7 @@ describe('buildEntitlementStanding', () => {
     expect(standing.entitled).toBe(false)
     expect(standing.remainingMs).toBe(0)
     expect(standing.canLaunchVr).toBe(false)
-    expect(standing.checkoutCta).toBe('subscribe')
+    expect(standing.checkoutCta).toBe('renew')
     expect(formatRemainingTimeLabel(standing.remainingMs)).toBe('Expired')
   })
 
@@ -547,6 +547,7 @@ describe('buildEntitlementStanding', () => {
         },
         {
           status: 'active',
+          plan: DEFAULT_SUBSCRIPTION_PLAN,
           periodEnd,
         },
       ],
@@ -585,13 +586,12 @@ describe('projectLiveEntitlementStanding', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
-      subscriptions: [
-        {
-          plan: FREE_SUBSCRIPTION_PLAN,
-          status: 'trialing',
-          trialEnd,
-        },
-      ],
+      subscriptions: [],
+      accessGate: {
+        status: 'trialing',
+        trialStart: NOW,
+        trialEnd,
+      },
     })
 
     const beforeEnd = projectLiveEntitlementStanding({
@@ -614,7 +614,7 @@ describe('projectLiveEntitlementStanding', () => {
     expect(afterEnd.entitled).toBe(false)
     expect(afterEnd.remainingMs).toBe(0)
     expect(afterEnd.checkoutCta).toBe('subscribe')
-    expect(afterEnd.showRemainingTime).toBe(true)
+    expect(afterEnd.showRemainingTime).toBe(false)
     expect(afterEnd.label).toBe('Expired')
     expect(afterEnd.checkoutCtaLabel).toBe('Subscribe')
   })

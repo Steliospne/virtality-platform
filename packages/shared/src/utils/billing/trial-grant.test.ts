@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { buildEntitlementStanding } from './entitlement-clock.ts'
 import { DEFAULT_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
+  ACCESS_GATE_OPEN_STATUSES,
   adjustTrialGrantForCustomer,
   clockEndForEntitlementSource,
   convertActiveTrialGrantOnPaidSubscription,
@@ -28,7 +29,7 @@ function activeGrant(
   overrides: Partial<TrialGrantClock> = {},
 ): TrialGrantClock {
   return {
-    status: 'active',
+    status: 'trialing',
     trialStart: NOW,
     trialEnd: TRIAL_END,
     ...overrides,
@@ -57,7 +58,7 @@ describe('resolveTrialGrantClock', () => {
     expect(standing.entitled).toBe(false)
     expect(standing.remainingMs).toBe(0)
     expect(standing.clockEnd).toBeNull()
-    expect(standing.status).toBe('active')
+    expect(standing.status).toBe('trialing')
   })
 
   it('is not entitled for revoked grants with no clock dates', () => {
@@ -82,7 +83,7 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
       grant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
         createdAt: new Date('2026-08-01T12:00:00.000Z'),
@@ -90,7 +91,7 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
     })
 
     expect(summary).toMatchObject({
-      status: 'active',
+      status: 'trialing',
       entitled: true,
       remainingMs: 7 * 24 * 60 * 60 * 1000,
     })
@@ -160,7 +161,7 @@ describe('resolveEntitlementFromSources', () => {
     expect(standing.clockEnd).toEqual(TRIAL_END)
   })
 
-  it('falls back to the Stripe clock once the TrialGrant is no longer live', () => {
+  it('does not resurrect entitlement from stale Stripe rows when Access Gate is not live', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [
@@ -224,6 +225,10 @@ describe('clockEndForEntitlementSource', () => {
   })
 })
 
+function isOpenAccessGate(status: TrialGrantClock['status']): boolean {
+  return (ACCESS_GATE_OPEN_STATUSES as readonly string[]).includes(status)
+}
+
 function createTrialGrantStore(input: {
   user?: { id: string; name: string; email: string; role: string | null }
   openGrant?: TrialGrantClock & { id: string; userId: string }
@@ -241,7 +246,7 @@ function createTrialGrantStore(input: {
       input.user && input.user.id === userId ? input.user : null,
     findOpenTrialGrantByUserId: async (userId) => {
       const row = grants.get(userId)
-      if (!row || row.status !== 'active') {
+      if (!row || !isOpenAccessGate(row.status)) {
         return null
       }
       return row
@@ -250,7 +255,7 @@ function createTrialGrantStore(input: {
       const row = {
         id: 'grant_1',
         userId: data.userId,
-        status: 'active' as const,
+        status: data.status,
         trialStart: data.trialStart,
         trialEnd: data.trialEnd,
       }
@@ -259,7 +264,7 @@ function createTrialGrantStore(input: {
     }),
     adjustTrialGrant: vi.fn(async (data) => {
       const existing = grants.get(data.userId)
-      if (!existing || existing.status !== 'active') {
+      if (!existing || existing.status !== 'trialing') {
         throw new TrialGrantNotActiveError(data.userId)
       }
       const row = {
@@ -283,7 +288,7 @@ function createTrialGrantStore(input: {
     }),
     convertActiveTrialGrantByUserId: vi.fn(async (userId) => {
       const existing = grants.get(userId)
-      if (!existing || existing.status !== 'active') {
+      if (!existing || !isOpenAccessGate(existing.status)) {
         return null
       }
       const row = {
@@ -334,10 +339,11 @@ describe('issueTrialGrantToCustomer', () => {
         userId: 'user_1',
         trialStart: NOW,
         trialEnd: TRIAL_END,
+        status: 'trialing',
       })
       expect(value).toMatchObject({
         trialGrantId: 'grant_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
         auditId: 'audit_1',
@@ -356,7 +362,7 @@ describe('issueTrialGrantToCustomer', () => {
       openGrant: {
         id: 'grant_existing',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -387,11 +393,12 @@ describe('grantActiveTrialToUser', () => {
         userId: 'user_1',
         trialStart: NOW,
         trialEnd: TRIAL_END,
+        status: 'trialing',
       })
       expect(store.recordAudit).not.toHaveBeenCalled()
       expect(result).toMatchObject({
         trialGrantId: 'grant_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       })
@@ -403,7 +410,7 @@ describe('grantActiveTrialToUser', () => {
       openGrant: {
         id: 'grant_existing',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -427,7 +434,7 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -451,7 +458,7 @@ describe('adjustTrialGrantForCustomer', () => {
       })
       expect(result).toMatchObject({
         trialGrantId: 'grant_1',
-        status: 'active',
+        status: 'trialing',
         previousTrialEnd: TRIAL_END,
         trialEnd: EXTENDED_TRIAL_END,
         auditId: 'audit_1',
@@ -470,7 +477,7 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -503,7 +510,7 @@ describe('adjustTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -563,7 +570,7 @@ describe('revokeTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -596,7 +603,7 @@ describe('revokeTrialGrantForCustomer', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -654,7 +661,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -701,7 +708,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -729,7 +736,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },
@@ -752,7 +759,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     })
 
     expect(issued).toMatchObject({
-      status: 'active',
+      status: 'trialing',
     })
   })
 })
@@ -763,7 +770,7 @@ describe('trial grant conversion entitlement handoff', () => {
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
       },

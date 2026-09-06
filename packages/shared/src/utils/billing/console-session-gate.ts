@@ -1,9 +1,10 @@
 /**
  * Console session gate (proxy): waitlist vs stay.
  *
- * Waitlist only when the user is not admin/tester and has no synced
- * Subscription row. Billing Path Established = ≥1 local Subscription for the
- * user's Stripe Customer (any status). Clock expiry never alone forces waitlist.
+ * Waitlist only when the user is not admin/tester and has no established
+ * billing path. Billing Path Established = an Access Gate has ever been
+ * issued OR ≥1 synced Subscription row (any status). Clock expiry never
+ * alone forces waitlist.
  */
 
 /** Synced local Subscription row; only presence matters for this gate. */
@@ -17,12 +18,16 @@ export type ConsoleSessionGateInput = {
   role?: string | null
   /** Synced local Subscription rows for this user's Stripe Customer. */
   subscriptions: readonly ConsoleSessionSubscription[]
+  /** True when any Access Gate row exists for the user (any status). */
+  accessGateEverIssued?: boolean
 }
 
-/** Billing Path Established: any synced Subscription row (any status). */
+/** Billing Path Established: Access Gate ever issued or any synced Subscription. */
 export function hasBillingPathEstablished(
   subscriptions: readonly ConsoleSessionSubscription[],
+  options?: { accessGateEverIssued?: boolean },
 ): boolean {
+  if (options?.accessGateEverIssued) return true
   return subscriptions.length > 0
 }
 
@@ -34,6 +39,12 @@ export function decideConsoleSessionGate(
   input: ConsoleSessionGateInput,
 ): ConsoleSessionGateDecision {
   if (input.role === 'admin' || input.role === 'tester') return 'allow'
-  if (hasBillingPathEstablished(input.subscriptions)) return 'allow'
+  if (
+    hasBillingPathEstablished(input.subscriptions, {
+      accessGateEverIssued: input.accessGateEverIssued,
+    })
+  ) {
+    return 'allow'
+  }
   return 'waitlist'
 }

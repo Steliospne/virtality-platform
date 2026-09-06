@@ -89,6 +89,38 @@ function createPrismaMock(input: {
       findMany: vi.fn(async () => []),
     },
     trialGrant: {
+      findMany: vi.fn(
+        async (args: {
+          where: {
+            userId: { in: string[] }
+            status?: { in: string[] }
+          }
+          orderBy: { createdAt: 'desc' }
+        }) => {
+          const userIds = args.where.userId.in
+          const filtered = trialGrants.filter((grant) =>
+            userIds.includes(grant.userId),
+          )
+          const statusFiltered = args.where.status?.in
+            ? filtered.filter((grant) =>
+                args.where.status!.in.includes(grant.status),
+              )
+            : filtered
+
+          const seen = new Set<string>()
+          return statusFiltered
+            .sort(
+              (left, right) =>
+                (right.createdAt?.getTime() ?? 0) -
+                (left.createdAt?.getTime() ?? 0),
+            )
+            .filter((grant) => {
+              if (seen.has(grant.userId)) return false
+              seen.add(grant.userId)
+              return true
+            })
+        },
+      ),
       findFirst: vi.fn(
         async (args: {
           where: {
@@ -179,6 +211,16 @@ describe('listAdminCustomers', () => {
           canceledAt: null,
         },
       ],
+      trialGrants: [
+        {
+          id: 'grant_1',
+          userId: 'user_trial',
+          status: 'trialing',
+          trialStart: NOW,
+          trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+          createdAt: NOW,
+        },
+      ],
     })
 
     const customers = await listAdminCustomers(prisma as never, { now: NOW })
@@ -226,6 +268,16 @@ describe('getAdminCustomerProfile', () => {
           periodEnd: null,
           endedAt: null,
           canceledAt: null,
+        },
+      ],
+      trialGrants: [
+        {
+          id: 'grant_1',
+          userId: 'user_1',
+          status: 'trialing',
+          trialStart: NOW,
+          trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+          createdAt: NOW,
         },
       ],
     })
@@ -311,7 +363,7 @@ describe('getAdminCustomerProfile', () => {
         {
           id: 'grant_1',
           userId: 'user_grant',
-          status: 'active',
+          status: 'trialing',
           trialStart: NOW,
           trialEnd: new Date('2026-08-20T12:00:00.000Z'),
           createdAt: new Date('2026-08-01T12:00:00.000Z'),
@@ -326,7 +378,7 @@ describe('getAdminCustomerProfile', () => {
     })
 
     expect(profile?.trialGrant).toMatchObject({
-      status: 'active',
+      status: 'trialing',
       entitled: true,
     })
     expect(profile?.entitlement).toMatchObject({

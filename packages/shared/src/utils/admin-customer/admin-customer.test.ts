@@ -110,19 +110,17 @@ describe('deriveCustomerAccessStatus', () => {
     ).toBe('paid')
   })
 
-  it('labels a live Free trial as trialing access', () => {
+  it('labels a live Access Gate trial as trialing access', () => {
     expect(
       deriveCustomerAccessStatus({
         now: NOW,
         role: 'user',
-        subscriptions: [
-          {
-            plan: FREE_SUBSCRIPTION_PLAN,
-            status: 'trialing',
-            trialEnd: new Date('2026-08-20T12:00:00.000Z'),
-            periodEnd: null,
-          },
-        ],
+        subscriptions: [],
+        accessGate: {
+          status: 'trialing',
+          trialStart: NOW,
+          trialEnd: new Date('2026-08-20T12:00:00.000Z'),
+        },
       }),
     ).toBe('trialing')
   })

@@ -44,7 +44,7 @@ describe('trial grant action eligibility', () => {
         profile({
           trialGrant: {
             id: 'grant_1',
-            status: 'active',
+            status: 'trialing',
             trialStart: new Date('2026-08-01T12:00:00.000Z'),
             trialEnd: new Date('2026-08-20T12:00:00.000Z'),
             createdAt: new Date(),
@@ -56,11 +56,11 @@ describe('trial grant action eligibility', () => {
     ).toBe(false)
   })
 
-  it('exposes adjust and revoke actions for an active grant', () => {
+  it('exposes adjust and revoke actions for a trialing grant', () => {
     const active = profile({
       trialGrant: {
         id: 'grant_1',
-        status: 'active',
+        status: 'trialing',
         trialStart: new Date('2026-08-01T12:00:00.000Z'),
         trialEnd: new Date('2026-08-20T12:00:00.000Z'),
         createdAt: new Date(),

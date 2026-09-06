@@ -1,11 +1,11 @@
 /**
  * Canonical "Paid billing history" rule: has this clinician ever completed a
- * paid Default billing period (not only trial-style entitlement that never
- * converted)? Used by Subscribe/Renew, Campaign Window attach, and Assign Free
- * after cancellation.
+ * paid Default billing period? Used by Subscribe/Renew, Campaign Window attach,
+ * and Assign Free after cancellation.
  */
 
 import { isFreeSubscriptionPlan } from './billing-plans.ts'
+import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 
 /** Minimal subscription shape for paid-billing history checks. */
 export type PaidBillingHistorySubscription = {
@@ -24,25 +24,13 @@ const PAID_BILLING_STATUSES = new Set([
   'paused',
 ])
 
-/**
- * Canceled (and other non-live) seats count only when a paid period continued
- * past trial end (`periodEnd > trialEnd`). Missing trialEnd with a periodEnd
- * counts as paid; missing periodEnd does not.
- */
-function paidPeriodContinuedPastTrial(
-  sub: PaidBillingHistorySubscription,
-): boolean {
-  if (sub.periodEnd == null) return false
-  if (sub.trialEnd == null) return true
-  return sub.periodEnd.getTime() > sub.trialEnd.getTime()
-}
-
 function subscriptionImpliesPaidBilling(
   sub: PaidBillingHistorySubscription,
 ): boolean {
   if (isFreeSubscriptionPlan(sub.plan)) return false
   if (PAID_BILLING_STATUSES.has(sub.status)) return true
-  return paidPeriodContinuedPastTrial(sub)
+  if (isLiveEntitlementSubscriptionStatus(sub.status)) return false
+  return sub.periodEnd != null
 }
 
 /** True when any synced Subscription row implies Paid billing history. */

@@ -6,19 +6,19 @@
  * clock (including Checkout `incomplete` before webhook/success sync). Entitled
  * for VR: status ∈ {active, trialing} AND now < clockEnd.
  *
- * Checkout CTA: none while entitled (any live source - paid Default, Stripe
- * trial, or TrialGrant); Subscribe vs Renew for soft-expired clinicians when
- * Billing Path Established (Renew if subscription history shows a paid period).
+ * Checkout CTA: none while entitled (any live source - paid Default or Access
+ * Gate trialing); Subscribe vs Renew for soft-expired clinicians when Billing
+ * Path Established (Renew if subscription history shows a paid period).
  * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
  * alone is enough, and it keeps its own trial-vs-portal distinction). Abandon
  * leaves soft-expired + CTA; only synced live Subscriptions or an active
  * TrialGrant restore.
  *
  * Merged entitlement source of truth is `resolveEntitlementFromSources`
- * (trial-grant.ts), reached via `buildEntitlementStanding` below. Any new
+ * (access-gate.ts), reached via `buildEntitlementStanding` below. Any new
  * feature or UI that needs to know "is this user currently entitled" must
  * resolve it through that function - never re-derive entitlement from raw
- * `Subscription.plan`/`status` rows or from a `TrialGrant` alone in a new
+ * `Subscription.plan`/`status` rows or from an Access Gate alone in a new
  * consumer.
  */
 
@@ -32,8 +32,8 @@ import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
 import {
   resolveEntitlementFromSources,
-  type TrialGrantClock,
-} from './trial-grant.ts'
+  type AccessGateClock,
+} from './access-gate.ts'
 
 export type EntitlementBillingInterval = 'month' | 'year'
 
@@ -210,8 +210,8 @@ export type CheckoutCta = 'subscribe' | 'renew'
 
 /**
  * Checkout CTA visibility for the sidebar: requires Billing Path Established,
- * hides the CTA for any live entitlement (paid, Stripe trial, or TrialGrant -
- * whatever {@link resolveEntitlementFromSources} merged into `entitled`), then
+ * hides the CTA for any live entitlement (paid Default or Access Gate
+ * trialing - whatever {@link resolveEntitlementFromSources} merged into
  * defers Subscribe/Renew to {@link resolveProfileBillingCheckoutCta} once not
  * entitled. Never re-derives entitlement from raw `plan`/`status` here -
  * Profile Billing's own trial-vs-portal distinction lives entirely inside
@@ -287,7 +287,7 @@ export function formatCheckoutCtaLabel(
 export type EntitlementStanding = EntitlementClockStanding & {
   /** VR soft gate including admin/tester bypass. */
   canLaunchVr: boolean
-  /** Billing Path Established: ≥1 synced Subscription (any status). */
+  /** Billing Path Established: Access Gate ever issued or ≥1 synced Subscription. */
   billingPathEstablished: boolean
   /** Prior paid billing period in synced Subscription history. */
   hadPaidBilling: boolean
@@ -331,15 +331,24 @@ export function buildEntitlementStanding(input: {
   now: Date
   role?: string | null
   subscriptions: readonly EntitlementClockSubscription[]
-  trialGrant?: TrialGrantClock | null
+  accessGate?: AccessGateClock | null
+  accessGateEverIssued?: boolean
+  /** @deprecated Use `accessGate`. */
+  trialGrant?: AccessGateClock | null
 }): EntitlementStanding {
   const subscription = pickEntitlementSubscription(input.subscriptions)
+  const accessGate = input.accessGate ?? input.trialGrant ?? null
   const clock = resolveEntitlementFromSources({
     now: input.now,
     subscriptions: input.subscriptions,
-    trialGrant: input.trialGrant,
+    accessGate,
   })
-  const billingPathEstablished = hasBillingPathEstablished(input.subscriptions)
+  const billingPathEstablished = hasBillingPathEstablished(
+    input.subscriptions,
+    {
+      accessGateEverIssued: input.accessGateEverIssued ?? accessGate != null,
+    },
+  )
   const hadPaidBilling = hadPaidBillingHistory(input.subscriptions)
   return {
     ...clock,
@@ -363,6 +372,7 @@ export function buildEntitlementStanding(input: {
     expiredFreeUpgradeQualifies: resolveExpiredFreeUpgradeQualifies({
       now: input.now,
       entitled: clock.entitled,
+      billingPathEstablished,
       subscriptions: input.subscriptions,
     }),
   }

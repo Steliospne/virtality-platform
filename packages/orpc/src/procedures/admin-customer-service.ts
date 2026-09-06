@@ -3,12 +3,13 @@ import {
   buildAdminCustomerProfile,
   mapAdminCustomerTrialGrantSummary,
   resolveStripeDashboardMode,
-  TRIAL_GRANT_OPEN_STATUSES,
+  ACCESS_GATE_OPEN_STATUSES,
   mapAdminCustomerAuditHistoryItem,
   deriveCustomerAccessStatus,
   deriveCustomerBillingStatus,
   mapAdminCustomerSubscriptionHistoryItem,
   pickPrimaryCustomerSubscription,
+  toAccessGateClock,
   type AdminCustomerAuditHistoryItem,
   type AdminCustomerBillingSnapshot,
   type AdminCustomerListItem,
@@ -62,6 +63,7 @@ async function listAdminCustomerAuditHistory(
 function buildCustomerListItem(input: {
   user: CustomerUserRow
   subscriptions: readonly AdminCustomerSubscriptionRow[]
+  openAccessGate: TrialGrantClock | null
   now: Date
 }): AdminCustomerListItem {
   const subscriptionSummaries = input.subscriptions.map(
@@ -79,6 +81,7 @@ function buildCustomerListItem(input: {
       now: input.now,
       role: input.user.role,
       subscriptions: subscriptionSummaries,
+      accessGate: input.openAccessGate,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
     primarySubscriptionId: primary?.id ?? null,
@@ -119,10 +122,31 @@ export async function listAdminCustomers(
     subscriptionsByUser.set(subscription.referenceId, existing)
   }
 
+  const openGrants = await prisma.trialGrant.findMany({
+    where: {
+      userId: { in: userIds },
+      status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      userId: true,
+      status: true,
+      trialStart: true,
+      trialEnd: true,
+    },
+  })
+  const openAccessGateByUser = new Map<string, TrialGrantClock>()
+  for (const grant of openGrants) {
+    if (!openAccessGateByUser.has(grant.userId)) {
+      openAccessGateByUser.set(grant.userId, toAccessGateClock(grant))
+    }
+  }
+
   return users.map((user) =>
     buildCustomerListItem({
       user,
       subscriptions: subscriptionsByUser.get(user.id) ?? [],
+      openAccessGate: openAccessGateByUser.get(user.id) ?? null,
       now,
     }),
   )
@@ -148,7 +172,7 @@ async function loadAdminCustomerTrialGrantContext(
   const openGrant = await prisma.trialGrant.findFirst({
     where: {
       userId,
-      status: { in: [...TRIAL_GRANT_OPEN_STATUSES] },
+      status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
     },
     orderBy: { createdAt: 'desc' },
     select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
@@ -167,13 +191,7 @@ async function loadAdminCustomerTrialGrantContext(
   }
 
   return {
-    openTrialGrantClock: openGrant
-      ? {
-          status: openGrant.status as TrialGrantClock['status'],
-          trialStart: openGrant.trialStart,
-          trialEnd: openGrant.trialEnd,
-        }
-      : null,
+    openTrialGrantClock: openGrant ? toAccessGateClock(openGrant) : null,
     trialGrant: mapAdminCustomerTrialGrantSummary({
       now,
       grant: displayGrant,
