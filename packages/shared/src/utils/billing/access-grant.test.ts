@@ -188,7 +188,7 @@ describe('buildEntitlementStanding with AccessGrant', () => {
     expect(standing.remainingMs).toBeGreaterThan(0)
   })
 
-  it('hides Subscribe/Renew and the expired-upgrade prompt while a grant is live, even with a stale expired-looking Stripe subscription row', () => {
+  it('shows Subscribe and hides the expired-upgrade prompt while a grant is live, even with a stale expired-looking Stripe subscription row', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -204,7 +204,7 @@ describe('buildEntitlementStanding with AccessGrant', () => {
     })
 
     expect(standing.entitled).toBe(true)
-    expect(standing.checkoutCta).toBeNull()
+    expect(standing.checkoutCta).toBe('subscribe')
     expect(standing.expiredFreeUpgradeQualifies).toBe(false)
   })
 })

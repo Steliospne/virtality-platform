@@ -210,11 +210,13 @@ export type CheckoutCta = 'subscribe' | 'renew'
 
 /**
  * Checkout CTA visibility for the sidebar: requires Billing Path Established,
- * hides the CTA for any live entitlement (paid Default or Access Gate
- * trialing - whatever {@link resolveEntitlementFromSources} merged into
- * defers Subscribe/Renew to {@link resolveProfileBillingCheckoutCta} once not
- * entitled. Never re-derives entitlement from raw `plan`/`status` here -
- * Profile Billing's own trial-vs-portal distinction lives entirely inside
+ * hides the CTA for any live paid entitlement (active - or trialing on the
+ * paid Default plan, which is already a committed Stripe Subscription), but
+ * shows it alongside the Remaining Time clock for any other trialing seat
+ * (Free/Access Gate trials) so those clinicians can upgrade early. Once not
+ * entitled, defers to {@link resolveProfileBillingCheckoutCta}. Never
+ * re-derives entitlement from raw `plan`/`status` here - Profile Billing's
+ * own trial-vs-portal distinction lives entirely inside
  * {@link resolveProfileBillingCheckoutCta} and stays unaffected by this gate.
  */
 export function resolveCheckoutCta(input: {
@@ -225,7 +227,7 @@ export function resolveCheckoutCta(input: {
   status?: string | null
 }): CheckoutCta | null {
   if (!input.billingPathEstablished) return null
-  if (input.entitled) return null
+  if (input.entitled && input.status !== 'trialing') return null
   return resolveProfileBillingCheckoutCta({
     entitled: input.entitled,
     hasStripeCustomer: true,
@@ -379,11 +381,12 @@ export function buildEntitlementStanding(input: {
 }
 
 /**
- * Console sidebar Remaining Time: live trialing seats and entitled seats
- * scheduled to cancel at period end (paid active still inside the period),
- * plus Free seats and granted Access Gates — always shown as expired (0d,
- * red) since neither carries a live clock. Renewing paid active and other
- * expired seats hide it.
+ * Console sidebar Remaining Time: live trialing seats (including ones that
+ * have just ticked past trialEnd client-side, before status resyncs) and
+ * entitled seats scheduled to cancel at period end (paid active still inside
+ * the period), plus Free seats and granted Access Gates — always shown as
+ * expired (0d, red) since neither carries a live clock. Renewing paid active
+ * and other expired seats hide it.
  */
 export function showsRemainingTimeSidebar(input: {
   entitled: boolean
@@ -393,11 +396,10 @@ export function showsRemainingTimeSidebar(input: {
 }): boolean {
   if (isFreeSubscriptionPlan(input.plan)) return true
   if (input.status === 'granted') return true
+  if (input.status === 'trialing') return true
   if (!input.entitled) return false
 
-  const isTrialing = input.status === 'trialing'
-  const isScheduledToCancel = Boolean(input.cancelAtPeriodEnd)
-  return isTrialing || isScheduledToCancel
+  return Boolean(input.cancelAtPeriodEnd)
 }
 
 /**

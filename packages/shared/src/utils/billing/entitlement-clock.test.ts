@@ -238,9 +238,6 @@ describe('showsRemainingTimeSidebar', () => {
         cancelAtPeriodEnd: false,
       }),
     ).toBe(false)
-    expect(
-      showsRemainingTimeSidebar({ entitled: false, status: 'trialing' }),
-    ).toBe(false)
     expect(showsRemainingTimeSidebar({ entitled: true, status: null })).toBe(
       false,
     )
@@ -249,6 +246,12 @@ describe('showsRemainingTimeSidebar', () => {
   it('always shows for granted Access Gates, even though never entitled', () => {
     expect(
       showsRemainingTimeSidebar({ entitled: false, status: 'granted' }),
+    ).toBe(true)
+  })
+
+  it('always shows for trialing seats, even once the live clock has expired', () => {
+    expect(
+      showsRemainingTimeSidebar({ entitled: false, status: 'trialing' }),
     ).toBe(true)
   })
 
@@ -360,7 +363,7 @@ describe('buildEntitlementStanding', () => {
     expect(standing.hadPaidBilling).toBe(true)
   })
 
-  it('hides Subscribe for entitled Access Gate trials (sidebar hides for any live entitlement)', () => {
+  it('shows Subscribe for entitled Access Gate trials so they can upgrade early', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
@@ -372,7 +375,7 @@ describe('buildEntitlementStanding', () => {
       },
     })
     expect(standing.entitled).toBe(true)
-    expect(standing.checkoutCta).toBeNull()
+    expect(standing.checkoutCta).toBe('subscribe')
     expect(standing.billingPathEstablished).toBe(true)
   })
 
@@ -587,7 +590,7 @@ describe('buildEntitlementStanding', () => {
 })
 
 describe('projectLiveEntitlementStanding', () => {
-  it('flips entitled, CTA, and sidebar visibility when the client now crosses clock end', () => {
+  it('keeps the clock visible (as Expired) when the client now crosses clock end for a trial', () => {
     const trialEnd = new Date('2026-08-17T12:00:00.000Z')
     const standing = buildEntitlementStanding({
       now: NOW,
@@ -607,10 +610,10 @@ describe('projectLiveEntitlementStanding', () => {
     })
     expect(beforeEnd.entitled).toBe(true)
     expect(beforeEnd.remainingMs).toBe(60 * 1000)
-    expect(beforeEnd.checkoutCta).toBeNull()
+    expect(beforeEnd.checkoutCta).toBe('subscribe')
     expect(beforeEnd.showRemainingTime).toBe(true)
     expect(beforeEnd.label).toBe(formatRemainingTimeLabel(60 * 1000))
-    expect(beforeEnd.checkoutCtaLabel).toBeNull()
+    expect(beforeEnd.checkoutCtaLabel).toBe('Subscribe')
 
     const afterEnd = projectLiveEntitlementStanding({
       standing,
@@ -620,7 +623,7 @@ describe('projectLiveEntitlementStanding', () => {
     expect(afterEnd.entitled).toBe(false)
     expect(afterEnd.remainingMs).toBe(0)
     expect(afterEnd.checkoutCta).toBe('subscribe')
-    expect(afterEnd.showRemainingTime).toBe(false)
+    expect(afterEnd.showRemainingTime).toBe(true)
     expect(afterEnd.label).toBe('Expired')
     expect(afterEnd.checkoutCtaLabel).toBe('Subscribe')
   })
@@ -768,7 +771,7 @@ describe('resolveCheckoutCta', () => {
     ).toBeNull()
   })
 
-  it('returns null for entitled Free trial seats (sidebar hides for any live entitlement)', () => {
+  it('returns subscribe for entitled Free trial seats so they can upgrade early', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,
@@ -777,16 +780,28 @@ describe('resolveCheckoutCta', () => {
         plan: FREE_SUBSCRIPTION_PLAN,
         status: 'trialing',
       }),
-    ).toBeNull()
+    ).toBe('subscribe')
   })
 
-  it('returns null for a AccessGrant-shaped live entitlement (no Stripe plan at all)', () => {
+  it('returns subscribe for a AccessGrant-shaped live entitlement (no Stripe plan at all)', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,
         billingPathEstablished: true,
         hadPaidBilling: false,
         plan: null,
+        status: 'trialing',
+      }),
+    ).toBe('subscribe')
+  })
+
+  it('returns null for a live paid Default trial (already a committed Stripe Subscription)', () => {
+    expect(
+      resolveCheckoutCta({
+        entitled: true,
+        billingPathEstablished: true,
+        hadPaidBilling: false,
+        plan: DEFAULT_SUBSCRIPTION_PLAN,
         status: 'trialing',
       }),
     ).toBeNull()
