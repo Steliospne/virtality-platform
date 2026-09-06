@@ -28,7 +28,6 @@ import Stripe from 'stripe'
 import { ac, roles } from './permissions.ts'
 import { getServerUrl } from '@virtality/shared/types'
 import {
-  FREE_PLAN_PRICE_ID,
   DEFAULT_PLAN_MONTHLY_PRICE_ID,
   authorizeAdminCyclePlanReference,
   buildBetterAuthStripePlansFromPlanVariantCatalog,
@@ -72,8 +71,6 @@ export const DEFAULT_PLAN_PRICE_ID = DEFAULT_PLAN_MONTHLY_PRICE_ID
  */
 export const DEFAULT_PLAN_ANNUAL_PRICE_ID =
   'price_1U3f2g4Fc2DAAhEfk5EkH3u1' as const
-
-export { FREE_PLAN_PRICE_ID }
 
 const baseURL = getServerUrl()
 

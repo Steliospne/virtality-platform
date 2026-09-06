@@ -21,6 +21,7 @@ import {
   type PlanVariantCatalog,
   type ReactivatePaidSubscriptionInput,
   type SendPaidCheckoutLinkInput,
+  type StaffAccessGateStore,
 } from '@virtality/shared/utils'
 
 export type AdminCustomerBillingCheckoutReturnUrls = {
@@ -32,7 +33,7 @@ export type AdminCustomerBillingRuntimePorts = {
   store: AdminCustomerBillingStore
   stripe: AdminCustomerBillingStripeGateway
   cyclePlan: AdminCustomerCyclePlanPort
-  freePlanPriceId: string
+  accessGateStore: StaffAccessGateStore
   checkoutReturnUrls: (userId: string) => AdminCustomerBillingCheckoutReturnUrls
   /**
    * When provided, paid-plan target Prices are validated against the Assigned
@@ -101,7 +102,7 @@ export function createAdminCustomerBillingRuntimeFromPorts(
     store,
     stripe,
     cyclePlan,
-    freePlanPriceId,
+    accessGateStore,
     checkoutReturnUrls,
     resolvePlanVariantCatalog,
   } = ports
@@ -143,10 +144,12 @@ export function createAdminCustomerBillingRuntimeFromPorts(
       return cancelCyclePlanChangeForCustomer(store, cyclePlan, input)
     },
     assignFreeAfterCancellation(input) {
-      return assignFreeAfterCancellationForCustomer(store, stripe, {
-        ...input,
-        priceId: freePlanPriceId,
-      })
+      return assignFreeAfterCancellationForCustomer(
+        store,
+        stripe,
+        accessGateStore,
+        input,
+      )
     },
     sendPaidCheckoutLink(input) {
       return withPlanVariantCatalog((planVariantCatalog) =>

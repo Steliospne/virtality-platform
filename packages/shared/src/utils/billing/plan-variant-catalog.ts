@@ -11,8 +11,6 @@ import {
   type BillingPlanPriceLabels,
 } from './billing-catalog.ts'
 import {
-  FREE_PLAN_PRICE_ID,
-  FREE_SUBSCRIPTION_PLAN,
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
   DEFAULT_PLAN_MONTHLY_PRICE_ID,
   DEFAULT_SUBSCRIPTION_PLAN,
@@ -470,13 +468,12 @@ export type BetterAuthStripePlanConfig = {
 
 /**
  * Expand the Assigned Variant catalog into Better Auth `subscription.plans`.
- * Free first; then one `pro` row per complete pair (basic first). Basic also
- * gets a legacy `pro_*` lookup_key alias until Stripe rename completes.
+ * One `pro` row per complete pair (basic first). Basic also gets a legacy
+ * `pro_*` lookup_key alias until Stripe rename completes.
  * Empty catalog falls back to the canonical sandbox basic Price ids.
  */
 export function buildBetterAuthStripePlansFromPlanVariantCatalog(
   catalog: PlanVariantCatalog,
-  freePriceId: string = FREE_PLAN_PRICE_ID,
 ): BetterAuthStripePlanConfig[] {
   const pairs =
     catalog.variants.length > 0
@@ -502,14 +499,7 @@ export function buildBetterAuthStripePlansFromPlanVariantCatalog(
     }
   }
 
-  return [
-    {
-      name: FREE_SUBSCRIPTION_PLAN,
-      priceId: freePriceId,
-      lookupKey: 'free_monthly',
-    },
-    ...proPlans,
-  ]
+  return proPlans
 }
 
 /**

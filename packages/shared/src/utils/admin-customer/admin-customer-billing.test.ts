@@ -20,13 +20,13 @@ import {
   type AdminCustomerCyclePlanPort,
 } from './admin-customer-billing.ts'
 import {
-  FREE_PLAN_PRICE_ID,
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
   DEFAULT_PLAN_MONTHLY_PRICE_ID,
   DEFAULT_SUBSCRIPTION_PLAN,
 } from '../billing/billing-plans.ts'
 import type { AdminCustomerBillingSnapshot } from './admin-customer-access.ts'
 import { buildPlanVariantCatalogFromStripePrices } from '../billing/plan-variant-catalog.ts'
+import type { StaffAccessGateStore } from '../billing/staff-access-gate.ts'
 
 const ACTOR_ID = 'admin_1'
 const SUCCESS_URL = 'https://console.test/profile?checkoutReturn=success'
@@ -126,13 +126,39 @@ function createGateway(
     scheduleCancelAtPeriodEnd: vi.fn(async () => ({
       stripeSubscriptionId: 'sub_pro_monthly',
     })),
-    createPermanentFreeSubscription: vi.fn(async () => ({
-      stripeSubscriptionId: 'sub_free_active',
-    })),
     createPaidCheckoutSession: vi.fn(async () => ({
       checkoutSessionId: 'cs_test_1',
       checkoutUrl: 'https://checkout.stripe.test/cs_test_1',
     })),
+    ...overrides,
+  }
+}
+
+function createAccessGateStore(
+  overrides: Partial<StaffAccessGateStore> = {},
+): StaffAccessGateStore {
+  return {
+    findTargetUser: vi.fn(async () => null),
+    findOpenAccessGateByUserId: vi.fn(async () => null),
+    userHasConvertedAccessGate: vi.fn(async () => false),
+    createAccessGate: vi.fn(async (input) => ({
+      id: 'gate_perm',
+      userId: input.userId,
+      status: input.status,
+      trialStart: input.trialStart,
+      trialEnd: input.trialEnd,
+    })),
+    updateAccessGate: vi.fn(async (input) => ({
+      id: input.accessGateId,
+      userId: 'user_paid',
+      status: input.status,
+      trialStart: input.trialStart ?? new Date(),
+      trialEnd: input.trialEnd,
+    })),
+    revokeAccessGate: vi.fn(),
+    updateRoleToUser: vi.fn(async () => {}),
+    summarizeBillingState: vi.fn(async () => snapshot()),
+    recordAudit: vi.fn(async () => ({ id: 'audit_gate_1' })),
     ...overrides,
   }
 }
@@ -502,7 +528,7 @@ describe('cancelCyclePlanChangeForCustomer', () => {
 })
 
 describe('assignFreeAfterCancellationForCustomer', () => {
-  it('cancels live paid Default and creates permanent Free without a trial', async () => {
+  it('cancels live paid Default and issues a permanent Access Gate', async () => {
     const store = createStore({
       user: {
         id: 'user_paid',
@@ -515,36 +541,55 @@ describe('assignFreeAfterCancellationForCustomer', () => {
       billingSnapshots: [
         snapshot(),
         snapshot({
-          primaryPlan: 'free',
-          primaryStatus: 'active',
-          stripeSubscriptionId: 'sub_free_active',
+          primaryPlan: null,
+          primaryStatus: null,
+          stripeSubscriptionId: null,
         }),
       ],
     })
     const gateway = createGateway()
+    const accessGateStore = createAccessGateStore()
 
     const result = await assignFreeAfterCancellationForCustomer(
       store,
       gateway,
+      accessGateStore,
       {
         userId: 'user_paid',
         actorUserId: ACTOR_ID,
-        reason: 'Move to restricted Free',
-        priceId: FREE_PLAN_PRICE_ID,
+        reason: 'Move to restricted access',
       },
     )
 
     expect(gateway.cancelSubscriptionImmediately).toHaveBeenCalled()
-    expect(gateway.createPermanentFreeSubscription).toHaveBeenCalled()
-    expect(result.stripeOperationId).toBe('sub_free_active')
+    expect(accessGateStore.createAccessGate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'granted',
+        trialEnd: null,
+      }),
+    )
+    expect(result.accessGateId).toBe('gate_perm')
+    expect(result.stripeOperationId).toBe('sub_pro_monthly')
+    expect(result.pendingWebhookSync).toBe(true)
     expect(store.recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'assign_free_after_cancellation',
+        outcome: 'success',
       }),
     )
   })
 
   it('allows canceled seats once a billing period ended, without live paid Default', async () => {
+    const accessGateStore = createAccessGateStore({
+      createAccessGate: async (input) => ({
+        id: 'gate_after_period',
+        userId: input.userId,
+        status: input.status,
+        trialStart: input.trialStart,
+        trialEnd: input.trialEnd,
+      }),
+    })
+
     const result = await assignFreeAfterCancellationForCustomer(
       createStore({
         user: {
@@ -564,20 +609,17 @@ describe('assignFreeAfterCancellationForCustomer', () => {
           }),
         ],
       }),
-      createGateway({
-        createPermanentFreeSubscription: async () => ({
-          stripeSubscriptionId: 'sub_free_after_period',
-        }),
-      }),
+      createGateway(),
+      accessGateStore,
       {
         userId: 'user_trial_only',
         actorUserId: ACTOR_ID,
         reason: 'Period ended',
-        priceId: FREE_PLAN_PRICE_ID,
       },
     )
 
-    expect(result.stripeOperationId).toBe('sub_free_after_period')
+    expect(result.accessGateId).toBe('gate_after_period')
+    expect(result.pendingWebhookSync).toBe(false)
   })
 })
 

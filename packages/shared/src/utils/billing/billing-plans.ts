@@ -1,17 +1,12 @@
 /**
- * Stripe plan names and sandbox Price identifiers for entitlement and trial
- * acquisition. Default Prices are also declared in `@virtality/auth` for
- * Better Auth Checkout; Free is never rendered in Profile Billing.
+ * Stripe plan names and sandbox Price identifiers for entitlement and billing.
+ * Default Prices are also declared in `@virtality/auth` for Better Auth Checkout.
+ * Legacy Free subscription rows may still exist in Stripe; Access Gates own
+ * pre-conversion access and no Free Price is registered in the catalog.
  */
 
 export const FREE_SUBSCRIPTION_PLAN = 'free' as const
 export const DEFAULT_SUBSCRIPTION_PLAN = 'default' as const
-
-/**
- * Canonical sandbox Free monthly Price on a distinct Product
- * (`lookup_key: free_monthly`, €0 recurring).
- */
-export const FREE_PLAN_PRICE_ID = 'price_1U7hSd4Fc2DAAhEf1E06qFtt' as const
 
 /**
  * Canonical sandbox Default monthly Price (`lookup_key: basic_monthly`;
@@ -54,10 +49,6 @@ export function shouldScheduleSubscriptionChangeAtPeriodEnd(
   return isDefaultSubscriptionPlan(currentPlan)
 }
 
-export function isFreePlanPriceId(priceId: string): boolean {
-  return priceId === FREE_PLAN_PRICE_ID
-}
-
 export function isDefaultPlanPriceId(priceId: string): boolean {
   return (SUPPORTED_DEFAULT_PLAN_PRICE_IDS as readonly string[]).includes(
     priceId,
@@ -68,50 +59,4 @@ export function formatDefaultPlanPriceLabel(priceId: string): string {
   if (priceId === DEFAULT_PLAN_MONTHLY_PRICE_ID) return 'Default monthly'
   if (priceId === DEFAULT_PLAN_ANNUAL_PRICE_ID) return 'Default yearly'
   return priceId
-}
-
-export type FreeTrialSubscriptionCreateInput = {
-  customerId: string
-  priceId: string
-  trialPeriodDays: number
-  metadata: { trialRedeemCodeId: string }
-}
-
-/**
- * Stripe `subscriptions.create` shape for a no-card Free Trial Subscription.
- * Omits Default-only `missing_payment_method: cancel` so the seat stays on
- * Free after trial expiry.
- */
-export function buildFreeTrialSubscriptionCreateParams(
-  input: FreeTrialSubscriptionCreateInput,
-) {
-  return {
-    customer: input.customerId,
-    items: [{ price: input.priceId }],
-    trial_period_days: input.trialPeriodDays,
-    metadata: {
-      plan: FREE_SUBSCRIPTION_PLAN,
-      trialRedeemCodeId: input.metadata.trialRedeemCodeId,
-    },
-  }
-}
-
-export type PermanentFreeSubscriptionCreateInput = {
-  customerId: string
-  priceId: string
-  metadata: Record<string, string>
-}
-
-/** Stripe `subscriptions.create` shape for a permanent Free subscription (no trial). */
-export function buildPermanentFreeSubscriptionCreateParams(
-  input: PermanentFreeSubscriptionCreateInput,
-) {
-  return {
-    customer: input.customerId,
-    items: [{ price: input.priceId }],
-    metadata: {
-      plan: FREE_SUBSCRIPTION_PLAN,
-      ...input.metadata,
-    },
-  }
 }

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  FREE_PLAN_PRICE_ID,
   FREE_SUBSCRIPTION_PLAN,
   DEFAULT_PLAN_ANNUAL_PRICE_ID,
   DEFAULT_PLAN_MONTHLY_PRICE_ID,
@@ -334,13 +333,10 @@ describe('buildBetterAuthStripePlansFromPlanVariantCatalog', () => {
     }),
   ])
 
-  it('registers free and every Assigned Variant Price as plan pro', () => {
+  it('registers every Assigned Variant Price as plan pro without a Free catalog row', () => {
     const plans = buildBetterAuthStripePlansFromPlanVariantCatalog(catalog)
-    expect(plans[0]).toEqual(
-      expect.objectContaining({
-        name: FREE_SUBSCRIPTION_PLAN,
-        priceId: FREE_PLAN_PRICE_ID,
-      }),
+    expect(plans.some((plan) => plan.name === FREE_SUBSCRIPTION_PLAN)).toBe(
+      false,
     )
     const proPriceIds = plans
       .filter((plan) => plan.name === DEFAULT_SUBSCRIPTION_PLAN)

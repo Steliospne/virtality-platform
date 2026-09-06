@@ -3,10 +3,8 @@ import {
   type AdminCustomerBillingSnapshot,
 } from './admin-customer-access.ts'
 import {
-  FREE_PLAN_PRICE_ID,
   DEFAULT_SUBSCRIPTION_PLAN,
   SUPPORTED_DEFAULT_PLAN_PRICE_IDS,
-  buildPermanentFreeSubscriptionCreateParams,
   formatDefaultPlanPriceLabel,
   isDefaultPlanPriceId,
   isDefaultSubscriptionPlan,
@@ -34,6 +32,11 @@ import {
   isKnownPlanVariantPriceId,
   type PlanVariantCatalog,
 } from '../billing/plan-variant-catalog.ts'
+import {
+  StaffAccessGateConvertedError,
+  upsertPermanentAccessGate,
+  type StaffAccessGateStore,
+} from '../billing/staff-access-gate.ts'
 
 export const ADMIN_CUSTOMER_BILLING_ACTIONS = [
   'change_paid_plan',
@@ -128,11 +131,6 @@ export type AdminCustomerBillingStripeGateway = {
   scheduleCancelAtPeriodEnd: (
     stripeSubscriptionId: string,
   ) => Promise<{ stripeSubscriptionId: string }>
-  createPermanentFreeSubscription: (input: {
-    customerId: string
-    priceId: string
-    metadata: Record<string, string>
-  }) => Promise<{ stripeSubscriptionId: string }>
   createPaidCheckoutSession: (input: {
     customerId: string
     priceId: string
@@ -190,7 +188,6 @@ export type AssignFreeAfterCancellationInput = {
   userId: string
   actorUserId: string
   reason: string
-  priceId: string
 }
 
 export type SendPaidCheckoutLinkInput = {
@@ -209,6 +206,7 @@ export type AdminCustomerBillingMutationResult = {
   stripeOperationId: string
   pendingWebhookSync: boolean
   checkoutUrl?: string
+  accessGateId?: string
 }
 
 function profileBillingReturnUrl(userId: string): string {
@@ -502,7 +500,7 @@ export function buildAssignFreeAfterCancellationPreview(): AdminCustomerBillingP
     effectiveTiming: 'immediate',
     prorationSummary: null,
     confirmationMessage:
-      'Assign permanent Free without a trial. Any live paid subscription is canceled immediately first.',
+      'Assign a permanent Access Gate without a trial. Any live paid subscription is canceled immediately first.',
     requiresConfirmation: true,
   }
 }
@@ -880,13 +878,11 @@ export async function cancelCyclePlanChangeForCustomer(
 export async function assignFreeAfterCancellationForCustomer(
   store: AdminCustomerBillingStore,
   stripe: AdminCustomerBillingStripeGateway,
+  accessGateStore: StaffAccessGateStore,
   input: AssignFreeAfterCancellationInput,
 ): Promise<AdminCustomerBillingMutationResult> {
   assertActors(input)
   assertReason(input.reason)
-  if (!input.priceId.trim()) {
-    throw new AdminCustomerBillingValidationError('priceId is required.')
-  }
 
   const { user, subscriptions, beforeBillingState, livePaidDefault } =
     await loadBillingContext(store, input)
@@ -897,7 +893,11 @@ export async function assignFreeAfterCancellationForCustomer(
     )
   }
 
-  let stripeOperationId: string | null = null
+  if (await accessGateStore.userHasConvertedAccessGate(user.id)) {
+    throw new StaffAccessGateConvertedError(user.id)
+  }
+
+  let stripeOperationId = ''
   if (livePaidDefault?.stripeSubscriptionId) {
     const canceled = await stripe.cancelSubscriptionImmediately(
       livePaidDefault.stripeSubscriptionId,
@@ -905,21 +905,10 @@ export async function assignFreeAfterCancellationForCustomer(
     stripeOperationId = canceled.stripeSubscriptionId
   }
 
-  const stripeCustomerId = await ensureStripeCustomer(
-    store,
-    stripe,
-    user,
-    input.actorUserId,
-  )
-
-  const created = await stripe.createPermanentFreeSubscription({
-    customerId: stripeCustomerId,
-    priceId: input.priceId,
-    metadata: stripeBillingMetadata({
-      actorUserId: input.actorUserId,
-      action: 'assign_free_after_cancellation',
-    }),
-  })
+  const accessGate = await upsertPermanentAccessGate(accessGateStore, user.id)
+  if (user.role === 'tester') {
+    await accessGateStore.updateRoleToUser(user.id)
+  }
 
   const afterBillingState = await store.summarizeBillingState(user.id)
   const audit = await store.recordAudit({
@@ -927,16 +916,17 @@ export async function assignFreeAfterCancellationForCustomer(
     actorUserId: input.actorUserId,
     action: 'assign_free_after_cancellation',
     reason: input.reason.trim(),
-    outcome: 'pending',
-    stripeOperationId: created.stripeSubscriptionId,
+    outcome: 'success',
+    stripeOperationId: stripeOperationId || null,
     beforeBillingState,
     afterBillingState,
   })
 
   return {
     auditId: audit.id,
-    stripeOperationId: created.stripeSubscriptionId,
-    pendingWebhookSync: true,
+    stripeOperationId,
+    accessGateId: accessGate.id,
+    pendingWebhookSync: stripeOperationId !== '',
   }
 }
 
@@ -988,21 +978,6 @@ export function billingSnapshotFromPrimarySubscription(input: {
   })
 }
 
-export function buildPermanentFreeAfterCancellationStripeParams(input: {
-  customerId: string
-  priceId: string
-  actorUserId: string
-}) {
-  return buildPermanentFreeSubscriptionCreateParams({
-    customerId: input.customerId,
-    priceId: input.priceId,
-    metadata: stripeBillingMetadata({
-      actorUserId: input.actorUserId,
-      action: 'assign_free_after_cancellation',
-    }),
-  })
-}
-
 export function buildPaidDefaultSubscriptionCreateParams(input: {
   customerId: string
   priceId: string
@@ -1018,4 +993,4 @@ export function buildPaidDefaultSubscriptionCreateParams(input: {
   }
 }
 
-export { FREE_PLAN_PRICE_ID, SUPPORTED_DEFAULT_PLAN_PRICE_IDS }
+export { SUPPORTED_DEFAULT_PLAN_PRICE_IDS }
