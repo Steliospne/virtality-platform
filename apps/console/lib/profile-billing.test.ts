@@ -13,7 +13,7 @@ import {
   profileBillingPrimaryCtaLabel,
   profileBillingSchedulesAtPeriodEnd,
   profileBillingShowsPlanCardCheckout,
-  profileBillingIsExpiredFree,
+  profileBillingIsLapsedAccessGateTrial,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
   resolveProfileBillingCardAction,
@@ -335,6 +335,38 @@ describe('profileBillingSchedulesAtPeriodEnd', () => {
   })
 })
 
+describe('profileBillingIsLapsedAccessGateTrial', () => {
+  it('is true when an Access Gate trial clock has ended', () => {
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: 'trialing',
+      }),
+    ).toBe(true)
+  })
+
+  it('is false for live trials and non-trial standings', () => {
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: true,
+        status: 'trialing',
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: 'active',
+      }),
+    ).toBe(false)
+    expect(
+      profileBillingIsLapsedAccessGateTrial({
+        entitled: false,
+        status: null,
+      }),
+    ).toBe(false)
+  })
+})
+
 describe('profileBillingStatusHeadline', () => {
   it('describes active, trial, and empty seats', () => {
     expect(
@@ -351,54 +383,37 @@ describe('profileBillingStatusHeadline', () => {
         ...base,
         entitled: true,
         status: 'trialing',
-        plan: FREE_SUBSCRIPTION_PLAN,
+        plan: null,
       }),
     ).toBe('Trial in progress')
     expect(
       profileBillingStatusHeadline({
         ...base,
         entitled: false,
-        status: 'active',
-        plan: FREE_SUBSCRIPTION_PLAN,
-      }),
-    ).toBe('Expired')
-    expect(profileBillingStatusHeadline(base)).toBe('No plan yet')
-  })
-})
-
-describe('profileBillingIsExpiredFree', () => {
-  it('is true for a Free plan with no live trial clock', () => {
-    expect(
-      profileBillingIsExpiredFree({
-        entitled: false,
-        status: 'active',
-        plan: FREE_SUBSCRIPTION_PLAN,
-      }),
-    ).toBe(true)
-  })
-
-  it('is false while a Free trial is live, and for Default or no plan', () => {
-    expect(
-      profileBillingIsExpiredFree({
-        entitled: true,
         status: 'trialing',
-        plan: FREE_SUBSCRIPTION_PLAN,
-      }),
-    ).toBe(false)
-    expect(
-      profileBillingIsExpiredFree({
-        entitled: true,
-        status: 'active',
-        plan: DEFAULT_SUBSCRIPTION_PLAN,
-      }),
-    ).toBe(false)
-    expect(
-      profileBillingIsExpiredFree({
-        entitled: false,
-        status: null,
         plan: null,
       }),
-    ).toBe(false)
+    ).toBe('Expired')
+    expect(profileBillingStatusHeadline(base)).toBe('No plan')
+  })
+
+  it('groups granted and revoked Access Gates with no gate as No plan', () => {
+    expect(
+      profileBillingStatusHeadline({
+        ...base,
+        entitled: false,
+        status: 'granted',
+        plan: null,
+      }),
+    ).toBe('No plan')
+    expect(
+      profileBillingStatusHeadline({
+        ...base,
+        entitled: false,
+        status: 'revoked',
+        plan: null,
+      }),
+    ).toBe('No plan')
   })
 })
 
@@ -407,15 +422,16 @@ describe('profileBillingStatusDetail', () => {
     expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Yearly/)
   })
 
-  it('mentions the expired Free plan when the seat has no live clock', () => {
-    expect(
-      profileBillingStatusDetail({
-        ...base,
-        entitled: false,
-        status: 'active',
-        plan: FREE_SUBSCRIPTION_PLAN,
-      }),
-    ).toMatch(/Free plan has expired/)
+  it('uses the generic checkout prompt for lapsed Access Gate trials', () => {
+    const detail = profileBillingStatusDetail({
+      ...base,
+      entitled: false,
+      status: 'trialing',
+      plan: null,
+    })
+
+    expect(detail).toMatch(/Monthly or Yearly/)
+    expect(detail).not.toMatch(/Free plan/)
   })
 
   it('mentions the scheduled target plan beside the renewal date', () => {
