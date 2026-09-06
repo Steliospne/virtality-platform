@@ -9,11 +9,35 @@ import {
   redeemTrialCodeAfterSignUp,
   routeSignUpCode,
   TRIAL_REDEEM_SIGNUP_WAITLIST_MESSAGE,
+  type ConsoleAccessCodeAccessGateIssuer,
   type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
 } from '@virtality/shared/utils'
 import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
 import { createAccessCodeVariantGateway } from './access-code-variant-adapter.ts'
+
+type TrialGrantStore = ReturnType<typeof createPrismaTrialGrantStore>
+
+export function createAccessGateIssuerFromTrialGrantStore(
+  store: TrialGrantStore,
+): TrialRedeemAccessGateIssuer {
+  return {
+    issueFreeGrant: (input) => issueFreeGrantToUser(store, input),
+    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
+  }
+}
+
+export function createProfileAccessGateIssuerFromTrialGrantStore(
+  store: TrialGrantStore,
+): ConsoleAccessCodeAccessGateIssuer {
+  return {
+    ...createAccessGateIssuerFromTrialGrantStore(store),
+    hasOpenGrantedAccessGate: async (userId) =>
+      (await store.findOpenGrantedAccessGateByUserId(userId)) != null,
+    hasOpenTimedAccessGate: async (userId) =>
+      (await store.findOpenTimedAccessGateByUserId(userId)) != null,
+  }
+}
 
 export function createPrismaTrialRedeemConsumeStore(
   client: PrismaClient = prisma,
@@ -52,11 +76,9 @@ export function createPrismaTrialRedeemConsumeStore(
 export function createTrialRedeemAccessGateIssuer(
   client: PrismaClient = prisma,
 ): TrialRedeemAccessGateIssuer {
-  const store = createPrismaTrialGrantStore(client)
-  return {
-    issueFreeGrant: (input) => issueFreeGrantToUser(store, input),
-    grantActiveTrial: (input) => grantActiveTrialToUser(store, input),
-  }
+  return createAccessGateIssuerFromTrialGrantStore(
+    createPrismaTrialGrantStore(client),
+  )
 }
 
 /** @deprecated Use `createTrialRedeemAccessGateIssuer`. */

@@ -2,6 +2,7 @@ import { type AccessCodeVariantOutcome } from './access-code-variant.ts'
 import {
   TRIAL_REDEEM_CODE_PATTERN,
   getTrialRedeemDisplayStatus,
+  type TrialRedeemCodeMode,
   type TrialRedeemCodeRecord,
   type TrialRedeemCodeStore,
 } from './trial-redeem-code.ts'
@@ -148,6 +149,22 @@ export type TrialRedeemAccessGateIssuer = {
 /** @deprecated Use `TrialRedeemAccessGateIssuer`. */
 export type TrialRedeemTrialGrantIssuer = TrialRedeemAccessGateIssuer
 
+export async function issueAccessGateForCodeMode(
+  accessGate: TrialRedeemAccessGateIssuer,
+  input: { userId: string; mode: TrialRedeemCodeMode; trialDays: number },
+): Promise<{ accessGateId: string }> {
+  if (input.mode === 'permanent_free') {
+    const issued = await accessGate.issueFreeGrant({ userId: input.userId })
+    return { accessGateId: issued.accessGateId }
+  }
+
+  const issued = await accessGate.grantActiveTrial({
+    userId: input.userId,
+    trialDays: input.trialDays,
+  })
+  return { accessGateId: issued.accessGateId }
+}
+
 export type RedeemTrialCodeInput = {
   code: string
   userId: string
@@ -200,16 +217,12 @@ export async function redeemTrialCodeAfterSignUp(
 
   let accessGateId: string
   try {
-    if (mode === 'permanent_free') {
-      const issued = await accessGate.issueFreeGrant({ userId: input.userId })
-      accessGateId = issued.accessGateId
-    } else {
-      const issued = await accessGate.grantActiveTrial({
-        userId: input.userId,
-        trialDays,
-      })
-      accessGateId = issued.accessGateId
-    }
+    const issued = await issueAccessGateForCodeMode(accessGate, {
+      userId: input.userId,
+      mode,
+      trialDays,
+    })
+    accessGateId = issued.accessGateId
   } catch {
     return { status: 'failed' }
   }

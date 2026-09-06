@@ -15,6 +15,8 @@ import {
 import {
   TRIAL_REDEEM_SIGNUP_ALREADY_USED_MESSAGE,
   TRIAL_REDEEM_SIGNUP_EXPIRED_MESSAGE,
+  issueAccessGateForCodeMode,
+  type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
 } from './trial-redeem-sign-up.ts'
 import { type AccessCodeVariantOutcome } from './access-code-variant.ts'
@@ -42,21 +44,11 @@ export function isProfileBillingAccessCode(raw: string): boolean {
   return routeProfileBillingCode(raw).kind === 'access_code'
 }
 
-export type ConsoleAccessCodeStore = Pick<TrialRedeemCodeStore, 'findByCode'> &
-  TrialRedeemConsumeStore & {
-    userHasLiveDefaultSubscription: (userId: string) => Promise<boolean>
-  }
+export type ConsoleAccessCodeStore = TrialRedeemConsumeStore
 
-export type ConsoleAccessCodeAccessGateIssuer = {
+export type ConsoleAccessCodeAccessGateIssuer = TrialRedeemAccessGateIssuer & {
   hasOpenGrantedAccessGate: (userId: string) => Promise<boolean>
   hasOpenTimedAccessGate: (userId: string) => Promise<boolean>
-  issueFreeGrant: (input: {
-    userId: string
-  }) => Promise<{ accessGateId: string }>
-  grantActiveTrial: (input: {
-    userId: string
-    trialDays: number
-  }) => Promise<{ accessGateId: string }>
 }
 
 export type AccessCodeProfileBlockReason = 'expired' | 'already_used'
@@ -236,18 +228,14 @@ export async function redeemAccessCodeOnProfile(
   let accessGateId: string
   let effect: RedeemAccessCodeEffect
   try {
-    if (mode === 'permanent_free') {
-      const issued = await accessGate.issueFreeGrant({ userId: input.userId })
-      accessGateId = issued.accessGateId
-      effect = 'free_grant_created'
-    } else {
-      const issued = await accessGate.grantActiveTrial({
-        userId: input.userId,
-        trialDays,
-      })
-      accessGateId = issued.accessGateId
-      effect = 'trial_grant_created'
-    }
+    const issued = await issueAccessGateForCodeMode(accessGate, {
+      userId: input.userId,
+      mode,
+      trialDays,
+    })
+    accessGateId = issued.accessGateId
+    effect =
+      mode === 'permanent_free' ? 'free_grant_created' : 'trial_grant_created'
   } catch {
     throw new ConsoleAccessCodeFailedError()
   }
