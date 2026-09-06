@@ -25,7 +25,7 @@ function record(
     id: 1,
     code: 'GO-ABCDEFGHIJ',
     status: 'unused',
-    mode: 'timed_trial',
+    mode: 'trial_grant',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
     variant: null,
@@ -207,7 +207,7 @@ describe('evaluateTrialRedeemAtSignUp', () => {
 })
 
 describe('redeemTrialCodeAfterSignUp', () => {
-  it('issues a timed Access Gate for timed_trial codes', async () => {
+  it('issues a timed Access Gate for trial_grant codes', async () => {
     const store = createMemoryStore([
       record({ id: 42, trialDays: 14, status: 'unused' }),
     ])
@@ -260,11 +260,11 @@ describe('redeemTrialCodeAfterSignUp', () => {
     expect(result).toMatchObject({ status: 'redeemed', accessGateId: 'gate_7' })
   })
 
-  it('issues a permanent Access Gate for permanent_free mode codes', async () => {
+  it('issues a permanent Access Gate for free_grant mode codes', async () => {
     const store = createMemoryStore([
       record({
         id: 99,
-        mode: 'permanent_free',
+        mode: 'free_grant',
         status: 'unused',
         code: 'GO-PERMFREE01',
       }),
@@ -418,7 +418,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
   it('applies the baked-in variant before consuming the code', async () => {
     const applyVariant = vi.fn(async () => 'applied' as const)
     const store = createMemoryStore(
-      [record({ id: 60, mode: 'permanent_free', variant: 'early-bird' })],
+      [record({ id: 60, mode: 'free_grant', variant: 'early-bird' })],
       { applyVariant },
     )
 
@@ -435,7 +435,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
   it('fails and leaves the code unused when the variant is blocked', async () => {
     const store = createMemoryStore(
-      [record({ id: 61, mode: 'permanent_free', variant: 'early-bird' })],
+      [record({ id: 61, mode: 'free_grant', variant: 'early-bird' })],
       { applyVariant: async () => 'blocked' },
     )
 
@@ -452,7 +452,7 @@ describe('redeemTrialCodeAfterSignUp', () => {
 
   it('fails and leaves the code unused when the variant no longer resolves', async () => {
     const store = createMemoryStore(
-      [record({ id: 62, mode: 'permanent_free', variant: 'retired-tier' })],
+      [record({ id: 62, mode: 'free_grant', variant: 'retired-tier' })],
       { applyVariant: async () => 'unavailable' },
     )
 

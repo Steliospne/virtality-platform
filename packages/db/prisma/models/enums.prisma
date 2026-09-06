@@ -55,8 +55,8 @@ enum TrialRedeemCodeStatus {
 }
 
 enum TrialRedeemCodeMode {
-  permanent_free
-  timed_trial
+  free_grant
+  trial_grant
 }
 
 enum PromotionCodeDeliveryStatus {

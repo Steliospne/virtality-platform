@@ -40,12 +40,12 @@ async function renderEmail(
 }
 
 describe('TrialRedeemCodeEmail', () => {
-  it('uses warm welcome copy for timed_trial mode', async () => {
-    const html = await renderEmail('timed_trial', {
+  it('uses warm welcome copy for trial_grant mode', async () => {
+    const html = await renderEmail('trial_grant', {
       recipientEmail: 'clinician@clinic.example',
     })
 
-    expect(html).toContain(TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.timed_trial)
+    expect(html).toContain(TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.trial_grant)
     expect(html).toContain('Welcome to Virtality')
     expect(html).toContain('14 days')
     expect(html).toContain(CODE)
@@ -59,17 +59,15 @@ describe('TrialRedeemCodeEmail', () => {
     expect(html).not.toContain('Trial length:')
     expect(html).toContain('clinician@clinic.example')
     expect(html).toContain('not bound to this address')
-    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial).toBe(
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.trial_grant).toBe(
       'Your Virtality Access Code',
     )
   })
 
-  it('uses warm welcome copy for permanent_free mode', async () => {
-    const html = await renderEmail('permanent_free')
+  it('uses warm welcome copy for free_grant mode', async () => {
+    const html = await renderEmail('free_grant')
 
-    expect(html).toContain(
-      TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.permanent_free,
-    )
+    expect(html).toContain(TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.free_grant)
     expect(html).toContain('Welcome to Virtality')
     expect(html).toContain('explore the')
     expect(html).toContain('include VR programs')
@@ -77,13 +75,13 @@ describe('TrialRedeemCodeEmail', () => {
     expect(html).not.toContain('Trial length:')
     expect(html).not.toContain('Free plan')
     expect(html).not.toContain('Free trial')
-    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.permanent_free).toBe(
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.free_grant).toBe(
       'Your Virtality Access Code',
     )
   })
 
   it('renders a billing CTA for existing accounts', async () => {
-    const html = await renderEmail('timed_trial', {
+    const html = await renderEmail('trial_grant', {
       ctaVariant: 'existing_account',
     })
 
@@ -101,14 +99,14 @@ describe('TrialRedeemCodeEmail', () => {
   })
 
   it('avoids em dashes in email copy', async () => {
-    const html = await renderEmail('timed_trial')
+    const html = await renderEmail('trial_grant')
 
     expect(html).not.toContain('—')
-    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial).not.toContain(
+    expect(TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.trial_grant).not.toContain(
       '—',
     )
-    expect(
-      TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.permanent_free,
-    ).not.toContain('—')
+    expect(TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE.free_grant).not.toContain(
+      '—',
+    )
   })
 })

@@ -44,7 +44,7 @@ export function CreateTrialRedeemCodeDialog({
   open,
   onOpenChange,
 }: CreateTrialRedeemCodeDialogProps) {
-  const [mode, setMode] = useState<TrialRedeemCodeMode>('timed_trial')
+  const [mode, setMode] = useState<TrialRedeemCodeMode>('trial_grant')
   const [trialDays, setTrialDays] = useState('')
   const [note, setNote] = useState('')
   const [variantName, setVariantName] = useState(NO_VARIANT_VALUE)
@@ -55,7 +55,7 @@ export function CreateTrialRedeemCodeDialog({
 
   useEffect(() => {
     if (!open) {
-      setMode('timed_trial')
+      setMode('trial_grant')
       setTrialDays('')
       setNote('')
       setVariantName(NO_VARIANT_VALUE)
@@ -69,7 +69,7 @@ export function CreateTrialRedeemCodeDialog({
       mode,
     }
 
-    if (mode === 'timed_trial') {
+    if (mode === 'trial_grant') {
       const trimmedDays = trialDays.trim()
       if (trimmedDays !== '') {
         const parsedDays = Number(trimmedDays)
@@ -132,7 +132,7 @@ export function CreateTrialRedeemCodeDialog({
                 </SelectContent>
               </Select>
             </div>
-            {mode === 'timed_trial' ? (
+            {mode === 'trial_grant' ? (
               <div className='grid gap-2'>
                 <Label htmlFor='trial-days'>Trial days (optional)</Label>
                 <Input

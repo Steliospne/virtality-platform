@@ -19,10 +19,7 @@ export const TRIAL_REDEEM_CODE_PATTERN = new RegExp(
   'i',
 )
 
-export const TRIAL_REDEEM_CODE_MODES = [
-  'permanent_free',
-  'timed_trial',
-] as const
+export const TRIAL_REDEEM_CODE_MODES = ['free_grant', 'trial_grant'] as const
 
 export type TrialRedeemCodeMode = (typeof TRIAL_REDEEM_CODE_MODES)[number]
 
@@ -30,8 +27,8 @@ export const TRIAL_REDEEM_CODE_MODE_LABELS: Record<
   TrialRedeemCodeMode,
   string
 > = {
-  permanent_free: 'Free',
-  timed_trial: 'Trial',
+  free_grant: 'Free',
+  trial_grant: 'Trial',
 }
 
 export type TrialRedeemStoredStatus = 'unused' | 'redeemed' | 'already_entitled'
@@ -241,16 +238,16 @@ export async function createTrialRedeemCode(
   runtime: TrialRedeemRuntime = {},
 ): Promise<TrialRedeemCodeRecord> {
   const now = runtime.now?.() ?? new Date()
-  const mode = input.mode ?? 'timed_trial'
+  const mode = input.mode ?? 'trial_grant'
   if (!TRIAL_REDEEM_CODE_MODES.includes(mode)) {
     throw new TrialRedeemCodeValidationError(
-      'mode must be permanent_free or timed_trial',
+      'mode must be free_grant or trial_grant',
     )
   }
 
   const trialDays = input.trialDays ?? DEFAULT_TRIAL_REDEEM_DAYS
   if (
-    mode === 'timed_trial' &&
+    mode === 'trial_grant' &&
     (!Number.isInteger(trialDays) || trialDays < 1)
   ) {
     throw new TrialRedeemCodeValidationError(

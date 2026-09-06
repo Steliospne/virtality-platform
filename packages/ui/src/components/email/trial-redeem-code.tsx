@@ -24,7 +24,7 @@ import {
 } from './styles/email.js'
 
 /** Mirrors `TrialRedeemCodeMode` in `@virtality/shared` (UI package boundary). */
-export type TrialRedeemCodeEmailMode = 'permanent_free' | 'timed_trial'
+export type TrialRedeemCodeEmailMode = 'free_grant' | 'trial_grant'
 
 export type TrialRedeemCodeEmailCtaVariant = 'no_account' | 'existing_account'
 
@@ -42,16 +42,16 @@ export const TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
-  timed_trial: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  free_grant: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
+  trial_grant: TRIAL_REDEEM_CODE_EMAIL_SUBJECT,
 }
 
 export const TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
-  timed_trial: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
+  free_grant: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
+  trial_grant: TRIAL_REDEEM_CODE_EMAIL_PREVIEW,
 }
 
 export interface TrialRedeemCodeEmailProps {
@@ -87,13 +87,13 @@ function existingAccountEmailCopy(
   }
 
   switch (mode) {
-    case 'permanent_free':
+    case 'free_grant':
       return {
         ...shared,
         intro: explorePlatformIntro(true),
         footer: VR_EXCLUSION_FOOTER,
       }
-    case 'timed_trial':
+    case 'trial_grant':
       return {
         ...shared,
         intro: explorePlatformIntro(true, trialDays),
@@ -110,7 +110,7 @@ function newAccountEmailCopy(
     'Enter this code in the Redeem code field on the sign-up page. The code is one-time use and expires one week after it was issued if unused.'
 
   switch (mode) {
-    case 'permanent_free':
+    case 'free_grant':
       return {
         heading: WELCOME_HEADING,
         intro: explorePlatformIntro(false),
@@ -118,7 +118,7 @@ function newAccountEmailCopy(
         cta: 'Create account and redeem',
         footer: VR_EXCLUSION_FOOTER,
       }
-    case 'timed_trial':
+    case 'trial_grant':
       return {
         heading: WELCOME_HEADING,
         intro: explorePlatformIntro(false, trialDays),

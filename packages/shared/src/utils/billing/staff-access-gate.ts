@@ -195,6 +195,41 @@ export async function assertStaffActionsAllowed(
   }
 }
 
+/**
+ * Shared shape for every staff Access Gate action: resolve the target user,
+ * block on a converted gate, snapshot billing state around the mutation, and
+ * record the audit entry.
+ */
+async function performAuditedStaffAction<T>(
+  store: StaffAccessGateStore,
+  input: { userId: string; actorUserId: string; reason: string },
+  action: StaffAccessGateAuditAction,
+  mutate: (user: StaffAccessGateTargetUser) => Promise<T>,
+): Promise<{ user: StaffAccessGateTargetUser; result: T; auditId: string }> {
+  const user = await store.findTargetUser(input.userId)
+  if (!user) {
+    throw new StaffAccessGateCustomerNotFoundError(input.userId)
+  }
+
+  await assertStaffActionsAllowed(store, user.id)
+
+  const beforeBillingState = await store.summarizeBillingState(user.id)
+  const result = await mutate(user)
+  const afterBillingState = await store.summarizeBillingState(user.id)
+  const audit = await store.recordAudit({
+    targetUserId: user.id,
+    actorUserId: input.actorUserId,
+    action,
+    reason: input.reason.trim(),
+    outcome: 'success',
+    stripeOperationId: null,
+    beforeBillingState,
+    afterBillingState,
+  })
+
+  return { user, result, auditId: audit.id }
+}
+
 function extensionBaseFromAccessGate(now: Date, gate: AccessGateRecord): Date {
   if (gate.trialEnd != null && gate.trialEnd.getTime() > now.getTime()) {
     return gate.trialEnd
@@ -242,31 +277,17 @@ export async function assignPermanentAccessGateToCustomer(
   assertActors(input)
   assertReason(input.reason)
 
-  const user = await store.findTargetUser(input.userId)
-  if (!user) {
-    throw new StaffAccessGateCustomerNotFoundError(input.userId)
-  }
-
-  await assertStaffActionsAllowed(store, user.id)
-
-  const beforeBillingState = await store.summarizeBillingState(user.id)
-  const testerDemoted = await demoteTesterIfNeeded(store, user)
   const now = runtime.now?.() ?? new Date()
-  const saved = await upsertPermanentAccessGate(store, user.id, {
-    now: () => now,
-  })
-
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
-    actorUserId: input.actorUserId,
-    action: 'assign_permanent_access_gate',
-    reason: input.reason.trim(),
-    outcome: 'success',
-    stripeOperationId: null,
-    beforeBillingState,
-    afterBillingState,
-  })
+  let testerDemoted = false
+  const { result: saved, auditId } = await performAuditedStaffAction(
+    store,
+    input,
+    'assign_permanent_access_gate',
+    async (user) => {
+      testerDemoted = await demoteTesterIfNeeded(store, user)
+      return upsertPermanentAccessGate(store, user.id, { now: () => now })
+    },
+  )
 
   return {
     accessGateId: saved.id,
@@ -274,7 +295,7 @@ export async function assignPermanentAccessGateToCustomer(
     trialStart: saved.trialStart ?? now,
     trialEnd: null,
     testerDemoted,
-    auditId: audit.id,
+    auditId,
   }
 }
 
@@ -287,66 +308,59 @@ export async function setAccessGateTrialForCustomer(
   assertReason(input.reason)
   assertTrialAmount(input.amount, input.unit)
   const direction = resolveTrialDirection(input.direction)
-
-  const user = await store.findTargetUser(input.userId)
-  if (!user) {
-    throw new StaffAccessGateCustomerNotFoundError(input.userId)
-  }
-
-  await assertStaffActionsAllowed(store, user.id)
-
-  const beforeBillingState = await store.summarizeBillingState(user.id)
   const now = runtime.now?.() ?? new Date()
-  const open = await store.findOpenAccessGateByUserId(user.id)
-  const previousTrialEnd = open?.trialEnd ?? null
 
-  const base = open ? extensionBaseFromAccessGate(now, open) : now
-  const trialEnd = computeExtensionTrialEnd(
-    base,
-    input.amount,
-    input.unit,
-    direction,
+  let previousTrialEnd: Date | null = null
+  let hadOpenTrial = false
+  let trialEndFallback: Date = now
+
+  const { result: saved, auditId } = await performAuditedStaffAction(
+    store,
+    input,
+    'set_access_gate_trial',
+    async (user) => {
+      const open = await store.findOpenAccessGateByUserId(user.id)
+      previousTrialEnd = open?.trialEnd ?? null
+      hadOpenTrial = open?.trialEnd != null
+
+      const base = open ? extensionBaseFromAccessGate(now, open) : now
+      const trialEnd = computeExtensionTrialEnd(
+        base,
+        input.amount,
+        input.unit,
+        direction,
+      )
+      if (direction === 'reduce' && trialEnd.getTime() <= now.getTime()) {
+        throw new StaffAccessGateValidationError(
+          'Reducing by this amount would end the Access Gate in the past. Reduce by less, or revoke the gate instead.',
+        )
+      }
+      trialEndFallback = trialEnd
+
+      return open
+        ? store.updateAccessGate({
+            accessGateId: open.id,
+            status: 'trialing',
+            trialStart: open.trialStart ?? now,
+            trialEnd,
+          })
+        : store.createAccessGate({
+            userId: user.id,
+            trialStart: now,
+            trialEnd,
+            status: accessGateStatusForIssue(trialEnd),
+          })
+    },
   )
-  if (direction === 'reduce' && trialEnd.getTime() <= now.getTime()) {
-    throw new StaffAccessGateValidationError(
-      'Reducing by this amount would end the Access Gate in the past. Reduce by less, or revoke the gate instead.',
-    )
-  }
-
-  const saved = open
-    ? await store.updateAccessGate({
-        accessGateId: open.id,
-        status: 'trialing',
-        trialStart: open.trialStart ?? now,
-        trialEnd,
-      })
-    : await store.createAccessGate({
-        userId: user.id,
-        trialStart: now,
-        trialEnd,
-        status: accessGateStatusForIssue(trialEnd),
-      })
-
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
-    actorUserId: input.actorUserId,
-    action: 'set_access_gate_trial',
-    reason: input.reason.trim(),
-    outcome: 'success',
-    stripeOperationId: null,
-    beforeBillingState,
-    afterBillingState,
-  })
 
   return {
     accessGateId: saved.id,
     status: saved.status,
-    mode: open?.trialEnd != null ? 'extended' : 'issued',
+    mode: hadOpenTrial ? 'extended' : 'issued',
     previousTrialEnd,
     trialStart: saved.trialStart ?? now,
-    trialEnd: saved.trialEnd ?? trialEnd,
-    auditId: audit.id,
+    trialEnd: saved.trialEnd ?? trialEndFallback,
+    auditId,
   }
 }
 
@@ -357,36 +371,23 @@ export async function revokeAccessGateForCustomer(
   assertActors(input)
   assertReason(input.reason)
 
-  const user = await store.findTargetUser(input.userId)
-  if (!user) {
-    throw new StaffAccessGateCustomerNotFoundError(input.userId)
-  }
-
-  await assertStaffActionsAllowed(store, user.id)
-
-  const beforeBillingState = await store.summarizeBillingState(user.id)
-  const open = await store.findOpenAccessGateByUserId(user.id)
-  if (!open) {
-    throw new StaffAccessGateOpenNotFoundError(user.id)
-  }
-
-  const revoked = await store.revokeAccessGate({ userId: user.id })
-  const afterBillingState = await store.summarizeBillingState(user.id)
-  const audit = await store.recordAudit({
-    targetUserId: user.id,
-    actorUserId: input.actorUserId,
-    action: 'revoke_access_gate',
-    reason: input.reason.trim(),
-    outcome: 'success',
-    stripeOperationId: null,
-    beforeBillingState,
-    afterBillingState,
-  })
+  const { result: revoked, auditId } = await performAuditedStaffAction(
+    store,
+    input,
+    'revoke_access_gate',
+    async (user) => {
+      const open = await store.findOpenAccessGateByUserId(user.id)
+      if (!open) {
+        throw new StaffAccessGateOpenNotFoundError(user.id)
+      }
+      return store.revokeAccessGate({ userId: user.id })
+    },
+  )
 
   return {
     accessGateId: revoked.id,
     status: revoked.status,
-    auditId: audit.id,
+    auditId,
   }
 }
 

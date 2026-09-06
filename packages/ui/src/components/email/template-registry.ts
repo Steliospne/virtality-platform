@@ -184,11 +184,11 @@ export const EMAIL_TEMPLATES: {
       id: 'trial-redeem-code',
       title: 'Access Code',
       category: 'billing',
-      subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.timed_trial,
+      subject: TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE.trial_grant,
     },
     sampleProps: {
       code: 'GO-ABCDEFGHIJ',
-      mode: 'timed_trial',
+      mode: 'trial_grant',
       trialDays: 14,
       ctaUrl: 'https://console.virtality.app/sign-up?access_code=GO-ABCDEFGHIJ',
       ctaVariant: 'no_account',
@@ -198,7 +198,7 @@ export const EMAIL_TEMPLATES: {
     render: (p) =>
       TrialRedeemCodeEmail({
         code: p.code as string,
-        mode: (p.mode as TrialRedeemCodeEmailMode | undefined) ?? 'timed_trial',
+        mode: (p.mode as TrialRedeemCodeEmailMode | undefined) ?? 'trial_grant',
         trialDays: p.trialDays as number,
         ctaUrl: p.ctaUrl as string,
         ctaVariant:

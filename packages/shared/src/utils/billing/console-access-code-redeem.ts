@@ -161,7 +161,7 @@ function profileMatrixAlreadyEntitled(input: {
   if (input.hasLivePaidSub || input.hasOpenTimedGate) {
     return true
   }
-  if (input.hasOpenGrantedGate && input.mode === 'permanent_free') {
+  if (input.hasOpenGrantedGate && input.mode === 'free_grant') {
     return true
   }
   return false
@@ -235,7 +235,7 @@ export async function redeemAccessCodeOnProfile(
     })
     accessGateId = issued.accessGateId
     effect =
-      mode === 'permanent_free' ? 'free_grant_created' : 'trial_grant_created'
+      mode === 'free_grant' ? 'free_grant_created' : 'trial_grant_created'
   } catch {
     throw new ConsoleAccessCodeFailedError()
   }
@@ -251,8 +251,9 @@ export async function redeemAccessCodeOnProfile(
 }
 
 const ACCESS_CODE_EFFECT_COPY: Record<RedeemAccessCodeEffect, string> = {
-  free_grant_created: 'You now have permanent Free access.',
-  trial_grant_created: 'Your free trial has started.',
+  free_grant_created:
+    "You now have permanent access to explore the platform. This doesn't include VR programs.",
+  trial_grant_created: 'Your trial access has started.',
   already_entitled: "You're already on a qualifying plan.",
 }
 

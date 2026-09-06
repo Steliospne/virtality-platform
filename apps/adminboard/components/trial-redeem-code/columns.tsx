@@ -90,7 +90,7 @@ export const columns: ColumnDef<TrialRedeemCodeListItem>[] = [
     header: ({ column }) => <ColumnHeader column={column} title='Trial days' />,
     cell: ({ row }) => (
       <div>
-        {row.original.mode === 'permanent_free' ? '-' : row.original.trialDays}
+        {row.original.mode === 'free_grant' ? '-' : row.original.trialDays}
       </div>
     ),
   },

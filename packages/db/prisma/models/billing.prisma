@@ -32,17 +32,17 @@ model WaitingList {
 /// Issuance/consume store for Access Codes. Entitlement clock lives on
 /// synced Stripe Subscription rows, not on this model.
 model TrialRedeemCode {
-  id        Int                    @id @default(autoincrement())
-  code      String                 @unique
-  status    TrialRedeemCodeStatus  @default(unused)
-  mode      TrialRedeemCodeMode    @default(timed_trial)
-  trialDays Int                    @default(14)
+  id        Int                   @id @default(autoincrement())
+  code      String                @unique
+  status    TrialRedeemCodeStatus @default(unused)
+  mode      TrialRedeemCodeMode   @default(trial_grant)
+  trialDays Int                   @default(14)
   note      String?
   /// Assigned Variant name (kebab-case), e.g. `early-bird`. Sparse: null means
   /// no variant is granted on redemption (existing trial/free-only behavior).
   variant   String?
-  createdAt DateTime               @db.Timestamp(6)
-  usedAt    DateTime?              @db.Timestamp(6)
+  createdAt DateTime              @db.Timestamp(6)
+  usedAt    DateTime?             @db.Timestamp(6)
   usedBy    String?
 
   usedByUser User? @relation(fields: [usedBy], references: [id], onDelete: SetNull)

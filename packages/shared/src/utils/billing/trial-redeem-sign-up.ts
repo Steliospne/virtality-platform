@@ -153,7 +153,7 @@ export async function issueAccessGateForCodeMode(
   accessGate: TrialRedeemAccessGateIssuer,
   input: { userId: string; mode: TrialRedeemCodeMode; trialDays: number },
 ): Promise<{ accessGateId: string }> {
-  if (input.mode === 'permanent_free') {
+  if (input.mode === 'free_grant') {
     const issued = await accessGate.issueFreeGrant({ userId: input.userId })
     return { accessGateId: issued.accessGateId }
   }

@@ -29,7 +29,7 @@ function record(
     id: 1,
     code: 'GO-ABCDEFGHIJ',
     status: 'unused',
-    mode: 'timed_trial',
+    mode: 'trial_grant',
     trialDays: DEFAULT_TRIAL_REDEEM_DAYS,
     note: null,
     variant: null,
@@ -139,7 +139,7 @@ describe('evaluateAccessCodeAtProfile', () => {
 describe('redeemAccessCodeOnProfile', () => {
   it('issues a permanent Access Gate when there is no existing gate', async () => {
     const store = createMemoryStore([
-      record({ id: 10, mode: 'permanent_free', code: 'GO-PERMFREE01' }),
+      record({ id: 10, mode: 'free_grant', code: 'GO-PERMFREE01' }),
     ])
     const issueFreeGrant = vi.fn(async () => ({ accessGateId: 'gate_perm' }))
     const grantActiveTrial = vi.fn()
@@ -213,10 +213,8 @@ describe('redeemAccessCodeOnProfile', () => {
     expect(grantActiveTrial).toHaveBeenCalledOnce()
   })
 
-  it('burns already_entitled for open granted plus permanent_free mode', async () => {
-    const store = createMemoryStore([
-      record({ id: 13, mode: 'permanent_free' }),
-    ])
+  it('burns already_entitled for open granted plus free_grant mode', async () => {
+    const store = createMemoryStore([record({ id: 13, mode: 'free_grant' })])
 
     const result = await redeemAccessCodeOnProfile(
       store,
@@ -254,9 +252,7 @@ describe('redeemAccessCodeOnProfile', () => {
   })
 
   it('treats only revoked or converted gates as no gate', async () => {
-    const store = createMemoryStore([
-      record({ id: 16, mode: 'permanent_free' }),
-    ])
+    const store = createMemoryStore([record({ id: 16, mode: 'free_grant' })])
     const issueFreeGrant = vi.fn(async () => ({ accessGateId: 'gate_fresh' }))
 
     const result = await redeemAccessCodeOnProfile(
@@ -314,7 +310,7 @@ describe('redeemAccessCodeOnProfile variant', () => {
   it('applies the baked-in variant before consuming the code', async () => {
     const applyVariant = vi.fn(async () => 'applied' as const)
     const store = createMemoryStore(
-      [record({ id: 20, mode: 'permanent_free', variant: 'early-bird' })],
+      [record({ id: 20, mode: 'free_grant', variant: 'early-bird' })],
       { applyVariant },
     )
 
@@ -331,7 +327,7 @@ describe('redeemAccessCodeOnProfile variant', () => {
 
   it('fails the whole redemption and leaves the code unused when blocked', async () => {
     const store = createMemoryStore(
-      [record({ id: 21, mode: 'permanent_free', variant: 'early-bird' })],
+      [record({ id: 21, mode: 'free_grant', variant: 'early-bird' })],
       { applyVariant: async () => 'blocked' },
     )
 
@@ -348,7 +344,7 @@ describe('redeemAccessCodeOnProfile variant', () => {
 
   it('fails the whole redemption when the variant no longer resolves', async () => {
     const store = createMemoryStore(
-      [record({ id: 22, mode: 'permanent_free', variant: 'retired-tier' })],
+      [record({ id: 22, mode: 'free_grant', variant: 'retired-tier' })],
       { applyVariant: async () => 'unavailable' },
     )
 
@@ -365,10 +361,9 @@ describe('redeemAccessCodeOnProfile variant', () => {
 
   it('does not call applyVariant when the code has no variant', async () => {
     const applyVariant = vi.fn(async () => 'applied' as const)
-    const store = createMemoryStore(
-      [record({ id: 23, mode: 'permanent_free' })],
-      { applyVariant },
-    )
+    const store = createMemoryStore([record({ id: 23, mode: 'free_grant' })], {
+      applyVariant,
+    })
 
     await redeemAccessCodeOnProfile(
       store,
@@ -388,6 +383,6 @@ describe('formatAccessCodeAppliedMessage', () => {
     ).toContain('Access Code applied.')
     expect(
       formatAccessCodeAppliedMessage({ effect: 'trial_grant_created' }),
-    ).toContain('free trial')
+    ).toContain('trial access')
   })
 })
