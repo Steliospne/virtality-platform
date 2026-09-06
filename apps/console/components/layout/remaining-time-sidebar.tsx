@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
  * (preview/local only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
-  const { state } = useSidebar()
+  const { state, isMobile } = useSidebar()
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
   const {
@@ -33,7 +33,7 @@ export function RemainingTimeSidebar() {
     subscribed,
     cancelAtPeriodEnd,
   } = useLiveEntitlementStanding()
-  const collapsed = state === 'collapsed'
+  const collapsed = state === 'collapsed' && !isMobile
   const display = isPending ? '…' : label
   const userId = session?.user?.id
   const showCheckoutCta = !isPending && checkoutCtaLabel != null && userId
