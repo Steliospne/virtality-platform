@@ -5,14 +5,14 @@ export function CheckoutSuccessHomeCta({ enabled }: { enabled: boolean }) {
   if (!enabled) {
     return (
       <Button size='lg' disabled>
-        Back to Console
+        Back to Dashboard
       </Button>
     )
   }
 
   return (
     <Button asChild size='lg'>
-      <Link href='/'>Back to Console</Link>
+      <Link href='/'>Back to Dashboard</Link>
     </Button>
   )
 }

@@ -79,15 +79,17 @@ export function RemainingTimeSidebar() {
         <SidebarMenuItem className={showCheckoutCta ? 'mt-3' : undefined}>
           <SidebarMenuButton
             className={cn(
-              'h-auto cursor-default justify-center gap-2 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current',
-              isExpired && 'text-red-600 dark:text-red-500',
+              'h-auto cursor-default justify-center gap-2 border border-zinc-200 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current dark:border-zinc-800',
+              isExpired &&
+                'border-red-200 text-red-600 dark:border-red-900 dark:text-red-500',
             )}
             tooltip={`${display}`}
           >
-            <Clock
-              className={isExpired ? 'text-red-600 dark:text-red-500' : ''}
-            />
-            {!collapsed && (
+            {collapsed ? (
+              <Clock
+                className={isExpired ? 'text-red-600 dark:text-red-500' : ''}
+              />
+            ) : (
               <span className='flex min-w-0 flex-col items-start leading-tight'>
                 <span
                   className={
@@ -98,7 +100,15 @@ export function RemainingTimeSidebar() {
                 >
                   Remaining Time
                 </span>
-                <span className='truncate font-medium'>{display}</span>
+                <span className='flex items-center gap-1.5'>
+                  <Clock
+                    className={cn(
+                      'size-4 shrink-0',
+                      isExpired && 'text-red-600 dark:text-red-500',
+                    )}
+                  />
+                  <span className='truncate font-medium'>{display}</span>
+                </span>
               </span>
             )}
           </SidebarMenuButton>
