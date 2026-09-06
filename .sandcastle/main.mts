@@ -23,6 +23,7 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle": "npx tsx --env-file=.sandcastle/.env .sandcastle/main.mts" }
 
+import { execSync } from 'node:child_process'
 import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
@@ -77,6 +78,13 @@ const hooks = {
 // starts. Avoids a full npm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ['node_modules']
+
+// The branch sandcastle is running from, i.e. the merge target. Issue
+// branches (sandcastle/issue-<n>) are forked from this branch's HEAD, and it
+// only moves forward via the merge phase below — so `<hostBranch>..HEAD`
+// inside an issue's worktree always lists exactly that issue's own commits,
+// however many separate runs (across restarts) produced them.
+const hostBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -160,27 +168,75 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
           },
         })
 
-        // Only review if the implementer produced commits
-        if (implement.commits.length > 0) {
-          const review = await sandbox.run({
-            name: 'reviewer',
-            maxIterations: 1,
-            agent: sandcastle.cursor(AGENT_MODEL),
-            promptFile: './.sandcastle/review-prompt.md',
-            promptArgs: {
-              BRANCH: issue.branch,
-            },
-          })
+        // Decide whether there's anything to review/merge from the branch's
+        // actual git state, not from `implement.commits` (commits made only
+        // during *this* run). `createSandbox` reuses an existing branch
+        // as-is, so a prior run's commits — e.g. left behind by a reviewer
+        // that failed before this run's retry/fallback logic existed, or
+        // just by a killed/restarted sandcastle process — are already on
+        // disk even when this run's implementer makes zero new commits. Only
+        // trusting `implement.commits` there would keep reporting "no
+        // commits produced" for a branch that has real, unmerged work,
+        // reproducing the infinite loop this whole check exists to avoid.
+        const branchLog = await sandbox.exec(`git rev-list ${hostBranch}..HEAD`)
+        const branchCommits = branchLog.stdout
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((sha) => ({ sha }))
 
-          // Merge commits from both runs so the merge phase sees all of them.
-          // Each sandbox.run() only returns commits from its own run.
-          return {
-            ...review,
-            commits: [...implement.commits, ...review.commits],
+        if (branchCommits.length === 0) {
+          return { ...implement, commits: branchCommits }
+        }
+
+        // One retry absorbs transient reviewer failures (network blip,
+        // sandbox flake). If it fails twice, fall back to the branch's
+        // commits rather than discarding them — otherwise the branch's work
+        // is dropped from this iteration's merge, the next planning pass
+        // re-queues the same issue, the implementer sees nothing left to
+        // do, and the loop spins with "No commits produced" forever even
+        // though the work exists on the branch. This also terminates
+        // deterministic reviewer failures (e.g. a provider-side prompt-size
+        // limit) that would otherwise fail identically on every retry.
+        const REVIEW_ATTEMPTS = 2
+        let lastReviewError: unknown
+        for (let attempt = 1; attempt <= REVIEW_ATTEMPTS; attempt++) {
+          try {
+            const review = await sandbox.run({
+              name: 'reviewer',
+              maxIterations: 1,
+              agent: sandcastle.cursor(AGENT_MODEL),
+              promptFile: './.sandcastle/review-prompt.md',
+              promptArgs: {
+                BRANCH: issue.branch,
+              },
+            })
+
+            // Recompute from git rather than concatenating arrays: the
+            // reviewer may itself have committed fixes, and branchCommits
+            // already captures everything implement.commits would have.
+            const postReviewLog = await sandbox.exec(
+              `git rev-list ${hostBranch}..HEAD`,
+            )
+            const finalCommits = postReviewLog.stdout
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((sha) => ({ sha }))
+
+            return { ...review, commits: finalCommits }
+          } catch (reviewError) {
+            lastReviewError = reviewError
+            console.error(
+              `  ⚠ ${issue.id} (${issue.branch}) reviewer attempt ${attempt}/${REVIEW_ATTEMPTS} failed: ${reviewError}`,
+            )
           }
         }
 
-        return implement
+        console.error(
+          `  ⚠ ${issue.id} (${issue.branch}) reviewer exhausted ${REVIEW_ATTEMPTS} attempts, proceeding with branch commits: ${lastReviewError}`,
+        )
+        return { ...implement, commits: branchCommits }
       } finally {
         await sandbox.close()
       }
