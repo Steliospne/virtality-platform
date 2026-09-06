@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
  * (preview/local only). CTA opens Profile → Billing.
  */
 export function RemainingTimeSidebar() {
-  const { state, isMobile } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
   const {
@@ -48,17 +48,37 @@ export function RemainingTimeSidebar() {
     <SidebarMenu>
       {showSubscribed ? (
         <SidebarMenuItem>
-          <span
+          <SidebarMenuButton
             className={cn(
-              'block py-2 text-center text-base font-medium',
+              'h-auto cursor-default justify-center gap-2 border border-zinc-200 py-2 text-base hover:bg-transparent hover:text-current active:bg-transparent active:text-current dark:border-zinc-800',
               isCanceled
-                ? 'text-amber-700 dark:text-amber-300'
-                : 'text-green-700 dark:text-green-300',
-              collapsed && 'sr-only',
+                ? 'border-amber-200 text-amber-700 dark:border-amber-900 dark:text-amber-300'
+                : 'border-green-200 text-green-700 dark:border-green-900 dark:text-green-300',
             )}
+            tooltip={isCanceled ? 'Canceled' : 'Active'}
           >
-            {isCanceled ? 'Canceled' : 'Subscribed'}
-          </span>
+            {collapsed ? (
+              <CreditCard />
+            ) : (
+              <span className='flex min-w-0 flex-col items-start leading-tight'>
+                <span
+                  className={
+                    isCanceled
+                      ? 'text-xs text-amber-700 dark:text-amber-300'
+                      : 'text-muted-foreground text-xs'
+                  }
+                >
+                  Subscription
+                </span>
+                <span className='flex items-center gap-1.5'>
+                  <CreditCard className='size-4 shrink-0' />
+                  <span className='truncate font-medium'>
+                    {isCanceled ? 'Canceled' : 'Active'}
+                  </span>
+                </span>
+              </span>
+            )}
+          </SidebarMenuButton>
         </SidebarMenuItem>
       ) : null}
       {showCheckoutCta ? (
@@ -68,7 +88,12 @@ export function RemainingTimeSidebar() {
             tooltip={checkoutCtaLabel}
             asChild
           >
-            <Link href={profileBillingHref(userId)}>
+            <Link
+              href={profileBillingHref(userId)}
+              onClick={() => {
+                if (isMobile) setOpenMobile(false)
+              }}
+            >
               <CreditCard />
               {!collapsed && <span>{checkoutCtaLabel}</span>}
             </Link>

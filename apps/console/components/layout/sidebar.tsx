@@ -23,7 +23,7 @@ import {
 import { RemainingTimeSidebar } from './remaining-time-sidebar'
 
 const RootSidebar = () => {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
 
   return (
     <Sidebar collapsible='icon'>
@@ -58,6 +58,7 @@ const RootSidebar = () => {
                     trackAnalyticsEvent('nav_item_clicked', {
                       item: item.title as AnalyticsEventProps<'nav_item_clicked'>['item'],
                     })
+                    if (isMobile) setOpenMobile(false)
                   }}
                 >
                   <Link href={item.url}>
