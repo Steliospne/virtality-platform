@@ -98,7 +98,6 @@ export { useConsolePendingPromotionCode } from './console-promo/use-console-pend
 export { useConsoleBillingCatalog } from './console-billing/use-console-billing-catalog.js'
 
 // Entitlement Extension queries
-export { useExtendableSeats } from './entitlement-extension/use-extendable-seats.js'
 
 // Entitlement Clock queries
 export { useEntitlementStanding } from './entitlement-clock/use-entitlement-standing.js'

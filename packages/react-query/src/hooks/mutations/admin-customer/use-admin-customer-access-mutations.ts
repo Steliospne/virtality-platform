@@ -15,45 +15,34 @@ function useInvalidateAdminCustomerQueries() {
   }
 }
 
-export function useAssignPermanentFree() {
+export function useAssignPermanentAccessGate() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()
 
   return useMutation(
-    orpc.adminCustomer.assignPermanentFree.mutationOptions({
+    orpc.adminCustomer.assignPermanentAccessGate.mutationOptions({
       onSuccess: invalidate,
     }),
   )
 }
 
-export function useIssueTrialGrant() {
+export function useSetAccessGateTrial() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()
 
   return useMutation(
-    orpc.adminCustomer.issueTrialGrant.mutationOptions({
+    orpc.adminCustomer.setAccessGateTrial.mutationOptions({
       onSuccess: invalidate,
     }),
   )
 }
 
-export function useAdjustTrialGrant() {
+export function useRevokeAccessGate() {
   const orpc = useORPC()
   const invalidate = useInvalidateAdminCustomerQueries()
 
   return useMutation(
-    orpc.adminCustomer.adjustTrialGrant.mutationOptions({
-      onSuccess: invalidate,
-    }),
-  )
-}
-
-export function useRevokeTrialGrant() {
-  const orpc = useORPC()
-  const invalidate = useInvalidateAdminCustomerQueries()
-
-  return useMutation(
-    orpc.adminCustomer.revokeTrialGrant.mutationOptions({
+    orpc.adminCustomer.revokeAccessGate.mutationOptions({
       onSuccess: invalidate,
     }),
   )

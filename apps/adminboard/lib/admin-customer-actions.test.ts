@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AdminCustomerProfile } from '@virtality/shared/utils'
 import {
-  canAssignCustomerAccessGrant,
   canAssignFreeAfterCancellation,
   canCancelCyclePlanChange,
   canCancelPaidBilling,
@@ -10,59 +9,6 @@ import {
   formatAuditActionLabel,
   formatBillingSnapshotSummary,
 } from './admin-customer-actions.ts'
-
-describe('canAssignCustomerAccessGrant', () => {
-  it('allows grants for blocked customers without live billing', () => {
-    expect(
-      canAssignCustomerAccessGrant({
-        role: 'user',
-        billingStatus: 'absent',
-        subscriptionHistory: [],
-      } as unknown as AdminCustomerProfile),
-    ).toBe(true)
-  })
-
-  it('blocks grants for admins and customers with a live Default subscription', () => {
-    expect(
-      canAssignCustomerAccessGrant({
-        role: 'admin',
-        billingStatus: 'absent',
-        subscriptionHistory: [],
-      } as unknown as AdminCustomerProfile),
-    ).toBe(false)
-    expect(
-      canAssignCustomerAccessGrant({
-        role: 'user',
-        billingStatus: 'trialing',
-        subscriptionHistory: [
-          {
-            plan: 'default',
-            status: 'trialing',
-            cancelAtPeriodEnd: false,
-            stripeSubscriptionId: 'sub_1',
-          },
-        ],
-      } as unknown as AdminCustomerProfile),
-    ).toBe(false)
-  })
-
-  it('allows grants for customers whose only subscription is a Free access-code redemption', () => {
-    expect(
-      canAssignCustomerAccessGrant({
-        role: 'user',
-        billingStatus: 'active',
-        subscriptionHistory: [
-          {
-            plan: 'free',
-            status: 'active',
-            cancelAtPeriodEnd: false,
-            stripeSubscriptionId: 'sub_free_1',
-          },
-        ],
-      } as unknown as AdminCustomerProfile),
-    ).toBe(true)
-  })
-})
 
 describe('paid billing administration eligibility', () => {
   const paidProfile = {
@@ -231,7 +177,19 @@ describe('formatAuditActionLabel', () => {
     )
   })
 
-  it('labels trial grant audit actions', () => {
+  it('labels Access Gate audit actions', () => {
+    expect(formatAuditActionLabel('assign_permanent_access_gate')).toBe(
+      'Assign permanent Access Gate',
+    )
+    expect(formatAuditActionLabel('set_access_gate_trial')).toBe(
+      'Set Access Gate trial',
+    )
+    expect(formatAuditActionLabel('revoke_access_gate')).toBe(
+      'Revoke Access Gate',
+    )
+  })
+
+  it('labels legacy trial grant audit actions', () => {
     expect(formatAuditActionLabel('issue_trial_grant')).toBe(
       'Issue trial grant',
     )

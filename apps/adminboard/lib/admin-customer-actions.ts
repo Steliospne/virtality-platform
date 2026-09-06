@@ -1,25 +1,14 @@
 import {
   findLivePaidDefaultSubscription,
-  formatAdminCustomerAccessActionLabel,
   formatAdminCustomerBillingActionLabel,
-  formatAdminCustomerTrialGrantActionLabel,
-  isAdminCustomerAccessAction,
+  formatStaffAccessGateActionLabel,
   isAdminCustomerBillingAction,
-  isAdminCustomerTrialGrantAction,
+  isStaffAccessGateAuditAction,
   qualifiesForAssignFreeAfterCancellation,
   type AdminCustomerBillingSnapshotState,
   type AdminCustomerProfile,
 } from '@virtality/shared/utils'
 import { formatCustomerPlanLabel } from './admin-customer-display.ts'
-
-export function canAssignCustomerAccessGrant(
-  profile: AdminCustomerProfile,
-): boolean {
-  if (profile.role === 'admin') return false
-  // A Free-plan subscription (e.g. from an access-code redemption) must not
-  // block granting a real Default trial — only a live Default subscription should.
-  return findLivePaidDefaultSubscription(profile.subscriptionHistory) == null
-}
 
 export function formatBillingSnapshotSummary(
   snapshot: AdminCustomerBillingSnapshotState | null,
@@ -46,16 +35,17 @@ export function formatBillingSnapshotSummary(
 const LEGACY_AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   assign_plan_variant: 'Assign Plan variant',
   grant_timed_trial: 'Grant timed trial',
+  assign_permanent_free: 'Assign permanent Free',
+  issue_trial_grant: 'Issue trial grant',
+  adjust_trial_grant: 'Adjust trial grant',
+  revoke_trial_grant: 'Revoke trial grant',
 }
 
 export function formatAuditActionLabel(action: string): string {
   const legacyLabel = LEGACY_AUDIT_ACTION_LABELS[action]
   if (legacyLabel) return legacyLabel
-  if (isAdminCustomerAccessAction(action)) {
-    return formatAdminCustomerAccessActionLabel(action)
-  }
-  if (isAdminCustomerTrialGrantAction(action)) {
-    return formatAdminCustomerTrialGrantActionLabel(action)
+  if (isStaffAccessGateAuditAction(action)) {
+    return formatStaffAccessGateActionLabel(action)
   }
   if (isAdminCustomerBillingAction(action)) {
     return formatAdminCustomerBillingActionLabel(action)
@@ -162,12 +152,4 @@ export function formatMutationErrorMessage(
   fallback: string,
 ): string {
   return error instanceof Error ? error.message : fallback
-}
-
-export function formatAssignPermanentFreeSuccessMessage(input: {
-  testerDemoted: boolean
-}): string {
-  return input.testerDemoted
-    ? 'Assigned permanent Free and changed the account role to user.'
-    : 'Assigned permanent Free. Subscription state settles after Stripe webhook sync.'
 }

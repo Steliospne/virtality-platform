@@ -2,7 +2,7 @@ import { ORPCError } from '@orpc/server'
 import {
   assignPlanVariantAction,
   createAdminCustomerBillingRuntime,
-  createTrialGrantRuntime,
+  createStaffAccessGateRuntime,
   getRequiredStripeClient,
   listAssignablePlanVariantsAction,
   stripeClient,
@@ -10,39 +10,32 @@ import {
 import { z } from 'zod'
 import {
   assignFreeAfterCancellationInputSchema,
-  assignPermanentFreeInputSchema,
+  assignPermanentAccessGateInputSchema,
   assignPlanVariantInputSchema,
-  adjustTrialGrantInputSchema,
   cancelCyclePlanChangeInputSchema,
   cancelPaidSubscriptionInputSchema,
   changePaidPlanInputSchema,
-  issueTrialGrantInputSchema,
   listAssignablePlanVariantsInputSchema,
   previewChangePaidPlanInputSchema,
   reactivatePaidSubscriptionInputSchema,
-  revokeTrialGrantInputSchema,
+  revokeAccessGateInputSchema,
   sendPaidCheckoutLinkInputSchema,
+  setAccessGateTrialInputSchema,
 } from '@virtality/shared/types'
 import {
-  AdminCustomerAccessAlreadyEntitledError,
-  AdminCustomerAccessNotFoundError,
-  AdminCustomerAccessValidationError,
   AdminCustomerBillingNotFoundError,
   AdminCustomerBillingStateError,
   AdminCustomerBillingValidationError,
   AssignPlanVariantNotFoundError,
   AssignPlanVariantStateError,
   AssignPlanVariantValidationError,
-  TrialGrantAlreadyOpenError,
-  TrialGrantCustomerAlreadyEntitledError,
-  TrialGrantCustomerNotFoundError,
-  TrialGrantNotActiveError,
-  TrialGrantOpenNotFoundError,
-  TrialGrantValidationError,
+  StaffAccessGateConvertedError,
+  StaffAccessGateCustomerNotFoundError,
+  StaffAccessGateOpenNotFoundError,
+  StaffAccessGateValidationError,
 } from '@virtality/shared/utils'
 import { adminAuthed } from '../middleware/admin.ts'
 import type { InitialContext } from '../context.ts'
-import { adminEntitlementClockRuntime } from './admin-entitlement-clock-runtime.ts'
 import {
   getAdminCustomerProfile,
   listAdminCustomers,
@@ -61,29 +54,24 @@ function adminCustomerBillingRuntime(context: InitialContext) {
   })
 }
 
-function trialGrantRuntime(context: InitialContext) {
-  return createTrialGrantRuntime({
+function staffAccessGateRuntime(context: InitialContext) {
+  return createStaffAccessGateRuntime({
     prisma: context.prisma,
   })
 }
 
 function throwAdminCustomerOrpcError(error: unknown): never {
   if (
-    error instanceof AdminCustomerAccessValidationError ||
-    error instanceof AdminCustomerAccessNotFoundError ||
-    error instanceof AdminCustomerAccessAlreadyEntitledError ||
     error instanceof AdminCustomerBillingValidationError ||
     error instanceof AdminCustomerBillingNotFoundError ||
     error instanceof AdminCustomerBillingStateError ||
     error instanceof AssignPlanVariantValidationError ||
     error instanceof AssignPlanVariantNotFoundError ||
     error instanceof AssignPlanVariantStateError ||
-    error instanceof TrialGrantValidationError ||
-    error instanceof TrialGrantCustomerNotFoundError ||
-    error instanceof TrialGrantAlreadyOpenError ||
-    error instanceof TrialGrantCustomerAlreadyEntitledError ||
-    error instanceof TrialGrantNotActiveError ||
-    error instanceof TrialGrantOpenNotFoundError
+    error instanceof StaffAccessGateValidationError ||
+    error instanceof StaffAccessGateCustomerNotFoundError ||
+    error instanceof StaffAccessGateConvertedError ||
+    error instanceof StaffAccessGateOpenNotFoundError
   ) {
     throw new ORPCError('BAD_REQUEST', { message: error.message })
   }
@@ -141,13 +129,16 @@ const assignPlanVariant = adminAuthed
     }
   })
 
-const assignPermanentFree = adminAuthed
-  .route({ path: '/admin-customer/assign-permanent-free', method: 'POST' })
-  .input(assignPermanentFreeInputSchema)
+const assignPermanentAccessGate = adminAuthed
+  .route({
+    path: '/admin-customer/assign-permanent-access-gate',
+    method: 'POST',
+  })
+  .input(assignPermanentAccessGateInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      const clock = adminEntitlementClockRuntime(context)
-      return await clock.assignPermanentFree({
+      const runtime = staffAccessGateRuntime(context)
+      return await runtime.assignPermanentAccessGate({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -157,31 +148,13 @@ const assignPermanentFree = adminAuthed
     }
   })
 
-const issueTrialGrant = adminAuthed
-  .route({ path: '/admin-customer/issue-trial-grant', method: 'POST' })
-  .input(issueTrialGrantInputSchema)
+const setAccessGateTrial = adminAuthed
+  .route({ path: '/admin-customer/set-access-gate-trial', method: 'POST' })
+  .input(setAccessGateTrialInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      const runtime = trialGrantRuntime(context)
-      return await runtime.issueGrant({
-        userId: input.userId,
-        actorUserId: context.user.id,
-        reason: input.reason,
-        amount: input.amount,
-        unit: input.unit,
-      })
-    } catch (error) {
-      throwAdminCustomerOrpcError(error)
-    }
-  })
-
-const adjustTrialGrant = adminAuthed
-  .route({ path: '/admin-customer/adjust-trial-grant', method: 'POST' })
-  .input(adjustTrialGrantInputSchema)
-  .handler(async ({ context, input }) => {
-    try {
-      const runtime = trialGrantRuntime(context)
-      return await runtime.adjustTrial({
+      const runtime = staffAccessGateRuntime(context)
+      return await runtime.setAccessGateTrial({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -194,13 +167,13 @@ const adjustTrialGrant = adminAuthed
     }
   })
 
-const revokeTrialGrant = adminAuthed
-  .route({ path: '/admin-customer/revoke-trial-grant', method: 'POST' })
-  .input(revokeTrialGrantInputSchema)
+const revokeAccessGate = adminAuthed
+  .route({ path: '/admin-customer/revoke-access-gate', method: 'POST' })
+  .input(revokeAccessGateInputSchema)
   .handler(async ({ context, input }) => {
     try {
-      const runtime = trialGrantRuntime(context)
-      return await runtime.revokeTrial({
+      const runtime = staffAccessGateRuntime(context)
+      return await runtime.revokeAccessGate({
         userId: input.userId,
         actorUserId: context.user.id,
         reason: input.reason,
@@ -338,10 +311,9 @@ export const adminCustomer = {
   getProfile,
   listAssignablePlanVariants,
   assignPlanVariant,
-  assignPermanentFree,
-  issueTrialGrant,
-  adjustTrialGrant,
-  revokeTrialGrant,
+  assignPermanentAccessGate,
+  setAccessGateTrial,
+  revokeAccessGate,
   previewChangePaidPlan,
   changePaidPlan,
   cancelPaidSubscription,

@@ -11,29 +11,29 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
-import { useAssignPermanentFree } from '@virtality/react-query'
+import { useAssignPermanentAccessGate } from '@virtality/react-query'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { formatAssignPermanentAccessGateSuccessMessage } from '@/lib/access-gate-actions'
 import {
-  formatAssignPermanentFreeSuccessMessage,
   formatMutationErrorMessage,
   TESTER_RECIPIENT_DIALOG_NOTE,
 } from '@/lib/admin-customer-actions'
 
-type CustomerProfileAssignFreeDialogProps = {
+type CustomerProfileAssignPermanentAccessGateDialogProps = {
   userId: string
   open: boolean
   onOpenChange: (open: boolean) => void
   testerRecipient: boolean
 }
 
-export function CustomerProfileAssignFreeDialog({
+export function CustomerProfileAssignPermanentAccessGateDialog({
   userId,
   open,
   onOpenChange,
   testerRecipient,
-}: CustomerProfileAssignFreeDialogProps) {
-  const { mutate, isPending } = useAssignPermanentFree()
+}: CustomerProfileAssignPermanentAccessGateDialogProps) {
+  const { mutate, isPending } = useAssignPermanentAccessGate()
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
 
@@ -47,7 +47,7 @@ export function CustomerProfileAssignFreeDialog({
       { userId, reason: reason.trim() },
       {
         onSuccess: (result) => {
-          toast.success(formatAssignPermanentFreeSuccessMessage(result))
+          toast.success(formatAssignPermanentAccessGateSuccessMessage(result))
           setReason('')
           setConfirmed(false)
           onOpenChange(false)
@@ -56,7 +56,7 @@ export function CustomerProfileAssignFreeDialog({
           toast.error(
             formatMutationErrorMessage(
               error,
-              'Failed to assign permanent Free',
+              'Failed to assign permanent Access Gate',
             ),
           )
         },
@@ -69,19 +69,19 @@ export function CustomerProfileAssignFreeDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Assign permanent Free</DialogTitle>
+            <DialogTitle>Assign permanent Access Gate</DialogTitle>
             <DialogDescription>
-              Creates a Stripe customer when needed and a zero-value Free
-              subscription without a trial. VR program launch stays blocked.
+              Sets or creates a permanent Access Gate row with no trial clock.
+              This is bookkeeping only and does not unlock VR program launch.
               {testerRecipient ? TESTER_RECIPIENT_DIALOG_NOTE : null}
             </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-4'>
             <div>
-              <Label htmlFor='assign-free-reason'>Reason</Label>
+              <Label htmlFor='assign-access-gate-reason'>Reason</Label>
               <Input
-                id='assign-free-reason'
+                id='assign-access-gate-reason'
                 className='mt-1'
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -96,8 +96,8 @@ export function CustomerProfileAssignFreeDialog({
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
               <span>
-                I confirm this customer should receive permanent Free access
-                without a trial period.
+                I confirm this customer should receive a permanent Access Gate
+                and understand this does not grant VR access.
               </span>
             </label>
           </div>
@@ -111,7 +111,7 @@ export function CustomerProfileAssignFreeDialog({
               Cancel
             </Button>
             <Button type='submit' disabled={!canSubmit}>
-              {isPending ? 'Assigning...' : 'Assign Free'}
+              {isPending ? 'Assigning...' : 'Assign permanent gate'}
             </Button>
           </DialogFooter>
         </form>

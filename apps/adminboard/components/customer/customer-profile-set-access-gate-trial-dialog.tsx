@@ -18,36 +18,54 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@virtality/ui/components/input'
 import { Label } from '@virtality/ui/components/label'
-import { useIssueTrialGrant } from '@virtality/react-query'
+import { useSetAccessGateTrial } from '@virtality/react-query'
 import {
+  isAccessGateOpenStatus,
+  isEntitlementExtensionDirection,
   isEntitlementExtensionDurationUnit,
+  type AdminCustomerProfile,
+  type EntitlementExtensionDirection,
   type EntitlementExtensionDurationUnit,
 } from '@virtality/shared/utils'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { formatSetAccessGateTrialSuccessMessage } from '@/lib/access-gate-actions'
 import { formatMutationErrorMessage } from '@/lib/admin-customer-actions'
 import {
+  EXTENSION_DIRECTION_LABELS,
+  EXTENSION_DIRECTIONS,
   EXTENSION_DURATION_UNIT_LABELS,
   EXTENSION_DURATION_UNITS,
 } from '@/lib/entitlement-extension'
-import { formatIssueTrialGrantSuccessMessage } from '@/lib/trial-grant-actions'
 
-type CustomerProfileIssueTrialGrantDialogProps = {
+type CustomerProfileSetAccessGateTrialDialogProps = {
   userId: string
+  profile: AdminCustomerProfile
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function CustomerProfileIssueTrialGrantDialog({
+export function CustomerProfileSetAccessGateTrialDialog({
   userId,
+  profile,
   open,
   onOpenChange,
-}: CustomerProfileIssueTrialGrantDialogProps) {
-  const { mutate, isPending } = useIssueTrialGrant()
+}: CustomerProfileSetAccessGateTrialDialogProps) {
+  const { mutate, isPending } = useSetAccessGateTrial()
   const [reason, setReason] = useState('')
   const [amount, setAmount] = useState('14')
   const [unit, setUnit] = useState<EntitlementExtensionDurationUnit>('days')
+  const [direction, setDirection] =
+    useState<EntitlementExtensionDirection>('extend')
   const [confirmed, setConfirmed] = useState(false)
+
+  const openGate =
+    profile.trialGrant && isAccessGateOpenStatus(profile.trialGrant.status)
+      ? profile.trialGrant
+      : null
+  const canReduce = openGate?.trialEnd != null
+  const title =
+    openGate?.trialEnd != null ? 'Extend trial access' : 'Issue trial access'
 
   const parsedAmount = Number(amount)
   const validAmount = Number.isInteger(parsedAmount) && parsedAmount > 0
@@ -64,19 +82,21 @@ export function CustomerProfileIssueTrialGrantDialog({
         reason: reason.trim(),
         amount: parsedAmount,
         unit,
+        direction: canReduce ? direction : 'extend',
       },
       {
         onSuccess: (result) => {
-          toast.success(formatIssueTrialGrantSuccessMessage(result))
+          toast.success(formatSetAccessGateTrialSuccessMessage(result))
           setReason('')
           setAmount('14')
           setUnit('days')
+          setDirection('extend')
           setConfirmed(false)
           onOpenChange(false)
         },
         onError: (error) => {
           toast.error(
-            formatMutationErrorMessage(error, 'Failed to issue trial grant'),
+            formatMutationErrorMessage(error, 'Failed to update trial access'),
           )
         },
       },
@@ -88,20 +108,43 @@ export function CustomerProfileIssueTrialGrantDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Issue trial grant</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Creates an active TrialGrant for this customer. The trial clock
-              starts immediately for the selected duration, without creating a
-              Stripe subscription.
+              Sets or adjusts the Access Gate trial clock directly in the
+              database. No Stripe call is made.
             </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-4'>
+            {canReduce ? (
+              <div>
+                <Label>Direction</Label>
+                <Select
+                  value={direction}
+                  onValueChange={(value) => {
+                    if (isEntitlementExtensionDirection(value)) {
+                      setDirection(value)
+                    }
+                  }}
+                >
+                  <SelectTrigger className='mt-1'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXTENSION_DIRECTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {EXTENSION_DIRECTION_LABELS[option]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <div className='grid gap-4 sm:grid-cols-2'>
               <div>
-                <Label htmlFor='issue-trial-grant-amount'>Duration</Label>
+                <Label htmlFor='set-access-gate-trial-amount'>Duration</Label>
                 <Input
-                  id='issue-trial-grant-amount'
+                  id='set-access-gate-trial-amount'
                   className='mt-1'
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
@@ -132,9 +175,9 @@ export function CustomerProfileIssueTrialGrantDialog({
               </div>
             </div>
             <div>
-              <Label htmlFor='issue-trial-grant-reason'>Reason</Label>
+              <Label htmlFor='set-access-gate-trial-reason'>Reason</Label>
               <Input
-                id='issue-trial-grant-reason'
+                id='set-access-gate-trial-reason'
                 className='mt-1'
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -149,8 +192,8 @@ export function CustomerProfileIssueTrialGrantDialog({
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
               <span>
-                I confirm this customer should receive an active trial grant for
-                the selected duration now.
+                I confirm this customer should receive the selected trial access
+                change now.
               </span>
             </label>
           </div>
@@ -164,7 +207,7 @@ export function CustomerProfileIssueTrialGrantDialog({
               Cancel
             </Button>
             <Button type='submit' disabled={!canSubmit}>
-              {isPending ? 'Issuing...' : 'Issue grant'}
+              {isPending ? 'Saving...' : title}
             </Button>
           </DialogFooter>
         </form>

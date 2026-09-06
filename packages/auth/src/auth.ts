@@ -63,26 +63,14 @@ export {
 export type { AuthContext, AuthSession, AuthUser } from './lib/auth-context.ts'
 export { asAuthSession } from './lib/auth-context.ts'
 export {
-  createPrismaAdminCustomerAccessStore,
-  createStripeAdminCustomerAccessGateway,
-} from './lib/admin-customer-access.ts'
-export {
   createAdminCustomerBillingRuntime,
   createPrismaAdminCustomerBillingStore,
   createStripeAdminCustomerBillingGateway,
 } from './lib/admin-customer-billing.ts'
 export type { AdminCustomerBillingRuntime } from './lib/admin-customer-billing.ts'
-export { createAdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
-export type { AdminEntitlementClockRuntime } from './lib/admin-entitlement-clock.ts'
-export {
-  convertTrialGrantAfterPaidCheckout,
-  createTrialGrantRuntime,
-} from './lib/trial-grant-access.ts'
-export type { TrialGrantRuntime } from './lib/trial-grant-access.ts'
-export {
-  createPrismaEntitlementExtensionStore,
-  createStripeEntitlementExtensionGateway,
-} from './lib/entitlement-extension-adapter.ts'
+export { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
+export { createStaffAccessGateRuntime } from './lib/staff-access-gate-access.ts'
+export type { StaffAccessGateRuntime } from './lib/staff-access-gate-access.ts'
 export {
   createPrismaRenewPromptDeliveryStore,
   createPrismaRenewTriggerStore,
