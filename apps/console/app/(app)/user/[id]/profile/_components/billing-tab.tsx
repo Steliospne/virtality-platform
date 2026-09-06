@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import {
   BILLING_SOFT_UNAVAILABLE_COPY,
   profileBillingCardActiveAction,
-  profileBillingIsExpiredFree,
   profileBillingStatusDetail,
   profileBillingStatusHeadline,
 } from '@/lib/profile-billing'
@@ -97,7 +96,8 @@ export function BillingTab() {
   }
 
   const showPortalCta = cta != null
-  const isExpiredFree = profileBillingIsExpiredFree(standing)
+  const isLapsedAccessGateTrial =
+    standing.status === 'trialing' && !standing.entitled
   const monthlyCheckout = showPlanCardCheckout
     ? profileBillingCardActiveAction(planCardActionFor('month'))
     : null
@@ -112,7 +112,7 @@ export function BillingTab() {
           <p
             className={cn(
               'text-xs font-medium tracking-wide uppercase',
-              isExpiredFree
+              isLapsedAccessGateTrial
                 ? 'text-red-600 dark:text-red-500'
                 : 'text-zinc-500',
             )}
@@ -122,7 +122,7 @@ export function BillingTab() {
           <h2
             className={cn(
               'text-2xl font-semibold tracking-tight',
-              isExpiredFree && 'text-red-600 dark:text-red-500',
+              isLapsedAccessGateTrial && 'text-red-600 dark:text-red-500',
             )}
           >
             {profileBillingStatusHeadline(standing, productName)}

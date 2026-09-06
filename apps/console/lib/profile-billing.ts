@@ -14,7 +14,6 @@ import {
   canRemovePromoDiscount,
   formatCheckoutCtaLabel,
   formatEntitlementClockEndLabel,
-  isFreeSubscriptionPlan,
   isPaidDefaultPortalEligible,
   isStaffRedeemBlocked,
   promoCodeLabel,
@@ -353,27 +352,23 @@ function profileBillingIntervalCancelConfirmCopy(
   }
 }
 
-/** Free plan seat with no live clock: shown as expired everywhere in Billing. */
-export function profileBillingIsExpiredFree(
-  standing: Pick<BillingStandingView, 'entitled' | 'plan' | 'status'>,
-): boolean {
-  if (!isFreeSubscriptionPlan(standing.plan)) return false
-  return !(standing.status === 'trialing' && standing.entitled)
-}
-
 export function profileBillingStatusHeadline(
   standing: BillingStandingView,
   productName: string = DEFAULT_PLAN_PRODUCT_NAME_FALLBACK,
 ): string {
-  if (isFreeSubscriptionPlan(standing.plan)) {
-    if (standing.status === 'trialing' && standing.entitled) {
-      return 'Trial in progress'
-    }
-    return 'Expired'
+  if (standing.status === 'trialing') {
+    return standing.entitled ? 'Trial in progress' : 'Expired'
+  }
+
+  if (
+    standing.status === 'granted' ||
+    standing.status === 'revoked' ||
+    standing.status == null
+  ) {
+    return 'No plan'
   }
 
   if (standing.entitled) {
-    if (standing.status === 'trialing') return 'Trial in progress'
     if (standing.billingInterval === 'year') return `${productName} · Yearly`
     if (standing.billingInterval === 'month') return `${productName} · Monthly`
     return productName
@@ -382,9 +377,6 @@ export function profileBillingStatusHeadline(
   switch (standing.status) {
     case 'canceled':
       return 'Subscription canceled'
-    case null:
-    case undefined:
-      return 'No plan yet'
     default:
       return 'Subscription ended'
   }
@@ -408,10 +400,6 @@ export function profileBillingStatusDetail(
   }
 
   if (standing.entitled) return `Your ${productName} access is active.`
-
-  if (profileBillingIsExpiredFree(standing)) {
-    return `Your Free plan has expired. Choose Monthly or Yearly ${productName} to continue.`
-  }
 
   return `Choose Monthly or Yearly ${productName}, then continue to Checkout.`
 }

@@ -9,9 +9,9 @@ import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standin
 import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 
 /**
- * Navigation bar banner for Free plan and expired seats: prompts Subscribe or
- * Renew before VR programs are blocked. Hidden for any live entitlement (paid
- * Default, Stripe trial, or TrialGrant), so it never overlaps RenewPromptBanner's
+ * Navigation bar banner for non-entitled seats: prompts Subscribe or Renew
+ * before VR programs are blocked. Hidden for any live entitlement (paid
+ * Default or live Access Gate trial), so it never overlaps RenewPromptBanner's
  * upcoming-renewal reminder. Gated by `useBillingFeatureEnabled` (preview/local only).
  */
 export function SubscribeRenewBanner() {
@@ -29,7 +29,7 @@ export function SubscribeRenewBanner() {
   const message =
     checkoutCta === 'renew'
       ? 'Your subscription has expired. Renew to keep using VR programs.'
-      : 'You are on the Free plan. Subscribe to unlock VR programs.'
+      : 'Subscribe to unlock VR programs.'
 
   return (
     <div

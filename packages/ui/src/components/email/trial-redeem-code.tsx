@@ -33,16 +33,16 @@ export const TRIAL_REDEEM_CODE_EMAIL_SUBJECT_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: 'Your Virtality Access Code: permanent Free access',
-  timed_trial: 'Your Virtality Access Code: Free trial access',
+  permanent_free: 'Your Virtality Access Code',
+  timed_trial: 'Your Virtality Access Code',
 }
 
 export const TRIAL_REDEEM_CODE_EMAIL_PREVIEW_BY_MODE: Record<
   TrialRedeemCodeEmailMode,
   string
 > = {
-  permanent_free: 'Redeem your Access Code for permanent Free access.',
-  timed_trial: 'Redeem your Access Code to start a Free trial.',
+  permanent_free: 'Redeem your Access Code to explore Virtality.',
+  timed_trial: 'Redeem your Access Code to explore Virtality.',
 }
 
 export interface TrialRedeemCodeEmailProps {
@@ -60,7 +60,7 @@ function existingAccountEmailCopy(
   trialDays: number,
 ) {
   const shared = {
-    heading: 'Redeem your Access Code on Billing',
+    heading: 'Welcome to Virtality',
     instructions:
       'Enter this code in the Access Code field on the Billing tab. The code is one-time use and expires one week after it was issued if unused.',
     cta: 'Go to Billing',
@@ -71,19 +71,15 @@ function existingAccountEmailCopy(
       return {
         ...shared,
         intro:
-          'You already have a Virtality account. Open Profile, then Billing, and apply the code below to unlock permanent Free access.',
-        entitlement: 'Access type: permanent Free (no trial period)',
+          'Open Profile, then Billing, and apply the code below to unlock access to explore the platform.',
         footer:
-          'This code grants permanent Free access. It does not include a paid Default subscription.',
+          "This code doesn't include VR programs or a paid Default subscription.",
       }
     case 'timed_trial':
       return {
         ...shared,
-        intro:
-          'You already have a Virtality account. Open Profile, then Billing, and apply the code below to start your no-card Free trial.',
-        entitlement: `Trial length: ${trialDays} days`,
-        footer:
-          'When the trial ends, your seat stays on the Free plan unless you subscribe to Default.',
+        intro: `Open Profile, then Billing, and apply the code below to unlock access to explore the platform for ${trialDays} days.`,
+        footer: 'When your trial ends, you can subscribe to keep going.',
       }
   }
 }
@@ -98,25 +94,21 @@ function newAccountEmailCopy(
   switch (mode) {
     case 'permanent_free':
       return {
-        heading: 'Your Access Code unlocks permanent Free access',
+        heading: 'Welcome to Virtality',
         intro:
-          'Use the code below when you create your Virtality account. After sign-up you will have permanent Free access with no trial countdown.',
-        entitlement: 'Access type: permanent Free (no trial period)',
+          'Use the code below when you create your account. Redeeming it gives you access to explore the platform.',
         instructions,
         cta: 'Create account and redeem',
         footer:
-          'This code grants permanent Free access. It does not include a paid Default subscription.',
+          "This code doesn't include VR programs or a paid Default subscription.",
       }
     case 'timed_trial':
       return {
-        heading: 'Your Access Code unlocks a Free trial',
-        intro:
-          'Use the code below when you create your Virtality account. After sign-up you will start a no-card Free trial on the Free plan.',
-        entitlement: `Trial length: ${trialDays} days`,
+        heading: 'Welcome to Virtality',
+        intro: `Use the code below when you create your account. Redeeming it gives you access to explore the platform for ${trialDays} days.`,
         instructions,
         cta: 'Create account and start trial',
-        footer:
-          'When the trial ends, your seat stays on the Free plan unless you subscribe to Default.',
+        footer: 'When your trial ends, you can subscribe to keep going.',
       }
   }
 }
@@ -171,8 +163,6 @@ export const TrialRedeemCodeEmail = ({
             Your Access Code:{' '}
             <strong style={{ letterSpacing: '0.04em' }}>{code}</strong>
           </Text>
-
-          <Text style={paragraph}>{copy.entitlement}</Text>
 
           <Text style={text}>{copy.instructions}</Text>
 
