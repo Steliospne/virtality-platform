@@ -1,51 +1,51 @@
 // Authentication and User Management Domain
 
 model User {
-  id                  String        @id(map: "user_pkey")
-  name                String
-  email               String        @unique(map: "user_email_key")
-  emailVerified       Boolean
-  image               String?       @unique
-  createdAt           DateTime      @db.Timestamp(6)
-  updatedAt           DateTime      @db.Timestamp(6)
-  deletedAt           DateTime?     @db.Timestamp(6)
-  phoneNumber         String?
-  phoneNumberVerified Boolean?
-  stripeCustomerId    String?
+  id                     String            @id(map: "user_pkey")
+  name                   String
+  email                  String            @unique(map: "user_email_key")
+  emailVerified          Boolean
+  image                  String?           @unique
+  createdAt              DateTime          @db.Timestamp(6)
+  updatedAt              DateTime          @db.Timestamp(6)
+  deletedAt              DateTime?         @db.Timestamp(6)
+  phoneNumber            String?
+  phoneNumberVerified    Boolean?
+  stripeCustomerId       String?
   /**
    * Assigned Variant name (kebab-case), e.g. `early-bird`. Sparse: null reads as `basic`.
    */
   assignedDefaultVariant String?
-  banExpires          DateTime?
-  banReason           String?
-  banned              Boolean?
-  role                String?       @default("user")
-  testerCode          TesterCode?
-  trialRedeemCodes    TrialRedeemCode[]
+  banExpires             DateTime?
+  banReason              String?
+  banned                 Boolean?
+  role                   String?           @default("user")
+  testerCode             TesterCode?
+  trialRedeemCodes       TrialRedeemCode[]
 
-  accounts         Account[]
-  devices          Device[]
-  invitations      Invitation[]
-  members          Member[]
-  patientProgram   PatientProgram[]
-  reusablePrograms ReusableProgram[]
-  sessions         Session[]
-  userPreset       Preset[]
-  favoriteExercise FavoriteExercise[]
-  adminEmailDraftsCreated      AdminEmailDraft[]      @relation("AdminEmailDraftCreator")
-  adminEmailDraftsArchived     AdminEmailDraft[]      @relation("AdminEmailDraftArchivedBy")
-  adminEmailDraftsRestored     AdminEmailDraft[]      @relation("AdminEmailDraftRestoredBy")
-  adminEmailSentRecordsCreated AdminEmailSentRecord[] @relation("AdminEmailSentRecordCreator")
-  adminEmailSentRecordsSent    AdminEmailSentRecord[] @relation("AdminEmailSentRecordSender")
+  accounts                     Account[]
+  devices                      Device[]
+  invitations                  Invitation[]
+  members                      Member[]
+  patientProgram               PatientProgram[]
+  reusablePrograms             ReusableProgram[]
+  sessions                     Session[]
+  userPreset                   Preset[]
+  favoriteExercise             FavoriteExercise[]
+  adminEmailDraftsCreated      AdminEmailDraft[]        @relation("AdminEmailDraftCreator")
+  adminEmailDraftsArchived     AdminEmailDraft[]        @relation("AdminEmailDraftArchivedBy")
+  adminEmailDraftsRestored     AdminEmailDraft[]        @relation("AdminEmailDraftRestoredBy")
+  adminEmailSentRecordsCreated AdminEmailSentRecord[]   @relation("AdminEmailSentRecordCreator")
+  adminEmailSentRecordsSent    AdminEmailSentRecord[]   @relation("AdminEmailSentRecordSender")
   pendingPasswordChanges       PendingPasswordChange[]
   pendingAccountDeletions      PendingAccountDeletion[]
   devicePairingAttempts        DevicePairingAttempt[]
   renewPromptDeliveries        RenewPromptDelivery[]
-  promotionCodeDeliveries       PromotionCodeDelivery[]
+  promotionCodeDeliveries      PromotionCodeDelivery[]
   pendingPromotionCodes        PendingPromotionCode[]
-  adminCustomerAuditsAsTarget  AdminCustomerAudit[] @relation("AdminCustomerAuditTarget")
-  adminCustomerAuditsAsActor   AdminCustomerAudit[] @relation("AdminCustomerAuditActor")
-  trialGrants                  TrialGrant[]
+  adminCustomerAuditsAsTarget  AdminCustomerAudit[]     @relation("AdminCustomerAuditTarget")
+  adminCustomerAuditsAsActor   AdminCustomerAudit[]     @relation("AdminCustomerAuditActor")
+  accessGrants                 AccessGrant[]
 }
 
 model Account {

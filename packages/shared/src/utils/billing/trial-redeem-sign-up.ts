@@ -147,7 +147,7 @@ export type TrialRedeemAccessGateIssuer = {
 }
 
 /** @deprecated Use `TrialRedeemAccessGateIssuer`. */
-export type TrialRedeemTrialGrantIssuer = TrialRedeemAccessGateIssuer
+export type TrialRedeemAccessGrantIssuer = TrialRedeemAccessGateIssuer
 
 export async function issueAccessGateForCodeMode(
   accessGate: TrialRedeemAccessGateIssuer,

@@ -71,7 +71,7 @@ enum PendingPromotionCodeStatus {
   expired
 }
 
-enum TrialGrantStatus {
+enum AccessGrantStatus {
   granted
   trialing
   converted

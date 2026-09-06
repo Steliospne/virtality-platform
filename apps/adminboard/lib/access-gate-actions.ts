@@ -9,11 +9,11 @@ import { formatExtensionClockEnd } from './entitlement-extension.ts'
 export function isAccessGateStaffActionsBlocked(
   profile: AdminCustomerProfile,
 ): boolean {
-  return profile.trialGrant?.status === 'converted'
+  return profile.accessGrant?.status === 'converted'
 }
 
 function openAccessGate(profile: AdminCustomerProfile) {
-  const grant = profile.trialGrant
+  const grant = profile.accessGrant
   if (!grant || !isAccessGateOpenStatus(grant.status)) return null
   return grant
 }

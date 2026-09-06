@@ -59,13 +59,13 @@ describe('buildAdminCustomerProfile', () => {
           trialEnd: new Date('2026-08-20T12:00:00.000Z'),
         }),
       ],
-      trialGrantContext: {
-        openTrialGrantClock: {
+      accessGrantContext: {
+        openAccessGrantClock: {
           status: 'trialing',
           trialStart: NOW,
           trialEnd: new Date('2026-08-20T12:00:00.000Z'),
         },
-        trialGrant: {
+        accessGrant: {
           id: 'grant_1',
           status: 'trialing',
           trialStart: NOW,
@@ -127,9 +127,9 @@ describe('buildAdminCustomerProfile', () => {
           stripeScheduleId: 'sub_sched_1',
         }),
       ],
-      trialGrantContext: {
-        openTrialGrantClock: null,
-        trialGrant: null,
+      accessGrantContext: {
+        openAccessGrantClock: null,
+        accessGrant: null,
       },
       auditHistory: [],
       stripeMode: 'test',
@@ -152,13 +152,13 @@ describe('buildAdminCustomerProfile', () => {
         createdAt: NOW,
       },
       subscriptions: [],
-      trialGrantContext: {
-        openTrialGrantClock: {
+      accessGrantContext: {
+        openAccessGrantClock: {
           status: 'trialing',
           trialStart: NOW,
           trialEnd: new Date('2026-08-20T12:00:00.000Z'),
         },
-        trialGrant: {
+        accessGrant: {
           id: 'grant_1',
           status: 'trialing',
           trialStart: NOW,
@@ -173,7 +173,7 @@ describe('buildAdminCustomerProfile', () => {
       now: NOW,
     })
 
-    expect(profile.trialGrant).toMatchObject({
+    expect(profile.accessGrant).toMatchObject({
       status: 'trialing',
       entitled: true,
     })
@@ -195,9 +195,9 @@ describe('buildAdminCustomerProfile', () => {
         createdAt: NOW,
       },
       subscriptions: [],
-      trialGrantContext: {
-        openTrialGrantClock: null,
-        trialGrant: null,
+      accessGrantContext: {
+        openAccessGrantClock: null,
+        accessGrant: null,
       },
       auditHistory: [],
       stripeMode: 'test',

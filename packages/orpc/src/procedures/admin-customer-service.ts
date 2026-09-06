@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@virtality/db'
 import {
   buildAdminCustomerProfile,
-  mapAdminCustomerTrialGrantSummary,
+  mapAdminCustomerAccessGrantSummary,
   resolveStripeDashboardMode,
   ACCESS_GATE_OPEN_STATUSES,
   mapAdminCustomerAuditHistoryItem,
@@ -15,9 +15,9 @@ import {
   type AdminCustomerListItem,
   type AdminCustomerProfile,
   type AdminCustomerSubscriptionRow,
-  type AdminCustomerTrialGrantSummary,
+  type AdminCustomerAccessGrantSummary,
   type StripeDashboardMode,
-  type TrialGrantClock,
+  type AccessGrantClock,
 } from '@virtality/shared/utils'
 
 type CustomerUserRow = {
@@ -63,7 +63,7 @@ async function listAdminCustomerAuditHistory(
 function buildCustomerListItem(input: {
   user: CustomerUserRow
   subscriptions: readonly AdminCustomerSubscriptionRow[]
-  openAccessGate: TrialGrantClock | null
+  openAccessGate: AccessGrantClock | null
   now: Date
 }): AdminCustomerListItem {
   const subscriptionSummaries = input.subscriptions.map(
@@ -122,7 +122,7 @@ export async function listAdminCustomers(
     subscriptionsByUser.set(subscription.referenceId, existing)
   }
 
-  const openGrants = await prisma.trialGrant.findMany({
+  const openGrants = await prisma.accessGrant.findMany({
     where: {
       userId: { in: userIds },
       status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
@@ -135,7 +135,7 @@ export async function listAdminCustomers(
       trialEnd: true,
     },
   })
-  const openAccessGateByUser = new Map<string, TrialGrantClock>()
+  const openAccessGateByUser = new Map<string, AccessGrantClock>()
   for (const grant of openGrants) {
     if (!openAccessGateByUser.has(grant.userId)) {
       openAccessGateByUser.set(grant.userId, toAccessGateClock(grant))
@@ -152,7 +152,7 @@ export async function listAdminCustomers(
   )
 }
 
-const ADMIN_CUSTOMER_TRIAL_GRANT_SELECT = {
+const ADMIN_CUSTOMER_ACCESS_GRANT_SELECT = {
   id: true,
   userId: true,
   status: true,
@@ -161,38 +161,38 @@ const ADMIN_CUSTOMER_TRIAL_GRANT_SELECT = {
   createdAt: true,
 } as const
 
-async function loadAdminCustomerTrialGrantContext(
+async function loadAdminCustomerAccessGrantContext(
   prisma: PrismaClient,
   userId: string,
   now: Date,
 ): Promise<{
-  openTrialGrantClock: TrialGrantClock | null
-  trialGrant: AdminCustomerTrialGrantSummary | null
+  openAccessGrantClock: AccessGrantClock | null
+  accessGrant: AdminCustomerAccessGrantSummary | null
 }> {
-  const openGrant = await prisma.trialGrant.findFirst({
+  const openGrant = await prisma.accessGrant.findFirst({
     where: {
       userId,
       status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
     },
     orderBy: { createdAt: 'desc' },
-    select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
+    select: ADMIN_CUSTOMER_ACCESS_GRANT_SELECT,
   })
 
   const displayGrant =
     openGrant ??
-    (await prisma.trialGrant.findFirst({
+    (await prisma.accessGrant.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      select: ADMIN_CUSTOMER_TRIAL_GRANT_SELECT,
+      select: ADMIN_CUSTOMER_ACCESS_GRANT_SELECT,
     }))
 
   if (!displayGrant) {
-    return { openTrialGrantClock: null, trialGrant: null }
+    return { openAccessGrantClock: null, accessGrant: null }
   }
 
   return {
-    openTrialGrantClock: openGrant ? toAccessGateClock(openGrant) : null,
-    trialGrant: mapAdminCustomerTrialGrantSummary({
+    openAccessGrantClock: openGrant ? toAccessGateClock(openGrant) : null,
+    accessGrant: mapAdminCustomerAccessGrantSummary({
       now,
       grant: displayGrant,
     }),
@@ -228,7 +228,7 @@ export async function getAdminCustomerProfile(
     where: { referenceId: user.id },
   })
 
-  const trialGrantContext = await loadAdminCustomerTrialGrantContext(
+  const accessGrantContext = await loadAdminCustomerAccessGrantContext(
     prisma,
     user.id,
     now,
@@ -238,7 +238,7 @@ export async function getAdminCustomerProfile(
   return buildAdminCustomerProfile({
     user,
     subscriptions,
-    trialGrantContext,
+    accessGrantContext,
     auditHistory,
     stripeMode: input.stripeMode,
     now,

@@ -38,7 +38,7 @@ export async function evaluateSessionGate(
             select: { status: true },
           })
         : null,
-      prisma.trialGrant.findFirst({
+      prisma.accessGrant.findFirst({
         where: { userId: data.user.id },
         select: { id: true },
       }),

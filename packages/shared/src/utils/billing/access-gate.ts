@@ -134,7 +134,7 @@ export function resolveEntitlementFromSources(input: {
   subscriptions: readonly EntitlementClockSubscription[]
   accessGate?: AccessGateClock | null
   /** @deprecated Use `accessGate`. */
-  trialGrant?: AccessGateClock | null
+  accessGrant?: AccessGateClock | null
 }): EntitlementClockStanding {
   if (userHasLivePaidDefaultSubscriptionForEntitlement(input.subscriptions)) {
     const subscription = pickEntitlementSubscription(input.subscriptions)
@@ -146,7 +146,7 @@ export function resolveEntitlementFromSources(input: {
 
   return resolveAccessGateClock({
     now: input.now,
-    accessGate: input.accessGate ?? input.trialGrant ?? null,
+    accessGate: input.accessGate ?? input.accessGrant ?? null,
   })
 }
 
@@ -154,7 +154,7 @@ export function clockEndForEntitlementSource(input: {
   subscriptions: readonly EntitlementClockSubscription[]
   accessGate?: AccessGateClock | null
   /** @deprecated Use `accessGate`. */
-  trialGrant?: AccessGateClock | null
+  accessGrant?: AccessGateClock | null
 }): Date | null {
   if (userHasLivePaidDefaultSubscriptionForEntitlement(input.subscriptions)) {
     const subscription = pickEntitlementSubscription(input.subscriptions)
@@ -166,5 +166,5 @@ export function clockEndForEntitlementSource(input: {
     )
   }
 
-  return clockEndForAccessGate(input.accessGate ?? input.trialGrant ?? null)
+  return clockEndForAccessGate(input.accessGate ?? input.accessGrant ?? null)
 }

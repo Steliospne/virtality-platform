@@ -10,7 +10,7 @@ export async function loadAccessGateClockForUser(
   prisma: PrismaClient,
   userId: string,
 ) {
-  return prisma.trialGrant.findFirst({
+  return prisma.accessGrant.findFirst({
     where: {
       userId,
       status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
@@ -28,7 +28,7 @@ export async function userHasAccessGateHistory(
   prisma: PrismaClient,
   userId: string,
 ): Promise<boolean> {
-  const row = await prisma.trialGrant.findFirst({
+  const row = await prisma.accessGrant.findFirst({
     where: { userId },
     select: { id: true },
   })
@@ -36,7 +36,7 @@ export async function userHasAccessGateHistory(
 }
 
 /** @deprecated Use `loadAccessGateClockForUser`. */
-export const loadTrialGrantClockForUser = loadAccessGateClockForUser
+export const loadAccessGrantClockForUser = loadAccessGateClockForUser
 
 export async function loadEntitlementStandingForSession(input: {
   prisma: PrismaClient

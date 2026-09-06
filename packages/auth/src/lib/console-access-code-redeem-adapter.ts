@@ -4,9 +4,9 @@ import { redeemAccessCodeOnProfile } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import {
   createPrismaTrialRedeemConsumeStore,
-  createProfileAccessGateIssuerFromTrialGrantStore,
+  createProfileAccessGateIssuerFromAccessGrantStore,
 } from './trial-redeem.ts'
-import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
+import { createPrismaAccessGrantStore } from './access-grant-access.ts'
 
 type ConsoleAccessCodeDeps = {
   prisma?: PrismaClient
@@ -18,10 +18,10 @@ export async function redeemAccessCodeForUser(
   deps: ConsoleAccessCodeDeps,
 ) {
   const client = deps.prisma ?? prisma
-  const trialGrantStore = createPrismaTrialGrantStore(client)
+  const accessGrantStore = createPrismaAccessGrantStore(client)
   const store = createPrismaTrialRedeemConsumeStore(client, deps.stripeClient)
   const accessGate =
-    createProfileAccessGateIssuerFromTrialGrantStore(trialGrantStore)
+    createProfileAccessGateIssuerFromAccessGrantStore(accessGrantStore)
 
   return redeemAccessCodeOnProfile(store, accessGate, {
     userId: input.userId,

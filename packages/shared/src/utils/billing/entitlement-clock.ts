@@ -12,7 +12,7 @@
  * Profile Billing uses `resolveProfileBillingCheckoutCta` instead (Customer id
  * alone is enough, and it keeps its own trial-vs-portal distinction). Abandon
  * leaves soft-expired + CTA; only synced live Subscriptions or an active
- * TrialGrant restore.
+ * AccessGrant restore.
  *
  * Merged entitlement source of truth is `resolveEntitlementFromSources`
  * (access-gate.ts), reached via `buildEntitlementStanding` below. Any new
@@ -334,10 +334,10 @@ export function buildEntitlementStanding(input: {
   accessGate?: AccessGateClock | null
   accessGateEverIssued?: boolean
   /** @deprecated Use `accessGate`. */
-  trialGrant?: AccessGateClock | null
+  accessGrant?: AccessGateClock | null
 }): EntitlementStanding {
   const subscription = pickEntitlementSubscription(input.subscriptions)
-  const accessGate = input.accessGate ?? input.trialGrant ?? null
+  const accessGate = input.accessGate ?? input.accessGrant ?? null
   const clock = resolveEntitlementFromSources({
     now: input.now,
     subscriptions: input.subscriptions,

@@ -27,7 +27,7 @@ async function findLatestOpenAccessGateId(
   client: PrismaClient,
   userId: string,
 ): Promise<string | null> {
-  const row = await client.trialGrant.findFirst({
+  const row = await client.accessGrant.findFirst({
     where: {
       userId,
       status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
@@ -55,7 +55,7 @@ export function createPrismaStaffAccessGateStore(
       return user ?? null
     },
     findOpenAccessGateByUserId: async (userId) => {
-      const row = await client.trialGrant.findFirst({
+      const row = await client.accessGrant.findFirst({
         where: {
           userId,
           status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
@@ -66,7 +66,7 @@ export function createPrismaStaffAccessGateStore(
       return row
     },
     userHasConvertedAccessGate: async (userId) => {
-      const row = await client.trialGrant.findFirst({
+      const row = await client.accessGrant.findFirst({
         where: { userId, status: 'converted' },
         select: { id: true },
       })
@@ -74,7 +74,7 @@ export function createPrismaStaffAccessGateStore(
     },
     createAccessGate: async (input) => {
       const now = new Date()
-      return client.trialGrant.create({
+      return client.accessGrant.create({
         data: {
           userId: input.userId,
           status: input.status,
@@ -88,7 +88,7 @@ export function createPrismaStaffAccessGateStore(
     },
     updateAccessGate: async (input) => {
       const now = new Date()
-      return client.trialGrant.update({
+      return client.accessGrant.update({
         where: { id: input.accessGateId },
         data: {
           status: input.status,
@@ -106,7 +106,7 @@ export function createPrismaStaffAccessGateStore(
       }
 
       const now = new Date()
-      return client.trialGrant.update({
+      return client.accessGrant.update({
         where: { id: openId },
         data: {
           status: 'revoked',

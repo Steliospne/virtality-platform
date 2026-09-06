@@ -8,7 +8,7 @@ const LAST_KNOWN_VERIFIED_KEY_PREFIX = 'virtality:lastKnownEmailVerified:'
 
 /**
  * Settle window for billing state right after verification lands. The local
- * Subscription/TrialGrant rows a fresh access-code sign-up depends on can lag
+ * Subscription/AccessGrant rows a fresh access-code sign-up depends on can lag
  * a beat behind the redirect (Stripe webhook delivery, replica lag), so this
  * keeps re-querying rather than trusting a single post-redirect fetch.
  */

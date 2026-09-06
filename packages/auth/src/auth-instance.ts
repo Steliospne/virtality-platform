@@ -9,7 +9,7 @@ import {
 } from './lib/trial-redeem.ts'
 import { redeemAccessCodeForUser } from './lib/console-access-code-redeem-adapter.ts'
 import { createRenewPromptLifecycle } from './lib/renew-prompt-lifecycle.ts'
-import { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
+import { convertAccessGrantAfterPaidCheckout } from './lib/access-grant-access.ts'
 import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window-adapter.ts'
 import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
 import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem-adapter.ts'
@@ -327,7 +327,7 @@ export const auth = betterAuth({
                 stripeSubscription,
               }) => {
                 await rearmRenewPromptsAfterCheckout(subscription)
-                await convertTrialGrantAfterPaidCheckout({
+                await convertAccessGrantAfterPaidCheckout({
                   userId: subscription.referenceId,
                   subscription: {
                     plan: subscription.plan,

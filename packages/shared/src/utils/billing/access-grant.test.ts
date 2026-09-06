@@ -4,25 +4,25 @@ import { DEFAULT_SUBSCRIPTION_PLAN } from './billing-plans.ts'
 import {
   ACCESS_GATE_OPEN_STATUSES,
   clockEndForEntitlementSource,
-  convertActiveTrialGrantOnPaidSubscription,
+  convertActiveAccessGrantOnPaidSubscription,
   grantActiveTrialToUser,
   issueFreeGrantToUser,
-  isPaidStripeSubscriptionForTrialGrantConversion,
-  mapAdminCustomerTrialGrantSummary,
+  isPaidStripeSubscriptionForAccessGrantConversion,
+  mapAdminCustomerAccessGrantSummary,
   resolveEntitlementFromSources,
-  resolveTrialGrantClock,
-  TrialGrantAlreadyOpenError,
-  type TrialGrantClock,
-  type TrialGrantStore,
-} from './trial-grant.ts'
+  resolveAccessGrantClock,
+  AccessGrantAlreadyOpenError,
+  type AccessGrantClock,
+  type AccessGrantStore,
+} from './access-grant.ts'
 
 const NOW = new Date('2026-08-10T12:00:00.000Z')
 const TRIAL_END = new Date('2026-08-17T12:00:00.000Z')
 const SUBSCRIPTION_PERIOD_END = new Date('2026-09-10T12:00:00.000Z')
 
 function activeGrant(
-  overrides: Partial<TrialGrantClock> = {},
-): TrialGrantClock {
+  overrides: Partial<AccessGrantClock> = {},
+): AccessGrantClock {
   return {
     status: 'trialing',
     trialStart: NOW,
@@ -31,11 +31,11 @@ function activeGrant(
   }
 }
 
-describe('resolveTrialGrantClock', () => {
+describe('resolveAccessGrantClock', () => {
   it('is entitled while active and now is before trialEnd', () => {
-    const standing = resolveTrialGrantClock({
+    const standing = resolveAccessGrantClock({
       now: NOW,
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
@@ -45,9 +45,9 @@ describe('resolveTrialGrantClock', () => {
   })
 
   it('is not entitled once trialEnd passes without mutating stored status', () => {
-    const standing = resolveTrialGrantClock({
+    const standing = resolveAccessGrantClock({
       now: new Date('2026-08-18T00:00:00.000Z'),
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(false)
@@ -57,9 +57,9 @@ describe('resolveTrialGrantClock', () => {
   })
 
   it('is not entitled for revoked grants with no clock dates', () => {
-    const standing = resolveTrialGrantClock({
+    const standing = resolveAccessGrantClock({
       now: NOW,
-      trialGrant: {
+      accessGrant: {
         status: 'revoked',
         trialStart: null,
         trialEnd: null,
@@ -71,9 +71,9 @@ describe('resolveTrialGrantClock', () => {
   })
 })
 
-describe('mapAdminCustomerTrialGrantSummary', () => {
+describe('mapAdminCustomerAccessGrantSummary', () => {
   it('includes remaining time for an active grant', () => {
-    const summary = mapAdminCustomerTrialGrantSummary({
+    const summary = mapAdminCustomerAccessGrantSummary({
       now: NOW,
       grant: {
         id: 'grant_1',
@@ -94,7 +94,7 @@ describe('mapAdminCustomerTrialGrantSummary', () => {
 })
 
 describe('resolveEntitlementFromSources', () => {
-  it('prefers a live paid Stripe subscription over an active TrialGrant', () => {
+  it('prefers a live paid Stripe subscription over an active AccessGrant', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [
@@ -104,14 +104,14 @@ describe('resolveEntitlementFromSources', () => {
           periodEnd: SUBSCRIPTION_PERIOD_END,
         },
       ],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
     expect(standing.clockEnd).toEqual(SUBSCRIPTION_PERIOD_END)
   })
 
-  it('does not let a canceled Stripe row shadow an active TrialGrant', () => {
+  it('does not let a canceled Stripe row shadow an active AccessGrant', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [
@@ -121,14 +121,14 @@ describe('resolveEntitlementFromSources', () => {
           periodEnd: new Date('2026-08-01T12:00:00.000Z'),
         },
       ],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
     expect(standing.clockEnd).toEqual(TRIAL_END)
   })
 
-  it('does not let a synced `free` plan row shadow an active TrialGrant', () => {
+  it('does not let a synced `free` plan row shadow an active AccessGrant', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [
@@ -138,18 +138,18 @@ describe('resolveEntitlementFromSources', () => {
           periodEnd: null,
         },
       ],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
     expect(standing.clockEnd).toEqual(TRIAL_END)
   })
 
-  it('falls back to TrialGrant when the user has no Stripe subscriptions', () => {
+  it('falls back to AccessGrant when the user has no Stripe subscriptions', () => {
     const standing = resolveEntitlementFromSources({
       now: NOW,
       subscriptions: [],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
@@ -166,7 +166,7 @@ describe('resolveEntitlementFromSources', () => {
           periodEnd: new Date('2026-08-01T12:00:00.000Z'),
         },
       ],
-      trialGrant: { status: 'revoked', trialStart: NOW, trialEnd: TRIAL_END },
+      accessGrant: { status: 'revoked', trialStart: NOW, trialEnd: TRIAL_END },
     })
 
     expect(standing.entitled).toBe(false)
@@ -174,13 +174,13 @@ describe('resolveEntitlementFromSources', () => {
   })
 })
 
-describe('buildEntitlementStanding with TrialGrant', () => {
+describe('buildEntitlementStanding with AccessGrant', () => {
   it('opens the VR gate for an active grant with a future trialEnd', () => {
     const standing = buildEntitlementStanding({
       now: NOW,
       role: 'user',
       subscriptions: [],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
@@ -200,7 +200,7 @@ describe('buildEntitlementStanding with TrialGrant', () => {
           periodEnd: new Date('2026-07-15T12:00:00.000Z'),
         },
       ],
-      trialGrant: activeGrant(),
+      accessGrant: activeGrant(),
     })
 
     expect(standing.entitled).toBe(true)
@@ -214,23 +214,23 @@ describe('clockEndForEntitlementSource', () => {
     expect(
       clockEndForEntitlementSource({
         subscriptions: [],
-        trialGrant: activeGrant(),
+        accessGrant: activeGrant(),
       }),
     ).toEqual(TRIAL_END)
   })
 })
 
-function isOpenAccessGate(status: TrialGrantClock['status']): boolean {
+function isOpenAccessGate(status: AccessGrantClock['status']): boolean {
   return (ACCESS_GATE_OPEN_STATUSES as readonly string[]).includes(status)
 }
 
-function createTrialGrantStore(input: {
-  openGrant?: TrialGrantClock & { id: string; userId: string }
-  grants?: Array<TrialGrantClock & { id: string; userId: string }>
-}): TrialGrantStore {
+function createAccessGrantStore(input: {
+  openGrant?: AccessGrantClock & { id: string; userId: string }
+  grants?: Array<AccessGrantClock & { id: string; userId: string }>
+}): AccessGrantStore {
   const grantsByUser = new Map<
     string,
-    Array<TrialGrantClock & { id: string; userId: string }>
+    Array<AccessGrantClock & { id: string; userId: string }>
   >()
   const seed = input.grants ?? (input.openGrant ? [input.openGrant] : [])
   for (const grant of seed) {
@@ -242,20 +242,20 @@ function createTrialGrantStore(input: {
 
   const findOpen = (
     userId: string,
-    predicate: (row: TrialGrantClock) => boolean,
+    predicate: (row: AccessGrantClock) => boolean,
   ) => {
     const rows = grantsByUser.get(userId) ?? []
     return rows.find(predicate) ?? null
   }
 
   return {
-    findOpenTrialGrantByUserId: async (userId) =>
+    findOpenAccessGrantByUserId: async (userId) =>
       findOpen(userId, (row) => isOpenAccessGate(row.status)),
     findOpenTimedAccessGateByUserId: async (userId) =>
       findOpen(userId, (row) => row.status === 'trialing'),
     findOpenGrantedAccessGateByUserId: async (userId) =>
       findOpen(userId, (row) => row.status === 'granted'),
-    createTrialGrant: vi.fn(async (data) => {
+    createAccessGrant: vi.fn(async (data) => {
       grantCounter += 1
       const row = {
         id: `grant_${grantCounter}`,
@@ -269,7 +269,7 @@ function createTrialGrantStore(input: {
       grantsByUser.set(data.userId, list)
       return row
     }),
-    convertActiveTrialGrantByUserId: vi.fn(async (userId) => {
+    convertActiveAccessGrantByUserId: vi.fn(async (userId) => {
       const existing = findOpen(userId, (row) => isOpenAccessGate(row.status))
       if (!existing) {
         return null
@@ -289,14 +289,14 @@ function createTrialGrantStore(input: {
 
 describe('grantActiveTrialToUser', () => {
   it('creates an active grant from a trial day count', () => {
-    const store = createTrialGrantStore({})
+    const store = createAccessGrantStore({})
 
     return grantActiveTrialToUser(
       store,
       { userId: 'user_1', trialDays: 7 },
       { now: () => NOW },
     ).then((result) => {
-      expect(store.createTrialGrant).toHaveBeenCalledWith({
+      expect(store.createAccessGrant).toHaveBeenCalledWith({
         userId: 'user_1',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -304,7 +304,7 @@ describe('grantActiveTrialToUser', () => {
       })
       expect(result).toMatchObject({
         accessGateId: 'grant_1',
-        trialGrantId: 'grant_1',
+        accessGrantId: 'grant_1',
         status: 'trialing',
         trialStart: NOW,
         trialEnd: TRIAL_END,
@@ -313,7 +313,7 @@ describe('grantActiveTrialToUser', () => {
   })
 
   it('rejects when the user already has an open timed gate', () => {
-    const store = createTrialGrantStore({
+    const store = createAccessGrantStore({
       openGrant: {
         id: 'grant_existing',
         userId: 'user_1',
@@ -325,11 +325,11 @@ describe('grantActiveTrialToUser', () => {
 
     return expect(
       grantActiveTrialToUser(store, { userId: 'user_1', trialDays: 7 }),
-    ).rejects.toBeInstanceOf(TrialGrantAlreadyOpenError)
+    ).rejects.toBeInstanceOf(AccessGrantAlreadyOpenError)
   })
 
   it('allows a timed gate when only a permanent granted gate exists', () => {
-    const store = createTrialGrantStore({
+    const store = createAccessGrantStore({
       grants: [
         {
           id: 'grant_granted',
@@ -356,14 +356,14 @@ describe('grantActiveTrialToUser', () => {
 
 describe('issueFreeGrantToUser', () => {
   it('creates a granted Access Gate row with no trial end', () => {
-    const store = createTrialGrantStore({})
+    const store = createAccessGrantStore({})
 
     return issueFreeGrantToUser(
       store,
       { userId: 'user_1' },
       { now: () => NOW },
     ).then((result) => {
-      expect(store.createTrialGrant).toHaveBeenCalledWith({
+      expect(store.createAccessGrant).toHaveBeenCalledWith({
         userId: 'user_1',
         trialStart: NOW,
         trialEnd: null,
@@ -378,10 +378,10 @@ describe('issueFreeGrantToUser', () => {
   })
 })
 
-describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
+describe('isPaidStripeSubscriptionForAccessGrantConversion', () => {
   it('accepts a live paid Default Stripe subscription', () => {
     expect(
-      isPaidStripeSubscriptionForTrialGrantConversion({
+      isPaidStripeSubscriptionForAccessGrantConversion({
         plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: 'sub_stripe_1',
       }),
@@ -390,13 +390,13 @@ describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
 
   it('rejects Free subscriptions and rows without a Stripe subscription id', () => {
     expect(
-      isPaidStripeSubscriptionForTrialGrantConversion({
+      isPaidStripeSubscriptionForAccessGrantConversion({
         plan: 'free',
         stripeSubscriptionId: 'sub_stripe_1',
       }),
     ).toBe(false)
     expect(
-      isPaidStripeSubscriptionForTrialGrantConversion({
+      isPaidStripeSubscriptionForAccessGrantConversion({
         plan: DEFAULT_SUBSCRIPTION_PLAN,
         stripeSubscriptionId: null,
       }),
@@ -404,9 +404,9 @@ describe('isPaidStripeSubscriptionForTrialGrantConversion', () => {
   })
 })
 
-describe('convertActiveTrialGrantOnPaidSubscription', () => {
+describe('convertActiveAccessGrantOnPaidSubscription', () => {
   it('marks an active grant converted when paid checkout creates a Default subscription', async () => {
-    const store = createTrialGrantStore({
+    const store = createAccessGrantStore({
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
@@ -416,7 +416,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       },
     })
 
-    const result = await convertActiveTrialGrantOnPaidSubscription(store, {
+    const result = await convertActiveAccessGrantOnPaidSubscription(store, {
       userId: 'user_1',
       subscription: {
         plan: DEFAULT_SUBSCRIPTION_PLAN,
@@ -426,14 +426,18 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
 
     expect(result).toEqual({
       converted: true,
-      trialGrantId: 'grant_1',
+      accessGrantId: 'grant_1',
     })
-    expect(store.convertActiveTrialGrantByUserId).toHaveBeenCalledWith('user_1')
-    await expect(store.findOpenTrialGrantByUserId('user_1')).resolves.toBeNull()
+    expect(store.convertActiveAccessGrantByUserId).toHaveBeenCalledWith(
+      'user_1',
+    )
+    await expect(
+      store.findOpenAccessGrantByUserId('user_1'),
+    ).resolves.toBeNull()
   })
 
   it('does not convert revoked grants or Free subscriptions', async () => {
-    const revokedStore = createTrialGrantStore({
+    const revokedStore = createAccessGrantStore({
       openGrant: {
         id: 'grant_revoked',
         userId: 'user_1',
@@ -444,7 +448,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     })
 
     await expect(
-      convertActiveTrialGrantOnPaidSubscription(revokedStore, {
+      convertActiveAccessGrantOnPaidSubscription(revokedStore, {
         userId: 'user_1',
         subscription: {
           plan: DEFAULT_SUBSCRIPTION_PLAN,
@@ -453,7 +457,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
       }),
     ).resolves.toEqual({ converted: false })
 
-    const activeStore = createTrialGrantStore({
+    const activeStore = createAccessGrantStore({
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
@@ -464,7 +468,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
     })
 
     await expect(
-      convertActiveTrialGrantOnPaidSubscription(activeStore, {
+      convertActiveAccessGrantOnPaidSubscription(activeStore, {
         userId: 'user_1',
         subscription: {
           plan: 'free',
@@ -477,7 +481,7 @@ describe('convertActiveTrialGrantOnPaidSubscription', () => {
 
 describe('trial grant conversion entitlement handoff', () => {
   it('uses the Stripe clock after checkout converts the grant', async () => {
-    const store = createTrialGrantStore({
+    const store = createAccessGrantStore({
       openGrant: {
         id: 'grant_1',
         userId: 'user_1',
@@ -487,7 +491,7 @@ describe('trial grant conversion entitlement handoff', () => {
       },
     })
 
-    await convertActiveTrialGrantOnPaidSubscription(store, {
+    await convertActiveAccessGrantOnPaidSubscription(store, {
       userId: 'user_1',
       subscription: {
         plan: DEFAULT_SUBSCRIPTION_PLAN,
@@ -505,7 +509,7 @@ describe('trial grant conversion entitlement handoff', () => {
           periodEnd: SUBSCRIPTION_PERIOD_END,
         },
       ],
-      trialGrant: null,
+      accessGrant: null,
     })
 
     expect(standing.entitled).toBe(true)

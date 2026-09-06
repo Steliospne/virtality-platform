@@ -5,9 +5,9 @@ import {
 } from '../billing/billing-plans.ts'
 import { resolveEntitlementFromSources } from '../billing/access-gate.ts'
 import type {
-  AdminCustomerTrialGrantSummary,
-  TrialGrantClock,
-} from '../billing/trial-grant.ts'
+  AdminCustomerAccessGrantSummary,
+  AccessGrantClock,
+} from '../billing/access-grant.ts'
 import { isLiveEntitlementSubscriptionStatus } from '../billing/entitlement-extension.ts'
 
 export type CustomerSubscriptionSummary = {
@@ -196,14 +196,14 @@ export function deriveCustomerAccessStatus(input: {
   now: Date
   role: string | null | undefined
   subscriptions: readonly CustomerSubscriptionSummary[]
-  accessGate?: TrialGrantClock | null
+  accessGate?: AccessGrantClock | null
   /** @deprecated Use `accessGate`. */
-  trialGrant?: TrialGrantClock | null
+  accessGrant?: AccessGrantClock | null
 }): CustomerAccessStatus {
   if (input.role === 'admin') return 'admin'
   if (input.role === 'tester') return 'tester'
 
-  const accessGate = input.accessGate ?? input.trialGrant ?? null
+  const accessGate = input.accessGate ?? input.accessGrant ?? null
   const { entitled } = resolveEntitlementFromSources({
     now: input.now,
     subscriptions: input.subscriptions,
@@ -356,5 +356,5 @@ export type AdminCustomerProfile = {
   subscriptionHistory: AdminCustomerSubscriptionHistoryItem[]
   auditHistory: AdminCustomerAuditHistoryItem[]
   /** Latest trial grant for display; open grants drive lifecycle actions. */
-  trialGrant: AdminCustomerTrialGrantSummary | null
+  accessGrant: AdminCustomerAccessGrantSummary | null
 }

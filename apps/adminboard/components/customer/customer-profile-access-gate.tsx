@@ -12,7 +12,7 @@ import {
   isAccessGateStaffActionsBlocked,
   setAccessGateTrialActionLabel,
 } from '@/lib/access-gate-actions'
-import { formatTrialGrantStatusSummary } from '@/lib/trial-grant-display'
+import { formatAccessGrantStatusSummary } from '@/lib/access-grant-display'
 import type { AdminCustomerProfile } from '@virtality/shared/utils'
 import { useState } from 'react'
 
@@ -44,9 +44,9 @@ export function CustomerProfileAccessGate({
           audit record.
         </p>
 
-        {profile.trialGrant ? (
+        {profile.accessGrant ? (
           <p className='mb-4 text-sm font-medium'>
-            {formatTrialGrantStatusSummary(profile.trialGrant)}
+            {formatAccessGrantStatusSummary(profile.accessGrant)}
           </p>
         ) : (
           <p className='text-muted-foreground mb-4 text-sm'>

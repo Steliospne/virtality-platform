@@ -15,7 +15,7 @@ function profile(
     role: 'user',
     billingStatus: 'absent',
     subscriptionHistory: [],
-    trialGrant: null,
+    accessGrant: null,
     ...overrides,
   } as AdminCustomerProfile
 }
@@ -27,7 +27,7 @@ describe('access gate action eligibility', () => {
     expect(
       canAssignPermanentAccessGate(
         profile({
-          trialGrant: {
+          accessGrant: {
             id: 'gate_1',
             status: 'trialing',
             trialStart: new Date('2026-08-01T12:00:00.000Z'),
@@ -43,7 +43,7 @@ describe('access gate action eligibility', () => {
 
   it('blocks all staff actions after conversion', () => {
     const converted = profile({
-      trialGrant: {
+      accessGrant: {
         id: 'gate_1',
         status: 'converted',
         trialStart: new Date('2026-08-01T12:00:00.000Z'),
@@ -65,7 +65,7 @@ describe('access gate action eligibility', () => {
     expect(
       setAccessGateTrialActionLabel(
         profile({
-          trialGrant: {
+          accessGrant: {
             id: 'gate_1',
             status: 'trialing',
             trialStart: new Date(),
@@ -84,7 +84,7 @@ describe('access gate action eligibility', () => {
     expect(
       canRevokeAccessGate(
         profile({
-          trialGrant: {
+          accessGrant: {
             id: 'gate_1',
             status: 'granted',
             trialStart: new Date(),

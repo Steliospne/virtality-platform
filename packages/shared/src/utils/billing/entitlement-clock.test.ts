@@ -774,7 +774,7 @@ describe('resolveCheckoutCta', () => {
     ).toBeNull()
   })
 
-  it('returns null for a TrialGrant-shaped live entitlement (no Stripe plan at all)', () => {
+  it('returns null for a AccessGrant-shaped live entitlement (no Stripe plan at all)', () => {
     expect(
       resolveCheckoutCta({
         entitled: true,

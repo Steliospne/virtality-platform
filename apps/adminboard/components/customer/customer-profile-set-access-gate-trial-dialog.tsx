@@ -60,8 +60,8 @@ export function CustomerProfileSetAccessGateTrialDialog({
   const [confirmed, setConfirmed] = useState(false)
 
   const openGate =
-    profile.trialGrant && isAccessGateOpenStatus(profile.trialGrant.status)
-      ? profile.trialGrant
+    profile.accessGrant && isAccessGateOpenStatus(profile.accessGrant.status)
+      ? profile.accessGrant
       : null
   const canReduce = openGate?.trialEnd != null
   const title =

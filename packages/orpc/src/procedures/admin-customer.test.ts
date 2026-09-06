@@ -33,7 +33,7 @@ function createPrismaMock(input: {
     cancelAtPeriodEnd?: boolean | null
     stripeScheduleId?: string | null
   }>
-  trialGrants?: Array<{
+  accessGrants?: Array<{
     id: string
     userId: string
     status: string
@@ -44,7 +44,7 @@ function createPrismaMock(input: {
 }) {
   const users = input.users ?? []
   const subscriptions = input.subscriptions ?? []
-  const trialGrants = input.trialGrants ?? []
+  const accessGrants = input.accessGrants ?? []
 
   return {
     user: {
@@ -88,7 +88,7 @@ function createPrismaMock(input: {
     adminCustomerAudit: {
       findMany: vi.fn(async () => []),
     },
-    trialGrant: {
+    accessGrant: {
       findMany: vi.fn(
         async (args: {
           where: {
@@ -98,7 +98,7 @@ function createPrismaMock(input: {
           orderBy: { createdAt: 'desc' }
         }) => {
           const userIds = args.where.userId.in
-          const filtered = trialGrants.filter((grant) =>
+          const filtered = accessGrants.filter((grant) =>
             userIds.includes(grant.userId),
           )
           const statusFiltered = args.where.status?.in
@@ -129,7 +129,7 @@ function createPrismaMock(input: {
           }
           orderBy: { createdAt: 'desc' }
         }) => {
-          const matches = trialGrants.filter(
+          const matches = accessGrants.filter(
             (grant) => grant.userId === args.where.userId,
           )
           const filtered = args.where.status?.in
@@ -211,7 +211,7 @@ describe('listAdminCustomers', () => {
           canceledAt: null,
         },
       ],
-      trialGrants: [
+      accessGrants: [
         {
           id: 'grant_1',
           userId: 'user_trial',
@@ -270,7 +270,7 @@ describe('getAdminCustomerProfile', () => {
           canceledAt: null,
         },
       ],
-      trialGrants: [
+      accessGrants: [
         {
           id: 'grant_1',
           userId: 'user_1',
@@ -359,7 +359,7 @@ describe('getAdminCustomerProfile', () => {
           createdAt: NOW,
         },
       ],
-      trialGrants: [
+      accessGrants: [
         {
           id: 'grant_1',
           userId: 'user_grant',
@@ -377,7 +377,7 @@ describe('getAdminCustomerProfile', () => {
       now: NOW,
     })
 
-    expect(profile?.trialGrant).toMatchObject({
+    expect(profile?.accessGrant).toMatchObject({
       status: 'trialing',
       entitled: true,
     })

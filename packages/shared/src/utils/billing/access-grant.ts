@@ -27,52 +27,52 @@ export {
 } from './access-gate.ts'
 
 /** @deprecated Use `ACCESS_GATE_STATUSES`. */
-export { ACCESS_GATE_STATUSES as TRIAL_GRANT_STATUSES } from './access-gate.ts'
+export { ACCESS_GATE_STATUSES as ACCESS_GRANT_STATUSES } from './access-gate.ts'
 
 /** @deprecated Use `AccessGateStatus`. */
-export type TrialGrantStatus = AccessGateStatus
+export type AccessGrantStatus = AccessGateStatus
 
 /** @deprecated Use `ACCESS_GATE_OPEN_STATUSES`. */
-export { ACCESS_GATE_OPEN_STATUSES as TRIAL_GRANT_OPEN_STATUSES } from './access-gate.ts'
+export { ACCESS_GATE_OPEN_STATUSES as ACCESS_GRANT_OPEN_STATUSES } from './access-gate.ts'
 
 /** @deprecated Use `AccessGateOpenStatus`. */
-export type TrialGrantOpenStatus = AccessGateOpenStatus
+export type AccessGrantOpenStatus = AccessGateOpenStatus
 
 /** @deprecated Use `isAccessGateOpenStatus`. */
-export { isAccessGateOpenStatus as isTrialGrantOpenStatus } from './access-gate.ts'
+export { isAccessGateOpenStatus as isAccessGrantOpenStatus } from './access-gate.ts'
 
 /** @deprecated Use `AccessGateClock`. */
-export type TrialGrantClock = AccessGateClock
+export type AccessGrantClock = AccessGateClock
 
 /** @deprecated Use `AccessGateRecord`. */
-export type TrialGrantRecord = AccessGateRecord
+export type AccessGrantRecord = AccessGateRecord
 
 /** @deprecated Use `resolveAccessGateClock`. */
-export function resolveTrialGrantClock(input: {
+export function resolveAccessGrantClock(input: {
   now: Date
-  trialGrant: AccessGateClock | null
+  accessGrant: AccessGateClock | null
 }): EntitlementClockStanding {
   return resolveAccessGateClock({
     now: input.now,
-    accessGate: input.trialGrant,
+    accessGate: input.accessGrant,
   })
 }
 
 /** @deprecated Use `clockEndForAccessGate`. */
-export { clockEndForAccessGate as clockEndForTrialGrant } from './access-gate.ts'
+export { clockEndForAccessGate as clockEndForAccessGrant } from './access-gate.ts'
 
-export type PaidStripeSubscriptionForTrialGrantConversion = {
+export type PaidStripeSubscriptionForAccessGrantConversion = {
   plan?: string | null
   stripeSubscriptionId?: string | null
 }
 
-export type ConvertActiveTrialGrantInput = {
+export type ConvertActiveAccessGrantInput = {
   userId: string
-  subscription: PaidStripeSubscriptionForTrialGrantConversion
+  subscription: PaidStripeSubscriptionForAccessGrantConversion
 }
 
-export function isPaidStripeSubscriptionForTrialGrantConversion(
-  subscription: PaidStripeSubscriptionForTrialGrantConversion,
+export function isPaidStripeSubscriptionForAccessGrantConversion(
+  subscription: PaidStripeSubscriptionForAccessGrantConversion,
 ): boolean {
   return (
     isDefaultSubscriptionPlan(subscription.plan) &&
@@ -80,25 +80,25 @@ export function isPaidStripeSubscriptionForTrialGrantConversion(
   )
 }
 
-export type TrialGrantStore = {
-  findOpenTrialGrantByUserId: (
+export type AccessGrantStore = {
+  findOpenAccessGrantByUserId: (
     userId: string,
-  ) => Promise<TrialGrantRecord | null>
+  ) => Promise<AccessGrantRecord | null>
   findOpenTimedAccessGateByUserId: (
     userId: string,
-  ) => Promise<TrialGrantRecord | null>
+  ) => Promise<AccessGrantRecord | null>
   findOpenGrantedAccessGateByUserId: (
     userId: string,
-  ) => Promise<TrialGrantRecord | null>
-  createTrialGrant: (input: {
+  ) => Promise<AccessGrantRecord | null>
+  createAccessGrant: (input: {
     userId: string
     trialStart: Date
     trialEnd: Date | null
     status: AccessGateOpenStatus
-  }) => Promise<TrialGrantRecord>
-  convertActiveTrialGrantByUserId: (
+  }) => Promise<AccessGrantRecord>
+  convertActiveAccessGrantByUserId: (
     userId: string,
-  ) => Promise<TrialGrantRecord | null>
+  ) => Promise<AccessGrantRecord | null>
   userHasLiveDefaultSubscription: (userId: string) => Promise<boolean>
 }
 
@@ -110,8 +110,8 @@ export type GrantActiveTrialInput = {
 export type GrantActiveTrialResult = {
   accessGateId: string
   /** @deprecated Use `accessGateId`. */
-  trialGrantId: string
-  status: TrialGrantStatus
+  accessGrantId: string
+  status: AccessGrantStatus
   trialStart: Date
   trialEnd: Date
 }
@@ -122,36 +122,36 @@ export type IssueFreeGrantInput = {
 
 export type IssueFreeGrantResult = {
   accessGateId: string
-  status: TrialGrantStatus
+  status: AccessGrantStatus
   trialStart: Date
   trialEnd: null
 }
 
-export type ConvertActiveTrialGrantResult = {
+export type ConvertActiveAccessGrantResult = {
   converted: boolean
-  trialGrantId?: string
+  accessGrantId?: string
 }
 
-export class TrialGrantValidationError extends Error {
+export class AccessGrantValidationError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'TrialGrantValidationError'
+    this.name = 'AccessGrantValidationError'
   }
 }
 
-export class TrialGrantAlreadyOpenError extends Error {
+export class AccessGrantAlreadyOpenError extends Error {
   constructor(userId: string) {
-    super(`User "${userId}" already has an open TrialGrant.`)
-    this.name = 'TrialGrantAlreadyOpenError'
+    super(`User "${userId}" already has an open AccessGrant.`)
+    this.name = 'AccessGrantAlreadyOpenError'
   }
 }
 
-export class TrialGrantCustomerAlreadyEntitledError extends Error {
+export class AccessGrantCustomerAlreadyEntitledError extends Error {
   constructor(userId: string) {
     super(
       `Customer for user "${userId}" already has a trialing or active Subscription.`,
     )
-    this.name = 'TrialGrantCustomerAlreadyEntitledError'
+    this.name = 'AccessGrantCustomerAlreadyEntitledError'
   }
 }
 
@@ -161,19 +161,19 @@ export class TrialGrantCustomerAlreadyEntitledError extends Error {
  */
 export async function grantActiveTrialToUser(
   store: Pick<
-    TrialGrantStore,
+    AccessGrantStore,
     | 'findOpenTimedAccessGateByUserId'
-    | 'createTrialGrant'
+    | 'createAccessGrant'
     | 'userHasLiveDefaultSubscription'
   >,
   input: GrantActiveTrialInput,
   runtime: { now?: () => Date } = {},
 ): Promise<GrantActiveTrialResult> {
   if (!input.userId.trim()) {
-    throw new TrialGrantValidationError('userId is required.')
+    throw new AccessGrantValidationError('userId is required.')
   }
   if (!Number.isInteger(input.trialDays) || input.trialDays < 1) {
-    throw new TrialGrantValidationError(
+    throw new AccessGrantValidationError(
       'Trial days must be a positive integer.',
     )
   }
@@ -182,17 +182,17 @@ export async function grantActiveTrialToUser(
     input.userId,
   )
   if (existingTimed) {
-    throw new TrialGrantAlreadyOpenError(input.userId)
+    throw new AccessGrantAlreadyOpenError(input.userId)
   }
 
   const entitled = await store.userHasLiveDefaultSubscription(input.userId)
   if (entitled) {
-    throw new TrialGrantCustomerAlreadyEntitledError(input.userId)
+    throw new AccessGrantCustomerAlreadyEntitledError(input.userId)
   }
 
   const now = runtime.now?.() ?? new Date()
   const trialEnd = computeExtensionTrialEnd(now, input.trialDays, 'days')
-  const created = await store.createTrialGrant({
+  const created = await store.createAccessGrant({
     userId: input.userId,
     trialStart: now,
     trialEnd,
@@ -201,7 +201,7 @@ export async function grantActiveTrialToUser(
 
   return {
     accessGateId: created.id,
-    trialGrantId: created.id,
+    accessGrantId: created.id,
     status: created.status,
     trialStart: created.trialStart ?? now,
     trialEnd: created.trialEnd ?? trialEnd,
@@ -214,23 +214,23 @@ export async function grantActiveTrialToUser(
  */
 export async function issueFreeGrantToUser(
   store: Pick<
-    TrialGrantStore,
-    'createTrialGrant' | 'userHasLiveDefaultSubscription'
+    AccessGrantStore,
+    'createAccessGrant' | 'userHasLiveDefaultSubscription'
   >,
   input: IssueFreeGrantInput,
   runtime: { now?: () => Date } = {},
 ): Promise<IssueFreeGrantResult> {
   if (!input.userId.trim()) {
-    throw new TrialGrantValidationError('userId is required.')
+    throw new AccessGrantValidationError('userId is required.')
   }
 
   const entitled = await store.userHasLiveDefaultSubscription(input.userId)
   if (entitled) {
-    throw new TrialGrantCustomerAlreadyEntitledError(input.userId)
+    throw new AccessGrantCustomerAlreadyEntitledError(input.userId)
   }
 
   const now = runtime.now?.() ?? new Date()
-  const created = await store.createTrialGrant({
+  const created = await store.createAccessGrant({
     userId: input.userId,
     trialStart: now,
     trialEnd: null,
@@ -245,38 +245,38 @@ export async function issueFreeGrantToUser(
   }
 }
 
-export async function convertActiveTrialGrantOnPaidSubscription(
-  store: Pick<TrialGrantStore, 'convertActiveTrialGrantByUserId'>,
-  input: ConvertActiveTrialGrantInput,
-): Promise<ConvertActiveTrialGrantResult> {
+export async function convertActiveAccessGrantOnPaidSubscription(
+  store: Pick<AccessGrantStore, 'convertActiveAccessGrantByUserId'>,
+  input: ConvertActiveAccessGrantInput,
+): Promise<ConvertActiveAccessGrantResult> {
   if (!input.userId.trim()) {
     return { converted: false }
   }
-  if (!isPaidStripeSubscriptionForTrialGrantConversion(input.subscription)) {
+  if (!isPaidStripeSubscriptionForAccessGrantConversion(input.subscription)) {
     return { converted: false }
   }
 
-  const converted = await store.convertActiveTrialGrantByUserId(input.userId)
+  const converted = await store.convertActiveAccessGrantByUserId(input.userId)
   if (!converted) {
     return { converted: false }
   }
 
   return {
     converted: true,
-    trialGrantId: converted.id,
+    accessGrantId: converted.id,
   }
 }
 
-export const TRIAL_GRANT_STATUS_LABELS: Record<TrialGrantStatus, string> = {
+export const ACCESS_GRANT_STATUS_LABELS: Record<AccessGrantStatus, string> = {
   granted: 'Granted',
   trialing: 'Trialing',
   converted: 'Converted to paid',
   revoked: 'Revoked',
 }
 
-export type AdminCustomerTrialGrantSummary = {
+export type AdminCustomerAccessGrantSummary = {
   id: string
-  status: TrialGrantStatus
+  status: AccessGrantStatus
   trialStart: Date | null
   trialEnd: Date | null
   createdAt: Date
@@ -284,10 +284,10 @@ export type AdminCustomerTrialGrantSummary = {
   entitled: boolean
 }
 
-export function mapAdminCustomerTrialGrantSummary(input: {
+export function mapAdminCustomerAccessGrantSummary(input: {
   now: Date
-  grant: TrialGrantRecord & { createdAt: Date }
-}): AdminCustomerTrialGrantSummary {
+  grant: AccessGrantRecord & { createdAt: Date }
+}): AdminCustomerAccessGrantSummary {
   const standing = resolveAccessGateClock({
     now: input.now,
     accessGate: input.grant,

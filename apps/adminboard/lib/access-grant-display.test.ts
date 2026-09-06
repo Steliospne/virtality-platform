@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatTrialGrantStatusSummary } from './trial-grant-display.ts'
+import { formatAccessGrantStatusSummary } from './access-grant-display.ts'
 
-describe('formatTrialGrantStatusSummary', () => {
+describe('formatAccessGrantStatusSummary', () => {
   it('describes revoked grants without a clock', () => {
     expect(
-      formatTrialGrantStatusSummary({
+      formatAccessGrantStatusSummary({
         id: 'grant_1',
         status: 'revoked',
         trialStart: new Date('2026-08-01T12:00:00.000Z'),
@@ -18,7 +18,7 @@ describe('formatTrialGrantStatusSummary', () => {
 
   it('describes trialing grants with remaining time', () => {
     expect(
-      formatTrialGrantStatusSummary({
+      formatAccessGrantStatusSummary({
         id: 'grant_1',
         status: 'trialing',
         trialStart: new Date('2026-08-10T12:00:00.000Z'),

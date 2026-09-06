@@ -2,9 +2,9 @@ import { buildEntitlementStanding } from '../billing/entitlement-clock.ts'
 import { hasPendingCyclePlanChange } from '../billing/cycle-plan-change.ts'
 import { effectiveAssignedPlanVariant } from '../billing/plan-variant-catalog.ts'
 import type {
-  AdminCustomerTrialGrantSummary,
-  TrialGrantClock,
-} from '../billing/trial-grant.ts'
+  AdminCustomerAccessGrantSummary,
+  AccessGrantClock,
+} from '../billing/access-grant.ts'
 import {
   buildAdminCustomerStripeLinks,
   deriveCustomerAccessStatus,
@@ -32,15 +32,15 @@ export type AdminCustomerProfileUserRow = {
 
 export type AdminCustomerProfileSubscriptionRow = AdminCustomerSubscriptionRow
 
-export type AdminCustomerProfileTrialGrantContext = {
-  openTrialGrantClock: TrialGrantClock | null
-  trialGrant: AdminCustomerTrialGrantSummary | null
+export type AdminCustomerProfileAccessGrantContext = {
+  openAccessGrantClock: AccessGrantClock | null
+  accessGrant: AdminCustomerAccessGrantSummary | null
 }
 
 export type BuildAdminCustomerProfileInput = {
   user: AdminCustomerProfileUserRow
   subscriptions: readonly AdminCustomerSubscriptionRow[]
-  trialGrantContext: AdminCustomerProfileTrialGrantContext
+  accessGrantContext: AdminCustomerProfileAccessGrantContext
   auditHistory: AdminCustomerAuditHistoryItem[]
   stripeMode: StripeDashboardMode
   now: Date
@@ -52,12 +52,12 @@ export function buildAdminCustomerProfile(
   const {
     user,
     subscriptions,
-    trialGrantContext,
+    accessGrantContext,
     auditHistory,
     stripeMode,
     now,
   } = input
-  const { openTrialGrantClock, trialGrant } = trialGrantContext
+  const { openAccessGrantClock, accessGrant } = accessGrantContext
 
   const subscriptionHistory = sortCustomerSubscriptionHistory(
     subscriptions.map(mapAdminCustomerSubscriptionHistoryItem),
@@ -68,8 +68,8 @@ export function buildAdminCustomerProfile(
     now,
     role: user.role,
     subscriptions: subscriptionHistory,
-    accessGate: openTrialGrantClock,
-    accessGateEverIssued: trialGrant != null,
+    accessGate: openAccessGrantClock,
+    accessGateEverIssued: accessGrant != null,
   })
 
   return {
@@ -88,7 +88,7 @@ export function buildAdminCustomerProfile(
       now,
       role: user.role,
       subscriptions: subscriptionHistory,
-      accessGate: openTrialGrantClock,
+      accessGate: openAccessGrantClock,
     }),
     billingStatus: deriveCustomerBillingStatus(primary),
     hasPendingCyclePlanChange:
@@ -107,6 +107,6 @@ export function buildAdminCustomerProfile(
     }),
     subscriptionHistory,
     auditHistory,
-    trialGrant,
+    accessGrant,
   }
 }

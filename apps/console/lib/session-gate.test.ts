@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 const getSession = vi.fn()
 const signOut = vi.fn()
 const findFirst = vi.fn()
-const findTrialGrantFirst = vi.fn()
+const findAccessGrantFirst = vi.fn()
 
 vi.mock('@/auth-client', () => ({
   authClient: {
@@ -15,8 +15,8 @@ vi.mock('@/auth-client', () => ({
 vi.mock('@virtality/db', () => ({
   prisma: {
     subscription: { findFirst: (...args: unknown[]) => findFirst(...args) },
-    trialGrant: {
-      findFirst: (...args: unknown[]) => findTrialGrantFirst(...args),
+    accessGrant: {
+      findFirst: (...args: unknown[]) => findAccessGrantFirst(...args),
     },
   },
 }))
@@ -34,8 +34,8 @@ describe('evaluateSessionGate', () => {
     getSession.mockReset()
     signOut.mockReset()
     findFirst.mockReset()
-    findTrialGrantFirst.mockReset()
-    findTrialGrantFirst.mockResolvedValue(null)
+    findAccessGrantFirst.mockReset()
+    findAccessGrantFirst.mockResolvedValue(null)
   })
 
   it('sends unauthenticated requests to sign-in', async () => {
@@ -83,7 +83,7 @@ describe('evaluateSessionGate', () => {
     getSession.mockResolvedValue({
       data: { user: { id: 'user_1', role: 'user', stripeCustomerId: null } },
     })
-    findTrialGrantFirst.mockResolvedValue({ id: 'grant_1' })
+    findAccessGrantFirst.mockResolvedValue({ id: 'grant_1' })
 
     await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
       decision: 'ok',

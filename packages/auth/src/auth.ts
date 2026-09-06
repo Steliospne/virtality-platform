@@ -67,7 +67,7 @@ export {
   createStripeAdminCustomerBillingGateway,
 } from './lib/admin-customer-billing.ts'
 export type { AdminCustomerBillingRuntime } from './lib/admin-customer-billing.ts'
-export { convertTrialGrantAfterPaidCheckout } from './lib/trial-grant-access.ts'
+export { convertAccessGrantAfterPaidCheckout } from './lib/access-grant-access.ts'
 export { createStaffAccessGateRuntime } from './lib/staff-access-gate-access.ts'
 export type { StaffAccessGateRuntime } from './lib/staff-access-gate-access.ts'
 export {

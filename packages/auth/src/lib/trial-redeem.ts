@@ -13,13 +13,13 @@ import {
   type TrialRedeemAccessGateIssuer,
   type TrialRedeemConsumeStore,
 } from '@virtality/shared/utils'
-import { createPrismaTrialGrantStore } from './trial-grant-access.ts'
+import { createPrismaAccessGrantStore } from './access-grant-access.ts'
 import { createAccessCodeVariantGateway } from './access-code-variant-adapter.ts'
 
-type TrialGrantStore = ReturnType<typeof createPrismaTrialGrantStore>
+type AccessGrantStore = ReturnType<typeof createPrismaAccessGrantStore>
 
-export function createAccessGateIssuerFromTrialGrantStore(
-  store: TrialGrantStore,
+export function createAccessGateIssuerFromAccessGrantStore(
+  store: AccessGrantStore,
 ): TrialRedeemAccessGateIssuer {
   return {
     issueFreeGrant: (input) => issueFreeGrantToUser(store, input),
@@ -27,11 +27,11 @@ export function createAccessGateIssuerFromTrialGrantStore(
   }
 }
 
-export function createProfileAccessGateIssuerFromTrialGrantStore(
-  store: TrialGrantStore,
+export function createProfileAccessGateIssuerFromAccessGrantStore(
+  store: AccessGrantStore,
 ): ConsoleAccessCodeAccessGateIssuer {
   return {
-    ...createAccessGateIssuerFromTrialGrantStore(store),
+    ...createAccessGateIssuerFromAccessGrantStore(store),
     hasOpenGrantedAccessGate: async (userId) =>
       (await store.findOpenGrantedAccessGateByUserId(userId)) != null,
     hasOpenTimedAccessGate: async (userId) =>
@@ -58,7 +58,7 @@ export function createPrismaTrialRedeemConsumeStore(
     }
 
   const variantGateway = createAccessCodeVariantGateway(client, stripeClient)
-  const trialGrantStore = createPrismaTrialGrantStore(client)
+  const accessGrantStore = createPrismaAccessGrantStore(client)
 
   return {
     findByCode: (code) =>
@@ -69,20 +69,20 @@ export function createPrismaTrialRedeemConsumeStore(
     consumeAsAlreadyEntitled: consumeUnusedAs('already_entitled'),
     applyVariant: variantGateway.applyVariant,
     userHasLiveDefaultSubscription: (userId) =>
-      trialGrantStore.userHasLiveDefaultSubscription(userId),
+      accessGrantStore.userHasLiveDefaultSubscription(userId),
   }
 }
 
 export function createTrialRedeemAccessGateIssuer(
   client: PrismaClient = prisma,
 ): TrialRedeemAccessGateIssuer {
-  return createAccessGateIssuerFromTrialGrantStore(
-    createPrismaTrialGrantStore(client),
+  return createAccessGateIssuerFromAccessGrantStore(
+    createPrismaAccessGrantStore(client),
   )
 }
 
 /** @deprecated Use `createTrialRedeemAccessGateIssuer`. */
-export const createTrialGrantIssuer = createTrialRedeemAccessGateIssuer
+export const createAccessGrantIssuer = createTrialRedeemAccessGateIssuer
 
 /** Reads the shared sign-up code field from email body or OAuth additionalData. */
 export function readSignUpCodeFromUnknown(source: unknown): string | undefined {

@@ -2,15 +2,15 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   ACCESS_GATE_OPEN_STATUSES,
-  convertActiveTrialGrantOnPaidSubscription,
+  convertActiveAccessGrantOnPaidSubscription,
   isDefaultSubscriptionPlan,
   LIVE_ENTITLEMENT_SUBSCRIPTION_STATUSES,
-  type ConvertActiveTrialGrantInput,
-  type ConvertActiveTrialGrantResult,
-  type TrialGrantStore,
+  type ConvertActiveAccessGrantInput,
+  type ConvertActiveAccessGrantResult,
+  type AccessGrantStore,
 } from '@virtality/shared/utils'
 
-const trialGrantRecordSelect = {
+const accessGrantRecordSelect = {
   id: true,
   userId: true,
   status: true,
@@ -23,25 +23,25 @@ async function findLatestAccessGateByUserId(
   userId: string,
   status: 'trialing' | 'granted',
 ) {
-  return client.trialGrant.findFirst({
+  return client.accessGrant.findFirst({
     where: { userId, status },
     orderBy: { createdAt: 'desc' },
-    select: trialGrantRecordSelect,
+    select: accessGrantRecordSelect,
   })
 }
 
-export function createPrismaTrialGrantStore(
+export function createPrismaAccessGrantStore(
   client: PrismaClient = prisma,
-): TrialGrantStore {
+): AccessGrantStore {
   return {
-    findOpenTrialGrantByUserId: async (userId) => {
-      const row = await client.trialGrant.findFirst({
+    findOpenAccessGrantByUserId: async (userId) => {
+      const row = await client.accessGrant.findFirst({
         where: {
           userId,
           status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
         },
         orderBy: { createdAt: 'desc' },
-        select: trialGrantRecordSelect,
+        select: accessGrantRecordSelect,
       })
       return row
     },
@@ -49,9 +49,9 @@ export function createPrismaTrialGrantStore(
       findLatestAccessGateByUserId(client, userId, 'trialing'),
     findOpenGrantedAccessGateByUserId: async (userId) =>
       findLatestAccessGateByUserId(client, userId, 'granted'),
-    createTrialGrant: async (input) => {
+    createAccessGrant: async (input) => {
       const now = new Date()
-      return client.trialGrant.create({
+      return client.accessGrant.create({
         data: {
           userId: input.userId,
           status: input.status,
@@ -60,11 +60,11 @@ export function createPrismaTrialGrantStore(
           createdAt: now,
           updatedAt: now,
         },
-        select: trialGrantRecordSelect,
+        select: accessGrantRecordSelect,
       })
     },
-    convertActiveTrialGrantByUserId: async (userId) => {
-      const openGrant = await client.trialGrant.findFirst({
+    convertActiveAccessGrantByUserId: async (userId) => {
+      const openGrant = await client.accessGrant.findFirst({
         where: {
           userId,
           status: { in: [...ACCESS_GATE_OPEN_STATUSES] },
@@ -77,13 +77,13 @@ export function createPrismaTrialGrantStore(
       }
 
       const now = new Date()
-      return client.trialGrant.update({
+      return client.accessGrant.update({
         where: { id: openGrant.id },
         data: {
           status: 'converted',
           updatedAt: now,
         },
-        select: trialGrantRecordSelect,
+        select: accessGrantRecordSelect,
       })
     },
     userHasLiveDefaultSubscription: async (userId) => {
@@ -100,10 +100,10 @@ export function createPrismaTrialGrantStore(
   }
 }
 
-export async function convertTrialGrantAfterPaidCheckout(
-  input: ConvertActiveTrialGrantInput,
+export async function convertAccessGrantAfterPaidCheckout(
+  input: ConvertActiveAccessGrantInput,
   deps: { prisma?: PrismaClient } = {},
-): Promise<ConvertActiveTrialGrantResult> {
-  const store = createPrismaTrialGrantStore(deps.prisma ?? prisma)
-  return convertActiveTrialGrantOnPaidSubscription(store, input)
+): Promise<ConvertActiveAccessGrantResult> {
+  const store = createPrismaAccessGrantStore(deps.prisma ?? prisma)
+  return convertActiveAccessGrantOnPaidSubscription(store, input)
 }
