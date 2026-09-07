@@ -16,11 +16,9 @@ import {
 import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
 import {
-  armLivePromotionCodeHold,
   discardOpenPendingPromotionCodeHold,
   getOpenPendingPromotionCodeForCheckout,
   savePendingPromotionCodeForCheckout,
-  sweepExpiredPromotionCodeHoldsForUser,
 } from './pending-promotion-code.ts'
 import { resolveDefaultPlanProductId } from './plan-variant-catalog-adapter.ts'
 import { readLiveSubscriptionDiscount } from './subscription-discount-read-adapter.ts'
@@ -178,10 +176,6 @@ export async function readConsoleSubscriptionDiscountForUser(
   userId: string,
   deps: ConsolePromoDeps,
 ) {
-  // Revert any Discount whose hold TTL already lapsed before reading live
-  // state, so this always reflects reality rather than a stale Stripe read.
-  await sweepExpiredPromotionCodeHoldsForUser({ userId }, deps)
-
   const runtime = createConsolePromoRuntime(deps)
   const stripeSubscriptionId = await resolveStripeSubscriptionIdForDiscountRead(
     userId,
@@ -214,27 +208,7 @@ export async function redeemPromotionCodeForUser(
   deps: ConsolePromoDeps,
 ) {
   const { store, stripe, read } = createConsolePromoRuntime(deps)
-  const result = await redeemPromotionCodeOnSubscription(
-    store,
-    stripe,
-    read,
-    input,
-  )
-  // Arm the same 2-minute TTL a pre-Checkout hold gets: a Discount redeemed
-  // straight onto a live Subscription auto-reverts unless explicitly kept
-  // (there's no separate "keep" step — every self-serve redeem is temporary
-  // until this window is renewed by a fresh redeem, same as any other hold).
-  await armLivePromotionCodeHold(
-    {
-      userId: input.userId,
-      code: result.promotionCode,
-      promotionCodeId: result.promotionCodeId,
-      couponId: result.couponId,
-      liveSubscriptionId: result.stripeSubscriptionId,
-    },
-    { prisma: deps.prisma },
-  )
-  return result
+  return redeemPromotionCodeOnSubscription(store, stripe, read, input)
 }
 
 export async function removePromoDiscountForUser(
@@ -260,12 +234,11 @@ export async function removePromoDiscountForUser(
 /**
  * Resolve the Promotion Code to attach to a brand-new Checkout Session.
  *
- * Bridges the two Discount systems: an open pre-subscribe hold wins first
- * (2-minute TTL, same as `savePendingPromotionCodeForCheckout`); otherwise, a
- * promo-channel Discount already live on the user's current eligible
- * Subscription is re-validated against Stripe and mirrored into a fresh
- * 2-minute hold, so every code that reaches a new Checkout Session — however
- * it originated — passes through the same short, re-validated TTL window.
+ * Bridges the two Discount systems: an open pre-subscribe hold wins first;
+ * otherwise, a promo-channel Discount already live on the user's current
+ * eligible Subscription is re-validated against Stripe and mirrored into a
+ * fresh hold, so every code that reaches a new Checkout Session — however
+ * it originated — passes through the same re-validation.
  */
 export async function resolvePromotionCodeForNewCheckout(
   input: { userId: string; now?: Date },
@@ -274,7 +247,7 @@ export async function resolvePromotionCodeForNewCheckout(
   const now = input.now ?? new Date()
 
   const existingHold = await getOpenPendingPromotionCodeForCheckout(
-    { userId: input.userId, now },
+    { userId: input.userId },
     deps,
   )
   if (existingHold) {

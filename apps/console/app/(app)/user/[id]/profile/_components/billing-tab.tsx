@@ -51,7 +51,6 @@ export function BillingTab() {
     discount,
     hasEligibleSubscription,
     pendingHoldCode,
-    pendingHoldExpiresAt,
     staffBlocked,
     redeemError,
     promoCode,
@@ -62,7 +61,6 @@ export function BillingTab() {
     handleRedeem,
     handleRemoveConfirm,
     handleCancelPendingHold,
-    handlePendingHoldExpired,
     cancelPendingPending,
     removeOpen,
     setRemoveOpen,
@@ -210,7 +208,6 @@ export function BillingTab() {
           discount={discount}
           hasEligibleSubscription={hasEligibleSubscription}
           pendingHoldCode={pendingHoldCode}
-          pendingHoldExpiresAt={pendingHoldExpiresAt}
           staffBlocked={staffBlocked}
           successFlash={removeSuccess}
           redeemError={redeemError}
@@ -219,7 +216,6 @@ export function BillingTab() {
           onCancelPending={() => {
             void handleCancelPendingHold()
           }}
-          onPendingExpired={handlePendingHoldExpired}
           cancelPendingPending={cancelPendingPending}
           onRedeem={handleRedeem}
           code={promoCode}

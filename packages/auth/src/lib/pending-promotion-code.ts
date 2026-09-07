@@ -1,14 +1,12 @@
 import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
-import { DEFAULT_PLAN_PRODUCT_ID } from '@virtality/shared/utils'
 import type {
   OpenPendingPromotionCodeHold,
   PendingPromotionCodeCouponTerms,
 } from '@virtality/shared/types'
 import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
-
-export const PENDING_PROMOTION_CODE_TTL_MS = 2 * 60 * 1000
+import { resolveDefaultPlanProductId } from './plan-variant-catalog-adapter.ts'
 
 export type { OpenPendingPromotionCodeHold, PendingPromotionCodeCouponTerms }
 
@@ -82,9 +80,14 @@ async function resolvePromotionCodeForProCheckout(
       'That Promotion Code cannot be applied to this plan (Coupon archived, deleted, or does not apply).',
     )
   }
+  // Compare against the live Default plan Product (resolved from Stripe by
+  // metadata), not a hardcoded id — Checkout always charges that live Product,
+  // so validating against anything else can pass a Coupon here that Stripe
+  // then rejects at Checkout with `coupon_applies_to_nothing`.
+  const defaultPlanProductId = await resolveDefaultPlanProductId(stripeClient)
   if (
     coupon.appliesToProductIds.length > 0 &&
-    !coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)
+    !coupon.appliesToProductIds.includes(defaultPlanProductId)
   ) {
     throw new Error(
       'That Promotion Code cannot be applied to this plan (Coupon archived, deleted, or does not apply).',
@@ -111,7 +114,7 @@ function isStripeMissingResource(error: unknown): boolean {
 /**
  * Revert the live Subscription Discount a hold was tracking. Best-effort:
  * a resource that's already gone (404) counts as reverted; any other Stripe
- * error is swallowed and the row is left `open` so the next sweep retries.
+ * error is swallowed and the row is left `open`.
  */
 async function revertLiveDiscountForHold(
   stripeClient: Stripe,
@@ -123,102 +126,6 @@ async function revertLiveDiscountForHold(
   } catch (error) {
     return isStripeMissingResource(error)
   }
-}
-
-/**
- * Expire open holds past TTL for a user. A hold tracking a live Subscription
- * Discount (`liveSubscriptionId` set) is force-reverted via Stripe first —
- * the same 2-minute TTL applies whether the hold is a pre-Checkout code or a
- * Discount already redeemed onto a live Subscription. Rows whose Stripe
- * revert fails are left `open` for the next sweep to retry.
- */
-async function sweepExpiredPendingPromotionCodes(
-  client: PrismaClient,
-  stripeClient: Stripe,
-  userId: string,
-  now: Date,
-): Promise<void> {
-  const due = await client.pendingPromotionCode.findMany({
-    where: { userId, status: 'open', expiresAt: { lte: now } },
-    select: { id: true, liveSubscriptionId: true },
-  })
-  if (due.length === 0) return
-
-  const reverted: string[] = []
-  for (const row of due) {
-    if (row.liveSubscriptionId == null) {
-      reverted.push(row.id)
-      continue
-    }
-    const ok = await revertLiveDiscountForHold(
-      stripeClient,
-      row.liveSubscriptionId,
-    )
-    if (ok) reverted.push(row.id)
-  }
-  if (reverted.length === 0) return
-
-  await client.pendingPromotionCode.updateMany({
-    where: { id: { in: reverted } },
-    data: { status: 'expired', updatedAt: now },
-  })
-}
-
-/**
- * Public entry point for the same TTL sweep, for callers that read live
- * Discount state directly (not through a hold lookup) and need it to
- * reflect a just-expired revert rather than stale Stripe state.
- */
-export async function sweepExpiredPromotionCodeHoldsForUser(
-  input: { userId: string; now?: Date },
-  deps: PendingPromotionCodeDeps,
-): Promise<void> {
-  const client = getClient(deps.prisma)
-  await sweepExpiredPendingPromotionCodes(
-    client,
-    deps.stripeClient,
-    input.userId,
-    input.now ?? new Date(),
-  )
-}
-
-/**
- * Scheduled-job entry point: sweep every user's expired open holds, not just
- * one. Nothing else revisits a hold while its owner stays signed out, so a
- * live Discount would otherwise outlive its TTL indefinitely.
- */
-export async function sweepAllExpiredPromotionCodeHolds(
-  deps: PendingPromotionCodeDeps,
-  now: Date = new Date(),
-): Promise<{ reverted: number; retried: number }> {
-  const client = getClient(deps.prisma)
-  const due = await client.pendingPromotionCode.findMany({
-    where: { status: 'open', expiresAt: { lte: now } },
-    select: { id: true, liveSubscriptionId: true },
-  })
-  if (due.length === 0) return { reverted: 0, retried: 0 }
-
-  const reverted: string[] = []
-  for (const row of due) {
-    if (row.liveSubscriptionId == null) {
-      reverted.push(row.id)
-      continue
-    }
-    const ok = await revertLiveDiscountForHold(
-      deps.stripeClient,
-      row.liveSubscriptionId,
-    )
-    if (ok) reverted.push(row.id)
-  }
-
-  if (reverted.length > 0) {
-    await client.pendingPromotionCode.updateMany({
-      where: { id: { in: reverted } },
-      data: { status: 'expired', updatedAt: now },
-    })
-  }
-
-  return { reverted: reverted.length, retried: due.length - reverted.length }
 }
 
 /** Cancel any open hold, canceling out a prior in-progress redeem/apply. */
@@ -240,23 +147,22 @@ async function armPromotionCodeHold(
     code: string
     promotionCodeId: string
     couponId: string
-    liveSubscriptionId: string | null
     now: Date
   },
 ): Promise<PendingPromotionCodeRow> {
   await cancelOpenHolds(client, input.userId, input.now)
 
-  const expiresAt = new Date(
-    input.now.getTime() + PENDING_PROMOTION_CODE_TTL_MS,
-  )
   return client.pendingPromotionCode.create({
     data: {
       userId: input.userId,
       code: input.code,
       promotionCodeId: input.promotionCodeId,
       couponId: input.couponId,
-      liveSubscriptionId: input.liveSubscriptionId,
-      expiresAt,
+      liveSubscriptionId: null,
+      // `expiresAt` is a NOT NULL column left over from the removed TTL —
+      // the hold no longer expires, so this is just a timestamp, not an
+      // enforced deadline.
+      expiresAt: input.now,
       createdAt: input.now,
       updatedAt: input.now,
     },
@@ -288,60 +194,19 @@ export async function savePendingPromotionCodeForCheckout(
     code: resolved.code,
     promotionCodeId: resolved.promotionCodeId,
     couponId: resolved.couponId,
-    liveSubscriptionId: null,
     now,
   })
 
   return { ...row, couponTerms: resolved.couponTerms }
 }
 
-/**
- * Arm the same TTL hold for a Discount just redeemed directly onto a live
- * Subscription (mid-cycle redeem, not a pre-Checkout hold). The Discount is
- * already live on Stripe by the time this is called; the hold only tracks
- * when it must be force-reverted.
- */
-export async function armLivePromotionCodeHold(
-  input: {
-    userId: string
-    code: string
-    promotionCodeId: string
-    couponId: string
-    liveSubscriptionId: string
-    now?: Date
-  },
-  deps: Pick<PendingPromotionCodeDeps, 'prisma'>,
-): Promise<void> {
-  const client = getClient(deps.prisma)
-  const now = input.now ?? new Date()
-  await armPromotionCodeHold(client, {
-    userId: input.userId,
-    code: input.code,
-    promotionCodeId: input.promotionCodeId,
-    couponId: input.couponId,
-    liveSubscriptionId: input.liveSubscriptionId,
-    now,
-  })
-}
-
 export async function getOpenPendingPromotionCodeForCheckout(
-  input: { userId: string; now?: Date },
+  input: { userId: string },
   deps: PendingPromotionCodeDeps,
 ): Promise<PendingPromotionCodeRow | null> {
   const client = getClient(deps.prisma)
-  const now = input.now ?? new Date()
-  await sweepExpiredPendingPromotionCodes(
-    client,
-    deps.stripeClient,
-    input.userId,
-    now,
-  )
   return client.pendingPromotionCode.findFirst({
-    where: {
-      userId: input.userId,
-      status: 'open',
-      expiresAt: { gt: now },
-    },
+    where: { userId: input.userId, status: 'open' },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -360,7 +225,7 @@ export async function getOpenPendingPromotionCodeForCheckout(
  * Cancels the row when the Coupon is missing or archived so chrome cannot stick.
  */
 export async function readOpenPendingPromotionCodeForCheckout(
-  input: { userId: string; now?: Date },
+  input: { userId: string },
   deps: PendingPromotionCodeDeps,
 ): Promise<OpenPendingPromotionCodeHold | null> {
   const row = await getOpenPendingPromotionCodeForCheckout(input, deps)
@@ -395,15 +260,9 @@ export async function cancelPendingPromotionCodeForCheckout(
 ): Promise<number> {
   const client = getClient(deps.prisma)
   const now = input.now ?? new Date()
-  await sweepExpiredPendingPromotionCodes(
-    client,
-    deps.stripeClient,
-    input.userId,
-    now,
-  )
 
   const open = await client.pendingPromotionCode.findMany({
-    where: { userId: input.userId, status: 'open', expiresAt: { gt: now } },
+    where: { userId: input.userId, status: 'open' },
     select: { id: true, liveSubscriptionId: true },
   })
   if (open.length === 0) return 0
@@ -446,14 +305,8 @@ export async function markPendingPromotionCodeAppliedForCheckout(
 ): Promise<number> {
   const client = getClient(deps.prisma)
   const now = input.now ?? new Date()
-  await sweepExpiredPendingPromotionCodes(
-    client,
-    deps.stripeClient,
-    input.userId,
-    now,
-  )
   const result = await client.pendingPromotionCode.updateMany({
-    where: { userId: input.userId, status: 'open', expiresAt: { gt: now } },
+    where: { userId: input.userId, status: 'open' },
     data: { status: 'applied', updatedAt: now },
   })
   return result.count

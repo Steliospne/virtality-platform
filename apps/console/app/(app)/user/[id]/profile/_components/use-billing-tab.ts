@@ -181,11 +181,10 @@ export function useBillingTab() {
   const appliedPromoCode = discount ? promoCodeLabel(discount) : null
   const pendingHold = pendingHoldQuery.data ?? null
   const pendingHoldCode = pendingHold?.code ?? null
-  const pendingHoldExpiresAt = pendingHold?.expiresAt ?? null
   const pendingHoldSuccessMessage = pendingHold
     ? hasEligibleSubscription
-      ? `Promotion Code ${pendingHold.code} applied. It reverts automatically in 2 minutes unless kept by reapplying.`
-      : `Promotion Code ${pendingHold.code} saved for Checkout. Finish subscribing within 2 minutes.`
+      ? `Promotion Code ${pendingHold.code} applied.`
+      : `Promotion Code ${pendingHold.code} saved for Checkout.`
     : null
   const promoSuccessBanner = redeemSuccessMessage ?? pendingHoldSuccessMessage
 
@@ -381,15 +380,6 @@ export function useBillingTab() {
     }
   }
 
-  function handlePendingHoldExpired() {
-    setRedeemSuccessMessage(null)
-    // A live-redeem hold's expiry reverts the Discount server-side as a
-    // side effect of the read (see `sweepExpiredPromotionCodeHoldsForUser`),
-    // so the Discount display must be refetched here too, not just the hold.
-    void pendingHoldQuery.refetch()
-    void discountQuery.refetch()
-  }
-
   const pendingDiscountPrices =
     pendingHold?.couponTerms && catalogMinor
       ? buildDiscountedBillingPriceLabels(pendingHold.couponTerms, catalogMinor)
@@ -433,7 +423,6 @@ export function useBillingTab() {
     discount,
     hasEligibleSubscription,
     pendingHoldCode,
-    pendingHoldExpiresAt,
     staffBlocked,
     redeemError,
     promoCode,
@@ -447,7 +436,6 @@ export function useBillingTab() {
     handleRedeem,
     handleRemoveConfirm,
     handleCancelPendingHold,
-    handlePendingHoldExpired,
     cancelPendingPending: cancelPendingMutation.isPending,
     removeOpen,
     setRemoveOpen,

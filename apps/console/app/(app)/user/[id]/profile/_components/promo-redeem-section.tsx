@@ -25,28 +25,22 @@ import { RedeemReplaceConfirmDialog } from './redeem-replace-confirm-dialog'
 
 function promoOutcomeChrome({
   chrome,
-  pendingHoldExpiresAt,
   onRemoveLive,
   onCancelPending,
-  onPendingExpired,
   cancelPendingPending,
 }: {
   chrome: PromoRedeemChrome
-  pendingHoldExpiresAt: Date | string | null
   onRemoveLive: () => void
   onCancelPending: () => void
-  onPendingExpired: () => void
   cancelPendingPending: boolean
 }): ReactNode {
   switch (chrome.kind) {
     case 'pending_hold':
-      return pendingHoldExpiresAt == null ? null : (
+      return (
         <PendingPromoHoldRow
           code={chrome.code}
-          expiresAt={pendingHoldExpiresAt}
           canceling={cancelPendingPending}
           onCancel={onCancelPending}
-          onExpired={onPendingExpired}
         />
       )
     case 'checking_discount':
@@ -62,12 +56,7 @@ function promoOutcomeChrome({
       return <p className='text-sm text-zinc-500'>{STAFF_REDEEM_BLOCK_COPY}</p>
     case 'applied_live':
       return (
-        <AppliedPromoRow
-          appliedCode={chrome.code}
-          expiresAt={chrome.expiresAt}
-          onRemove={onRemoveLive}
-          onExpired={onPendingExpired}
-        />
+        <AppliedPromoRow appliedCode={chrome.code} onRemove={onRemoveLive} />
       )
     case 'entry':
       // Entry form is rendered below when showEntry is true.
@@ -79,11 +68,9 @@ export function PromoRedeemSection({
   discount,
   hasEligibleSubscription,
   pendingHoldCode,
-  pendingHoldExpiresAt,
   staffBlocked,
   onRemove,
   onCancelPending,
-  onPendingExpired,
   cancelPendingPending,
   successFlash,
   redeemError,
@@ -95,11 +82,9 @@ export function PromoRedeemSection({
   discount: SubscriptionDiscountRead | undefined
   hasEligibleSubscription: boolean
   pendingHoldCode: string | null
-  pendingHoldExpiresAt: Date | string | null
   staffBlocked: boolean
   onRemove: () => void
   onCancelPending: () => void
-  onPendingExpired: () => void
   cancelPendingPending: boolean
   successFlash: boolean
   redeemError: string | null
@@ -113,7 +98,6 @@ export function PromoRedeemSection({
   const chrome = resolvePromoRedeemChrome({
     hasEligibleSubscription,
     pendingHoldCode,
-    pendingHoldExpiresAt,
     discount,
     staffBlocked,
   })
@@ -158,10 +142,8 @@ export function PromoRedeemSection({
       <p className='text-sm font-medium'>{PROFILE_BILLING_CODE_FIELD_LABEL}</p>
       {promoOutcomeChrome({
         chrome,
-        pendingHoldExpiresAt,
         onRemoveLive: onRemove,
         onCancelPending,
-        onPendingExpired,
         cancelPendingPending,
       })}
       {showEntry ? (

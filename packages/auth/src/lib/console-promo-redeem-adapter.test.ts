@@ -171,7 +171,7 @@ describe('resolvePromotionCodeForNewCheckout', () => {
 })
 
 describe('redeemPromotionCodeForUser', () => {
-  it('arms a fresh TTL hold tied to the live Subscription after a successful redeem', async () => {
+  it('applies the Discount to the live Subscription without arming a hold', async () => {
     const prisma = createPrismaMock({
       subscription: {
         stripeSubscriptionId: LIVE_SUB_ID,
@@ -196,15 +196,7 @@ describe('redeemPromotionCodeForUser', () => {
         discounts: [{ promotion_code: 'promo_1' }],
       }),
     )
-    expect(prisma.pendingPromotionCode.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          userId: USER_ID,
-          promotionCodeId: 'promo_1',
-          liveSubscriptionId: LIVE_SUB_ID,
-        }),
-      }),
-    )
+    expect(prisma.pendingPromotionCode.create).not.toHaveBeenCalled()
   })
 })
 
