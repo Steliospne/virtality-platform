@@ -2,7 +2,6 @@ import { prisma } from '@virtality/db'
 import type { PrismaClient } from '@virtality/db'
 import {
   CONSOLE_PROMO_ELIGIBLE_STATUSES,
-  DEFAULT_PLAN_PRODUCT_ID,
   isConsolePromoEligibleStatus,
   loadConsolePromoRedeemPreflight,
   redeemPromotionCodeOnSubscription,
@@ -23,6 +22,7 @@ import {
   savePendingPromotionCodeForCheckout,
   sweepExpiredPromotionCodeHoldsForUser,
 } from './pending-promotion-code.ts'
+import { resolveDefaultPlanProductId } from './plan-variant-catalog-adapter.ts'
 import { readLiveSubscriptionDiscount } from './subscription-discount-read-adapter.ts'
 
 type ConsolePromoDeps = {
@@ -37,9 +37,16 @@ type ConsolePromoRuntime = {
   read: ConsolePromoReadGateway
 }
 
-function productIdsForPlan(plan: string): string[] {
+// Compares against the live Default plan Product (resolved from Stripe by
+// metadata), not a hardcoded id — the live Subscription Discount this gates
+// always sits on that live Product, so a stale id here could let a Coupon
+// apply locally that Stripe would then reject as `coupon_applies_to_nothing`.
+async function productIdsForPlan(
+  plan: string,
+  stripeClient: Stripe,
+): Promise<string[]> {
   if (plan === 'default' || plan.trim() === '') {
-    return [DEFAULT_PLAN_PRODUCT_ID]
+    return [await resolveDefaultPlanProductId(stripeClient)]
   }
   return []
 }
@@ -72,7 +79,7 @@ function createConsolePromoRuntime(
   const client = deps.prisma ?? prisma
   return {
     client,
-    store: createPrismaConsolePromoStore(client),
+    store: createPrismaConsolePromoStore(client, deps.stripeClient),
     stripe: createStripeConsolePromoGateway(deps.stripeClient),
     read: createConsolePromoReadGateway(deps.stripeClient, client),
   }
@@ -80,6 +87,7 @@ function createConsolePromoRuntime(
 
 export function createPrismaConsolePromoStore(
   client: PrismaClient = prisma,
+  stripeClient?: Stripe,
 ): ConsolePromoStore {
   return {
     findEligibleSubscriptionByUserId: async (userId) => {
@@ -102,7 +110,9 @@ export function createPrismaConsolePromoStore(
       return {
         stripeSubscriptionId: row.stripeSubscriptionId,
         status: row.status,
-        productIds: productIdsForPlan(row.plan),
+        productIds: stripeClient
+          ? await productIdsForPlan(row.plan, stripeClient)
+          : [],
       }
     },
   }

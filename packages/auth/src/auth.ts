@@ -50,6 +50,7 @@ import {
   clearPlanVariantCatalogCache,
   readPlanVariantCatalogOrSandbox,
   resolveAssignedPlanVariantChargePrice,
+  resolveDefaultPlanProductId,
   type AssignablePlanVariantOption,
 } from './lib/plan-variant-catalog-adapter.ts'
 
@@ -138,6 +139,11 @@ export function createLibraryCouponForAdminboard(
 
 export function listLibraryCouponsForAdminboard() {
   return listLibraryCoupons(couponLibraryGateway())
+}
+
+/** Live Default plan Product id, for filtering Coupons against what Checkout actually charges. */
+export function resolveDefaultPlanProductIdForAdminboard() {
+  return resolveDefaultPlanProductId(requireStripeClient())
 }
 
 export function updateLibraryCouponNameForAdminboard(

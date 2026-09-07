@@ -3,6 +3,7 @@ import {
   closeCampaignWindowAction,
   getCampaignWindowForAdminboard,
   listLibraryCouponsForAdminboard,
+  resolveDefaultPlanProductIdForAdminboard,
   saveCampaignWindowForAdminboard,
 } from '@virtality/auth'
 import {
@@ -81,8 +82,11 @@ const listPickerCoupons = authed
   .route({ path: '/campaign-window/picker-coupons', method: 'GET' })
   .handler(async () =>
     runCampaignWindowHandler(async () => {
-      const coupons = await listLibraryCouponsForAdminboard()
-      return listCouponsForCampaignPicker(coupons)
+      const [coupons, defaultPlanProductId] = await Promise.all([
+        listLibraryCouponsForAdminboard(),
+        resolveDefaultPlanProductIdForAdminboard(),
+      ])
+      return listCouponsForCampaignPicker(coupons, defaultPlanProductId)
     }),
   )
 

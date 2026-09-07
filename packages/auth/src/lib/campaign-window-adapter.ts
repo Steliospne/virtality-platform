@@ -25,6 +25,7 @@ import {
 } from '@virtality/shared/utils'
 import type Stripe from 'stripe'
 import { retrieveLibraryCoupon } from './coupon-library-adapter.ts'
+import { resolveDefaultPlanProductId } from './plan-variant-catalog-adapter.ts'
 import { registerCampaignCouponId } from './subscription-discount-read-adapter.ts'
 
 type CampaignWindowRow = {
@@ -120,8 +121,14 @@ async function loadCouponHealth(
   couponHealth: CampaignCouponHealth
 }> {
   try {
-    const coupon = await retrieveLibraryCoupon(stripeClient, couponId)
-    return { coupon, couponHealth: assessCampaignCouponHealth(coupon) }
+    const [coupon, defaultPlanProductId] = await Promise.all([
+      retrieveLibraryCoupon(stripeClient, couponId),
+      resolveDefaultPlanProductId(stripeClient),
+    ])
+    return {
+      coupon,
+      couponHealth: assessCampaignCouponHealth(coupon, defaultPlanProductId),
+    }
   } catch {
     return { coupon: null, couponHealth: 'deleted' }
   }
@@ -168,8 +175,13 @@ export async function upsertCampaignWindowForAdminboard(
   },
 ): Promise<CampaignWindowRecord> {
   const client = deps.prisma ?? prisma
-  const coupon = await retrieveLibraryCoupon(deps.stripeClient, input.couponId)
-  assertCampaignCouponEligible(assessCampaignCouponHealth(coupon))
+  const [coupon, defaultPlanProductId] = await Promise.all([
+    retrieveLibraryCoupon(deps.stripeClient, input.couponId),
+    resolveDefaultPlanProductId(deps.stripeClient),
+  ])
+  assertCampaignCouponEligible(
+    assessCampaignCouponHealth(coupon, defaultPlanProductId),
+  )
 
   const store = createPrismaCampaignWindowStore(client)
   return upsertCampaignWindow(store, input, {

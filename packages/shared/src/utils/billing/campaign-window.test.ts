@@ -127,30 +127,41 @@ describe('isCampaignWindowAttaching', () => {
 
 describe('assessCampaignCouponHealth', () => {
   it('marks missing Coupons deleted', () => {
-    expect(assessCampaignCouponHealth(null)).toBe('deleted')
+    expect(assessCampaignCouponHealth(null, DEFAULT_PLAN_PRODUCT_ID)).toBe(
+      'deleted',
+    )
   })
 
   it('marks archived Coupons archived', () => {
-    expect(assessCampaignCouponHealth(baseCoupon({ archived: true }))).toBe(
-      'archived',
-    )
+    expect(
+      assessCampaignCouponHealth(
+        baseCoupon({ archived: true }),
+        DEFAULT_PLAN_PRODUCT_ID,
+      ),
+    ).toBe('archived')
   })
 
   it('marks Coupons scoped to a different product', () => {
     expect(
       assessCampaignCouponHealth(
         baseCoupon({ appliesToProductIds: ['prod_other'] }),
+        DEFAULT_PLAN_PRODUCT_ID,
       ),
     ).toBe('applies_to_miss')
   })
 
   it('marks Default Coupons healthy', () => {
-    expect(assessCampaignCouponHealth(baseCoupon())).toBe('healthy')
+    expect(
+      assessCampaignCouponHealth(baseCoupon(), DEFAULT_PLAN_PRODUCT_ID),
+    ).toBe('healthy')
   })
 
   it('marks store-wide Coupons (empty applies_to) healthy', () => {
     expect(
-      assessCampaignCouponHealth(baseCoupon({ appliesToProductIds: [] })),
+      assessCampaignCouponHealth(
+        baseCoupon({ appliesToProductIds: [] }),
+        DEFAULT_PLAN_PRODUCT_ID,
+      ),
     ).toBe('healthy')
   })
 })
@@ -248,10 +259,11 @@ describe('listCouponsForCampaignPicker', () => {
       baseCoupon({ id: 'cou_archived', archived: true }),
       baseCoupon({ id: 'cou_miss', appliesToProductIds: ['prod_other'] }),
     ]
-    expect(listCouponsForCampaignPicker(coupons).map((c) => c.id)).toEqual([
-      'cou_ok',
-      'cou_store_wide',
-    ])
+    expect(
+      listCouponsForCampaignPicker(coupons, DEFAULT_PLAN_PRODUCT_ID).map(
+        (c) => c.id,
+      ),
+    ).toEqual(['cou_ok', 'cou_store_wide'])
   })
 })
 

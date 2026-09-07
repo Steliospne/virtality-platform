@@ -67,6 +67,11 @@ function createStripeMock() {
         metadata: {},
       })),
     },
+    products: {
+      search: vi.fn(async () => ({
+        data: [{ id: 'prod_default_test', name: 'Default' }],
+      })),
+    },
   }
 }
 

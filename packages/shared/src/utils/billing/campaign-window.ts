@@ -8,10 +8,7 @@
  * retains historical Coupon ids (caller registers via onCouponSelected).
  */
 
-import {
-  DEFAULT_PLAN_PRODUCT_ID,
-  type CouponLibraryRecord,
-} from './coupon-library.ts'
+import { type CouponLibraryRecord } from './coupon-library.ts'
 
 export const CAMPAIGN_WINDOW_SINGLETON_ID = 'singleton' as const
 
@@ -75,15 +72,22 @@ export function isCampaignWindowAttaching(
   return resolveCampaignWindowLifecycle(window ?? null, now) === 'live'
 }
 
-/** Empty `appliesToProductIds` means the Coupon applies store-wide (the norm since Coupons no longer set `applies_to` on create). */
+/**
+ * Empty `appliesToProductIds` means the Coupon applies store-wide (the norm
+ * since Coupons no longer set `applies_to` on create). `defaultPlanProductId`
+ * must be the live Default plan Product id (resolved from Stripe by
+ * metadata, not the legacy hardcoded constant) — comparing against a stale id
+ * would pass a Coupon here that Stripe itself then rejects at Checkout.
+ */
 export function assessCampaignCouponHealth(
   coupon: CouponLibraryRecord | null,
+  defaultPlanProductId: string,
 ): CampaignCouponHealth {
   if (!coupon) return 'deleted'
   if (coupon.archived) return 'archived'
   if (
     coupon.appliesToProductIds.length > 0 &&
-    !coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)
+    !coupon.appliesToProductIds.includes(defaultPlanProductId)
   ) {
     return 'applies_to_miss'
   }
@@ -128,12 +132,13 @@ export function toCampaignCheckoutSessionParams(
 
 export function listCouponsForCampaignPicker(
   coupons: readonly CouponLibraryRecord[],
+  defaultPlanProductId: string,
 ): CouponLibraryRecord[] {
   return coupons.filter(
     (coupon) =>
       !coupon.archived &&
       (coupon.appliesToProductIds.length === 0 ||
-        coupon.appliesToProductIds.includes(DEFAULT_PLAN_PRODUCT_ID)),
+        coupon.appliesToProductIds.includes(defaultPlanProductId)),
   )
 }
 
