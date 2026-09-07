@@ -17,12 +17,16 @@ import { profileBillingHref } from '@/lib/renew-prompt-dismiss'
 export function SubscribeRenewBanner() {
   const { data: session } = authClient.useSession()
   const billingEnabled = useBillingFeatureEnabled()
-  const { isPending, checkoutCta, checkoutCtaLabel } =
+  const { isPending, entitled, checkoutCta, checkoutCtaLabel } =
     useLiveEntitlementStanding()
   const userId = session?.user?.id
 
   const visible =
-    billingEnabled && !isPending && userId != null && checkoutCtaLabel != null
+    billingEnabled &&
+    !isPending &&
+    !entitled &&
+    userId != null &&
+    checkoutCtaLabel != null
 
   if (!visible || !userId) return null
 

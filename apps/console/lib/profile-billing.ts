@@ -449,7 +449,7 @@ export function profileBillingStatusDetail(
 
   if (standing.entitled) return `Your ${productName} access is active.`
 
-  return `Choose Monthly or Yearly ${productName}, then continue to Checkout.`
+  return `Choose Monthly or Annual ${productName} plan, then continue to Checkout.`
 }
 
 export function profileBillingDiscountDisplay(
