@@ -4,6 +4,11 @@ import { settings } from '@/i18n/settings'
 import { getWebsiteUrl } from '@virtality/shared/types'
 import { buildSignInHref } from '@/lib/sign-in-redirect'
 import { evaluateSessionGate } from '@/lib/session-gate'
+import {
+  clinicianNeedsTrialWelcome,
+  isTrialWelcomePath,
+  TRIAL_WELCOME_PATH,
+} from '@/lib/trial-welcome-gate'
 
 acceptLanguage.languages(settings.languages)
 
@@ -33,7 +38,9 @@ export const config = {
 }
 
 const sessionHandler = async (request: NextRequest) => {
-  const { decision, setCookies } = await evaluateSessionGate(request.headers)
+  const { decision, setCookies, user } = await evaluateSessionGate(
+    request.headers,
+  )
 
   if (decision === 'sign-in') {
     const signInURL = new URL(
@@ -52,6 +59,17 @@ const sessionHandler = async (request: NextRequest) => {
       response.headers.append('set-cookie', cookie)
     }
     return response
+  }
+
+  if (
+    user?.id &&
+    !isTrialWelcomePath(request.nextUrl.pathname) &&
+    (await clinicianNeedsTrialWelcome({
+      userId: user.id,
+      role: user.role,
+    }))
+  ) {
+    return NextResponse.redirect(new URL(TRIAL_WELCOME_PATH, request.url))
   }
 
   return NextResponse.next()

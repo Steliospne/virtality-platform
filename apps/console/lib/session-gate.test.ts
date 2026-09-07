@@ -88,6 +88,7 @@ describe('evaluateSessionGate', () => {
     await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
       decision: 'ok',
       setCookies: [],
+      user: { id: 'user_1', role: 'user' },
     })
     expect(signOut).not.toHaveBeenCalled()
   })
@@ -103,6 +104,7 @@ describe('evaluateSessionGate', () => {
     await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
       decision: 'ok',
       setCookies: [],
+      user: { id: 'user_1', role: 'user' },
     })
     expect(signOut).not.toHaveBeenCalled()
   })

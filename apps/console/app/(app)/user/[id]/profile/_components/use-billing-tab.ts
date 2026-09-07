@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useCancelPendingPromotionCode,
   useConsoleBillingCatalog,
@@ -50,6 +51,7 @@ import {
   formatAccessCodeAppliedMessage,
   isProfileBillingAccessCode,
   readAccessCodePrefill,
+  TRIAL_WELCOME_PATH,
 } from '@virtality/shared/utils'
 
 const STANDING_REFETCH_ATTEMPTS = 5
@@ -75,6 +77,7 @@ function readInitialClientSearch<T>(
 }
 
 export function useBillingTab() {
+  const router = useRouter()
   const { data: session } = authClient.useSession()
   const standingQuery = useLiveEntitlementStanding()
   const catalogQuery = useConsoleBillingCatalog()
@@ -324,6 +327,9 @@ export function useBillingTab() {
         setRedeemSuccessMessage(formatAccessCodeAppliedMessage(result))
         await refetchStandingUntil((data) => data != null)
         setPromoCode('')
+        if (result.effect === 'trial_grant_created') {
+          router.push(TRIAL_WELCOME_PATH)
+        }
         return true
       } catch (error) {
         setRedeemError(errorMessage(error, 'Could not apply that Access Code.'))

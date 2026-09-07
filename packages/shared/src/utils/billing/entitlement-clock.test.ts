@@ -307,6 +307,22 @@ describe('buildEntitlementStanding', () => {
     expect(standing.entitled).toBe(true)
     expect(standing.canLaunchVr).toBe(true)
     expect(standing.remainingMs).toBeGreaterThan(0)
+    expect(standing.needsTrialWelcome).toBe(false)
+  })
+
+  it('flags trial welcome when a live Access Gate has not been seen', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [],
+      accessGate: {
+        status: 'trialing',
+        trialStart: NOW,
+        trialEnd: new Date('2026-08-17T12:00:00.000Z'),
+      },
+      accessGateHasSeenWelcome: false,
+    })
+    expect(standing.needsTrialWelcome).toBe(true)
   })
 
   it('blocks VR after a Free trial expires while the Free subscription stays active', () => {

@@ -8,6 +8,7 @@ export type SessionGateResult = {
   decision: SessionGateDecision
   /** Raw `Set-Cookie` header values from a sign-out that must reach the browser. */
   setCookies: string[]
+  user?: { id: string; role: string | null }
 }
 
 /**
@@ -64,7 +65,17 @@ export async function evaluateSessionGate(
       return { decision: 'waitlist', setCookies }
     }
 
-    return { decision: 'ok', setCookies }
+    return {
+      decision: 'ok',
+      setCookies,
+      user:
+        typeof data.user.id === 'string'
+          ? {
+              id: data.user.id,
+              role: typeof role === 'string' ? role : null,
+            }
+          : undefined,
+    }
   } catch (error) {
     console.error('Error checking session:', error)
     return { decision: 'ok', setCookies }

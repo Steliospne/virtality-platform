@@ -102,13 +102,14 @@ model PendingPromotionCode {
 /// Stripe subscription (Access Gate). Created directly as `granted` (permanent)
 /// or `trialing` (timed). At most one open (`granted`|`trialing`) row per user.
 model AccessGrant {
-  id         String            @id @default(cuid())
-  userId     String
-  trialStart DateTime?         @db.Timestamp(6)
-  trialEnd   DateTime?         @db.Timestamp(6)
-  status     AccessGrantStatus @default(trialing)
-  createdAt  DateTime          @db.Timestamp(6)
-  updatedAt  DateTime          @db.Timestamp(6)
+  id              String            @id @default(cuid())
+  userId          String
+  trialStart      DateTime?         @db.Timestamp(6)
+  trialEnd        DateTime?         @db.Timestamp(6)
+  status          AccessGrantStatus @default(trialing)
+  hasSeenWelcome  Boolean           @default(false)
+  createdAt       DateTime          @db.Timestamp(6)
+  updatedAt       DateTime          @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

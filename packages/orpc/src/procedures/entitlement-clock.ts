@@ -4,6 +4,7 @@ import {
   ACCESS_GATE_OPEN_STATUSES,
   type EntitlementStanding,
 } from '@virtality/shared/utils'
+import { z } from 'zod'
 import { authed } from '../middleware/auth.ts'
 
 export async function loadAccessGateClockForUser(
@@ -20,6 +21,7 @@ export async function loadAccessGateClockForUser(
       status: true,
       trialStart: true,
       trialEnd: true,
+      hasSeenWelcome: true,
     },
   })
 }
@@ -75,8 +77,15 @@ export async function loadEntitlementStandingForSession(input: {
     now: input.now ?? new Date(),
     role: input.role,
     subscriptions,
-    accessGate,
+    accessGate: accessGate
+      ? {
+          status: accessGate.status,
+          trialStart: accessGate.trialStart,
+          trialEnd: accessGate.trialEnd,
+        }
+      : null,
     accessGateEverIssued,
+    accessGateHasSeenWelcome: accessGate?.hasSeenWelcome,
   })
 }
 
@@ -91,6 +100,25 @@ const getStanding = authed
     })
   })
 
+const markTrialWelcomeSeen = authed
+  .route({ path: '/entitlement-clock/mark-trial-welcome-seen', method: 'POST' })
+  .input(z.object({}))
+  .handler(async ({ context }) => {
+    await context.prisma.accessGrant.updateMany({
+      where: {
+        userId: context.user.id,
+        status: 'trialing',
+        hasSeenWelcome: false,
+      },
+      data: {
+        hasSeenWelcome: true,
+        updatedAt: new Date(),
+      },
+    })
+    return { ok: true as const }
+  })
+
 export const entitlementClock = {
   getStanding,
+  markTrialWelcomeSeen,
 }

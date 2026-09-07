@@ -43,9 +43,9 @@ function createParticle(width: number, height: number): Particle {
 }
 
 /**
- * Lightweight, dependency-free confetti burst for the trial welcome page.
- * Runs for a fixed duration then stops updating, leaving the settled pieces
- * on screen without an indefinite animation loop.
+ * One burst: pieces spawn above the viewport, fall once, and rest on the
+ * floor. Nothing is respawned. The loop stops after a short duration so the
+ * last frame stays on screen.
  */
 export function TrialWelcomeConfettiCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -95,8 +95,12 @@ export function TrialWelcomeConfettiCanvas() {
         particle.y += particle.vy
         particle.rotation += particle.rotationSpeed
 
-        if (particle.y > height + 30) {
-          Object.assign(particle, createParticle(width, height))
+        const floorY = height - particle.size / 2
+        if (particle.y >= floorY) {
+          particle.y = floorY
+          particle.vy = 0
+          particle.vx *= 0.85
+          particle.rotationSpeed *= 0.9
         }
 
         ctx.save()

@@ -34,6 +34,7 @@ import {
   resolveEntitlementFromSources,
   type AccessGateClock,
 } from './access-gate.ts'
+import { shouldShowTrialWelcome } from './trial-welcome.ts'
 
 export type EntitlementBillingInterval = 'month' | 'year'
 
@@ -315,6 +316,11 @@ export type EntitlementStanding = EntitlementClockStanding & {
   cancelAtPeriodEnd: boolean
   /** Expired Free / canceled upgrade dialog eligibility (not trialing or paid). */
   expiredFreeUpgradeQualifies: boolean
+  /**
+   * Open timed Access Gate whose welcome page has not been shown. Console
+   * redirects to `/welcome/trial` until the grant is marked seen.
+   */
+  needsTrialWelcome: boolean
 }
 
 /** Normalize synced interval strings to month/year when recognizable. */
@@ -335,6 +341,7 @@ export function buildEntitlementStanding(input: {
   subscriptions: readonly EntitlementClockSubscription[]
   accessGate?: AccessGateClock | null
   accessGateEverIssued?: boolean
+  accessGateHasSeenWelcome?: boolean
   /** @deprecated Use `accessGate`. */
   accessGrant?: AccessGateClock | null
 }): EntitlementStanding {
@@ -376,6 +383,12 @@ export function buildEntitlementStanding(input: {
       entitled: clock.entitled,
       billingPathEstablished,
       subscriptions: input.subscriptions,
+    }),
+    needsTrialWelcome: shouldShowTrialWelcome({
+      role: input.role,
+      accessGate,
+      hasSeenWelcome: input.accessGateHasSeenWelcome,
+      now: input.now,
     }),
   }
 }
@@ -433,6 +446,7 @@ function emptyEntitlementStanding(): EntitlementStanding {
     hasPendingPlanChange: false,
     cancelAtPeriodEnd: false,
     expiredFreeUpgradeQualifies: false,
+    needsTrialWelcome: false,
   }
 }
 

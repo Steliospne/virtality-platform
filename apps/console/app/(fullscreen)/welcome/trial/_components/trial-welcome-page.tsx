@@ -1,16 +1,11 @@
 'use client'
 
-import { authClient } from '@/auth-client'
-import useMounted from '@/hooks/use-mounted'
 import { CheckoutSuccessHomeCta } from '../../../billing/success/_components/checkout-success-home-cta'
 import { TrialWelcomeConfettiLazy } from './trial-welcome-confetti-lazy'
+import { useTrialWelcomePage } from './use-trial-welcome-page'
 
 export function TrialWelcomePage() {
-  const mounted = useMounted()
-  const { data: session, isPending } = authClient.useSession()
-
-  // Keep SSR and the first client paint on the same shell (confetti only).
-  const ready = mounted && !isPending && Boolean(session?.user?.id)
+  const { ready } = useTrialWelcomePage()
 
   return (
     <section className='relative flex min-h-svh w-full flex-col items-center justify-center gap-8 overflow-hidden px-6 py-12'>
