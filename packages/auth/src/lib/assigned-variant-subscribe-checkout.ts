@@ -20,6 +20,7 @@ import type Stripe from 'stripe'
 import { buildCampaignAwareCheckoutSessionParams } from './campaign-window-adapter.ts'
 import { buildCheckoutAddressCollectionParams } from './checkout-address-collection.ts'
 import { resolvePromotionCodeForNewCheckout } from './console-promo-redeem-adapter.ts'
+import { ensureLiveStripeCustomerId } from './ensure-live-stripe-customer.ts'
 import { resolveAssignedPlanVariantChargePrice } from './plan-variant-catalog-adapter.ts'
 
 /** Stripe metadata: cancel the prior Free subscription after paid Checkout. */
@@ -46,18 +47,14 @@ export async function startAssignedVariantSubscribeCheckout(input: {
     where: { id: input.referenceId, deletedAt: null },
     select: {
       id: true,
+      email: true,
+      name: true,
       assignedDefaultVariant: true,
       stripeCustomerId: true,
     },
   })
   if (!user) {
     return { ok: false, message: 'Customer not found.' }
-  }
-  if (!user.stripeCustomerId) {
-    return {
-      ok: false,
-      message: 'Stripe customer is required before Subscribe.',
-    }
   }
 
   const priceResolved = await resolveAssignedPlanVariantChargePrice({
@@ -99,10 +96,21 @@ export async function startAssignedVariantSubscribeCheckout(input: {
   }
 
   try {
+    const stripeCustomerId = await ensureLiveStripeCustomerId({
+      stripeClient: input.stripeClient,
+      prisma: client,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        stripeCustomerId: user.stripeCustomerId,
+      },
+    })
+
     const { params: campaignParams } =
       await buildCampaignAwareCheckoutSessionParams({
         userId: user.id,
-        stripeCustomerId: user.stripeCustomerId,
+        stripeCustomerId,
         stripeClient: input.stripeClient,
         prisma: client,
       })
@@ -142,7 +150,7 @@ export async function startAssignedVariantSubscribeCheckout(input: {
     }
 
     const session = await input.stripeClient.checkout.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: stripeCustomerId,
       mode: 'subscription',
       success_url: buildBetterAuthCheckoutSuccessUrl(
         toAbsoluteConsoleReturnUrl(successUrl),

@@ -1,6 +1,11 @@
 import { betterAuth } from 'better-auth'
 import { sendResetPassword, sendVerificationEmail } from '@virtality/nodemailer'
-import { APIError, createAuthMiddleware, getOAuthState } from 'better-auth/api'
+import {
+  APIError,
+  createAuthMiddleware,
+  getOAuthState,
+  getSessionFromCtx,
+} from 'better-auth/api'
 import validateAndConsumeTesterCode from './lib/tester-code.ts'
 import {
   assertTrialRedeemAllowedAtSignUp,
@@ -14,6 +19,7 @@ import { buildCampaignAwareCheckoutSessionParams } from './lib/campaign-window-a
 import { buildCheckoutAddressCollectionParams } from './lib/checkout-address-collection.ts'
 import { resolvePromotionCodeForNewCheckout } from './lib/console-promo-redeem-adapter.ts'
 import { markPendingPromotionCodeAppliedForCheckout } from './lib/pending-promotion-code.ts'
+import { ensureLiveStripeCustomerId } from './lib/ensure-live-stripe-customer.ts'
 import { ASSIGNED_VARIANT_CANCEL_STRIPE_SUB_METADATA_KEY } from './lib/assigned-variant-subscribe-checkout.ts'
 import {
   readPlanVariantCatalogOrSandbox,
@@ -416,6 +422,28 @@ export const auth = betterAuth({
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       const { path } = ctx
+
+      if (path === '/subscription/upgrade' && stripeClient) {
+        const session = await getSessionFromCtx(ctx)
+        const user = session?.user as {
+          id?: string
+          email?: string
+          name?: string | null
+          stripeCustomerId?: string | null
+        } | null
+        if (user?.id && user.email) {
+          user.stripeCustomerId = await ensureLiveStripeCustomerId({
+            stripeClient,
+            prisma,
+            user: {
+              id: user.id,
+              email: user.email,
+              name: user.name ?? null,
+              stripeCustomerId: user.stripeCustomerId ?? null,
+            },
+          })
+        }
+      }
 
       if (
         path === '/sign-up/email' &&

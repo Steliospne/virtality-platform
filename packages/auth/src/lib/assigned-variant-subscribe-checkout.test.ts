@@ -47,11 +47,14 @@ function createPrismaMock(input: {
           ? null
           : {
               id: USER_ID,
+              email: 'clinician@example.test',
+              name: 'Clinician',
               assignedDefaultVariant:
                 input.assignedDefaultVariant ?? 'early-bird',
               stripeCustomerId: input.stripeCustomerId ?? CUSTOMER_ID,
             },
       ),
+      update: vi.fn(async () => ({})),
     },
     subscription: {
       findFirst: vi.fn(async () => input.subscription ?? null),
@@ -113,6 +116,11 @@ function createStripeMock(input?: {
           params,
         })),
       },
+    },
+    customers: {
+      retrieve: vi.fn(async (id: string) => ({ id, deleted: false })),
+      list: vi.fn(async () => ({ data: [] })),
+      create: vi.fn(async () => ({ id: 'cus_created' })),
     },
   }
 }
@@ -179,5 +187,43 @@ describe('startAssignedVariantSubscribeCheckout', () => {
       message: 'Subscribe requires a live Free subscription.',
     })
     expect(stripeClient.checkout.sessions.create).not.toHaveBeenCalled()
+  })
+
+  it('replaces a stale stored Stripe customer before opening Checkout', async () => {
+    const prisma = createPrismaMock({
+      stripeCustomerId: 'cus_stale',
+      subscription: {
+        id: LOCAL_SUB_ID,
+        stripeSubscriptionId: FREE_SUB_ID,
+        status: 'trialing',
+      },
+    })
+    const stripeClient = createStripeMock()
+    stripeClient.customers.retrieve.mockRejectedValue({
+      code: 'resource_missing',
+    })
+    stripeClient.customers.list.mockResolvedValue({
+      data: [{ id: 'cus_email' }],
+    })
+
+    const result = await startAssignedVariantSubscribeCheckout({
+      stripeClient: stripeClient as never,
+      prisma: prisma as never,
+      referenceId: USER_ID,
+      annual: false,
+      returnUrl: RETURN_URL,
+    })
+
+    expect(result).toEqual({
+      ok: true,
+      checkoutUrl: 'https://checkout.stripe.test/session',
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: USER_ID },
+      data: { stripeCustomerId: 'cus_email' },
+    })
+    expect(stripeClient.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: 'cus_email' }),
+    )
   })
 })
