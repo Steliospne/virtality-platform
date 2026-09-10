@@ -131,7 +131,7 @@ export const programLibraryColumns: ColumnDef<CompleteReusableProgram>[] = [
                 onClick={() => setRetireOpen(true)}
               >
                 <Archive />
-                Retire
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -152,7 +152,7 @@ export const programLibraryColumns: ColumnDef<CompleteReusableProgram>[] = [
                   disabled={isPending}
                   onClick={handleRetire}
                 >
-                  Retire program
+                  Delete program
                 </Button>
               </DialogFooter>
             </DialogContent>

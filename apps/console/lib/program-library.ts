@@ -6,7 +6,7 @@ export type ProgramLibraryListRow = {
 }
 
 export const PROGRAM_RETIRE_CONFIRMATION = {
-  title: 'Retire program?',
+  title: 'Delete program?',
   description:
     'This program will no longer appear for future treatment. Past patient sessions that used this program will stay unchanged.',
 } as const

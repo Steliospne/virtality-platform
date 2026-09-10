@@ -76,7 +76,7 @@ describe('program library surfaces', () => {
     }
   })
 
-  it('supports make a copy, edit, and retire actions from the library table', () => {
+  it('supports make a copy, edit, and delete actions from the library table', () => {
     const columnsSource = readConsoleFile(
       'app/(app)/programs/_components/columns.tsx',
     )
@@ -85,6 +85,8 @@ describe('program library surfaces', () => {
     expect(columnsSource).toMatch(/useCopyReusableProgram/)
     expect(columnsSource).toMatch(/useRetireReusableProgram/)
     expect(columnsSource).toMatch(/PROGRAM_RETIRE_CONFIRMATION/)
+    expect(columnsSource).toMatch(/<Archive \/>\s*\n\s*Delete/)
+    expect(columnsSource).toMatch(/Delete program/)
     expect(columnsSource).toMatch(/\/programs\/\$\{program\.id\}\/edit/)
   })
 

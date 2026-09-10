@@ -56,7 +56,8 @@ describe('program library search', () => {
 })
 
 describe('program library retirement confirmation', () => {
-  it('explains that past sessions stay unchanged', () => {
+  it('uses delete wording while explaining soft retirement', () => {
+    expect(PROGRAM_RETIRE_CONFIRMATION.title).toBe('Delete program?')
     expect(PROGRAM_RETIRE_CONFIRMATION.description).toMatch(
       /past patient sessions/i,
     )
