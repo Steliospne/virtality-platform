@@ -1,4 +1,5 @@
 import { z } from 'zod/v4'
+import { isPatientLanguage, isPatientSex } from './patient-form-validation'
 import { isValidNumber } from './utils'
 import { isValidPassword } from '@virtality/shared/utils'
 
@@ -121,9 +122,13 @@ export const PatientFormSchema = z.object({
     },
   ),
   dob: z.string().optional(),
-  sex: z.string().optional(),
+  sex: z.string().refine(isPatientSex, {
+    message: 'Sex is required',
+  }),
   image: z.instanceof(File).or(z.string()).optional().nullable(),
-  language: z.enum(['Greek', 'English']).optional(),
+  language: z.string().refine(isPatientLanguage, {
+    message: 'Language is required',
+  }),
   occupation: z.string().optional(),
   // medical history
   anamneses: z.string().nullable(),
@@ -133,6 +138,7 @@ export const PatientFormSchema = z.object({
   nprs: z.string().nullable(),
 })
 
+export type PatientFormInput = z.input<typeof PatientFormSchema>
 export type PatientForm = z.infer<typeof PatientFormSchema>
 
 export const DeviceSchema = z.object({

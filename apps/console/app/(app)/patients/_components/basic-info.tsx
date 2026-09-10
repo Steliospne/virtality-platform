@@ -30,7 +30,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { PatientForm } from '@/lib/definitions'
+import { PatientFormInput } from '@/lib/definitions'
+import {
+  patientLanguageSelectValue,
+  patientSexSelectValue,
+} from '@/lib/patient-form-validation'
 import { Patient } from '@virtality/db'
 import { CalendarIcon, Trash2, Upload, User } from 'lucide-react'
 import Image from 'next/image'
@@ -43,7 +47,7 @@ import { useClientT } from '@/i18n/use-client-t'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 interface BasicInfoProps {
-  form: ReturnType<typeof useForm<PatientForm>>
+  form: ReturnType<typeof useForm<PatientFormInput>>
   patient?: Patient
 }
 
@@ -58,7 +62,7 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
 
   const handlePhotoUpload = (
     event: ChangeEvent<HTMLInputElement>,
-    field: ControllerRenderProps<PatientForm, 'image'>,
+    field: ControllerRenderProps<PatientFormInput, 'image'>,
   ) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -277,11 +281,11 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                 name='sex'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('form.sex')}</FormLabel>
+                    <FormLabel>{t('form.sex')} *</FormLabel>
                     <Select
                       name='sex'
                       onValueChange={field.onChange}
-                      value={field.value}
+                      value={patientSexSelectValue(field.value)}
                     >
                       <FormControl>
                         <SelectTrigger className='w-full shadow-none'>
@@ -293,7 +297,6 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                         <SelectItem value='female'>
                           {t('form.female')}
                         </SelectItem>
-                        <SelectItem value='other'>{t('form.other')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -335,11 +338,11 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                 name='language'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('language', { ns: 'glossary' })}</FormLabel>
+                    <FormLabel>{t('language', { ns: 'glossary' })} *</FormLabel>
                     <Select
                       name='language'
                       onValueChange={field.onChange}
-                      value={field.value ?? undefined}
+                      value={patientLanguageSelectValue(field.value)}
                     >
                       <FormControl>
                         <SelectTrigger className='w-full shadow-none'>

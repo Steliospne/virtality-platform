@@ -4,10 +4,8 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { Separator } from '@virtality/ui/components/separator'
 import { useForm } from 'react-hook-form'
-import {
-  PatientFormSchema,
-  PatientForm as PatientFormType,
-} from '@/lib/definitions'
+import { patientFormDefaultValues } from '@/lib/patient-form-defaults'
+import { PatientFormSchema, PatientFormInput } from '@/lib/definitions'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form } from '@/components/ui/form'
 import { BodyAreas } from '@/types/models'
@@ -27,25 +25,6 @@ import useIsAuthed from '@/hooks/use-is-authed'
 import { getQueryClient, useNewPatient, useORPC } from '@virtality/react-query'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 import useNow from '@/hooks/use-now'
-
-const defaultValues: PatientFormType = {
-  name: '',
-  email: '',
-  phone: '',
-  height: '',
-  weight: '',
-  sex: '',
-  dob: undefined,
-  language: 'Greek',
-  occupation: '',
-  image: null,
-  // medical history
-  anamneses: '',
-  complaints: '',
-  expectations: '',
-  diagnosis: '',
-  nprs: '5',
-}
 
 const PatientForm = () => {
   useIsAuthed()
@@ -77,12 +56,12 @@ const PatientForm = () => {
 
   const { t } = useClientT(['common'])
 
-  const form = useForm<PatientFormType>({
+  const form = useForm<PatientFormInput>({
     resolver: zodResolver(PatientFormSchema),
-    defaultValues,
+    defaultValues: patientFormDefaultValues,
   })
 
-  const onSubmit = (values: PatientFormType) => {
+  const onSubmit = (values: PatientFormInput) => {
     const {
       name,
       email,
@@ -109,11 +88,11 @@ const PatientForm = () => {
       email: email ?? null,
       phone: phone ?? null,
       dob: dob ?? null,
-      sex: sex ?? null,
+      sex,
       weight: weight ?? null,
       height: height ?? null,
       image: image,
-      language: language ?? 'Greek',
+      language,
       occupation: occupation ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),

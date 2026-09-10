@@ -12,7 +12,7 @@ import { Slider } from '@/components/ui/slider'
 import dynamic from 'next/dynamic'
 import { useForm } from 'react-hook-form'
 import { BodyAreas, MedHistoryDeltas } from '@/types/models'
-import { PatientForm } from '@/lib/definitions'
+import { PatientFormInput } from '@/lib/definitions'
 import { useRef, useState } from 'react'
 import { HumanState } from '@/data/static/human-body'
 import useBeforeUnload from '@/hooks/use-before-unload'
@@ -47,7 +47,7 @@ const Editor = dynamic(() => import('@/editor'), {
 })
 
 interface MedicalHistoryProps {
-  form: ReturnType<typeof useForm<PatientForm>>
+  form: ReturnType<typeof useForm<PatientFormInput>>
   initialBodyAreas: BodyAreas
   bodyAreas: BodyAreas
   onBodyAreasChange?: (bodyAreas: BodyAreas) => void

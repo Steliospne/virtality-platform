@@ -4,10 +4,8 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { Separator } from '@virtality/ui/components/separator'
 import { useForm } from 'react-hook-form'
-import {
-  PatientFormSchema,
-  PatientForm as PatientFormType,
-} from '@/lib/definitions'
+import { patientFormDefaultValues } from '@/lib/patient-form-defaults'
+import { PatientFormSchema, PatientFormInput } from '@/lib/definitions'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form } from '@/components/ui/form'
 import { BodyAreas, MedHistoryDeltas } from '@/types/models'
@@ -34,24 +32,6 @@ import {
 } from '@virtality/react-query'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 
-const defaultValues: PatientFormType = {
-  name: '',
-  email: '',
-  phone: '',
-  height: '',
-  weight: '',
-  sex: '',
-  dob: undefined,
-  occupation: '',
-  image: null,
-  // medical history
-  anamneses: '',
-  complaints: '',
-  expectations: '',
-  diagnosis: '',
-  nprs: '5',
-}
-
 interface PatientFormEditProps {
   patientId: string
 }
@@ -76,7 +56,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
     weight: patient?.weight ?? '',
     dob: patient?.dob ?? undefined,
     sex: patient?.sex ?? '',
-    language: patient?.language ?? 'Greek',
+    language: patient?.language ?? '',
     occupation: patient?.occupation ?? '',
     image: patient?.image ?? null,
     // medical history
@@ -126,7 +106,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
     }
   }, [medHistory?.bodyFront, medHistory?.bodyBack])
 
-  const submittedValues = useRef<PatientFormType | null>(null)
+  const submittedValues = useRef<PatientFormInput | null>(null)
 
   const { mutate: updatePatient, isPending: isFormPending } = useUpdatePatient({
     onSuccess: (_, variables) => {
@@ -153,15 +133,15 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
     },
   })
 
-  const form = useForm<PatientFormType>({
+  const form = useForm<PatientFormInput>({
     resolver: zodResolver(PatientFormSchema),
-    defaultValues,
+    defaultValues: patientFormDefaultValues,
     values,
   })
 
   const { errors, isSubmitSuccessful, isSubmitting, isDirty } = form.formState
 
-  const onSubmit = (values: PatientFormType) => {
+  const onSubmit = (values: PatientFormInput) => {
     if (!patient || !medHistory) return
 
     const {
@@ -192,11 +172,11 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
       email: email ?? null,
       phone: phone ?? null,
       dob: dob ?? null,
-      sex: sex ?? null,
+      sex,
       weight: weight ?? null,
       height: height ?? null,
       image: image ?? null,
-      language: language ?? 'Greek',
+      language,
       occupation: occupation ?? null,
       updatedAt: new Date(),
     }
