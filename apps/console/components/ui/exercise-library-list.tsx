@@ -334,7 +334,7 @@ const ExerciseLibraryList = ({
             checked={globalCheck}
             onCheckedChange={checkAll}
           />
-          <p className='text-muted-foreground text-sm'>Select all</p>
+          <p className='text-sm'>Edit all</p>
         </div>
 
         {showExerciseLibraryAccess && (

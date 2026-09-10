@@ -44,7 +44,7 @@ export function pruneDeferredRemovalIds(
   return [...deferredRemovalIds].filter((id) => existingRowIds.has(id))
 }
 
-/** Rows eligible for Select all, segment checkboxes, and Remove Selected. */
+/** Rows eligible for Edit all, segment checkboxes, and Remove Selected. */
 export function bulkSelectableRowIds(
   rows: readonly { id: string }[],
   deferredRemovalIds: DeferredRemovalIdSet,
