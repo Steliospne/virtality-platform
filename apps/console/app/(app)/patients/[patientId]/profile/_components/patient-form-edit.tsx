@@ -4,6 +4,7 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { Separator } from '@virtality/ui/components/separator'
 import { useForm } from 'react-hook-form'
+import { patientFormDefaultValues } from '@/lib/patient-form-defaults'
 import { PatientFormSchema, PatientFormInput } from '@/lib/definitions'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form } from '@/components/ui/form'
@@ -30,25 +31,6 @@ import {
   useORPC,
 } from '@virtality/react-query'
 import { trackAnalyticsEvent } from '@/lib/analytics-contract'
-
-const defaultValues: PatientFormInput = {
-  name: '',
-  email: '',
-  phone: '',
-  height: '',
-  weight: '',
-  sex: '',
-  dob: undefined,
-  language: '',
-  occupation: '',
-  image: null,
-  // medical history
-  anamneses: '',
-  complaints: '',
-  expectations: '',
-  diagnosis: '',
-  nprs: '5',
-}
 
 interface PatientFormEditProps {
   patientId: string
@@ -153,7 +135,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
 
   const form = useForm<PatientFormInput>({
     resolver: zodResolver(PatientFormSchema),
-    defaultValues,
+    defaultValues: patientFormDefaultValues,
     values,
   })
 

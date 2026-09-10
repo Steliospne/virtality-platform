@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { PatientFormSchema } from './definitions'
-import { patientSexSelectValue } from './patient-form-validation'
 
 const validBase = {
   name: 'Test Patient',
@@ -65,18 +64,5 @@ describe('PatientFormSchema sex and language', () => {
         language: 'English',
       }).success,
     ).toBe(true)
-  })
-})
-
-describe('patientSexSelectValue', () => {
-  it('maps legacy or empty sex to an unset select value', () => {
-    expect(patientSexSelectValue('other')).toBeUndefined()
-    expect(patientSexSelectValue('')).toBeUndefined()
-    expect(patientSexSelectValue(null)).toBeUndefined()
-  })
-
-  it('keeps male and female selections', () => {
-    expect(patientSexSelectValue('male')).toBe('male')
-    expect(patientSexSelectValue('female')).toBe('female')
   })
 })

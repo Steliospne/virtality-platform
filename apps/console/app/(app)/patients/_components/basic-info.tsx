@@ -31,7 +31,10 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { PatientFormInput } from '@/lib/definitions'
-import { patientSexSelectValue } from '@/lib/patient-form-validation'
+import {
+  patientLanguageSelectValue,
+  patientSexSelectValue,
+} from '@/lib/patient-form-validation'
 import { Patient } from '@virtality/db'
 import { CalendarIcon, Trash2, Upload, User } from 'lucide-react'
 import Image from 'next/image'
@@ -339,7 +342,7 @@ const BasicInfo = ({ form, patient }: BasicInfoProps) => {
                     <Select
                       name='language'
                       onValueChange={field.onChange}
-                      value={field.value || undefined}
+                      value={patientLanguageSelectValue(field.value)}
                     >
                       <FormControl>
                         <SelectTrigger className='w-full shadow-none'>
