@@ -303,7 +303,7 @@ const QuickStartDialog = () => {
                     onClick={openSavePrompt}
                     disabled={!canFinalize || isSaving}
                   >
-                    Continue
+                    Finalize
                     <Zap />
                   </Button>
                 </div>
@@ -320,7 +320,7 @@ const QuickStartDialog = () => {
                   onClick={goToSelectedList}
                 >
                   <ArrowLeft />
-                  Done
+                  Continue
                 </Button>
               </>
             )}

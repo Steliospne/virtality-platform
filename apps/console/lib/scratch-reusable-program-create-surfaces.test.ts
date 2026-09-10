@@ -22,10 +22,10 @@ describe('scratch reusable program settings-first create flow', () => {
     expect(formSource).toMatch(/goToSelectedList/)
   })
 
-  it('shows selected exercise count near the catalog Done action', () => {
+  it('shows selected exercise count near the catalog Continue action', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
-    expect(formSource).toMatch(/>\s*Done\s*</)
+    expect(formSource).toMatch(/>\s*Continue\s*</)
   })
 
   it('renders the program name field only on the selected-list step', () => {

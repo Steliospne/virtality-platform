@@ -46,14 +46,22 @@ describe('quick start dialog surfaces', () => {
     )
   })
 
-  it('places Continue and Save Program on the selected-list step', () => {
+  it('places Finalize and Save Program on the selected-list step', () => {
     expect(source).toMatch(/canQuickStartFinalAction/)
-    expect(source).toMatch(/Continue/)
+    expect(source).toMatch(/Finalize/)
     expect(source).toMatch(/Save Program/)
     expect(source).not.toMatch(/Quickstart Program Overview/)
   })
 
-  it('opens a save reminder dialog before Continue finalizes', () => {
+  it('shows Continue on the catalog step to return to settings', () => {
+    const catalogFooterBlock =
+      source.match(/isCatalogStep[\s\S]*?<\/DialogFooter>/)?.[0] ?? ''
+
+    expect(catalogFooterBlock).toMatch(/goToSelectedList/)
+    expect(catalogFooterBlock).toMatch(/>\s*Continue\s*</)
+  })
+
+  it('opens a save reminder dialog before Finalize loads the session', () => {
     expect(source).toMatch(/openSavePrompt/)
     expect(source).toMatch(/Save this as a program\?/)
     expect(source).toMatch(/Continue without saving/)

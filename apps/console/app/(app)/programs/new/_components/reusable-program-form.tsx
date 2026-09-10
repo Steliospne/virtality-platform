@@ -263,7 +263,7 @@ const ReusableProgramFormView = ({
             </span>
             <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
             <Button variant='primary' onClick={goToSelectedList}>
-              Done
+              Continue
             </Button>
           </div>
         </div>

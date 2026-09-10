@@ -21,10 +21,10 @@ describe('reusable program settings-first edit flow', () => {
     expect(formSource).toMatch(/updateExercises\(withRom\(seededExercises\)\)/)
   })
 
-  it('shows selected exercise count near the catalog Done action', () => {
+  it('shows selected exercise count near the catalog Continue action', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
-    expect(formSource).toMatch(/>\s*Done\s*</)
+    expect(formSource).toMatch(/>\s*Continue\s*</)
   })
 
   it('renders the existing program name only on the selected-list step', () => {
