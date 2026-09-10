@@ -1,4 +1,5 @@
 import type { ExerciseDraftLaterality } from '../../types/exercise-draft.ts'
+import { normalizeExerciseEquipmentKey } from '../clinical/normalize-exercise-equipment-key.ts'
 import { buildBucketObjectKey } from './bucket.ts'
 
 export type ExerciseDraftRecord = {
@@ -358,6 +359,97 @@ function buildPromoteRowsFromDraft(
     direction: entry.direction,
     ...shared,
   }))
+}
+
+export async function saveExerciseDraft(
+  store: ExerciseDraftStore,
+  draftId: string,
+  data: Partial<Omit<ExerciseDraftRecord, 'id' | 'createdBy'>>,
+): Promise<ExerciseDraftRecord> {
+  const existing = await store.findById(draftId)
+  if (!existing) {
+    throw new ExerciseDraftNotFoundError(draftId)
+  }
+
+  const merged: ExerciseDraftRecord = { ...existing, ...data }
+  const stemFieldsChanged =
+    data.displayName !== undefined ||
+    data.laterality !== undefined ||
+    data.unityStem !== undefined ||
+    data.unityStemDirty !== undefined
+
+  if (stemFieldsChanged && merged.laterality) {
+    const stemError = validateUnityStem(getEffectiveUnityStem(merged))
+    if (stemError) {
+      throw new ExerciseDraftUnityStemError(stemError)
+    }
+  }
+
+  return store.update(draftId, data)
+}
+
+export type ExerciseNameOccupancyReader = {
+  listExerciseNames: () => Promise<string[]>
+}
+
+export async function checkExerciseDraftUnityNameOccupancy(
+  draftStore: ExerciseDraftStore,
+  occupancyReader: ExerciseNameOccupancyReader,
+  input: { draftId: string; candidateNames?: string[] },
+): Promise<{ occupiedNames: string[] }> {
+  const draft = await draftStore.findById(input.draftId)
+  if (!draft) {
+    throw new ExerciseDraftNotFoundError(input.draftId)
+  }
+
+  const candidateNames =
+    input.candidateNames ??
+    deriveExerciseNamesFromDraft(draft).map((entry) => entry.name)
+
+  if (candidateNames.length === 0) {
+    return { occupiedNames: [] }
+  }
+
+  const [exerciseNames, drafts] = await Promise.all([
+    occupancyReader.listExerciseNames(),
+    draftStore.listAll(),
+  ])
+
+  const occupiedNames = findOccupiedUnityNames({
+    candidateNames,
+    exerciseNames,
+    drafts,
+    excludeDraftId: draft.id,
+  })
+
+  return { occupiedNames }
+}
+
+export function collectExerciseWizardClassificationVocabulary(
+  exercises: readonly { category: string; item: string | null }[],
+  drafts: readonly { category: string; item: string | null }[],
+): { categories: string[]; items: string[] } {
+  const categories = new Set<string>()
+  const items = new Set<string>()
+
+  for (const row of [...exercises, ...drafts]) {
+    const category = row.category.trim()
+    if (category) {
+      categories.add(category)
+    }
+
+    const item = row.item?.trim()
+    if (item) {
+      items.add(normalizeExerciseEquipmentKey(item))
+    }
+  }
+
+  return {
+    categories: [...categories].sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    items: [...items].sort((left, right) => left.localeCompare(right)),
+  }
 }
 
 export async function createEmptyExerciseDraft(

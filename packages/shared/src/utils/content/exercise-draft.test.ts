@@ -5,18 +5,22 @@ import {
   assessExerciseProductionReadiness,
   buildExerciseDraftMediaObjectKey,
   collectDraftUnityNameReservations,
+  checkExerciseDraftUnityNameOccupancy,
+  collectExerciseWizardClassificationVocabulary,
   createEmptyExerciseDraft,
   deriveExerciseNamesFromDraft,
   deriveUnityStemFromDisplayName,
   discardExerciseDraft,
   ExerciseDraftNameOccupiedError,
   ExerciseDraftNotFoundError,
+  ExerciseDraftUnityStemError,
   ExerciseEnableValidationError,
   ExercisePairEnabledMismatchError,
   findOccupiedUnityNames,
   getEffectiveUnityStem,
   promoteExerciseDraft,
   resetUnityStemFromDisplayName,
+  saveExerciseDraft,
   validateUnityStem,
   type ExerciseDraftRecord,
   type ExerciseDraftStore,
@@ -394,6 +398,65 @@ describe('exercise draft media object keys', () => {
     expect(fromStemOnly).toBe(
       'exercises/thumbnail/ignored-when-stem-differs-abc12345.png',
     )
+  })
+})
+
+describe('save exercise draft', () => {
+  it('persists field updates for an existing draft', async () => {
+    const draftStore = createDraftStore([completeDraft])
+
+    const updated = await saveExerciseDraft(draftStore, 'draft-1', {
+      description: 'Updated copy.',
+    })
+
+    expect(updated.description).toBe('Updated copy.')
+  })
+
+  it('rejects stems that already encode laterality', async () => {
+    const draftStore = createDraftStore([
+      createDraft({
+        id: 'draft-1',
+        laterality: 'pair',
+        displayName: 'Move',
+        unityStem: 'Move_L',
+        unityStemDirty: true,
+      }),
+    ])
+
+    await expect(
+      saveExerciseDraft(draftStore, 'draft-1', { displayName: 'Move' }),
+    ).rejects.toBeInstanceOf(ExerciseDraftUnityStemError)
+  })
+})
+
+describe('check exercise draft unity name occupancy', () => {
+  it('returns occupied Unity names for the draft sitting', async () => {
+    const draftStore = createDraftStore([completeDraft])
+
+    const result = await checkExerciseDraftUnityNameOccupancy(
+      draftStore,
+      { listExerciseNames: async () => ['BicepCurls_L'] },
+      { draftId: 'draft-1' },
+    )
+
+    expect(result.occupiedNames).toEqual(['BicepCurls_L'])
+  })
+})
+
+describe('exercise wizard classification vocabulary', () => {
+  it('merges distinct categories and items from exercises and drafts', () => {
+    const vocabulary = collectExerciseWizardClassificationVocabulary(
+      [{ category: 'Legs', item: 'Band' }],
+      [
+        { category: 'Arms', item: null },
+        { category: 'Legs', item: 'band' },
+      ],
+    )
+
+    expect(vocabulary).toEqual({
+      categories: ['Arms', 'Legs'],
+      items: ['band'],
+    })
   })
 })
 

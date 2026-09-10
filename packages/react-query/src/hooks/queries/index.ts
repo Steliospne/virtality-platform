@@ -32,6 +32,9 @@ export { useMap } from './use-map.js'
 export { useExercise } from './use-exercise.js'
 export { useExerciseCategories } from './use-exercise-categories.js'
 export { useExerciseItems } from './use-exercise-items.js'
+export { useExerciseDraft } from './exercise-draft/use-exercise-draft.js'
+export { useExerciseDrafts } from './exercise-draft/use-exercise-drafts.js'
+export { useExerciseDraftClassificationVocabulary } from './exercise-draft/use-exercise-draft-classification-vocabulary.js'
 
 // Medical history queries
 export { useMedicalHistory } from './use-medical-history.js'

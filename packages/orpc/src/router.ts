@@ -4,6 +4,7 @@ import { medicalHistory } from './procedures/medical-history.ts'
 import { avatar } from './procedures/avatar.ts'
 import { map } from './procedures/map.ts'
 import { exercise } from './procedures/exercise.ts'
+import { exerciseDraft } from './procedures/exercise-draft.ts'
 import { patientSession } from './procedures/patient-session.ts'
 import { device } from './procedures/device.ts'
 import { supplementalTherapy } from './procedures/supplemental-therapy.ts'
@@ -52,6 +53,7 @@ export const router = {
   avatar,
   map,
   exercise,
+  exerciseDraft,
   device,
   supplementalTherapy,
   reusableProgram,

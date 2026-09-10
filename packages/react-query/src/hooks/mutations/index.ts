@@ -132,6 +132,13 @@ export {
 export { useAddFavoriteExercise } from './favorite-exercise/use-add-favorite-exercise.js'
 export { useRemoveFavoriteExercise } from './favorite-exercise/use-remove-favorite-exercise.js'
 
+// Exercise draft mutations
+export { useCreateExerciseDraft } from './exercise-draft/use-create-exercise-draft.js'
+export { useSaveExerciseDraft } from './exercise-draft/use-save-exercise-draft.js'
+export { useDiscardExerciseDraft } from './exercise-draft/use-discard-exercise-draft.js'
+export { useCheckExerciseDraftOccupancy } from './exercise-draft/use-check-exercise-draft-occupancy.js'
+export { usePromoteExerciseDraft } from './exercise-draft/use-promote-exercise-draft.js'
+
 // Partner logo mutations
 export { useCreatePartnerLogo } from './partner-logo/use-create-partner-logo.js'
 export { useUpdatePartnerLogo } from './partner-logo/use-update-partner-logo.js'
