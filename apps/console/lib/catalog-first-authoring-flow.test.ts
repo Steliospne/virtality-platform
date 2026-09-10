@@ -87,7 +87,7 @@ describe('settings-first authoring navigation guards', () => {
 })
 
 describe('settings-first selected exercise count label', () => {
-  it('shows a zero-selection label near the catalog Continue action', () => {
+  it('returns a zero-selection count label', () => {
     expect(catalogFirstSelectedExerciseCountLabel(0)).toBe(
       'No exercises selected',
     )

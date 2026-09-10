@@ -36,8 +36,14 @@ import {
 import { withRom } from '@/lib/with-rom'
 import { ZERO_ENABLED_VARIANTS_MESSAGE } from '@/lib/program-submit-enabled-variants'
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
-import { CATALOG_CATALOG_FIRST_AUTHORING_STEP } from '@/lib/catalog-first-authoring-flow'
-import { canQuickStartFinalAction } from '@/lib/quickstart-authoring-flow'
+import {
+  CATALOG_CATALOG_FIRST_AUTHORING_STEP,
+  CATALOG_FIRST_CATALOG_CONTINUE_LABEL,
+} from '@/lib/catalog-first-authoring-flow'
+import {
+  canQuickStartFinalAction,
+  QUICKSTART_FINALIZE_LABEL,
+} from '@/lib/quickstart-authoring-flow'
 
 const scrollableStepContentClass = 'min-h-0 flex-1 overflow-auto'
 
@@ -303,7 +309,7 @@ const QuickStartDialog = () => {
                     onClick={openSavePrompt}
                     disabled={!canFinalize || isSaving}
                   >
-                    Finalize
+                    {QUICKSTART_FINALIZE_LABEL}
                     <Zap />
                   </Button>
                 </div>
@@ -320,7 +326,7 @@ const QuickStartDialog = () => {
                   onClick={goToSelectedList}
                 >
                   <ArrowLeft />
-                  Continue
+                  {CATALOG_FIRST_CATALOG_CONTINUE_LABEL}
                 </Button>
               </>
             )}

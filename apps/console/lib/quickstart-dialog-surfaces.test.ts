@@ -48,7 +48,7 @@ describe('quick start dialog surfaces', () => {
 
   it('places Finalize and Save Program on the selected-list step', () => {
     expect(source).toMatch(/canQuickStartFinalAction/)
-    expect(source).toMatch(/Finalize/)
+    expect(source).toMatch(/QUICKSTART_FINALIZE_LABEL/)
     expect(source).toMatch(/Save Program/)
     expect(source).not.toMatch(/Quickstart Program Overview/)
   })
@@ -58,7 +58,7 @@ describe('quick start dialog surfaces', () => {
       source.match(/isCatalogStep[\s\S]*?<\/DialogFooter>/)?.[0] ?? ''
 
     expect(catalogFooterBlock).toMatch(/goToSelectedList/)
-    expect(catalogFooterBlock).toMatch(/>\s*Continue\s*</)
+    expect(catalogFooterBlock).toMatch(/CATALOG_FIRST_CATALOG_CONTINUE_LABEL/)
   })
 
   it('opens a save reminder dialog before Finalize loads the session', () => {
@@ -88,11 +88,11 @@ describe('quick start dialog surfaces', () => {
   it('preserves exercise library selection when navigating to catalog and back', () => {
     const addExercisesBlock =
       source.match(/onClick=\{goToCatalog\}[\s\S]*?<\/Button>/)?.[0] ?? ''
-    const doneBlock =
+    const continueBlock =
       source.match(/onClick=\{goToSelectedList\}[\s\S]*?<\/Button>/)?.[0] ?? ''
 
     expect(addExercisesBlock).not.toMatch(/updateExercises/)
-    expect(doneBlock).not.toMatch(/updateExercises/)
+    expect(continueBlock).not.toMatch(/updateExercises/)
   })
 
   it('does not mount the nested exercise library dialog path', () => {

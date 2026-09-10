@@ -44,7 +44,10 @@ import {
   suggestedProgramNameFromTemplate,
 } from '@/lib/starter-template-create'
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
-import { CATALOG_CATALOG_FIRST_AUTHORING_STEP } from '@/lib/catalog-first-authoring-flow'
+import {
+  CATALOG_CATALOG_FIRST_AUTHORING_STEP,
+  CATALOG_FIRST_CATALOG_CONTINUE_LABEL,
+} from '@/lib/catalog-first-authoring-flow'
 
 type EditorSource =
   | { kind: 'scratch' }
@@ -263,7 +266,7 @@ const ReusableProgramFormView = ({
             </span>
             <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
             <Button variant='primary' onClick={goToSelectedList}>
-              Continue
+              {CATALOG_FIRST_CATALOG_CONTINUE_LABEL}
             </Button>
           </div>
         </div>

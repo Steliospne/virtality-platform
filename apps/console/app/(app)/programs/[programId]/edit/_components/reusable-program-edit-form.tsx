@@ -44,6 +44,7 @@ import {
 } from '@/lib/program-library-submit'
 import { ZERO_ENABLED_VARIANTS_MESSAGE } from '@/lib/program-submit-enabled-variants'
 import { useCatalogFirstAuthoringFlow } from '@/hooks/use-catalog-first-authoring-flow'
+import { CATALOG_FIRST_CATALOG_CONTINUE_LABEL } from '@/lib/catalog-first-authoring-flow'
 
 interface ReusableProgramEditFormProps {
   programId: string
@@ -245,7 +246,7 @@ const ReusableProgramEditForm = ({
             </span>
             <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
             <Button variant='primary' onClick={goToSelectedList}>
-              Continue
+              {CATALOG_FIRST_CATALOG_CONTINUE_LABEL}
             </Button>
           </div>
         </div>

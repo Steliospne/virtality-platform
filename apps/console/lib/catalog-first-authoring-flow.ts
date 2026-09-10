@@ -70,7 +70,10 @@ export function isSelectedListStep(step: CatalogFirstAuthoringStep): boolean {
   return step === SELECTED_LIST_CATALOG_FIRST_AUTHORING_STEP
 }
 
-/** Label shown near the Continue action on the catalog step. */
+/** Primary action on the catalog step: return to settings (selected-list). */
+export const CATALOG_FIRST_CATALOG_CONTINUE_LABEL = 'Continue'
+
+/** Label shown near the catalog Continue action on the catalog step. */
 export function catalogFirstSelectedExerciseCountLabel(count: number): string {
   if (count === 0) return 'No exercises selected'
   if (count === 1) return '1 exercise selected'

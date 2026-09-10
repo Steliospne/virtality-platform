@@ -35,10 +35,10 @@ describe('starter template settings-first create flow', () => {
     )
   })
 
-  it('shows selected exercise count near the catalog Continue action for templates', () => {
+  it('wires the catalog continue action with selected exercise count for templates', () => {
     expect(formSource).toMatch(/selectedExerciseCountLabel/)
     expect(formSource).toMatch(/goToSelectedList/)
-    expect(formSource).toMatch(/>\s*Continue\s*</)
+    expect(formSource).toMatch(/CATALOG_FIRST_CATALOG_CONTINUE_LABEL/)
   })
 
   it('shows the suggested template name only on the selected-list step', () => {
