@@ -186,12 +186,18 @@ const ReusableProgramEditForm = ({
               </P>
             </div>
 
-            <div className='flex shrink-0 gap-2'>
-              <Button onClick={secondaryNav.onClick}>
+            <div key='settings-actions' className='flex shrink-0 gap-2'>
+              <Button type='button' onClick={secondaryNav.onClick}>
                 {secondaryNav.label}
               </Button>
-              <Button onClick={goToCatalog}>Add exercises</Button>
-              <Button variant='primary' form='reusableProgramEditForm'>
+              <Button type='button' onClick={goToCatalog}>
+                Add exercises
+              </Button>
+              <Button
+                type='submit'
+                variant='primary'
+                form='reusableProgramEditForm'
+              >
                 {t('btn.submit')}
               </Button>
             </div>
@@ -240,12 +246,17 @@ const ReusableProgramEditForm = ({
             </P>
           </div>
 
-          <div className='flex shrink-0 items-center gap-3'>
+          <div
+            key='catalog-actions'
+            className='flex shrink-0 items-center gap-3'
+          >
             <span className='text-muted-foreground text-sm'>
               {selectedExerciseCountLabel(selectedCount)}
             </span>
-            <Button onClick={secondaryNav.onClick}>{secondaryNav.label}</Button>
-            <Button variant='primary' onClick={goToSelectedList}>
+            <Button type='button' onClick={secondaryNav.onClick}>
+              {secondaryNav.label}
+            </Button>
+            <Button type='button' variant='primary' onClick={goToSelectedList}>
               {CATALOG_FIRST_CATALOG_CONTINUE_LABEL}
             </Button>
           </div>

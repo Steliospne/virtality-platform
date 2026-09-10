@@ -457,7 +457,7 @@ describe('profileBillingStatusHeadline', () => {
 
 describe('profileBillingStatusDetail', () => {
   it('prompts interval choice when there is no live clock', () => {
-    expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Yearly/)
+    expect(profileBillingStatusDetail(base)).toMatch(/Monthly or Annual/)
   })
 
   it('uses the generic checkout prompt for lapsed Access Gate trials', () => {
@@ -468,7 +468,7 @@ describe('profileBillingStatusDetail', () => {
       plan: null,
     })
 
-    expect(detail).toMatch(/Monthly or Yearly/)
+    expect(detail).toMatch(/Monthly or Annual/)
     expect(detail).not.toMatch(/Free plan/)
   })
 

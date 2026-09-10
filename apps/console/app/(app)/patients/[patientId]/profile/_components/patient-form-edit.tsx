@@ -17,7 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BasicInfo from '@/app/(app)/patients/_components/basic-info'
 import MedicalHistory from '@/app/(app)/patients/_components/medical-history-tab'
 import useBeforeUnload from '@/hooks/use-before-unload'
-import { MedicalHistory as MedicalHistoryType, Patient } from '@virtality/db'
+import {
+  Language,
+  MedicalHistory as MedicalHistoryType,
+  Patient,
+} from '@virtality/db'
 import { useRouter } from 'next/navigation'
 import useMounted from '@/hooks/use-mounted'
 import DeleteConfirmDialog from '@/components/ui/delete-confirm-dialog'
@@ -176,7 +180,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
       weight: weight ?? null,
       height: height ?? null,
       image: image ?? null,
-      language,
+      language: language as Language,
       occupation: occupation ?? null,
       updatedAt: new Date(),
     }

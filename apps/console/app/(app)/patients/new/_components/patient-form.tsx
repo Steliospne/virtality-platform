@@ -19,7 +19,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BasicInfo from '../../_components/basic-info'
 import MedicalHistory from '../../_components/medical-history-tab'
 import useBeforeUnload from '@/hooks/use-before-unload'
-import { MedicalHistory as MedicalHistoryType, Patient } from '@virtality/db'
+import {
+  Language,
+  MedicalHistory as MedicalHistoryType,
+  Patient,
+} from '@virtality/db'
 import useMounted from '@/hooks/use-mounted'
 import useIsAuthed from '@/hooks/use-is-authed'
 import { getQueryClient, useNewPatient, useORPC } from '@virtality/react-query'
@@ -92,7 +96,7 @@ const PatientForm = () => {
       weight: weight ?? null,
       height: height ?? null,
       image: image,
-      language,
+      language: language as Language,
       occupation: occupation ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
