@@ -2,6 +2,7 @@ import { bucketCdnUrl } from './bucket.ts'
 
 export type BucketReferenceResourceType =
   | 'exercise'
+  | 'exerciseDraft'
   | 'avatar'
   | 'map'
   | 'patient'
@@ -36,6 +37,14 @@ export type BucketFolderPreviewOutcome = {
 
 export type BucketReferenceReader = {
   findExerciseReferences: (lookupValues: string[]) => Promise<
+    Array<{
+      id: string
+      displayName: string
+      image: string | null
+      video: string | null
+    }>
+  >
+  findExerciseDraftReferences: (lookupValues: string[]) => Promise<
     Array<{
       id: string
       displayName: string
@@ -97,6 +106,7 @@ export type BucketReferenceReader = {
 
 const RESOURCE_TYPE_ORDER: BucketReferenceResourceType[] = [
   'exercise',
+  'exerciseDraft',
   'avatar',
   'map',
   'patient',
@@ -120,6 +130,39 @@ function fieldMatchesReference(
   }
 
   return lookupValues.includes(storedValue)
+}
+
+type ImageVideoBucketRow = {
+  id: string
+  displayName: string
+  image: string | null
+  video: string | null
+}
+
+function appendImageVideoBucketReferences(
+  references: BucketObjectReference[],
+  lookupValues: string[],
+  resourceType: 'exercise' | 'exerciseDraft',
+  row: ImageVideoBucketRow,
+  resourceLabel: string,
+): void {
+  if (fieldMatchesReference(row.image, lookupValues)) {
+    references.push({
+      resourceType,
+      resourceId: row.id,
+      resourceLabel,
+      field: 'image',
+    })
+  }
+
+  if (fieldMatchesReference(row.video, lookupValues)) {
+    references.push({
+      resourceType,
+      resourceId: row.id,
+      resourceLabel,
+      field: 'video',
+    })
+  }
 }
 
 function sortReferences(
@@ -151,6 +194,7 @@ export async function findKnownBucketObjectReferences({
 
   const [
     exercises,
+    exerciseDrafts,
     avatars,
     maps,
     patients,
@@ -160,6 +204,7 @@ export async function findKnownBucketObjectReferences({
     mosaicTiles,
   ] = await Promise.all([
     reader.findExerciseReferences(lookupValues),
+    reader.findExerciseDraftReferences(lookupValues),
     reader.findAvatarReferences(lookupValues),
     reader.findMapReferences(lookupValues),
     reader.findPatientReferences(lookupValues),
@@ -170,23 +215,26 @@ export async function findKnownBucketObjectReferences({
   ])
 
   for (const exercise of exercises) {
-    if (fieldMatchesReference(exercise.image, lookupValues)) {
-      references.push({
-        resourceType: 'exercise',
-        resourceId: exercise.id,
-        resourceLabel: exercise.displayName,
-        field: 'image',
-      })
-    }
+    appendImageVideoBucketReferences(
+      references,
+      lookupValues,
+      'exercise',
+      exercise,
+      exercise.displayName,
+    )
+  }
 
-    if (fieldMatchesReference(exercise.video, lookupValues)) {
-      references.push({
-        resourceType: 'exercise',
-        resourceId: exercise.id,
-        resourceLabel: exercise.displayName,
-        field: 'video',
-      })
-    }
+  for (const exerciseDraft of exerciseDrafts) {
+    const draftLabel =
+      exerciseDraft.displayName.trim() || `Exercise draft ${exerciseDraft.id}`
+
+    appendImageVideoBucketReferences(
+      references,
+      lookupValues,
+      'exerciseDraft',
+      exerciseDraft,
+      draftLabel,
+    )
   }
 
   for (const avatar of avatars) {

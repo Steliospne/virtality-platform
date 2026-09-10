@@ -1,0 +1,24 @@
+// Exercise Creation Wizard: in-progress family setting (not catalog Exercise rows)
+
+enum ExerciseDraftLaterality {
+  pair
+  single
+}
+
+model ExerciseDraft {
+  id             String                   @id
+  createdBy      String
+  laterality     ExerciseDraftLaterality?
+  displayName    String                   @default("")
+  unityStem      String                   @default("")
+  unityStemDirty Boolean                  @default(false)
+  description    String                   @default("")
+  category       String                   @default("")
+  item           String?
+  image          String?
+  video          String?
+  createdAt      DateTime                 @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime                 @updatedAt @db.Timestamp(6)
+
+  @@index([createdBy])
+}

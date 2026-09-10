@@ -16,6 +16,7 @@ function createReader(
 ): BucketReferenceReader {
   return {
     findExerciseReferences: async () => [],
+    findExerciseDraftReferences: async () => [],
     findAvatarReferences: async () => [],
     findMapReferences: async () => [],
     findPatientReferences: async () => [],
@@ -46,6 +47,59 @@ describe('findKnownBucketObjectReferences', () => {
     })
 
     expect(outcome.references).toEqual([])
+  })
+
+  it('drops exercise draft references once the draft is discarded', async () => {
+    let drafts = [
+      {
+        id: 'draft-1',
+        displayName: 'WIP family',
+        image: 'exercises/thumbnail/wip-family.jpg',
+        video: null,
+      },
+    ]
+
+    const reader = createReader({
+      findExerciseDraftReferences: async () => drafts,
+    })
+
+    const referenced = await findKnownBucketObjectReferences({
+      reader,
+      objectKey: 'exercises/thumbnail/wip-family.jpg',
+    })
+    expect(referenced.references).toHaveLength(1)
+
+    drafts = []
+    const afterDiscard = await findKnownBucketObjectReferences({
+      reader,
+      objectKey: 'exercises/thumbnail/wip-family.jpg',
+    })
+    expect(afterDiscard.references).toEqual([])
+  })
+
+  it('detects exercise draft image references', async () => {
+    const outcome = await findKnownBucketObjectReferences({
+      reader: createReader({
+        findExerciseDraftReferences: async () => [
+          {
+            id: 'draft-1',
+            displayName: 'Shoulder Press',
+            image: 'exercises/thumbnail/shoulder-press.jpg',
+            video: null,
+          },
+        ],
+      }),
+      objectKey: 'exercises/thumbnail/shoulder-press.jpg',
+    })
+
+    expect(outcome.references).toEqual([
+      {
+        resourceType: 'exerciseDraft',
+        resourceId: 'draft-1',
+        resourceLabel: 'Shoulder Press',
+        field: 'image',
+      },
+    ])
   })
 
   it('detects known database references by object key', async () => {

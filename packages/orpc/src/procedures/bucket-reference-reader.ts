@@ -20,6 +20,21 @@ export function createPrismaBucketReferenceReader(
           video: true,
         },
       }),
+    findExerciseDraftReferences: (lookupValues) =>
+      prisma.exerciseDraft.findMany({
+        where: {
+          OR: [
+            { image: { in: lookupValues } },
+            { video: { in: lookupValues } },
+          ],
+        },
+        select: {
+          id: true,
+          displayName: true,
+          image: true,
+          video: true,
+        },
+      }),
     findAvatarReferences: (lookupValues) =>
       prisma.avatar.findMany({
         where: { image: { in: lookupValues } },
