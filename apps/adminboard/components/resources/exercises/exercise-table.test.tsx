@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockUseExercise = vi.fn()
 const mockDataTableBody = vi.fn(
@@ -16,8 +17,14 @@ vi.mock('@/components/resources/exercises/columns', () => ({
   columns: [{ accessorKey: 'displayName', header: 'Name' }],
 }))
 
+vi.mock('@/components/resources/exercises/exercise-draft-list', () => ({
+  ExerciseDraftList: () => <div data-testid='exercise-draft-list' />,
+}))
+
 vi.mock('@virtality/ui/components/data-table', () => ({
-  DataTableHeader: () => <div data-testid='data-table-header' />,
+  DataTableHeader: ({ children }: { children?: ReactNode }) => (
+    <div data-testid='data-table-header'>{children}</div>
+  ),
   DataTableBody: (props: { isLoading?: boolean; rowNavigation?: unknown }) => {
     mockDataTableBody(props)
     return <div data-testid='data-table-body' />
@@ -28,6 +35,10 @@ vi.mock('@virtality/ui/components/data-table', () => ({
 import ExerciseTable from './exercise-table'
 
 describe('ExerciseTable', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -44,6 +55,18 @@ describe('ExerciseTable', () => {
     expect(mockDataTableBody).toHaveBeenCalledWith(
       expect.objectContaining({ isLoading: true }),
     )
+  })
+
+  it('offers Create exercise entry to the wizard route', () => {
+    mockUseExercise.mockReturnValue({
+      data: [],
+      isPending: false,
+    })
+
+    render(<ExerciseTable />)
+
+    const link = screen.getByTestId('create-exercise-link')
+    expect(link).toHaveAttribute('href', '/resources/exercises/new')
   })
 
   it('does not wire row navigation', () => {
