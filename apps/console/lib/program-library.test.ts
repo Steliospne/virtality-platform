@@ -55,15 +55,16 @@ describe('program library search', () => {
   })
 })
 
-describe('program library retirement confirmation', () => {
+describe('program library delete confirmation', () => {
   it('uses delete wording while explaining soft retirement', () => {
-    expect(PROGRAM_RETIRE_CONFIRMATION.title).toBe('Delete program?')
-    expect(PROGRAM_RETIRE_CONFIRMATION.description).toMatch(
-      /past patient sessions/i,
-    )
-    expect(PROGRAM_RETIRE_CONFIRMATION.description).toMatch(/unchanged/i)
-    expect(PROGRAM_RETIRE_CONFIRMATION.description).toMatch(
-      /no longer appear for future treatment/i,
-    )
+    const { menuLabel, title, confirmLabel, description } =
+      PROGRAM_RETIRE_CONFIRMATION
+
+    expect(menuLabel).toBe('Delete')
+    expect(title).toBe('Delete program?')
+    expect(confirmLabel).toBe(title.replace('?', ''))
+    expect(description).toMatch(/past patient sessions/i)
+    expect(description).toMatch(/unchanged/i)
+    expect(description).toMatch(/no longer appear for future treatment/i)
   })
 })

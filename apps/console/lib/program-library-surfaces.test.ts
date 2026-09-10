@@ -84,9 +84,8 @@ describe('program library surfaces', () => {
     expect(columnsSource).toMatch(/Make a copy/)
     expect(columnsSource).toMatch(/useCopyReusableProgram/)
     expect(columnsSource).toMatch(/useRetireReusableProgram/)
-    expect(columnsSource).toMatch(/PROGRAM_RETIRE_CONFIRMATION/)
-    expect(columnsSource).toMatch(/<Archive \/>\s*\n\s*Delete/)
-    expect(columnsSource).toMatch(/Delete program/)
+    expect(columnsSource).toMatch(/PROGRAM_RETIRE_CONFIRMATION\.menuLabel/)
+    expect(columnsSource).toMatch(/PROGRAM_RETIRE_CONFIRMATION\.confirmLabel/)
     expect(columnsSource).toMatch(/\/programs\/\$\{program\.id\}\/edit/)
   })
 
