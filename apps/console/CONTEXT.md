@@ -137,7 +137,7 @@ Client-side pending-removal state for an **Exercise Variant** is keyed by select
 _Avoid_: exerciseId-based pending removal keys
 
 **Bulk Selection Scope**:
-**Exercise Variants** marked for deferred removal are excluded from bulk selection controls (`Select all`, segment checkbox aggregation, and `Remove Selected`).
+**Exercise Variants** marked for deferred removal are excluded from bulk selection controls (`Edit all`, segment checkbox aggregation, and `Remove Selected`).
 _Avoid_: Bulk actions that include pending-removal variants
 
 **Disabled Family Visibility**:

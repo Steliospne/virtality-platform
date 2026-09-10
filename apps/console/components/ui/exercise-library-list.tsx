@@ -334,7 +334,7 @@ const ExerciseLibraryList = ({
             checked={globalCheck}
             onCheckedChange={checkAll}
           />
-          <p className='text-sm'>Edit all</p>
+          <span className='text-sm'>Edit all</span>
         </div>
 
         {showExerciseLibraryAccess && (

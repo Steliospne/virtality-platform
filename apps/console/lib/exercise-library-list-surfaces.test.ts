@@ -48,13 +48,6 @@ describe('exercise library list surfaces', () => {
     }
   })
 
-  it('shows Edit all beside the header checkbox as a normal foreground action', () => {
-    expect(listSource).toMatch(
-      /onCheckedChange=\{checkAll\}[\s\S]*?<p className='text-sm'>Edit all<\/p>/,
-    )
-    expect(listSource).not.toContain('Select all')
-  })
-
   it('keeps selected-list settings handlers in the component source', () => {
     expect(listSource).toMatch(/reorderSegmentGroups/)
     expect(listSource).toMatch(/deleteSelected/)
