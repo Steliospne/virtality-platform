@@ -28,6 +28,7 @@ import {
 } from './billing-plans.ts'
 import { hasBillingPathEstablished } from './console-session-gate.ts'
 import { resolveExpiredFreeUpgradeQualifies } from './expired-free-upgrade-prompt.ts'
+import { omitPlaceholderSubscriptions } from './placeholder-subscription.ts'
 import { isLiveEntitlementSubscriptionStatus } from './entitlement-extension.ts'
 import { hadPaidBillingHistory } from './paid-billing-history.ts'
 import {
@@ -345,20 +346,20 @@ export function buildEntitlementStanding(input: {
   /** @deprecated Use `accessGate`. */
   accessGrant?: AccessGateClock | null
 }): EntitlementStanding {
-  const subscription = pickEntitlementSubscription(input.subscriptions)
+  // Abandoned Checkout leaves an `incomplete` placeholder row; it is not
+  // billing history and must not surface as plan/status or establish the path.
+  const subscriptions = omitPlaceholderSubscriptions(input.subscriptions)
+  const subscription = pickEntitlementSubscription(subscriptions)
   const accessGate = input.accessGate ?? input.accessGrant ?? null
   const clock = resolveEntitlementFromSources({
     now: input.now,
-    subscriptions: input.subscriptions,
+    subscriptions,
     accessGate,
   })
-  const billingPathEstablished = hasBillingPathEstablished(
-    input.subscriptions,
-    {
-      accessGateEverIssued: input.accessGateEverIssued ?? accessGate != null,
-    },
-  )
-  const hadPaidBilling = hadPaidBillingHistory(input.subscriptions)
+  const billingPathEstablished = hasBillingPathEstablished(subscriptions, {
+    accessGateEverIssued: input.accessGateEverIssued ?? accessGate != null,
+  })
+  const hadPaidBilling = hadPaidBillingHistory(subscriptions)
   return {
     ...clock,
     canLaunchVr: canLaunchVrPrograms({
@@ -382,7 +383,7 @@ export function buildEntitlementStanding(input: {
       now: input.now,
       entitled: clock.entitled,
       billingPathEstablished,
-      subscriptions: input.subscriptions,
+      subscriptions,
     }),
     needsTrialWelcome: shouldShowTrialWelcome({
       role: input.role,

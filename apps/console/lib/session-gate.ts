@@ -32,13 +32,13 @@ export async function evaluateSessionGate(
       user: { stripeCustomerId, role },
     } = data
 
-    const [subscription, accessGateHistoryRow] = await Promise.all([
+    const [subscriptions, accessGateHistoryRow] = await Promise.all([
       stripeCustomerId
-        ? prisma.subscription.findFirst({
+        ? prisma.subscription.findMany({
             where: { stripeCustomerId },
             select: { status: true },
           })
-        : null,
+        : [],
       prisma.accessGrant.findFirst({
         where: { userId: data.user.id },
         select: { id: true },
@@ -47,7 +47,7 @@ export async function evaluateSessionGate(
 
     const decision = decideConsoleSessionGate({
       role,
-      subscriptions: subscription ? [subscription] : [],
+      subscriptions,
       accessGateEverIssued: accessGateHistoryRow != null,
     })
 

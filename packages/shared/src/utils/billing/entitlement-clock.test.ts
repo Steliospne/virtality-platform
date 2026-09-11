@@ -293,6 +293,23 @@ describe('buildEntitlementStanding', () => {
     expect(admin.canLaunchVr).toBe(true)
   })
 
+  it('treats an abandoned Checkout placeholder row as no Subscription at all', () => {
+    const standing = buildEntitlementStanding({
+      now: NOW,
+      role: 'user',
+      subscriptions: [
+        { status: 'incomplete', plan: 'pro', billingInterval: 'month' },
+      ],
+    })
+    expect(standing.entitled).toBe(false)
+    expect(standing.status).toBeNull()
+    expect(standing.plan).toBeNull()
+    expect(standing.billingInterval).toBeNull()
+    expect(standing.billingPathEstablished).toBe(false)
+    expect(standing.hadPaidBilling).toBe(false)
+    expect(standing.checkoutCta).toBeNull()
+  })
+
   it('allows VR while an Access Gate trialing clock is live', () => {
     const standing = buildEntitlementStanding({
       now: NOW,

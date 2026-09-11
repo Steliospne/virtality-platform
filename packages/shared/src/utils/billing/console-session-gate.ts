@@ -3,9 +3,11 @@
  *
  * Waitlist only when the user is not admin/tester and has no established
  * billing path. Billing Path Established = an Access Gate has ever been
- * issued OR ≥1 synced Subscription row (any status). Clock expiry never
- * alone forces waitlist.
+ * issued OR ≥1 synced Subscription row (any status except the Checkout
+ * placeholder). Clock expiry never alone forces waitlist.
  */
+
+import { omitPlaceholderSubscriptions } from './placeholder-subscription.ts'
 
 /** Synced local Subscription row; only presence matters for this gate. */
 export type ConsoleSessionSubscription = {
@@ -28,7 +30,7 @@ export function hasBillingPathEstablished(
   options?: { accessGateEverIssued?: boolean },
 ): boolean {
   if (options?.accessGateEverIssued) return true
-  return subscriptions.length > 0
+  return omitPlaceholderSubscriptions(subscriptions).length > 0
 }
 
 /**

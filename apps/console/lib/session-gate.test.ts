@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 const getSession = vi.fn()
 const signOut = vi.fn()
-const findFirst = vi.fn()
+const findMany = vi.fn()
 const findAccessGrantFirst = vi.fn()
 
 vi.mock('@/auth-client', () => ({
@@ -14,7 +14,7 @@ vi.mock('@/auth-client', () => ({
 
 vi.mock('@virtality/db', () => ({
   prisma: {
-    subscription: { findFirst: (...args: unknown[]) => findFirst(...args) },
+    subscription: { findMany: (...args: unknown[]) => findMany(...args) },
     accessGrant: {
       findFirst: (...args: unknown[]) => findAccessGrantFirst(...args),
     },
@@ -33,7 +33,8 @@ describe('evaluateSessionGate', () => {
   beforeEach(() => {
     getSession.mockReset()
     signOut.mockReset()
-    findFirst.mockReset()
+    findMany.mockReset()
+    findMany.mockResolvedValue([])
     findAccessGrantFirst.mockReset()
     findAccessGrantFirst.mockResolvedValue(null)
   })
@@ -45,7 +46,7 @@ describe('evaluateSessionGate', () => {
       decision: 'sign-in',
       setCookies: [],
     })
-    expect(findFirst).not.toHaveBeenCalled()
+    expect(findMany).not.toHaveBeenCalled()
   })
 
   it('lets admins through without a Stripe lookup', async () => {
@@ -57,7 +58,7 @@ describe('evaluateSessionGate', () => {
       decision: 'ok',
       setCookies: [],
     })
-    expect(findFirst).not.toHaveBeenCalled()
+    expect(findMany).not.toHaveBeenCalled()
   })
 
   it('signs out over HTTP and relays the Set-Cookie for a clinician with no established billing path', async () => {
@@ -99,7 +100,7 @@ describe('evaluateSessionGate', () => {
         user: { id: 'user_1', role: 'user', stripeCustomerId: 'cus_123' },
       },
     })
-    findFirst.mockResolvedValue({ status: 'canceled' })
+    findMany.mockResolvedValue([{ status: 'canceled' }])
 
     await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
       decision: 'ok',
@@ -107,6 +108,26 @@ describe('evaluateSessionGate', () => {
       user: { id: 'user_1', role: 'user' },
     })
     expect(signOut).not.toHaveBeenCalled()
+  })
+
+  it('still waitlists when the only Subscription row is an abandoned Checkout placeholder', async () => {
+    getSession.mockResolvedValue({
+      data: {
+        user: { id: 'user_1', role: 'user', stripeCustomerId: 'cus_123' },
+      },
+    })
+    findMany.mockResolvedValue([{ status: 'incomplete' }])
+    signOut.mockImplementation(async ({ fetchOptions }) => {
+      fetchOptions.onResponse({
+        response: fakeSetCookieResponse(['session=; Max-Age=0']),
+      })
+      return { data: null }
+    })
+
+    await expect(evaluateSessionGate(new Headers())).resolves.toEqual({
+      decision: 'waitlist',
+      setCookies: ['session=; Max-Age=0'],
+    })
   })
 
   it('treats a session-lookup failure as pass-through, not a hard block', async () => {

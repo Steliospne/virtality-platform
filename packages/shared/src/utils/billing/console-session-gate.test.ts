@@ -14,6 +14,19 @@ describe('hasBillingPathEstablished', () => {
     expect(hasBillingPathEstablished([{ status: 'active' }])).toBe(true)
   })
 
+  it('ignores abandoned Checkout placeholder rows', () => {
+    expect(hasBillingPathEstablished([{ status: 'incomplete' }])).toBe(false)
+    expect(hasBillingPathEstablished([{ status: 'incomplete_expired' }])).toBe(
+      false,
+    )
+    expect(
+      hasBillingPathEstablished([
+        { status: 'incomplete' },
+        { status: 'canceled' },
+      ]),
+    ).toBe(true)
+  })
+
   it('is true when an Access Gate has ever been issued', () => {
     expect(hasBillingPathEstablished([], { accessGateEverIssued: true })).toBe(
       true,
