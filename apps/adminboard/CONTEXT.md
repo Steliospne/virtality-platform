@@ -33,7 +33,7 @@ A content update that creates a new bucket object instead of changing the conten
 _Avoid_: Overwrite
 
 **Referenced Bucket Object**:
-A bucket object whose CDN URL or object key is used by another platform resource.
+A bucket object whose CDN URL or object key is used by another platform resource, including an Exercise or an Exercise Draft.
 _Avoid_: Attached file
 
 **Folder**:
@@ -54,7 +54,7 @@ _Avoid_: Transactional template
 
 **Email Draft**:
 A saved, editable Admin-authored Email that has not been final-sent.
-_Avoid_: Template draft
+_Avoid_: Template draft, Exercise Draft
 
 **Sent Email Record**:
 An immutable record created by Final Send, including the rendered snapshot and per-recipient delivery results.
@@ -79,6 +79,32 @@ _Avoid_: Preview send
 **Final Send**:
 The immediate, irreversible send that creates a Sent Email Record.
 _Avoid_: Blast send, publish
+
+### Exercises
+
+**Exercise Draft**:
+A saved, not-yet-promoted exercise family from the Adminboard creation wizard. One record is one sitting and becomes one or two Exercise rows on promotion; it is not an Exercise.
+_Avoid_: Email Draft, Wizard Session, disabled Exercise (as in-progress work)
+
+**Exercise family**:
+The Exercise rows that share one `displayName`: either a Left and right pair or a Single entry. Console treats that exact `displayName` as the family key.
+_Avoid_: Exercise group, bilateral set
+
+**Left and right pair**:
+An Exercise family stored as two rows that share `displayName` and media, with `direction` Left and Right and Unity `name`s suffixed `_L` and `_R`.
+_Avoid_: Bilateral (as wizard copy; that word already appears in `displayName` for some Single entries)
+
+**Single entry**:
+An Exercise family stored as one row with `direction` Both and an unsuffixed Unity `name`.
+_Avoid_: Unilateral (as wizard copy), Both (as the laterality label; Both is the stored `direction` value)
+
+**Enabled Exercise**:
+An Exercise row visible in the clinician catalog, stored as `enabled: true`.
+_Avoid_: Production-ready, published, live Exercise
+
+**Enable in Console**:
+The Review action that promotes a complete Exercise Draft to Enabled Exercise row(s) for the family.
+_Avoid_: Publish, go live
 
 ### Access and billing
 
