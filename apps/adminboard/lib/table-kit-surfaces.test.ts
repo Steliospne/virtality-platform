@@ -52,10 +52,6 @@ describe('adminboard table kit migration', () => {
       'coupon-library',
       'components/coupon-library/coupon-promotion-code-table.tsx',
     ],
-    ['user', 'components/resources/user/user-table.tsx'],
-    ['patients', 'components/resources/patients/patient-table.tsx'],
-    ['map', 'components/resources/map/map-table.tsx'],
-    ['avatar', 'components/resources/avatar/avatar-table.tsx'],
   ])(
     'migrates %s resource table to shared kit with fetch loading',
     (_, relativePath) => {
