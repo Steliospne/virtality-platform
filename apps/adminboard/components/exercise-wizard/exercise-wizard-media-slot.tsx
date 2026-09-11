@@ -1,22 +1,22 @@
 'use client'
 
 import { BucketObjectPickerDialog } from '@/components/email/bucket-object-picker-dialog'
+import { ExerciseWizardMediaUploadTab } from '@/components/exercise-wizard/exercise-wizard-media-upload-tab'
+import { ExerciseWizardThumbnailTab } from '@/components/exercise-wizard/exercise-wizard-thumbnail-tab'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { objectKeyFromCdnUrl } from '@/lib/cdn-url-object-key'
-import { formatBucketUploadFileCount } from '@/lib/bucket-upload-display'
 import { getErrorMessage } from '@/lib/get-error-message'
 import {
   EXERCISE_WIZARD_IMAGE_UPLOAD_PREFIX,
   EXERCISE_WIZARD_VIDEO_UPLOAD_PREFIX,
   renameFileForExerciseDraftUpload,
 } from '@/lib/exercise-wizard-media'
+import type { ExerciseThumbnailVideoSource } from '@/lib/exercise-wizard-thumbnail'
+import { cn } from '@/lib/utils'
 import { useUploadBucketObjects } from '@virtality/react-query'
 import { bucketCdnUrl } from '@virtality/shared/utils'
-import { Input } from '@virtality/ui/components/input'
-import { Label } from '@virtality/ui/components/label'
-import { Spinner } from '@virtality/ui/components/spinner'
-import { ImageIcon, Upload } from 'lucide-react'
+import { ImageIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -26,12 +26,16 @@ type ExerciseWizardMediaSlotProps = {
   displayName: string
   cdnUrl: string | null
   onCdnUrlChange: (cdnUrl: string | null) => void
+  /** Image slot only: the video the Exercise Thumbnail Generator reads from. */
+  thumbnailSource?: ExerciseThumbnailVideoSource | null
+  /** Video slot only: reports the file selected for upload before it is uploaded. */
+  onPendingFileChange?: (file: File | null) => void
 }
 
-type SourceMode = 'upload' | 'pick'
+type SourceMode = 'upload' | 'pick' | 'thumbnail'
 
 function isSourceMode(value: string): value is SourceMode {
-  return value === 'upload' || value === 'pick'
+  return value === 'upload' || value === 'pick' || value === 'thumbnail'
 }
 
 export function ExerciseWizardMediaSlot({
@@ -40,6 +44,8 @@ export function ExerciseWizardMediaSlot({
   displayName,
   cdnUrl,
   onCdnUrlChange,
+  thumbnailSource = null,
+  onPendingFileChange,
 }: ExerciseWizardMediaSlotProps) {
   const [sourceMode, setSourceMode] = useState<SourceMode>('upload')
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -54,7 +60,13 @@ export function ExerciseWizardMediaSlot({
 
   const objectKey = cdnUrl ? objectKeyFromCdnUrl(cdnUrl) : null
   const pickerKind = slot === 'image' ? 'image' : 'mp4'
-  const accept = slot === 'image' ? 'image/*' : 'video/mp4,video/*'
+  const showThumbnailTab = slot === 'image'
+
+  const selectFile = (file: File | null) => {
+    setSelectedFile(file)
+    onPendingFileChange?.(file)
+    uploadMutation.reset()
+  }
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -82,7 +94,7 @@ export function ExerciseWizardMediaSlot({
       }
 
       onCdnUrlChange(upload.cdnUrl)
-      setSelectedFile(null)
+      selectFile(null)
       setIsReplacing(false)
       toast.success(`${label} uploaded.`)
     } catch (error) {
@@ -107,7 +119,7 @@ export function ExerciseWizardMediaSlot({
               variant='outline'
               size='sm'
               onClick={() => {
-                setSelectedFile(null)
+                selectFile(null)
                 setSourceMode('upload')
                 setIsReplacing(true)
               }}
@@ -133,7 +145,7 @@ export function ExerciseWizardMediaSlot({
             <img
               src={cdnUrl}
               alt={`${label} preview`}
-              className='h-24 w-auto max-w-full rounded object-cover'
+              className='max-h-60 w-auto max-w-full rounded object-contain'
             />
           ) : (
             <video
@@ -157,49 +169,30 @@ export function ExerciseWizardMediaSlot({
             }
           }}
         >
-          <TabsList className='grid w-full grid-cols-2'>
+          <TabsList
+            className={cn(
+              'grid w-full',
+              showThumbnailTab ? 'grid-cols-3' : 'grid-cols-2',
+            )}
+          >
             <TabsTrigger value='upload'>Upload</TabsTrigger>
             <TabsTrigger value='pick'>Pick from bucket</TabsTrigger>
+            {showThumbnailTab ? (
+              <TabsTrigger value='thumbnail' disabled={!thumbnailSource}>
+                From video
+              </TabsTrigger>
+            ) : null}
           </TabsList>
-          <TabsContent value='upload' className='space-y-3 pt-2'>
-            <div className='flex flex-col gap-2'>
-              <Label htmlFor={`${slot}-upload-prefix`}>Target folder</Label>
-              <Input
-                id={`${slot}-upload-prefix`}
-                value={targetPrefix}
-                onChange={(event) => setTargetPrefix(event.target.value)}
-              />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label htmlFor={`${slot}-upload-file`}>File</Label>
-              <Input
-                id={`${slot}-upload-file`}
-                type='file'
-                accept={accept}
-                className='file:text-foreground text-transparent'
-                onChange={(event) => {
-                  setSelectedFile(event.target.files?.[0] ?? null)
-                  uploadMutation.reset()
-                }}
-              />
-              {selectedFile ? (
-                <p className='text-muted-foreground text-xs'>
-                  {formatBucketUploadFileCount(1)}: {selectedFile.name}
-                </p>
-              ) : null}
-            </div>
-            <Button
-              type='button'
-              disabled={uploadMutation.isPending}
-              onClick={() => void handleUpload()}
-            >
-              {uploadMutation.isPending ? (
-                <Spinner className='mr-2 size-4' />
-              ) : (
-                <Upload className='mr-2 size-4' />
-              )}
-              Upload
-            </Button>
+          <TabsContent value='upload' className='pt-2'>
+            <ExerciseWizardMediaUploadTab
+              slot={slot}
+              targetPrefix={targetPrefix}
+              selectedFile={selectedFile}
+              isPending={uploadMutation.isPending}
+              onTargetPrefixChange={setTargetPrefix}
+              onSelectedFileChange={selectFile}
+              onUpload={() => void handleUpload()}
+            />
           </TabsContent>
           <TabsContent value='pick' className='pt-2'>
             <Button
@@ -211,6 +204,18 @@ export function ExerciseWizardMediaSlot({
               Choose from bucket
             </Button>
           </TabsContent>
+          {showThumbnailTab ? (
+            <TabsContent value='thumbnail' className='pt-2'>
+              <ExerciseWizardThumbnailTab
+                source={thumbnailSource}
+                displayName={displayName}
+                onCdnUrlChange={(nextCdnUrl) => {
+                  onCdnUrlChange(nextCdnUrl)
+                  setIsReplacing(false)
+                }}
+              />
+            </TabsContent>
+          ) : null}
         </Tabs>
       )}
 
