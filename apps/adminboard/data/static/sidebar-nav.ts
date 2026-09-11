@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
   CreditCard,
+  Dumbbell,
   Film,
   Grid3x3,
   Images,
@@ -56,6 +57,12 @@ export const sidebarNav: SidebarNavGroup[] = [
       { title: 'Features', href: '/features', icon: Layers },
       { title: 'Blog', href: '/blog', icon: Newspaper },
       { title: 'Email', href: '/email', icon: Mail },
+    ],
+  },
+  {
+    label: 'Resources',
+    items: [
+      { title: 'Exercises', href: '/resources/exercises', icon: Dumbbell },
     ],
   },
   {

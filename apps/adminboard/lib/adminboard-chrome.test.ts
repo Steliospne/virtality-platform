@@ -31,6 +31,8 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/href: ['"]\/benefits['"]/)
     expect(nav).toMatch(/href: ['"]\/features['"]/)
     expect(nav).toMatch(/href: ['"]\/email['"]/)
+    expect(nav).toMatch(/Resources/)
+    expect(nav).toMatch(/href: ['"]\/resources\/exercises['"]/)
     expect(nav).toMatch(/Billing/)
     expect(nav).toMatch(/title: ['"]Access Codes['"]/)
     expect(nav).toMatch(/href: ['"]\/trial-redeem-codes['"]/)
@@ -40,7 +42,7 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/Admin/)
     expect(nav).toMatch(/href: ['"]\/tester-codes['"]/)
     expect(nav).toMatch(/href: ['"]\/admin\/create-user['"]/)
-    expect(nav).not.toMatch(/\/resources\//)
+    expect(nav).not.toMatch(/\/resources\/(avatar|map|patient|user)/)
     expect(nav).not.toMatch(/S3 bucket/)
   })
 
