@@ -25,6 +25,7 @@ import {
 import { isExerciseWizardSittingDirty } from '@/lib/exercise-wizard-dirty'
 import {
   exerciseDraftToSaveInput,
+  formatExerciseDraftExerciseIdOccupancyError,
   formatExerciseDraftOccupancyError,
 } from '@/lib/exercise-wizard-save'
 import { getErrorMessage } from '@/lib/get-error-message'
@@ -36,7 +37,10 @@ import {
   usePromoteExerciseDraft,
   useSaveExerciseDraft,
 } from '@virtality/react-query'
-import { deriveExerciseNamesFromDraft } from '@virtality/shared/utils'
+import {
+  deriveExerciseIdsFromDraft,
+  deriveExerciseNamesFromDraft,
+} from '@virtality/shared/utils'
 import { Spinner } from '@virtality/ui/components/spinner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -114,10 +118,18 @@ export function ExerciseWizardWorkspace({
     const result = await occupancyMutation.mutateAsync({
       draftId: form.id,
       candidateNames,
+      candidateExerciseIds: deriveExerciseIdsFromDraft(form),
     })
 
     if (result.occupiedNames.length > 0) {
       setOccupancyError(formatExerciseDraftOccupancyError(result.occupiedNames))
+      return false
+    }
+
+    if (result.occupiedExerciseIds.length > 0) {
+      setOccupancyError(
+        formatExerciseDraftExerciseIdOccupancyError(result.occupiedExerciseIds),
+      )
       return false
     }
 

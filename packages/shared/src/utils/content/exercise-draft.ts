@@ -6,6 +6,7 @@ export type ExerciseDraftRecord = {
   id: string
   createdBy: string
   laterality: ExerciseDraftLaterality | null
+  exerciseId: string
   displayName: string
   unityStem: string
   unityStemDirty: boolean
@@ -42,6 +43,7 @@ export type ExercisePromoteRow = {
 
 export type ExercisePromoteStore = {
   listExerciseNames: () => Promise<string[]>
+  listExerciseIds: () => Promise<string[]>
   promoteDraft: (input: {
     draftId: string
     rows: ExercisePromoteRow[]
@@ -86,6 +88,27 @@ export class ExerciseDraftNameOccupiedError extends Error {
     )
     this.name = 'ExerciseDraftNameOccupiedError'
     this.occupiedNames = occupiedNames
+  }
+}
+
+export class ExerciseDraftExerciseIdError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ExerciseDraftExerciseIdError'
+  }
+}
+
+export class ExerciseDraftExerciseIdOccupiedError extends Error {
+  readonly occupiedExerciseIds: string[]
+
+  constructor(occupiedExerciseIds: string[]) {
+    super(
+      occupiedExerciseIds.length === 1
+        ? `Exercise ID ${occupiedExerciseIds[0]} is already in use.`
+        : `Exercise IDs ${occupiedExerciseIds.join(', ')} are already in use.`,
+    )
+    this.name = 'ExerciseDraftExerciseIdOccupiedError'
+    this.occupiedExerciseIds = occupiedExerciseIds
   }
 }
 
@@ -186,6 +209,79 @@ export function deriveExerciseNamesFromDraft(
   }
 
   return [{ name: stem, direction: 'Both' }]
+}
+
+const EXERCISE_ID_PATTERN = /^[1-9][0-9]*$/
+
+export function validateExerciseId(exerciseId: string): string | null {
+  const trimmed = exerciseId.trim()
+  if (!trimmed) {
+    return 'Exercise ID is required.'
+  }
+
+  if (!EXERCISE_ID_PATTERN.test(trimmed)) {
+    return 'Exercise ID must be a positive whole number, matching the Exercise row ID.'
+  }
+
+  if (!Number.isSafeInteger(Number(trimmed))) {
+    return 'Exercise ID is too large.'
+  }
+
+  return null
+}
+
+/**
+ * A pair occupies two consecutive row IDs: the entered number and the next one.
+ */
+export function deriveExerciseIdsFromDraft(
+  draft: Pick<ExerciseDraftRecord, 'laterality' | 'exerciseId'>,
+): string[] {
+  const trimmed = draft.exerciseId.trim()
+  if (!draft.laterality || !trimmed || validateExerciseId(trimmed)) {
+    return []
+  }
+
+  if (draft.laterality === 'pair') {
+    return [trimmed, String(Number(trimmed) + 1)]
+  }
+
+  return [trimmed]
+}
+
+export function findOccupiedExerciseIds({
+  candidateExerciseIds,
+  exerciseIds,
+  drafts,
+  excludeDraftId,
+}: {
+  candidateExerciseIds: string[]
+  exerciseIds: readonly string[]
+  drafts: readonly ExerciseDraftRecord[]
+  excludeDraftId?: string
+}): string[] {
+  const occupied = new Set<string>()
+  const exerciseIdSet = new Set(exerciseIds)
+  const candidateSet = new Set(candidateExerciseIds)
+
+  for (const exerciseId of candidateExerciseIds) {
+    if (exerciseIdSet.has(exerciseId)) {
+      occupied.add(exerciseId)
+    }
+  }
+
+  for (const draft of drafts) {
+    if (draft.id === excludeDraftId) {
+      continue
+    }
+
+    for (const reserved of deriveExerciseIdsFromDraft(draft)) {
+      if (candidateSet.has(reserved)) {
+        occupied.add(reserved)
+      }
+    }
+  }
+
+  return [...occupied].sort((left, right) => Number(left) - Number(right))
 }
 
 export function collectDraftUnityNameReservations(
@@ -329,7 +425,6 @@ export function assertExercisePairEnabledConsistency(
 
 function buildPromoteRowsFromDraft(
   draft: ExerciseDraftRecord,
-  generateExerciseId: () => string,
 ): ExercisePromoteRow[] {
   const derivedNames = deriveExerciseNamesFromDraft(draft)
   if (derivedNames.length === 0) {
@@ -343,6 +438,18 @@ function buildPromoteRowsFromDraft(
     throw new ExerciseDraftUnityStemError(stemError)
   }
 
+  const exerciseIdError = validateExerciseId(draft.exerciseId)
+  if (exerciseIdError) {
+    throw new ExerciseDraftExerciseIdError(exerciseIdError)
+  }
+
+  const exerciseIds = deriveExerciseIdsFromDraft(draft)
+  if (exerciseIds.length !== derivedNames.length) {
+    throw new ExerciseDraftPromoteError(
+      'Draft exercise ID could not be resolved for every row.',
+    )
+  }
+
   const shared = {
     displayName: draft.displayName.trim(),
     category: draft.category.trim(),
@@ -353,8 +460,8 @@ function buildPromoteRowsFromDraft(
     enabled: true,
   }
 
-  return derivedNames.map((entry) => ({
-    id: generateExerciseId(),
+  return derivedNames.map((entry, index) => ({
+    id: exerciseIds[index]!,
     name: entry.name,
     direction: entry.direction,
     ...shared,
@@ -390,13 +497,18 @@ export async function saveExerciseDraft(
 
 export type ExerciseNameOccupancyReader = {
   listExerciseNames: () => Promise<string[]>
+  listExerciseIds: () => Promise<string[]>
 }
 
 export async function checkExerciseDraftUnityNameOccupancy(
   draftStore: ExerciseDraftStore,
   occupancyReader: ExerciseNameOccupancyReader,
-  input: { draftId: string; candidateNames?: string[] },
-): Promise<{ occupiedNames: string[] }> {
+  input: {
+    draftId: string
+    candidateNames?: string[]
+    candidateExerciseIds?: string[]
+  },
+): Promise<{ occupiedNames: string[]; occupiedExerciseIds: string[] }> {
   const draft = await draftStore.findById(input.draftId)
   if (!draft) {
     throw new ExerciseDraftNotFoundError(input.draftId)
@@ -405,13 +517,16 @@ export async function checkExerciseDraftUnityNameOccupancy(
   const candidateNames =
     input.candidateNames ??
     deriveExerciseNamesFromDraft(draft).map((entry) => entry.name)
+  const candidateExerciseIds =
+    input.candidateExerciseIds ?? deriveExerciseIdsFromDraft(draft)
 
-  if (candidateNames.length === 0) {
-    return { occupiedNames: [] }
+  if (candidateNames.length === 0 && candidateExerciseIds.length === 0) {
+    return { occupiedNames: [], occupiedExerciseIds: [] }
   }
 
-  const [exerciseNames, drafts] = await Promise.all([
+  const [exerciseNames, exerciseIds, drafts] = await Promise.all([
     occupancyReader.listExerciseNames(),
+    occupancyReader.listExerciseIds(),
     draftStore.listAll(),
   ])
 
@@ -422,7 +537,14 @@ export async function checkExerciseDraftUnityNameOccupancy(
     excludeDraftId: draft.id,
   })
 
-  return { occupiedNames }
+  const occupiedExerciseIds = findOccupiedExerciseIds({
+    candidateExerciseIds,
+    exerciseIds,
+    drafts,
+    excludeDraftId: draft.id,
+  })
+
+  return { occupiedNames, occupiedExerciseIds }
 }
 
 export function collectExerciseWizardClassificationVocabulary(
@@ -460,6 +582,7 @@ export async function createEmptyExerciseDraft(
     id: input.id,
     createdBy: input.createdBy,
     laterality: null,
+    exerciseId: '',
     displayName: '',
     unityStem: '',
     unityStemDirty: false,
@@ -488,17 +611,14 @@ export async function discardExerciseDraft(
 export async function promoteExerciseDraft(
   draftStore: ExerciseDraftStore,
   promoteStore: ExercisePromoteStore,
-  input: {
-    draftId: string
-    generateExerciseId: () => string
-  },
+  input: { draftId: string },
 ): Promise<ExercisePromoteRow[]> {
   const draft = await draftStore.findById(input.draftId)
   if (!draft) {
     throw new ExerciseDraftNotFoundError(input.draftId)
   }
 
-  const rows = buildPromoteRowsFromDraft(draft, input.generateExerciseId)
+  const rows = buildPromoteRowsFromDraft(draft)
 
   for (const row of rows) {
     const readiness = assessExerciseProductionReadiness(row)
@@ -510,8 +630,9 @@ export async function promoteExerciseDraft(
   }
 
   const candidateNames = rows.map((row) => row.name)
-  const [exerciseNames, drafts] = await Promise.all([
+  const [exerciseNames, exerciseIds, drafts] = await Promise.all([
     promoteStore.listExerciseNames(),
+    promoteStore.listExerciseIds(),
     draftStore.listAll(),
   ])
   const occupied = findOccupiedUnityNames({
@@ -523,6 +644,17 @@ export async function promoteExerciseDraft(
 
   if (occupied.length > 0) {
     throw new ExerciseDraftNameOccupiedError(occupied)
+  }
+
+  const occupiedExerciseIds = findOccupiedExerciseIds({
+    candidateExerciseIds: deriveExerciseIdsFromDraft(draft),
+    exerciseIds,
+    drafts,
+    excludeDraftId: draft.id,
+  })
+
+  if (occupiedExerciseIds.length > 0) {
+    throw new ExerciseDraftExerciseIdOccupiedError(occupiedExerciseIds)
   }
 
   return promoteStore.promoteDraft({

@@ -5,7 +5,10 @@ import { EXERCISE_WIZARD_LATERALITY_OPTIONS } from '@/lib/exercise-wizard-consta
 import type { ExerciseWizardStep } from '@/lib/exercise-wizard-steps'
 import type { ExerciseDraftFields } from '@virtality/shared/types'
 import type { ReactNode } from 'react'
-import { deriveExerciseNamesFromDraft } from '@virtality/shared/utils'
+import {
+  deriveExerciseIdsFromDraft,
+  deriveExerciseNamesFromDraft,
+} from '@virtality/shared/utils'
 
 const REVIEW_EMPTY_VALUE = 'Not set'
 
@@ -29,12 +32,19 @@ export function ExerciseWizardReviewStep({
   const unityNames = deriveExerciseNamesFromDraft(draft).map(
     (entry) => entry.name,
   )
+  const exerciseIds = deriveExerciseIdsFromDraft(draft)
 
   return (
     <div className='flex max-w-2xl flex-col gap-6'>
       <ReviewSection title='Identity' onEdit={() => onEditStep('identity')}>
         <ReviewRow label='Laterality' value={lateralityLabel} />
         <ReviewRow label='Display name' value={reviewText(draft.displayName)} />
+        <ReviewRow
+          label='Exercise ID(s)'
+          value={
+            exerciseIds.length > 0 ? exerciseIds.join(', ') : REVIEW_EMPTY_VALUE
+          }
+        />
         <ReviewRow
           label='Unity key(s)'
           value={

@@ -13,6 +13,7 @@ export const exerciseDraftIdInputSchema = z.object({
 export const saveExerciseDraftInputSchema = z.object({
   id: z.uuid(),
   laterality: exerciseDraftLateralitySchema.nullable().optional(),
+  exerciseId: z.string().optional(),
   displayName: z.string().optional(),
   unityStem: z.string().optional(),
   unityStemDirty: z.boolean().optional(),
@@ -30,6 +31,7 @@ export type SaveExerciseDraftInput = z.infer<
 export const checkExerciseDraftOccupancyInputSchema = z.object({
   draftId: z.uuid(),
   candidateNames: z.array(z.string()).optional(),
+  candidateExerciseIds: z.array(z.string()).optional(),
 })
 
 export const promoteExerciseDraftInputSchema = z.object({
@@ -40,6 +42,7 @@ export type ExerciseDraftFields = {
   id: string
   createdBy: string
   laterality: ExerciseDraftLaterality | null
+  exerciseId: string
   displayName: string
   unityStem: string
   unityStemDirty: boolean

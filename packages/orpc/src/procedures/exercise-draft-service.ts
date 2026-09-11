@@ -17,6 +17,7 @@ function mapPrismaExerciseDraft(row: ExerciseDraft): ExerciseDraftRecord {
     id: row.id,
     createdBy: row.createdBy,
     laterality: row.laterality,
+    exerciseId: row.exerciseId,
     displayName: row.displayName,
     unityStem: row.unityStem,
     unityStemDirty: row.unityStemDirty,
@@ -94,6 +95,10 @@ export function createPrismaExercisePromoteStore(
       const rows = await prisma.exercise.findMany({ select: { name: true } })
       return rows.map((row) => row.name)
     },
+    listExerciseIds: async () => {
+      const rows = await prisma.exercise.findMany({ select: { id: true } })
+      return rows.map((row) => row.id)
+    },
     promoteDraft: async ({ draftId, rows }) =>
       prisma.$transaction(async (tx) => {
         for (const row of rows) {
@@ -170,7 +175,11 @@ export async function discardExerciseDraftById(
 
 export async function checkExerciseDraftOccupancy(
   prisma: PrismaClient,
-  input: { draftId: string; candidateNames?: string[] },
+  input: {
+    draftId: string
+    candidateNames?: string[]
+    candidateExerciseIds?: string[]
+  },
 ) {
   const { draftStore, promoteStore } = createExerciseDraftStores(prisma)
   return checkExerciseDraftUnityNameOccupancy(draftStore, promoteStore, input)
@@ -189,7 +198,7 @@ export async function listExerciseDraftClassificationVocabulary(
 
 export async function promoteExerciseDraftToCatalog(
   prisma: PrismaClient,
-  input: { draftId: string; generateExerciseId: () => string },
+  input: { draftId: string },
 ) {
   const { draftStore, promoteStore } = createExerciseDraftStores(prisma)
   return promoteExerciseDraft(draftStore, promoteStore, input)

@@ -9,6 +9,7 @@ export function exerciseDraftToSaveInput(
   return {
     id: draft.id,
     laterality: draft.laterality,
+    exerciseId: draft.exerciseId,
     displayName: draft.displayName,
     unityStem: draft.unityStem,
     unityStemDirty: draft.unityStemDirty,
@@ -18,6 +19,16 @@ export function exerciseDraftToSaveInput(
     image: draft.image,
     video: draft.video,
   }
+}
+
+export function formatExerciseDraftExerciseIdOccupancyError(
+  occupiedExerciseIds: string[],
+): string {
+  if (occupiedExerciseIds.length === 1) {
+    return `Exercise ID ${occupiedExerciseIds[0]} is already in use.`
+  }
+
+  return `Exercise IDs ${occupiedExerciseIds.join(', ')} are already in use.`
 }
 
 export function formatExerciseDraftOccupancyError(

@@ -4,6 +4,7 @@ export function isExerciseWizardSittingDirty(
   draft: Pick<
     ExerciseDraftFields,
     | 'laterality'
+    | 'exerciseId'
     | 'displayName'
     | 'unityStem'
     | 'unityStemDirty'
@@ -18,6 +19,7 @@ export function isExerciseWizardSittingDirty(
 
   return (
     draft.laterality != null ||
+    hasText(draft.exerciseId) ||
     hasText(draft.displayName) ||
     (draft.unityStemDirty && hasText(draft.unityStem)) ||
     hasText(draft.description) ||

@@ -6,6 +6,7 @@ const emptyDraft: ExerciseDraftFields = {
   id: 'draft-1',
   createdBy: 'admin',
   laterality: null,
+  exerciseId: '',
   displayName: '',
   unityStem: '',
   unityStemDirty: false,

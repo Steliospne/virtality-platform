@@ -11,6 +11,7 @@ describe('exercise draft service', () => {
       id: 'draft-1',
       createdBy: 'admin-1',
       laterality: null,
+      exerciseId: '',
       displayName: '',
       unityStem: '',
       unityStemDirty: false,
@@ -50,6 +51,7 @@ describe('exercise draft service', () => {
       id: 'draft-1',
       createdBy: 'admin-1',
       laterality: 'single' as const,
+      exerciseId: '420',
       displayName: 'Bicep Curls',
       unityStem: '',
       unityStemDirty: false,
@@ -88,12 +90,11 @@ describe('exercise draft service', () => {
 
     const rows = await promoteExerciseDraftToCatalog(prisma as never, {
       draftId: 'draft-1',
-      generateExerciseId: () => 'exercise-1',
     })
 
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
-      id: 'exercise-1',
+      id: '420',
       name: 'BicepCurls',
       enabled: true,
     })

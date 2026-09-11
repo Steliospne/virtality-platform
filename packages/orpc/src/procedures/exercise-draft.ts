@@ -6,6 +6,8 @@ import {
   saveExerciseDraftInputSchema,
 } from '@virtality/shared/types'
 import {
+  ExerciseDraftExerciseIdError,
+  ExerciseDraftExerciseIdOccupiedError,
   ExerciseDraftNameOccupiedError,
   ExerciseDraftNotFoundError,
   ExerciseDraftPromoteError,
@@ -31,6 +33,8 @@ function throwExerciseDraftOrpcError(error: unknown): never {
 
   if (
     error instanceof ExerciseDraftUnityStemError ||
+    error instanceof ExerciseDraftExerciseIdError ||
+    error instanceof ExerciseDraftExerciseIdOccupiedError ||
     error instanceof ExerciseDraftPromoteError ||
     error instanceof ExerciseDraftNameOccupiedError
   ) {
@@ -128,7 +132,6 @@ const promote = adminAuthed
     withExerciseDraftErrors(() =>
       promoteExerciseDraftToCatalog(context.prisma, {
         draftId: input.draftId,
-        generateExerciseId: generateUUID,
       }),
     ),
   )

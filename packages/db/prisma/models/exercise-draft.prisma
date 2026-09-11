@@ -9,6 +9,7 @@ model ExerciseDraft {
   id             String                   @id
   createdBy      String
   laterality     ExerciseDraftLaterality?
+  exerciseId     String                   @default("")
   displayName    String                   @default("")
   unityStem      String                   @default("")
   unityStemDirty Boolean                  @default(false)

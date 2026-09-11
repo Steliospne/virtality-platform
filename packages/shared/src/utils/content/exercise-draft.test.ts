@@ -8,9 +8,12 @@ import {
   checkExerciseDraftUnityNameOccupancy,
   collectExerciseWizardClassificationVocabulary,
   createEmptyExerciseDraft,
+  deriveExerciseIdsFromDraft,
   deriveExerciseNamesFromDraft,
   deriveUnityStemFromDisplayName,
   discardExerciseDraft,
+  ExerciseDraftExerciseIdError,
+  ExerciseDraftExerciseIdOccupiedError,
   ExerciseDraftNameOccupiedError,
   ExerciseDraftNotFoundError,
   ExerciseDraftUnityStemError,
@@ -21,6 +24,7 @@ import {
   promoteExerciseDraft,
   resetUnityStemFromDisplayName,
   saveExerciseDraft,
+  validateExerciseId,
   validateUnityStem,
   type ExerciseDraftRecord,
   type ExerciseDraftStore,
@@ -35,6 +39,7 @@ function createDraft(
   return {
     createdBy: 'user-1',
     laterality: null,
+    exerciseId: '',
     displayName: '',
     unityStem: '',
     unityStemDirty: false,
@@ -82,6 +87,7 @@ function createDraftStore(
 function createPromoteStore(
   options: {
     exerciseNames?: string[]
+    exerciseIds?: string[]
     onPromote?: (input: {
       draftId: string
       rows: ExercisePromoteRow[]
@@ -98,6 +104,7 @@ function createPromoteStore(
     exercises,
     promoted,
     listExerciseNames: vi.fn(async () => options.exerciseNames ?? []),
+    listExerciseIds: vi.fn(async () => options.exerciseIds ?? []),
     promoteDraft: vi.fn(async (input) => {
       if (options.onPromote) {
         return options.onPromote(input)
@@ -113,6 +120,7 @@ function createPromoteStore(
 const completeDraft = createDraft({
   id: 'draft-1',
   laterality: 'pair',
+  exerciseId: '420',
   displayName: 'Bicep Curls',
   description: 'Curl both arms.',
   category: 'Upper body',
@@ -168,6 +176,43 @@ describe('exercise draft unity names', () => {
       unityStem: 'HamstringCurl',
       unityStemDirty: false,
     })
+  })
+})
+
+describe('exercise draft exercise IDs', () => {
+  it('accepts a positive whole number', () => {
+    expect(validateExerciseId('420')).toBeNull()
+  })
+
+  it('rejects a blank ID and anything that is not a positive whole number', () => {
+    expect(validateExerciseId('')).not.toBeNull()
+    expect(validateExerciseId('   ')).not.toBeNull()
+    expect(validateExerciseId('42a')).not.toBeNull()
+    expect(validateExerciseId('0')).not.toBeNull()
+    expect(validateExerciseId('-3')).not.toBeNull()
+    expect(validateExerciseId('4.2')).not.toBeNull()
+    expect(validateExerciseId('042')).not.toBeNull()
+  })
+
+  it('gives a pair the entered number and the next one', () => {
+    expect(
+      deriveExerciseIdsFromDraft({ laterality: 'pair', exerciseId: '420' }),
+    ).toEqual(['420', '421'])
+  })
+
+  it('gives a single entry just the entered number', () => {
+    expect(
+      deriveExerciseIdsFromDraft({ laterality: 'single', exerciseId: '420' }),
+    ).toEqual(['420'])
+  })
+
+  it('reserves nothing without a laterality or a valid ID', () => {
+    expect(
+      deriveExerciseIdsFromDraft({ laterality: null, exerciseId: '420' }),
+    ).toEqual([])
+    expect(
+      deriveExerciseIdsFromDraft({ laterality: 'pair', exerciseId: '42a' }),
+    ).toEqual([])
   })
 })
 
@@ -247,7 +292,6 @@ describe('promote exercise draft', () => {
 
     const rows = await promoteExerciseDraft(draftStore, promoteStore, {
       draftId: singleDraft.id,
-      generateExerciseId: () => 'ex-single',
     })
 
     expect(rows).toHaveLength(1)
@@ -262,10 +306,8 @@ describe('promote exercise draft', () => {
     const draftStore = createDraftStore([completeDraft])
     const promoteStore = createPromoteStore()
 
-    let nextId = 0
     const rows = await promoteExerciseDraft(draftStore, promoteStore, {
       draftId: 'draft-1',
-      generateExerciseId: () => `ex-${++nextId}`,
     })
 
     expect(rows).toHaveLength(2)
@@ -286,12 +328,61 @@ describe('promote exercise draft', () => {
     await expect(
       promoteExerciseDraft(draftStore, promoteStore, {
         draftId: 'draft-1',
-        generateExerciseId: () => 'ex-1',
       }),
     ).rejects.toThrow('db rollback')
 
     expect(draftStore.records).toHaveLength(1)
     expect(promoteStore.exercises).toHaveLength(0)
+  })
+
+  it('uses the admin exercise ID, plus the next number for a pair', async () => {
+    const draftStore = createDraftStore([completeDraft])
+    const promoteStore = createPromoteStore()
+
+    const rows = await promoteExerciseDraft(draftStore, promoteStore, {
+      draftId: 'draft-1',
+    })
+
+    expect(rows.map((row) => row.id)).toEqual(['420', '421'])
+  })
+
+  it('rejects promotion when the exercise ID is blank', async () => {
+    const draftStore = createDraftStore([
+      createDraft({ ...completeDraft, exerciseId: '' }),
+    ])
+    const promoteStore = createPromoteStore()
+
+    await expect(
+      promoteExerciseDraft(draftStore, promoteStore, {
+        draftId: 'draft-1',
+      }),
+    ).rejects.toBeInstanceOf(ExerciseDraftExerciseIdError)
+  })
+
+  it('rejects promotion when the admin exercise ID is malformed', async () => {
+    const draftStore = createDraftStore([
+      createDraft({ ...completeDraft, exerciseId: '42a' }),
+    ])
+    const promoteStore = createPromoteStore()
+
+    await expect(
+      promoteExerciseDraft(draftStore, promoteStore, {
+        draftId: 'draft-1',
+      }),
+    ).rejects.toBeInstanceOf(ExerciseDraftExerciseIdError)
+  })
+
+  it('rejects promotion when the exercise ID is already taken', async () => {
+    const draftStore = createDraftStore([completeDraft])
+    const promoteStore = createPromoteStore({
+      exerciseIds: ['421'],
+    })
+
+    await expect(
+      promoteExerciseDraft(draftStore, promoteStore, {
+        draftId: 'draft-1',
+      }),
+    ).rejects.toBeInstanceOf(ExerciseDraftExerciseIdOccupiedError)
   })
 
   it('rejects promotion when Unity names are already taken', async () => {
@@ -303,7 +394,6 @@ describe('promote exercise draft', () => {
     await expect(
       promoteExerciseDraft(draftStore, promoteStore, {
         draftId: 'draft-1',
-        generateExerciseId: () => 'ex-1',
       }),
     ).rejects.toBeInstanceOf(ExerciseDraftNameOccupiedError)
   })
@@ -435,11 +525,30 @@ describe('check exercise draft unity name occupancy', () => {
 
     const result = await checkExerciseDraftUnityNameOccupancy(
       draftStore,
-      { listExerciseNames: async () => ['BicepCurls_L'] },
+      {
+        listExerciseNames: async () => ['BicepCurls_L'],
+        listExerciseIds: async () => [],
+      },
       { draftId: 'draft-1' },
     )
 
     expect(result.occupiedNames).toEqual(['BicepCurls_L'])
+    expect(result.occupiedExerciseIds).toEqual([])
+  })
+
+  it('returns occupied exercise IDs for the draft sitting', async () => {
+    const draftStore = createDraftStore([completeDraft])
+
+    const result = await checkExerciseDraftUnityNameOccupancy(
+      draftStore,
+      {
+        listExerciseNames: async () => [],
+        listExerciseIds: async () => ['420'],
+      },
+      { draftId: 'draft-1' },
+    )
+
+    expect(result.occupiedExerciseIds).toEqual(['420'])
   })
 })
 
