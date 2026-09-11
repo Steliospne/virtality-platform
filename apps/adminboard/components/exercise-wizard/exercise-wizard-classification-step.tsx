@@ -5,6 +5,7 @@ import { ExerciseWizardVocabularyField } from '@/components/exercise-wizard/exer
 type ExerciseWizardClassificationStepProps = {
   category: string
   item: string | null
+  categoryError: string | undefined
   categories: string[]
   items: string[]
   onChange: (patch: { category?: string; item?: string | null }) => void
@@ -13,6 +14,7 @@ type ExerciseWizardClassificationStepProps = {
 export function ExerciseWizardClassificationStep({
   category,
   item,
+  categoryError,
   categories,
   items,
   onChange,
@@ -24,6 +26,7 @@ export function ExerciseWizardClassificationStep({
         value={category}
         options={categories}
         placeholder='Select category'
+        error={categoryError}
         onChange={(next) => onChange({ category: next })}
       />
       <ExerciseWizardVocabularyField

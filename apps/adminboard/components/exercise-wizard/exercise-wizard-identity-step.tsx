@@ -1,10 +1,14 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { ExerciseWizardExerciseIdField } from '@/components/exercise-wizard/exercise-wizard-exercise-id-field'
+import { ExerciseWizardFieldError } from '@/components/exercise-wizard/exercise-wizard-field-error'
+import type { ExerciseWizardIdentityErrors } from '@/lib/exercise-wizard-validation'
 import { EXERCISE_WIZARD_LATERALITY_OPTIONS } from '@/lib/exercise-wizard-constants'
 import { cn } from '@/lib/utils'
 import type { ExerciseDraftLaterality } from '@virtality/shared/types'
 import {
+  deriveExerciseIdsFromDraft,
   deriveExerciseNamesFromDraft,
   getEffectiveUnityStem,
 } from '@virtality/shared/utils'
@@ -14,6 +18,7 @@ import { Textarea } from '@virtality/ui/components/textarea'
 
 export type ExerciseWizardIdentityValues = {
   laterality: ExerciseDraftLaterality | null
+  exerciseId: string
   displayName: string
   unityStem: string
   unityStemDirty: boolean
@@ -22,6 +27,7 @@ export type ExerciseWizardIdentityValues = {
 
 type ExerciseWizardIdentityStepProps = {
   values: ExerciseWizardIdentityValues
+  errors: ExerciseWizardIdentityErrors
   occupancyError: string | null
   onChange: (patch: Partial<ExerciseWizardIdentityValues>) => void
   onResetStem: () => void
@@ -29,6 +35,7 @@ type ExerciseWizardIdentityStepProps = {
 
 export function ExerciseWizardIdentityStep({
   values,
+  errors,
   occupancyError,
   onChange,
   onResetStem,
@@ -37,6 +44,7 @@ export function ExerciseWizardIdentityStep({
     (entry) => entry.name,
   )
   const effectiveStem = getEffectiveUnityStem(values)
+  const previewExerciseIds = deriveExerciseIdsFromDraft(values)
 
   return (
     <div className='flex max-w-2xl flex-col gap-6'>
@@ -65,7 +73,15 @@ export function ExerciseWizardIdentityStep({
             )
           })}
         </div>
+        <ExerciseWizardFieldError message={errors.laterality} />
       </div>
+
+      <ExerciseWizardExerciseIdField
+        value={values.exerciseId}
+        error={errors.exerciseId}
+        previewIds={previewExerciseIds}
+        onChange={(exerciseId) => onChange({ exerciseId })}
+      />
 
       <div className='flex flex-col gap-2'>
         <Label htmlFor='exercise-display-name'>Display name</Label>
@@ -74,10 +90,12 @@ export function ExerciseWizardIdentityStep({
           value={values.displayName}
           onChange={(event) => onChange({ displayName: event.target.value })}
           placeholder='Family name shown in Console'
+          aria-invalid={errors.displayName ? true : undefined}
         />
-        <p className='text-muted-foreground text-xs'>
-          Never suffix display name with _L or _R.
-        </p>
+        <ExerciseWizardFieldError
+          message={errors.displayName}
+          hint='Never suffix display name with _L or _R.'
+        />
       </div>
 
       <div className='flex flex-col gap-2'>
@@ -91,7 +109,9 @@ export function ExerciseWizardIdentityStep({
               unityStemDirty: true,
             })
           }
+          aria-invalid={errors.unityStem ? true : undefined}
         />
+        <ExerciseWizardFieldError message={errors.unityStem} />
         <div className='flex flex-wrap items-center gap-2'>
           <Button
             type='button'
@@ -116,7 +136,9 @@ export function ExerciseWizardIdentityStep({
           value={values.description}
           onChange={(event) => onChange({ description: event.target.value })}
           rows={4}
+          aria-invalid={errors.description ? true : undefined}
         />
+        <ExerciseWizardFieldError message={errors.description} />
       </div>
 
       {occupancyError ? (

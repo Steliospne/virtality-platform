@@ -5,9 +5,7 @@ import type { ExerciseWizardStep } from '@/lib/exercise-wizard-steps'
 
 type ExerciseWizardFooterProps = {
   currentStep: ExerciseWizardStep
-  canGoNext: boolean
   showReviewActions: boolean
-  canEnable: boolean
   isBusy: boolean
   onBack: () => void
   onNext: () => void
@@ -17,9 +15,7 @@ type ExerciseWizardFooterProps = {
 
 export function ExerciseWizardFooter({
   currentStep,
-  canGoNext,
   showReviewActions,
-  canEnable,
   isBusy,
   onBack,
   onNext,
@@ -51,20 +47,12 @@ export function ExerciseWizardFooter({
             >
               Save as draft
             </Button>
-            <Button
-              type='button'
-              onClick={onEnable}
-              disabled={!canEnable || isBusy}
-            >
+            <Button type='button' onClick={onEnable} disabled={isBusy}>
               Enable in Console
             </Button>
           </>
         ) : (
-          <Button
-            type='button'
-            onClick={onNext}
-            disabled={!canGoNext || isBusy}
-          >
+          <Button type='button' onClick={onNext} disabled={isBusy}>
             Next
           </Button>
         )}

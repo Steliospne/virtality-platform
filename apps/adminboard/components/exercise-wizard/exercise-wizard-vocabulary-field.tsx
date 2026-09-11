@@ -1,5 +1,6 @@
 'use client'
 
+import { ExerciseWizardFieldError } from '@/components/exercise-wizard/exercise-wizard-field-error'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -23,6 +24,7 @@ type ExerciseWizardVocabularyFieldProps = {
   value: string
   options: string[]
   placeholder: string
+  error?: string
   allowEmpty?: boolean
   onChange: (value: string) => void
 }
@@ -32,6 +34,7 @@ export function ExerciseWizardVocabularyField({
   value,
   options,
   placeholder,
+  error,
   allowEmpty = false,
   onChange,
 }: ExerciseWizardVocabularyFieldProps) {
@@ -63,6 +66,7 @@ export function ExerciseWizardVocabularyField({
             variant='outline'
             role='combobox'
             aria-expanded={open}
+            aria-invalid={error ? true : undefined}
             className='w-full justify-between font-normal'
           >
             <span className='truncate'>{displayValue}</span>
@@ -138,9 +142,10 @@ export function ExerciseWizardVocabularyField({
           </Command>
         </PopoverContent>
       </Popover>
-      <p className='text-muted-foreground text-xs'>
-        Typos create new clinician filter options. Use add new deliberately.
-      </p>
+      <ExerciseWizardFieldError
+        message={error}
+        hint='Typos create new clinician filter options. Use add new deliberately.'
+      />
     </div>
   )
 }

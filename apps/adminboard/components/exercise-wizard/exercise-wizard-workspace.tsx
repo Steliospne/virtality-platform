@@ -17,11 +17,11 @@ import {
   EXERCISE_WIZARD_PAGE_TITLE,
 } from '@/lib/exercise-wizard-constants'
 import {
-  canAdvanceExerciseWizardClassificationStep,
-  canAdvanceExerciseWizardIdentityStep,
-  canAdvanceExerciseWizardMediaStep,
-  canEnableExerciseDraftInConsole,
-} from '@/lib/exercise-wizard-gates'
+  collectExerciseWizardClassificationErrors,
+  collectExerciseWizardEnableIssues,
+  collectExerciseWizardIdentityErrors,
+  hasExerciseWizardErrors,
+} from '@/lib/exercise-wizard-validation'
 import { isExerciseWizardSittingDirty } from '@/lib/exercise-wizard-dirty'
 import {
   exerciseDraftToSaveInput,
@@ -69,6 +69,7 @@ export function ExerciseWizardWorkspace({
   const occupancyMutation = useCheckExerciseDraftOccupancy()
   const promoteMutation = usePromoteExerciseDraft()
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [showErrors, setShowErrors] = useState(false)
   const [occupancyError, setOccupancyError] = useState<string | null>(null)
   const [success, setSuccess] = useState<SuccessState | null>(null)
 
@@ -77,26 +78,30 @@ export function ExerciseWizardWorkspace({
     occupancyMutation.isPending ||
     promoteMutation.isPending
 
-  const canGoNext = useMemo(() => {
-    if (!form) {
-      return false
-    }
+  const identityErrors = useMemo(
+    () => (form ? collectExerciseWizardIdentityErrors(form) : {}),
+    [form],
+  )
+  const classificationErrors = useMemo(
+    () => (form ? collectExerciseWizardClassificationErrors(form) : {}),
+    [form],
+  )
+  const enableIssues = useMemo(
+    () => (form ? collectExerciseWizardEnableIssues(form) : []),
+    [form],
+  )
 
-    switch (navigation.currentStep) {
-      case 'identity':
-        return canAdvanceExerciseWizardIdentityStep(form)
-      case 'classification':
-        return canAdvanceExerciseWizardClassificationStep(form)
-      case 'media':
-        return canAdvanceExerciseWizardMediaStep()
-      default:
-        return false
-    }
-  }, [form, navigation.currentStep])
+  const currentStepErrors =
+    navigation.currentStep === 'identity'
+      ? identityErrors
+      : navigation.currentStep === 'classification'
+        ? classificationErrors
+        : {}
 
-  const enableReadiness = form
-    ? canEnableExerciseDraftInConsole(form)
-    : { ready: false as const, missing: [] }
+  const goToStep = (step: Parameters<typeof navigation.goToStep>[0]) => {
+    setShowErrors(false)
+    navigation.goToStep(step)
+  }
 
   const persistDraft = async (override?: Partial<NonNullable<typeof form>>) => {
     if (!form) {
@@ -138,7 +143,12 @@ export function ExerciseWizardWorkspace({
   }
 
   const handleNext = async () => {
-    if (!form || !canGoNext) {
+    if (!form) {
+      return
+    }
+
+    if (hasExerciseWizardErrors(currentStepErrors)) {
+      setShowErrors(true)
       return
     }
 
@@ -151,6 +161,7 @@ export function ExerciseWizardWorkspace({
         }
       }
 
+      setShowErrors(false)
       navigation.goNext()
     } catch (error) {
       toast.error(getErrorMessage(error, 'Could not save draft.'))
@@ -158,7 +169,12 @@ export function ExerciseWizardWorkspace({
   }
 
   const handleEnable = async () => {
-    if (!form || !enableReadiness.ready) {
+    if (!form) {
+      return
+    }
+
+    if (enableIssues.length > 0) {
+      setShowErrors(true)
       return
     }
 
@@ -249,12 +265,13 @@ export function ExerciseWizardWorkspace({
       <ExerciseWizardStepper
         currentStep={navigation.currentStep}
         canJumpToStep={navigation.canJumpToStep}
-        onStepClick={navigation.goToStep}
+        onStepClick={goToStep}
       />
       <div className='flex-1 px-8 py-8'>
         {navigation.currentStep === 'identity' ? (
           <ExerciseWizardIdentityStep
             values={form}
+            errors={showErrors ? identityErrors : {}}
             occupancyError={occupancyError}
             onChange={(patch) => {
               setOccupancyError(null)
@@ -267,6 +284,9 @@ export function ExerciseWizardWorkspace({
           <ExerciseWizardClassificationStep
             category={form.category}
             item={form.item}
+            categoryError={
+              showErrors ? classificationErrors.category : undefined
+            }
             categories={vocabulary?.categories ?? []}
             items={vocabulary?.items ?? []}
             onChange={(patch) => patchForm(patch)}
@@ -288,17 +308,19 @@ export function ExerciseWizardWorkspace({
         {navigation.currentStep === 'review' ? (
           <ExerciseWizardReviewStep
             draft={form}
-            onEditStep={navigation.goToStep}
+            issues={showErrors ? enableIssues : []}
+            onEditStep={goToStep}
           />
         ) : null}
       </div>
       <ExerciseWizardFooter
         currentStep={navigation.currentStep}
-        canGoNext={canGoNext}
         showReviewActions={navigation.currentStep === 'review'}
-        canEnable={enableReadiness.ready}
         isBusy={isBusy}
-        onBack={navigation.goBack}
+        onBack={() => {
+          setShowErrors(false)
+          navigation.goBack()
+        }}
         onNext={() => void handleNext()}
         onSaveDraft={() => void handleSaveDraft()}
         onEnable={() => void handleEnable()}

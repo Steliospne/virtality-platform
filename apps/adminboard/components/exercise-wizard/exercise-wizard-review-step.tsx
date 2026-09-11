@@ -1,5 +1,6 @@
 'use client'
 
+import { ExerciseWizardIssueList } from '@/components/exercise-wizard/exercise-wizard-issue-list'
 import { Button } from '@/components/ui/button'
 import { EXERCISE_WIZARD_LATERALITY_OPTIONS } from '@/lib/exercise-wizard-constants'
 import type { ExerciseWizardStep } from '@/lib/exercise-wizard-steps'
@@ -18,11 +19,13 @@ function reviewText(value: string): string {
 
 type ExerciseWizardReviewStepProps = {
   draft: ExerciseDraftFields
+  issues: string[]
   onEditStep: (step: ExerciseWizardStep) => void
 }
 
 export function ExerciseWizardReviewStep({
   draft,
+  issues,
   onEditStep,
 }: ExerciseWizardReviewStepProps) {
   const lateralityLabel =
@@ -66,6 +69,11 @@ export function ExerciseWizardReviewStep({
         <ReviewRow label='Image' value={draft.image ? 'Attached' : 'Missing'} />
         <ReviewRow label='Video' value={draft.video ? 'Attached' : 'Missing'} />
       </ReviewSection>
+
+      <ExerciseWizardIssueList
+        title='Fix these before enabling in Console:'
+        issues={issues}
+      />
     </div>
   )
 }
