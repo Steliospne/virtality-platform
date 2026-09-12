@@ -196,6 +196,24 @@ _Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating U
 Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
+### Immersive Video
+
+**Headset Library**:
+The set of **Immersive Video** files present on one physical headset, keyed by its **Headset Identity**. It lives on the headset's disk; the console only ever sees a report of it.
+_Avoid_: Device videos, downloaded videos, cache, mirror
+
+**Library State**:
+The headset's full report of its **Headset Library** (every video with its status, version and byte counts, plus free space). It is the only source the console renders from while the headset is in the room.
+_Avoid_: Manifest, sync status, device state
+
+**Download Request**:
+A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video**. Resuming a paused download is the same request sent again; the headset never starts one on its own.
+_Avoid_: Push, sync, auto-download, preload
+
+**Update Available**:
+The console-derived state of a `ready` **Headset Library** entry whose version is older than the catalog's. The old file stays playable until the newer one is `ready`; the headset never knows it is out of date.
+_Avoid_: Outdated, stale, needs sync, error
+
 ### Access and billing
 
 **Tester Code**:
