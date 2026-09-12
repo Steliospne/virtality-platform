@@ -114,6 +114,28 @@ _Avoid_: Thumbnail tool, frame grabber
 The Review action that promotes a complete Exercise Draft to Enabled Exercise row(s) for the family.
 _Avoid_: Publish, go live
 
+### Immersive Videos
+
+**Immersive Video**:
+A catalog entry for one 180° FPV clip (cycling or walking) that physios push to headsets from the console. Owns title, activity, description, thumbnail and one bucket object per version.
+_Avoid_: FPV video, 360 video, movie, clip (as the entity name)
+
+**Catalog State**:
+Where an Immersive Video is in its lifecycle: `Draft` (may not yet have a file), `Uploading`, `Verifying`, `Published`, `Republishing`, `Unpublished`. Only `Published` rows reach the console.
+_Avoid_: Status (in copy), enabled/disabled, live
+
+**Version**:
+The integer on an Immersive Video that increments only when its file is replaced, never on a metadata edit; the headset uses it to tell "newer file" from "new title".
+_Avoid_: Revision, file version, v2 (as a separate entity)
+
+**Activity**:
+The closed enum (`Cycling`, `Walking`) naming the scene an Immersive Video is filmed for.
+_Avoid_: Category, type, tag
+
+**Video Upload**:
+The server-owned multipart transfer of an Immersive Video's file in 64 MiB parts, resumable after a page reload by re-picking the same file. One per browser tab. Replacing the file is an **Object Replacement**.
+_Avoid_: Multipart (user-facing), bucket upload
+
 ### Access and billing
 
 **Tester Code**:
