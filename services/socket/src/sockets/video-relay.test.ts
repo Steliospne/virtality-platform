@@ -108,6 +108,24 @@ describe('immersive video relay', () => {
     },
   )
 
+  it('delivers a bare videoId as Socket.IO argument 0, not an array', async () => {
+    const { consoleSocket, vrSocket } = await connectPairedRoom('video-args')
+
+    const rawPacket = new Promise<string>((resolve) => {
+      vrSocket.io.engine.once('data', (data) => resolve(String(data)))
+    })
+    const vrArgs = new Promise<unknown[]>((resolve) => {
+      vrSocket.once(VIDEO_EVENT.Play, (...args: unknown[]) => resolve(args))
+    })
+
+    consoleSocket.emit(VIDEO_EVENT.Play, 'video-args-sample')
+
+    await expect(rawPacket).resolves.toBe(
+      `2${JSON.stringify([VIDEO_EVENT.Play, 'video-args-sample'])}`,
+    )
+    await expect(vrArgs).resolves.toEqual(['video-args-sample'])
+  })
+
   it('does not deliver videoDownloadStart to a socket in a different room', async () => {
     const { consoleSocket } = await connectPairedRoom('video-same-room')
     const { vrSocket: otherRoomVr } =
