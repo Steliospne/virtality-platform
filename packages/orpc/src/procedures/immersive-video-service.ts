@@ -621,15 +621,3 @@ export async function runImmersiveVideoVerify(
 
   return toImmersiveVideoAdminRow(updated)
 }
-
-export async function sweepImmersiveVideoVerify(
-  deps: ServiceDeps,
-): Promise<void> {
-  const rows = await deps.prisma.immersiveVideo.findMany({
-    where: { state: 'Verifying' },
-    select: { id: true },
-  })
-  for (const row of rows) {
-    await runImmersiveVideoVerify(row.id, deps)
-  }
-}

@@ -1,6 +1,3 @@
-import {
-  runImmersiveVideoVerify,
-  sweepImmersiveVideoVerify,
-} from './immersive-video-service.ts'
+import { runImmersiveVideoVerify } from './immersive-video-service.ts'
 
-export { runImmersiveVideoVerify, sweepImmersiveVideoVerify }
+export { runImmersiveVideoVerify }

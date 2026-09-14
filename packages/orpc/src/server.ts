@@ -6,9 +6,6 @@ export {
   claimDevicePairing,
   DevicePairingError,
 } from './procedures/device-pairing/device-pairing.ts'
-export {
-  runImmersiveVideoVerify,
-  sweepImmersiveVideoVerify,
-} from './procedures/immersive-video-verify.ts'
+export { runImmersiveVideoVerify } from './procedures/immersive-video-verify.ts'
 export { createImmersiveVideoS3 } from './procedures/immersive-video-s3.ts'
 export type { ImmersiveVideoAdminRow } from './procedures/immersive-video-constants.ts'

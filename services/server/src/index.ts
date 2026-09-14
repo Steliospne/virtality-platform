@@ -17,7 +17,6 @@ import { devicePairingRoutes } from './routes/device-pairing.ts'
 import { deviceVideoRoutes } from './routes/device-videos.ts'
 import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
 import { scheduleImmersiveVideoCleanup } from './lib/schedule-immersive-video-cleanup.ts'
-import { scheduleImmersiveVideoVerify } from './lib/schedule-immersive-video-verify.ts'
 
 const ENV =
   process.env.ENV === 'production'
@@ -191,7 +190,6 @@ if (ENV === 'development' || process.env.LISTEN === 'true') {
   server = serve({ fetch: app.fetch, port: 8080, hostname: '0.0.0.0' })
   scheduleStripeSubscriptionReconciliation(logger)
   scheduleImmersiveVideoCleanup(logger)
-  scheduleImmersiveVideoVerify(logger)
 }
 
 export default app
