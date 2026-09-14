@@ -1,5 +1,4 @@
 import type {
-  VideoDownloadCompletePayload,
   VideoDownloadFailedPayload,
   VideoDownloadPausedPayload,
   VideoDownloadProgressPayload,
@@ -89,13 +88,16 @@ export function applyDownloadProgress(
   })
 }
 
+/**
+ * `videoDownloadComplete` carries no version; the row is `ready` at whatever
+ * version it already had until the next `videoLibraryState` reports the file.
+ */
 export function applyDownloadComplete(
   state: LiveLibraryState | VideoLibraryStatePayload | null,
-  payload: VideoDownloadCompletePayload,
+  videoId: string,
 ): LiveLibraryState {
-  return upsertLibraryEntry(state, payload.videoId, {
+  return upsertLibraryEntry(state, videoId, {
     status: 'ready',
-    version: payload.version,
     stalled: false,
   })
 }

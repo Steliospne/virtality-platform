@@ -30,13 +30,13 @@ describe('headset library live updates', () => {
     ])
   })
 
-  it('marks a completed video ready at the reported version', () => {
+  it('marks a completed video ready and keeps the version it already had', () => {
     const next = applyDownloadComplete(
       {
-        videos: [{ videoId: 'trail', status: 'downloading' }],
+        videos: [{ videoId: 'trail', status: 'downloading', version: 4 }],
         freeBytes: 9,
       },
-      { videoId: 'trail', version: 4 },
+      'trail',
     )
 
     expect(next.videos[0]).toMatchObject({

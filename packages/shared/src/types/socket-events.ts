@@ -211,7 +211,7 @@ export const VIDEO_RELAY = {
   Stop: { name: VIDEO_EVENT.Stop, payload: false },
   Recenter: { name: VIDEO_EVENT.Recenter, payload: false },
   PlaybackProgress: { name: VIDEO_EVENT.PlaybackProgress, payload: true },
-  Ended: { name: VIDEO_EVENT.Ended, payload: true },
+  Ended: { name: VIDEO_EVENT.Ended, payload: false },
 } as const satisfies Record<VideoEventKey, RelayEntry>
 
 // ── Payload types (wire‑format, dependency‑free) ───────────────────────────
@@ -337,10 +337,13 @@ export type VideoIdPayload = {
 }
 
 /**
- * `videoDownloadStart` is the one command the headset reads as a positional
- * string array: `[videoId]`. Every other video event carries an object.
+ * The headset reads and writes the single-id video events as a positional
+ * string array: `[videoId]`. Used by `videoDownloadStart`, `videoDownloadCancel`,
+ * `videoDelete`, `videoPlay`, `videoDownloadAck`, `videoDownloadComplete` and
+ * `videoPlayAck`.
+ * Every other video event carries an object.
  */
-export type VideoDownloadStartPayload = [videoId: string, ...rest: string[]]
+export type VideoIdArrayPayload = [videoId: string, ...rest: string[]]
 
 export const VIDEO_DEVICE_STATUS = {
   Absent: 'absent',
@@ -385,11 +388,6 @@ export type VideoDownloadPausedPayload = {
   bytesDownloaded: number
 }
 
-export type VideoDownloadCompletePayload = {
-  videoId: string
-  version: number
-}
-
 export const VIDEO_DOWNLOAD_FAILURE_REASON = {
   InsufficientStorage: 'insufficient_storage',
   /** Non-recoverable transport or I/O error (4xx other than 403/410, disk I/O). Transient loss is retried, not failed. */
@@ -410,8 +408,6 @@ export type VideoDownloadFailedPayload = {
   videoId: string
   reason: VideoDownloadFailureReason
 }
-
-export type VideoPlayPayload = VideoIdPayload
 
 export type VideoPlaybackProgressPayload = {
   videoId: string
@@ -479,21 +475,21 @@ export type CastingEventPayloads = {
 export type VideoEventPayloads = {
   LibraryStateRequest: []
   LibraryState: [payload: VideoLibraryStatePayload]
-  DownloadStart: [payload: VideoDownloadStartPayload]
-  DownloadAck: [payload: VideoIdPayload]
+  DownloadStart: [payload: VideoIdArrayPayload]
+  DownloadAck: [payload: VideoIdArrayPayload]
   DownloadProgress: [payload: VideoDownloadProgressPayload]
-  DownloadComplete: [payload: VideoDownloadCompletePayload]
+  DownloadComplete: [payload: VideoIdArrayPayload]
   DownloadFailed: [payload: VideoDownloadFailedPayload]
   DownloadPause: [payload: VideoIdPayload]
   DownloadPaused: [payload: VideoDownloadPausedPayload]
-  DownloadCancel: [payload: VideoIdPayload]
-  Delete: [payload: VideoIdPayload]
-  Play: [payload: VideoPlayPayload]
-  PlayAck: [payload: VideoIdPayload]
+  DownloadCancel: [payload: VideoIdArrayPayload]
+  Delete: [payload: VideoIdArrayPayload]
+  Play: [payload: VideoIdArrayPayload]
+  PlayAck: [payload: VideoIdArrayPayload]
   Pause: []
   Resume: []
   Stop: []
   Recenter: []
   PlaybackProgress: [payload: VideoPlaybackProgressPayload]
-  Ended: [payload: VideoIdPayload]
+  Ended: []
 }

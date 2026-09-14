@@ -40,32 +40,32 @@ All events are relayed unchanged to the other peer in the room. Names are the wi
 
 ### Console → VR
 
-| Key                   | Wire name                  | Payload            | Notes                                                                                                                                                                                                                                                                   |
-| --------------------- | -------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LibraryStateRequest` | `videoLibraryStateRequest` | none               | Sent on every console (re)connect to the room. VR must answer with `LibraryState`.                                                                                                                                                                                      |
-| `DownloadStart`       | `videoDownloadStart`       | `[videoId]`        | Queue a download, or resume a `paused` one. The headset fetches the **Download Descriptor** (`GET /api/v1/device-videos/:videoId`) for the current version, URL and size. Idempotent: already `ready` at the descriptor's version → ack + immediate `DownloadComplete`. |
-| `DownloadPause`       | `videoDownloadPause`       | `VideoIdPayload`   | Abort the transfer, keep the `.part`, status becomes `paused`. Not auto-resumed.                                                                                                                                                                                        |
-| `DownloadCancel`      | `videoDownloadCancel`      | `VideoIdPayload`   | Abort (running, queued, or paused) and discard the `.part`.                                                                                                                                                                                                             |
-| `Delete`              | `videoDelete`              | `VideoIdPayload`   | Remove the final file (and any `.part`).                                                                                                                                                                                                                                |
-| `Play`                | `videoPlay`                | `VideoPlayPayload` | Start playback of a `ready` video from the beginning.                                                                                                                                                                                                                   |
-| `Pause`               | `videoPause`               | none               |                                                                                                                                                                                                                                                                         |
-| `Resume`              | `videoResume`              | none               |                                                                                                                                                                                                                                                                         |
-| `Stop`                | `videoStop`                | none               | Return the headset to its idle scene.                                                                                                                                                                                                                                   |
-| `Recenter`            | `videoRecenter`            | none               | Re-align the 180° sphere to the patient's current forward direction.                                                                                                                                                                                                    |
+| Key                   | Wire name                  | Payload          | Notes                                                                                                                                                                                                                                                                   |
+| --------------------- | -------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LibraryStateRequest` | `videoLibraryStateRequest` | none             | Sent on every console (re)connect to the room. VR must answer with `LibraryState`.                                                                                                                                                                                      |
+| `DownloadStart`       | `videoDownloadStart`       | `[videoId]`      | Queue a download, or resume a `paused` one. The headset fetches the **Download Descriptor** (`GET /api/v1/device-videos/:videoId`) for the current version, URL and size. Idempotent: already `ready` at the descriptor's version → ack + immediate `DownloadComplete`. |
+| `DownloadPause`       | `videoDownloadPause`       | `VideoIdPayload` | Abort the transfer, keep the `.part`, status becomes `paused`. Not auto-resumed.                                                                                                                                                                                        |
+| `DownloadCancel`      | `videoDownloadCancel`      | `[videoId]`      | Abort (running, queued, or paused) and discard the `.part`.                                                                                                                                                                                                             |
+| `Delete`              | `videoDelete`              | `[videoId]`      | Remove the final file (and any `.part`).                                                                                                                                                                                                                                |
+| `Play`                | `videoPlay`                | `[videoId]`      | Start playback of a `ready` video from the beginning.                                                                                                                                                                                                                   |
+| `Pause`               | `videoPause`               | none             |                                                                                                                                                                                                                                                                         |
+| `Resume`              | `videoResume`              | none             |                                                                                                                                                                                                                                                                         |
+| `Stop`                | `videoStop`                | none             | Return the headset to its idle scene.                                                                                                                                                                                                                                   |
+| `Recenter`            | `videoRecenter`            | none             | Re-align the 180° sphere to the patient's current forward direction.                                                                                                                                                                                                    |
 
 ### VR → Console
 
 | Key                | Wire name               | Payload                        | Notes                                                                                                                                                                                             |
 | ------------------ | ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `LibraryState`     | `videoLibraryState`     | `VideoLibraryStatePayload`     | Full Library State. Also sent unsolicited on VR (re)connect if a console is in the room.                                                                                                          |
-| `DownloadAck`      | `videoDownloadAck`      | `VideoIdPayload`               | Download accepted and queued. Console times out at 5 s without this.                                                                                                                              |
+| `DownloadAck`      | `videoDownloadAck`      | `[videoId]`                    | Download accepted and queued. Console times out at 5 s without this.                                                                                                                              |
 | `DownloadProgress` | `videoDownloadProgress` | `VideoDownloadProgressPayload` | Throttled headset-side to **at most 1 per second** per video. `stalled: true` while retrying a lost connection.                                                                                   |
-| `DownloadComplete` | `videoDownloadComplete` | `VideoDownloadCompletePayload` | Emitted after the byte count matched `sizeBytes` and the atomic rename.                                                                                                                           |
+| `DownloadComplete` | `videoDownloadComplete` | `[videoId]`                    | Emitted after the byte count matched `sizeBytes` and the atomic rename. Carries no version: the console answers with `LibraryStateRequest` to learn the version on disk.                          |
 | `DownloadFailed`   | `videoDownloadFailed`   | `VideoDownloadFailedPayload`   | Terminal for this request. The `.part` is kept for `url_expired` only (after the headset has already refreshed the descriptor once). Transient network loss is **not** a failure (see `stalled`). |
 | `DownloadPaused`   | `videoDownloadPaused`   | `VideoDownloadPausedPayload`   | `DownloadPause` honoured; carries the kept byte count.                                                                                                                                            |
-| `PlayAck`          | `videoPlayAck`          | `VideoIdPayload`               | Playback started.                                                                                                                                                                                 |
+| `PlayAck`          | `videoPlayAck`          | `[videoId]`                    | Playback started.                                                                                                                                                                                 |
 | `PlaybackProgress` | `videoPlaybackProgress` | `VideoPlaybackProgressPayload` | At most 1 per second while playing **and while paused** (`paused: true`); this is how a (re)joining console re-attaches its controls.                                                             |
-| `Ended`            | `videoEnded`            | `VideoIdPayload`               | Video reached its end, or `Stop` was honoured.                                                                                                                                                    |
+| `Ended`            | `videoEnded`            | none                           | Video reached its end, or `Stop` was honoured. The console already knows which video is playing.                                                                                                  |
 
 ## Payload types
 
@@ -74,8 +74,14 @@ export type VideoIdPayload = {
   videoId: string
 }
 
-/** `videoDownloadStart` only: a string array, `videoId` at index 0. */
-export type VideoDownloadStartPayload = [videoId: string, ...rest: string[]]
+/**
+ * The headset reads and writes the single-id video events as a positional
+ * string array: `[videoId]`. Used by `videoDownloadStart`, `videoDownloadCancel`,
+ * `videoDelete`, `videoPlay`, `videoDownloadAck`, `videoDownloadComplete` and
+ * `videoPlayAck`.
+ * Every other video event carries an object.
+ */
+export type VideoIdArrayPayload = [videoId: string, ...rest: string[]]
 
 export const VIDEO_DEVICE_STATUS = {
   Absent: 'absent',
@@ -120,11 +126,6 @@ export type VideoDownloadPausedPayload = {
   bytesDownloaded: number
 }
 
-export type VideoDownloadCompletePayload = {
-  videoId: string
-  version: number
-}
-
 export const VIDEO_DOWNLOAD_FAILURE_REASON = {
   InsufficientStorage: 'insufficient_storage',
   /** Non-recoverable transport or I/O error (4xx other than 403/410, disk I/O). Transient loss is retried, not failed. */
@@ -145,8 +146,6 @@ export type VideoDownloadFailedPayload = {
   videoId: string
   reason: VideoDownloadFailureReason
 }
-
-export type VideoPlayPayload = VideoIdPayload
 
 export type VideoPlaybackProgressPayload = {
   videoId: string
@@ -230,7 +229,7 @@ sequenceDiagram
     Console->>API: deviceVideo.requestDownload (requested)
     Console->>Relay: videoDownloadStart [videoId]
     Relay->>VR: videoDownloadStart
-    VR-->>Console: videoDownloadAck
+    VR-->>Console: videoDownloadAck [videoId]
     VR->>API: GET /api/v1/device-videos/{videoId}?deviceId=…
     API-->>VR: {version,url,sizeBytes}
     Console->>API: deviceVideo.applyEvent (downloading)
@@ -250,7 +249,9 @@ sequenceDiagram
         Console->>VR: videoDownloadStart [videoId] → re-fetches descriptor, resumes
     end
     VR->>VR: .part size == sizeBytes, rename .part → final
-    VR-->>Console: videoDownloadComplete {videoId,version}
+    VR-->>Console: videoDownloadComplete [videoId]
+    Console->>VR: videoLibraryStateRequest
+    VR-->>Console: videoLibraryState (version on disk)
     Console->>API: deviceVideo.applyEvent (ready)
 ```
 
@@ -261,8 +262,8 @@ sequenceDiagram
     participant Console
     participant VR
 
-    Console->>VR: videoPlay {videoId}
-    VR-->>Console: videoPlayAck
+    Console->>VR: videoPlay [videoId]
+    VR-->>Console: videoPlayAck [videoId]
     loop while playing or paused
         VR-->>Console: videoPlaybackProgress {positionSec,durationSec,paused}
     end

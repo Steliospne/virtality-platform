@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ROOM_EVENT,
   VIDEO_EVENT,
-  type VideoIdPayload,
+  type VideoIdArrayPayload,
   type VideoLibraryStatePayload,
 } from '@virtality/shared/types'
 import useSocketConnection from '@/hooks/use-socket-connection'
@@ -117,20 +117,22 @@ export function useHeadsetLibrary(
         setRoomComplete(true)
         mirror.onLibraryState(next)
       },
-      DownloadAck: (payload: VideoIdPayload) => {
-        if (pendingDownloadRef.current === payload.videoId) {
+      DownloadAck: ([videoId]: VideoIdArrayPayload) => {
+        if (pendingDownloadRef.current === videoId) {
           clearPendingDownload()
         }
-        setLibraryState((current) => applyDownloadAck(current, payload.videoId))
-        mirror.onAck(payload.videoId)
+        setLibraryState((current) => applyDownloadAck(current, videoId))
+        mirror.onAck(videoId)
       },
       DownloadProgress: (payload) => {
         setLibraryState((current) => applyDownloadProgress(current, payload))
         mirror.onProgress(payload)
       },
-      DownloadComplete: (payload) => {
-        setLibraryState((current) => applyDownloadComplete(current, payload))
-        mirror.onComplete(payload)
+      DownloadComplete: ([videoId]: VideoIdArrayPayload) => {
+        setLibraryState((current) => applyDownloadComplete(current, videoId))
+        mirror.onComplete(videoId)
+        // The complete event has no version; ask for the state that does.
+        deviceRef.current?.events.video.LibraryStateRequest()
       },
       DownloadFailed: (payload) => {
         setLibraryState((current) => applyDownloadFailed(current, payload))
@@ -190,7 +192,7 @@ export function useHeadsetLibrary(
     (videoId: string) => {
       const target = readyDevice()
       if (!target) return
-      target.events.video.DownloadCancel({ videoId })
+      target.events.video.DownloadCancel([videoId])
       // A `requested` row is console intent; withdraw it without waiting for
       // a headset that may never have seen the request.
       const entry = libraryStateRef.current?.videos.find(
@@ -210,7 +212,7 @@ export function useHeadsetLibrary(
 
   const sendDelete = useCallback(
     (videoId: string) => {
-      readyDevice()?.events.video.Delete({ videoId })
+      readyDevice()?.events.video.Delete([videoId])
     },
     [readyDevice],
   )

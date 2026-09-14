@@ -106,7 +106,7 @@ sequenceDiagram
     participant CDN
 
     Console->>VR: videoDownloadStart [videoId]
-    VR-->>Console: videoDownloadAck
+    VR-->>Console: videoDownloadAck [videoId]
     VR->>API: GET /api/v1/device-videos/{videoId}?deviceId=…
     API-->>VR: Download Descriptor {version, url, sizeBytes}\n(404 → Failed(unavailable))
     VR->>VR: free space ≥ sizeBytes? else Failed(insufficient_storage)
@@ -117,7 +117,9 @@ sequenceDiagram
         VR-->>Console: videoDownloadProgress (≤1/s)
     end
     VR->>VR: .part size == sizeBytes? rename .part → final
-    VR-->>Console: videoDownloadComplete {videoId, version}
+    VR-->>Console: videoDownloadComplete [videoId]
+    Console->>VR: videoLibraryStateRequest
+    VR-->>Console: videoLibraryState (version on disk)
 ```
 
 ### Interruptions
@@ -143,7 +145,7 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Starting : videoPlay {videoId}\n(console gate: status = ready,\nversion = catalog,\nno program session active)
+    Idle --> Starting : videoPlay [videoId]\n(console gate: status = ready,\nversion = catalog,\nno program session active)
     Starting --> Playing : videoPlayAck
     Starting --> Idle : no ack in 5 s\n(console shows "headset didn't respond")
     Playing --> Playing : videoPlaybackProgress (≤1/s)

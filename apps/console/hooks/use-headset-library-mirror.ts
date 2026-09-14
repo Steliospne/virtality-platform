@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useRef } from 'react'
 import type {
-  VideoDownloadCompletePayload,
   VideoDownloadFailedPayload,
   VideoDownloadPausedPayload,
   VideoDownloadProgressPayload,
@@ -115,13 +114,12 @@ export function useHeadsetLibraryMirror(deviceId: string | null | undefined) {
   )
 
   const onComplete = useCallback(
-    (payload: VideoDownloadCompletePayload) =>
+    (videoId: string) =>
       withHeadset((headsetId, w) =>
         w.applyEvent({
           deviceId: headsetId,
-          videoId: payload.videoId,
+          videoId,
           status: 'ready',
-          version: payload.version,
         }),
       ),
     [withHeadset],
