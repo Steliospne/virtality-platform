@@ -1,6 +1,6 @@
 # Headset-owned video library with a headset-written Library Mirror
 
-**Status:** accepted
+**Status:** accepted; decisions 2, 3 and 5 (headset-written mirror over `PUT /api/v1/device-videos`) superseded by [ADR 0013](./0013-console-written-library-mirror-with-requested-intent.md). Decisions 1 and 4 stand.
 
 The 180° FPV **Immersive Video** mode (map: issue #283) puts multi-GB files on a headset's disk and lets a physio manage them from the console. Something has to tell the console what is on a headset that is currently off. The two live candidates were a platform-owned record the console writes as it issues commands, or a headset-owned record the headset reports. We chose the headset: its disk is the only thing that knows whether a file is really there, and every command can fail after the console has moved on.
 

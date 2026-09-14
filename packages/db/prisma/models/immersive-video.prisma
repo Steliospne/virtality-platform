@@ -15,6 +15,10 @@ enum ImmersiveVideoCatalogState {
 }
 
 enum DeviceVideoStatus {
+  /// Console intent: the physio asked for a download the headset has not yet
+  /// acknowledged. Never reported by a headset; survives a full Library State
+  /// replace until the headset reports the video or the physio cancels.
+  requested
   downloading
   paused
   ready
@@ -61,12 +65,14 @@ model ImmersiveVideo {
   @@index([updatedAt])
 }
 
-/// Header of one headset's Library Mirror. Keyed by Headset Identity
+/// Header of one headset's Library Mirror, written by the console from the
+/// headset's socket events (ADR 0013). Keyed by Headset Identity
 /// (`Device.deviceId`), not `Device.id`, and has no FK to Device: re-pairing
 /// must not move or clear the rows, and the retention job owns deletion.
+/// `freeBytes` is null until the headset has reported Library State once.
 model DeviceVideoReport {
   deviceId   String   @id
-  freeBytes  BigInt
+  freeBytes  BigInt?
   reportedAt DateTime @db.Timestamp(6)
 
   videos DeviceVideo[]

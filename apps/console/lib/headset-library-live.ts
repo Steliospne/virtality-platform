@@ -7,7 +7,9 @@ import type {
   VideoLibraryStatePayload,
 } from '@virtality/shared/types'
 
-export type LiveLibraryEntry = VideoLibraryEntry & {
+export type LiveLibraryEntry = Omit<VideoLibraryEntry, 'status'> & {
+  /** `requested` is console-local: sent, not yet acknowledged by the headset. */
+  status: VideoLibraryEntry['status'] | 'requested'
   stalled?: boolean
 }
 
@@ -17,6 +19,7 @@ export type LiveLibraryState = {
 }
 
 const LIBRARY_STATUSES = new Set<LiveLibraryEntry['status']>([
+  'requested',
   'absent',
   'downloading',
   'paused',
@@ -125,4 +128,33 @@ export function applyDownloadPaused(
     bytesDownloaded: payload.bytesDownloaded,
     stalled: false,
   })
+}
+
+export function applyDownloadRequested(
+  state: LiveLibraryState | VideoLibraryStatePayload | null,
+  videoId: string,
+): LiveLibraryState {
+  return upsertLibraryEntry(state, videoId, { status: 'requested' })
+}
+
+export function applyDownloadAck(
+  state: LiveLibraryState | VideoLibraryStatePayload | null,
+  videoId: string,
+): LiveLibraryState {
+  return upsertLibraryEntry(state, videoId, {
+    status: 'downloading',
+    bytesDownloaded: 0,
+  })
+}
+
+export function removeLibraryEntry(
+  state: LiveLibraryState | VideoLibraryStatePayload | null,
+  videoId: string,
+): LiveLibraryState {
+  return {
+    freeBytes: state?.freeBytes ?? 0,
+    videos: asLibraryVideos(state?.videos).filter(
+      (entry) => entry.videoId !== videoId,
+    ),
+  }
 }

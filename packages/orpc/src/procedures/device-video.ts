@@ -1,6 +1,18 @@
 import type { DeviceVideoStatus, PrismaClient } from '@virtality/db'
-import type { VideoDownloadFailureReason } from '@virtality/shared/types'
+import { ORPCError } from '@orpc/server'
+import {
+  VIDEO_DEVICE_STATUS,
+  VIDEO_DOWNLOAD_FAILURE_REASON,
+  type VideoDownloadFailureReason,
+} from '@virtality/shared/types'
+import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
+import {
+  applyDeviceVideoEvent,
+  removeDeviceVideo,
+  replaceDeviceVideoLibraryState,
+  requestDeviceVideoDownload,
+} from './device-video-mirror.ts'
 import { toSizeBytesNumber } from './immersive-video-constants.ts'
 
 export type DeviceVideoListItem = {
@@ -19,7 +31,7 @@ export type DeviceVideoListForUserResult = {
     deviceId: string
     report: null | {
       reportedAt: string
-      freeBytes: number
+      freeBytes: number | null
       videos: DeviceVideoListItem[]
     }
   }>
@@ -27,7 +39,7 @@ export type DeviceVideoListForUserResult = {
 
 type DeviceVideoReportRow = {
   deviceId: string
-  freeBytes: bigint | number
+  freeBytes: bigint | number | null
   reportedAt: Date
   videos: Array<{
     videoId: string
@@ -59,7 +71,7 @@ function toListReport(
 
   return {
     reportedAt: report.reportedAt.toISOString(),
-    freeBytes: Number(report.freeBytes),
+    freeBytes: toSizeBytesNumber(report.freeBytes),
     videos: report.videos.map((video) => ({
       videoId: video.videoId,
       status: video.status,
@@ -119,6 +131,96 @@ const listForUser = authed
     listDeviceVideosForUser(context.prisma, context.user.id),
   )
 
+// ── Library Mirror writes (console only; ADR 0013) ───────────────────────
+
+const HeadsetIdentitySchema = z.string().trim().min(1).max(128)
+const VideoIdSchema = z.string().min(1)
+
+const LibraryEntrySchema = z.object({
+  videoId: VideoIdSchema,
+  status: z.enum([
+    VIDEO_DEVICE_STATUS.Downloading,
+    VIDEO_DEVICE_STATUS.Paused,
+    VIDEO_DEVICE_STATUS.Ready,
+    VIDEO_DEVICE_STATUS.Failed,
+  ]),
+  version: z.number().int().nonnegative().optional(),
+  bytesDownloaded: z.number().finite().nonnegative().optional(),
+  sizeBytes: z.number().finite().nonnegative().optional(),
+  reason: z
+    .enum([
+      VIDEO_DOWNLOAD_FAILURE_REASON.InsufficientStorage,
+      VIDEO_DOWNLOAD_FAILURE_REASON.Network,
+      VIDEO_DOWNLOAD_FAILURE_REASON.ChecksumMismatch,
+      VIDEO_DOWNLOAD_FAILURE_REASON.Cancelled,
+      VIDEO_DOWNLOAD_FAILURE_REASON.UrlExpired,
+      VIDEO_DOWNLOAD_FAILURE_REASON.Unavailable,
+    ])
+    .optional(),
+})
+
+const HeadsetVideoSchema = z.object({
+  deviceId: HeadsetIdentitySchema,
+  videoId: VideoIdSchema,
+})
+
+/** The mirror is keyed by Headset Identity; only its owner may write it. */
+export async function assertOwnedHeadset(
+  prisma: Pick<PrismaClient, 'device'>,
+  userId: string,
+  deviceId: string,
+): Promise<void> {
+  const owned = await prisma.device.findFirst({
+    where: { deviceId, userId, deletedAt: null },
+    select: { id: true },
+  })
+  if (!owned) {
+    throw new ORPCError('NOT_FOUND', { message: 'Headset not found.' })
+  }
+}
+
+const reportLibraryState = authed
+  .route({ path: '/device-video/report-library-state', method: 'POST' })
+  .input(
+    z.object({
+      deviceId: HeadsetIdentitySchema,
+      freeBytes: z.number().finite().nonnegative(),
+      videos: z.array(LibraryEntrySchema).max(64),
+    }),
+  )
+  .handler(async ({ context, input }) => {
+    await assertOwnedHeadset(context.prisma, context.user.id, input.deviceId)
+    await replaceDeviceVideoLibraryState(context.prisma, input)
+  })
+
+const requestDownload = authed
+  .route({ path: '/device-video/request-download', method: 'POST' })
+  .input(HeadsetVideoSchema)
+  .handler(async ({ context, input }) => {
+    await assertOwnedHeadset(context.prisma, context.user.id, input.deviceId)
+    await requestDeviceVideoDownload(context.prisma, input)
+  })
+
+const applyEvent = authed
+  .route({ path: '/device-video/apply-event', method: 'POST' })
+  .input(LibraryEntrySchema.extend({ deviceId: HeadsetIdentitySchema }))
+  .handler(async ({ context, input }) => {
+    await assertOwnedHeadset(context.prisma, context.user.id, input.deviceId)
+    await applyDeviceVideoEvent(context.prisma, input)
+  })
+
+const remove = authed
+  .route({ path: '/device-video/remove', method: 'POST' })
+  .input(HeadsetVideoSchema)
+  .handler(async ({ context, input }) => {
+    await assertOwnedHeadset(context.prisma, context.user.id, input.deviceId)
+    await removeDeviceVideo(context.prisma, input)
+  })
+
 export const deviceVideo = {
   listForUser,
+  reportLibraryState,
+  requestDownload,
+  applyEvent,
+  remove,
 }

@@ -6,10 +6,10 @@ import type {
 
 export type DeviceVideoReportView = {
   reportedAt: string
-  freeBytes: number
+  freeBytes: number | null
   videos: Array<{
     videoId: string
-    status: 'downloading' | 'paused' | 'ready' | 'failed'
+    status: 'requested' | 'downloading' | 'paused' | 'ready' | 'failed'
     version: number | null
     bytesDownloaded: number | null
     sizeBytes: number | null
@@ -78,4 +78,23 @@ export function toCatalogVideos(
     | undefined,
 ): HeadsetCatalogVideo[] {
   return Array.isArray(videos) ? videos : []
+}
+
+/**
+ * While online the headset's live report wins, but it cannot know about a
+ * `requested` row (console intent). Carry those over so the physio can see
+ * and withdraw a request the headset never acknowledged.
+ */
+export function overlayRequestedRows(
+  live: HeadsetLibrarySnapshot,
+  mirror: HeadsetLibrarySnapshot | null,
+): HeadsetLibrarySnapshot {
+  if (!mirror) return live
+  const known = new Set(live.videos.map((video) => video.videoId))
+  const requested = mirror.videos.filter(
+    (video) => video.status === 'requested' && !known.has(video.videoId),
+  )
+  return requested.length === 0
+    ? live
+    : { ...live, videos: [...live.videos, ...requested] }
 }

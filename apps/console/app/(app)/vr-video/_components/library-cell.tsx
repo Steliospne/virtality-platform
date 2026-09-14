@@ -12,6 +12,7 @@ import {
 import type { HeadsetLibraryCell } from '@/lib/headset-library-rows'
 import { DeleteFromHeadsetButton } from './delete-from-headset-button'
 import { FailedLibraryCell } from './failed-library-cell'
+import { LibraryCellCancelButton } from './library-cell-cancel-button'
 import { LibraryCellDownloading } from './library-cell-downloading'
 import { LibraryCellPaused } from './library-cell-paused'
 import {
@@ -119,6 +120,24 @@ export function LibraryCell({
         >
           Download ({formatByteSize(sizeBytes)})
         </Button>
+      )
+      break
+    case 'requested':
+      content = (
+        <div className='flex items-center gap-2'>
+          <Badge variant='secondary'>Requested</Badge>
+          <LibraryCellCancelButton disabled={disabled} onCancel={onCancel} />
+        </div>
+      )
+      break
+    case 'offline-requested':
+      content = (
+        <div className='text-right'>
+          <Badge variant='secondary'>Requested</Badge>
+          <p className='text-muted-foreground mt-1 text-xs'>
+            Waiting for the headset
+          </p>
+        </div>
       )
       break
     case 'offline-on-headset': {

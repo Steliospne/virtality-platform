@@ -372,15 +372,6 @@ export type VideoLibraryStatePayload = {
   freeBytes: number
 }
 
-/**
- * Body of `PUT /api/v1/device-videos` (headset → API). Same shape as the socket
- * payload plus the Headset Identity; the server replaces all DeviceVideo rows
- * for that Headset Identity with `videos` and stamps `reportedAt`.
- */
-export type DeviceVideoReportBody = VideoLibraryStatePayload & {
-  deviceId: string
-}
-
 export type VideoDownloadProgressPayload = {
   videoId: string
   bytesDownloaded: number

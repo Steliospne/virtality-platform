@@ -14,6 +14,7 @@ import {
   usedBytesOnHeadset,
 } from '@/lib/headset-library-rows'
 import {
+  overlayRequestedRows,
   selectedHeadsetOnline,
   toCatalogVideos,
   toLibrarySnapshot,
@@ -74,7 +75,10 @@ export function useVrVideoPage() {
   )
 
   const selectedSnapshot = useLive
-    ? liveSnapshot
+    ? overlayRequestedRows(
+        liveSnapshot,
+        toLibrarySnapshot(selectedMirror?.report),
+      )
     : toLibrarySnapshot(selectedMirror?.report)
 
   const rows = buildHeadsetLibraryRows(catalog, selectedSnapshot, useLive)

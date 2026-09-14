@@ -207,8 +207,12 @@ The headset's full report of its **Headset Library** (every video with its statu
 _Avoid_: Manifest, sync status, device state
 
 **Download Request**:
-A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video**. Resuming a paused download is the same request sent again; the headset never starts one on its own.
+A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video**. Resuming a paused download is the same request sent again; the headset never starts one on its own. Recorded as **Requested** until the headset answers.
 _Avoid_: Push, sync, auto-download, preload
+
+**Requested**:
+The state of a **Download Request** the headset has not yet acknowledged. It is console intent, not **Library State**: the headset never reports it, a fresh **Library State** does not clear it, and only the headset reporting that video or the physio cancelling ends it. Shown with a Cancel while the headset is in the room and as "Waiting for the headset" offline.
+_Avoid_: Pending (in copy), queued (that is the headset's `downloading` at 0 bytes), scheduled
 
 **Update Available**:
 The console-derived state of a `ready` **Headset Library** entry whose version is older than the catalog's. The old file stays playable until the newer one is `ready`; the headset never knows it is out of date.

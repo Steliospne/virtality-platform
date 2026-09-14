@@ -14,27 +14,12 @@ type CatalogRow = {
 
 type Store = {
   devices: Array<{ deviceId: string; deletedAt: Date | null }>
-  reports: Map<
-    string,
-    { deviceId: string; freeBytes: bigint; reportedAt: Date }
-  >
-  videos: Array<{
-    deviceId: string
-    videoId: string
-    status: string
-    version: number | null
-    bytesDownloaded: bigint | null
-    sizeBytes: bigint | null
-    reason: string | null
-  }>
   catalog: CatalogRow[]
 }
 
 const { store, prisma } = vi.hoisted(() => {
   const store: Store = {
     devices: [],
-    reports: new Map(),
-    videos: [],
     catalog: [],
   }
 
@@ -68,46 +53,11 @@ const { store, prisma } = vi.hoisted(() => {
           store.devices.find((device) => deviceMatches(device, where)) ?? null,
       ),
     },
-    deviceVideoReport: {
-      upsert: vi.fn(
-        async ({
-          where,
-          create,
-          update,
-        }: {
-          where: { deviceId: string }
-          create: { deviceId: string; freeBytes: bigint; reportedAt: Date }
-          update: { freeBytes: bigint; reportedAt: Date }
-        }) => {
-          const next = store.reports.has(where.deviceId)
-            ? {
-                ...store.reports.get(where.deviceId)!,
-                ...update,
-              }
-            : create
-          store.reports.set(where.deviceId, next)
-          return next
-        },
-      ),
-    },
-    deviceVideo: {
-      deleteMany: vi.fn(async ({ where }: { where: { deviceId: string } }) => {
-        store.videos = store.videos.filter(
-          (video) => video.deviceId !== where.deviceId,
-        )
-      }),
-      createMany: vi.fn(async ({ data }: { data: Store['videos'] }) => {
-        store.videos.push(...data)
-      }),
-    },
     immersiveVideo: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => {
         return store.catalog.find((row) => row.id === where.id) ?? null
       }),
     },
-    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-      fn(prisma),
-    ),
   }
 
   return { store, prisma }
@@ -121,8 +71,6 @@ const app = new Hono().route('/api/v1/device-videos', deviceVideoRoutes)
 
 function resetStore() {
   store.devices = [{ deviceId: 'headset-1', deletedAt: null }]
-  store.reports = new Map()
-  store.videos = []
   store.catalog = []
 }
 
@@ -144,175 +92,6 @@ describe('device-videos routes', () => {
   beforeEach(() => {
     resetStore()
     vi.clearAllMocks()
-  })
-
-  it('PUT replaces an empty library and upserts the report header', async () => {
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 42,
-        videos: [],
-      }),
-    })
-
-    expect(response.status).toBe(204)
-    expect(await response.text()).toBe('')
-    expect(response.headers.get('Cache-Control')).toBe('no-store')
-    expect(store.videos).toEqual([])
-    const report = store.reports.get('headset-1')
-    expect(report?.freeBytes).toBe(42n)
-    expect(report?.reportedAt).toBeInstanceOf(Date)
-  })
-
-  it('PUT stores unknown videoIds', async () => {
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: [
-          {
-            videoId: 'not-in-catalog',
-            status: 'ready',
-            version: 1,
-            sizeBytes: 10,
-          },
-        ],
-      }),
-    })
-
-    expect(response.status).toBe(204)
-    expect(store.videos).toEqual([
-      expect.objectContaining({
-        deviceId: 'headset-1',
-        videoId: 'not-in-catalog',
-        status: 'ready',
-        version: 1,
-        sizeBytes: 10n,
-      }),
-    ])
-  })
-
-  it('PUT replace-all shrinks existing rows', async () => {
-    await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: [
-          { videoId: 'a', status: 'ready' },
-          { videoId: 'b', status: 'paused' },
-        ],
-      }),
-    })
-
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 2,
-        videos: [{ videoId: 'a', status: 'ready' }],
-      }),
-    })
-
-    expect(response.status).toBe(204)
-    expect(store.videos.map((video) => video.videoId)).toEqual(['a'])
-    expect(store.reports.get('headset-1')?.freeBytes).toBe(2n)
-  })
-
-  it('PUT returns 404 UNPAIRED when the headset is not paired', async () => {
-    store.devices = []
-
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: [],
-      }),
-    })
-
-    expect(response.status).toBe(404)
-    expect(await response.json()).toEqual({
-      error: 'UNPAIRED',
-      message: 'Headset is not paired.',
-    })
-    expect(store.reports.size).toBe(0)
-  })
-
-  it('PUT returns 404 when the only matching Device is soft-deleted', async () => {
-    store.devices = [
-      {
-        deviceId: 'headset-1',
-        deletedAt: new Date('2026-01-01T00:00:00.000Z'),
-      },
-    ]
-
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: [],
-      }),
-    })
-
-    expect(response.status).toBe(404)
-    expect(await response.json()).toMatchObject({ error: 'UNPAIRED' })
-  })
-
-  it('PUT returns 400 for an invalid body', async () => {
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId: 'headset-1' }),
-    })
-
-    expect(response.status).toBe(400)
-    expect(await response.json()).toEqual({
-      error: 'INVALID_REQUEST',
-      message: 'Invalid device videos report.',
-    })
-  })
-
-  it("PUT returns 400 when status is 'absent'", async () => {
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: [{ videoId: 'video-1', status: 'absent' }],
-      }),
-    })
-
-    expect(response.status).toBe(400)
-    expect(await response.json()).toMatchObject({ error: 'INVALID_REQUEST' })
-  })
-
-  it('PUT returns 400 when the library has 65 entries', async () => {
-    const response = await app.request('/api/v1/device-videos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: 'headset-1',
-        freeBytes: 1,
-        videos: Array.from({ length: 65 }, (_, index) => ({
-          videoId: `video-${index}`,
-          status: 'ready',
-        })),
-      }),
-    })
-
-    expect(response.status).toBe(400)
-    expect(await response.json()).toMatchObject({ error: 'INVALID_REQUEST' })
   })
 
   it('GET returns the live Published download descriptor', async () => {

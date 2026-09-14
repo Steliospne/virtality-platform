@@ -11,12 +11,16 @@ import useSocketConnection from '@/hooks/use-socket-connection'
 import { subscribe } from '@/lib/device-event-controller'
 import { isReplacementNoticeError } from '@/lib/socket-replacement-notice'
 import type { HeadsetDidNotConfirmReason } from '@/lib/headset-did-not-confirm'
+import { useHeadsetLibraryMirror } from '@/hooks/use-headset-library-mirror'
 import {
+  applyDownloadAck,
   applyDownloadComplete,
   applyDownloadFailed,
   applyDownloadPaused,
   applyDownloadProgress,
+  applyDownloadRequested,
   normalizeLiveLibraryState,
+  removeLibraryEntry,
   type LiveLibraryState,
 } from '@/lib/headset-library-live'
 import type { VRDevice } from '@/types/models'
@@ -42,6 +46,9 @@ export function useHeadsetLibrary(
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deviceRef = useRef(device)
   deviceRef.current = device
+  const libraryStateRef = useRef(libraryState)
+  libraryStateRef.current = libraryState
+  const mirror = useHeadsetLibraryMirror(device?.data.deviceId)
 
   const clearPendingDownload = useCallback(() => {
     if (timeoutRef.current) {
@@ -105,25 +112,33 @@ export function useHeadsetLibrary(
 
     const unsubscribeVideo = subscribe(socket, VIDEO_EVENT, {
       LibraryState: (payload: VideoLibraryStatePayload) => {
-        setLibraryState(normalizeLiveLibraryState(payload))
+        const next = normalizeLiveLibraryState(payload)
+        setLibraryState(next)
         setRoomComplete(true)
+        mirror.onLibraryState(next)
       },
       DownloadAck: (payload: VideoIdPayload) => {
         if (pendingDownloadRef.current === payload.videoId) {
           clearPendingDownload()
         }
+        setLibraryState((current) => applyDownloadAck(current, payload.videoId))
+        mirror.onAck(payload.videoId)
       },
       DownloadProgress: (payload) => {
         setLibraryState((current) => applyDownloadProgress(current, payload))
+        mirror.onProgress(payload)
       },
       DownloadComplete: (payload) => {
         setLibraryState((current) => applyDownloadComplete(current, payload))
+        mirror.onComplete(payload)
       },
       DownloadFailed: (payload) => {
         setLibraryState((current) => applyDownloadFailed(current, payload))
+        mirror.onFailed(payload)
       },
       DownloadPaused: (payload) => {
         setLibraryState((current) => applyDownloadPaused(current, payload))
+        mirror.onPaused(payload)
       },
     })
 
@@ -138,7 +153,7 @@ export function useHeadsetLibrary(
       unsubscribeVideo()
       socket.off('disconnect', markIncomplete)
     }
-  }, [clearPendingDownload, device])
+  }, [mirror, clearPendingDownload, device])
 
   const readyDevice = useCallback((): VRDevice | null => {
     if (!device || !roomComplete || replaced) return null
@@ -152,6 +167,8 @@ export function useHeadsetLibrary(
 
       pendingDownloadRef.current = videoId
       target.events.video.DownloadStart([videoId])
+      setLibraryState((current) => applyDownloadRequested(current, videoId))
+      mirror.onRequested(videoId)
       timeoutRef.current = setTimeout(() => {
         if (pendingDownloadRef.current === videoId) {
           clearPendingDownload()
@@ -159,7 +176,7 @@ export function useHeadsetLibrary(
         }
       }, DOWNLOAD_ACK_TIMEOUT_MS)
     },
-    [clearPendingDownload, readyDevice],
+    [clearPendingDownload, mirror, readyDevice],
   )
 
   const sendDownloadPause = useCallback(
@@ -171,9 +188,24 @@ export function useHeadsetLibrary(
 
   const sendDownloadCancel = useCallback(
     (videoId: string) => {
-      readyDevice()?.events.video.DownloadCancel({ videoId })
+      const target = readyDevice()
+      if (!target) return
+      target.events.video.DownloadCancel({ videoId })
+      // A `requested` row is console intent; withdraw it without waiting for
+      // a headset that may never have seen the request.
+      const entry = libraryStateRef.current?.videos.find(
+        (video) => video.videoId === videoId,
+      )
+      if (
+        pendingDownloadRef.current === videoId ||
+        entry?.status === 'requested'
+      ) {
+        if (pendingDownloadRef.current === videoId) clearPendingDownload()
+        setLibraryState((current) => removeLibraryEntry(current, videoId))
+        mirror.onRemoved(videoId)
+      }
     },
-    [readyDevice],
+    [clearPendingDownload, mirror, readyDevice],
   )
 
   const sendDelete = useCallback(

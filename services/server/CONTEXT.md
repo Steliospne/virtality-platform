@@ -9,7 +9,7 @@ A short-lived request by an authenticated user to set or change their password t
 _Avoid_: Password reset, immediate password change, password update
 
 **Library Mirror**:
-The headset-written Postgres cache of one headset's **Library State** (`DeviceVideoReport` + `DeviceVideo` rows), keyed by **Headset Identity**. The console reads it only when that headset is offline. The console never writes it.
+The Postgres cache of one headset's **Library State** (`DeviceVideoReport` + `DeviceVideo` rows), keyed by **Headset Identity**, written by the console from the headset's socket events and read by the console when that headset is offline. It also holds the physio's pending **Download Request** rows (`requested`), which the headset never reports. The headset never writes it.
 _Avoid_: Mirror (as the term), device library table, server-owned library
 
 **Download Descriptor**:
@@ -35,9 +35,9 @@ _Avoid_: Manifest (the headset's on-disk file), download ticket, download link, 
 - Cancelling a **Pending Password Change** requires an authenticated session but not current-password proof.
 
 - A **Library Mirror** belongs to exactly one **Headset Identity**, not to a Device row; re-pairing does not move or clear it.
-- A **Library Mirror** write replaces the whole snapshot for that **Headset Identity**; there are no partial updates.
+- A **Library Mirror** full report replaces the snapshot for that **Headset Identity** except `requested` rows the report does not name; download events patch one row each.
 - A **Download Descriptor** is issued only for a **Headset Identity** currently bound to a non-deleted Device, and only for a `Published` or `Republishing` catalog entry (the last verified version).
-- Neither the **Library Mirror** write nor the **Download Descriptor** read is authenticated or rate-limited in v1; both trust the **Headset Identity** the way the pairing claim does.
+- A **Library Mirror** write is a console (oRPC) call scoped to a headset bound to a Device the caller owns. The **Download Descriptor** read is unauthenticated and not rate-limited in v1; it trusts the **Headset Identity** the way the pairing claim does.
 
 ## Example Dialogue
 

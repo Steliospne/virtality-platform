@@ -13,7 +13,7 @@ export type HeadsetCatalogVideo = {
 
 export type HeadsetLibraryEntry = {
   videoId: string
-  status: 'downloading' | 'paused' | 'ready' | 'failed' | 'absent'
+  status: 'requested' | 'downloading' | 'paused' | 'ready' | 'failed' | 'absent'
   version?: number | null
   bytesDownloaded?: number | null
   sizeBytes?: number | null
@@ -23,7 +23,7 @@ export type HeadsetLibraryEntry = {
 
 export type HeadsetLibrarySnapshot = {
   videos: HeadsetLibraryEntry[]
-  freeBytes: number
+  freeBytes: number | null
   reportedAt?: string
 }
 
@@ -42,6 +42,8 @@ export type HeadsetLibraryCell =
     }
   | { type: 'failed'; reason: VideoDownloadFailureReason }
   | { type: 'absent' }
+  | { type: 'requested' }
+  | { type: 'offline-requested' }
   | { type: 'offline-on-headset'; reportedAt?: string }
   | { type: 'offline-absent' }
   | { type: 'not-in-catalog' }
@@ -155,6 +157,8 @@ function cellForCatalogEntry(
       return online
         ? { type: 'failed', reason: entry.reason ?? 'network' }
         : { type: 'offline-failed', reason: entry.reason ?? 'network' }
+    case 'requested':
+      return online ? { type: 'requested' } : { type: 'offline-requested' }
     case 'absent':
       return online ? { type: 'absent' } : { type: 'offline-absent' }
   }

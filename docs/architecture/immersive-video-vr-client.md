@@ -112,7 +112,7 @@ Either keep downloading in the background or auto-suspend on program start and a
 
 ## 4. Library State: building and reporting
 
-The headset owns one function, `BuildLibraryState()`, and sends its output over two channels. Both channels carry the same object; only the trigger and the transport differ.
+The headset owns one function, `BuildLibraryState()`, and sends its output over the socket only. There is no HTTP report: the console writes the **Library Mirror** from `videoLibraryState` and the download events it receives (ADR 0013). What the headset does not say on the socket, the platform does not know.
 
 ### 4.1 Building the payload from the manifest
 
@@ -160,7 +160,7 @@ Then add `freeBytes` (free space on the volume holding `videos/`, measured at ca
 
 Read the manifest and `.part` sizes under the same lock the download worker uses to write them, so a report never shows a `ready` entry whose final-file rename has not finished.
 
-### 4.2 Channel 1: socket `videoLibraryState` (live)
+### 4.2 Sending `videoLibraryState`
 
 Emit the payload above, unchanged, on:
 
@@ -170,48 +170,16 @@ Emit the payload above, unchanged, on:
 
 Do **not** emit it on download start/pause/complete/fail: those have their own events, and the console updates its row from them. Emitting the full state there is harmless but redundant.
 
-### 4.3 Channel 2: `PUT /api/v1/device-videos` (durable)
+### 4.3 What the console persists, and what that costs the headset
 
-The same payload plus the **Headset Identity** as `deviceId`:
+The console turns each event into a Library Mirror write: `videoLibraryState` replaces the headset's rows; `videoDownloadAck`, `videoDownloadPaused`, `videoDownloadComplete` and `videoDownloadFailed` patch one row; progress is sampled about every 10 s. Two consequences for the headset:
 
-```http
-PUT /api/v1/device-videos HTTP/1.1
-Host: <same base URL as /api/v1/device-pairing/claim>
-Content-Type: application/json
-
-{ "deviceId": "<Headset Identity>", "videos": [ ... ], "freeBytes": 12884901888 }
-```
-
-The server **replaces** every `DeviceVideo` row for that Headset Identity with `videos`, upserts the `DeviceVideoReport` header (`freeBytes`) and stamps `reportedAt`. It is a full snapshot, not a delta: always send the whole library.
-
-| Response          | Meaning                                   | Headset does                                     |
-| ----------------- | ----------------------------------------- | ------------------------------------------------ |
-| `204`             | Stored.                                   | Clear `dirty`.                                   |
-| `400`             | Body failed validation.                   | Log; do not retry the same body. Treat as a bug. |
-| `404`             | `deviceId` is not paired to any `Device`. | Log; stop reporting until the next pairing.      |
-| `5xx` / no answer | Server or network.                        | One immediate retry, then keep `dirty`.          |
-
-Send it on these triggers, and only these:
-
-| Trigger                                                  | Why the Library Mirror needs it                                 |
-| -------------------------------------------------------- | --------------------------------------------------------------- |
-| App launch and wake, after reconcile and resume          | The Library Mirror learns about silent resumes with no console. |
-| Download **started** (dequeued and first byte requested) | Offline consoles show "Downloading, as of …".                   |
-| Download **paused**                                      | Offline consoles show "Paused 43 %".                            |
-| Download **completed**                                   | The main case: finishes after the physio left.                  |
-| Download **failed** (any reason, including `cancelled`)  | Row returns to failed/absent.                                   |
-| Video **deleted**                                        | Row removed.                                                    |
-| Connectivity returns while `dirty` is set                | Catch-up.                                                       |
-
-Never on progress ticks and never on `stalled` transitions: progress is socket-only.
-
-Coalesce: if several triggers fire within a short window (e.g. delete three videos), one `PUT` with the final state is enough; only the latest snapshot matters. A `PUT` must never block the download worker or the render loop: queue it on a background task.
-
-`dirty` and the last snapshot survive a relaunch only implicitly: launch always sends a fresh report anyway, so no persistence is needed for the flag.
+- **A download that finishes with no console in the room is unknown to the platform** until the next console joins and asks. That is why the unsolicited `videoLibraryState` on every `roomComplete` (§4.2) is required, not optional.
+- **Be complete in `videoLibraryState`.** It is the only reconciliation point; an entry missing from it is treated as absent on the platform side (and, for a `requested` row the console recorded, as "still waiting").
 
 ### 4.4 Auth
 
-None in v1. Both `PUT /api/v1/device-videos` and `GET /api/v1/device-videos/:videoId` validate that `deviceId` is on a non-deleted `Device`. No rate limit in v1. A pairing-issued device token will be added later as a header; the payloads do not change.
+None in v1. `GET /api/v1/device-videos/:videoId` validates that `deviceId` is on a non-deleted `Device`. No rate limit in v1. A pairing-issued device token will be added later as a header; the payloads do not change.
 
 ## 5. Playback
 
@@ -259,9 +227,9 @@ Log the underlying exception for every `network` so it can be triaged from heads
 11. Edge returns `200` to a ranged request (defensive; not expected from CloudFront) → restart from 0, size still matches.
 12. Console disconnects mid-download and mid-playback → both unaffected; a new console gets `videoLibraryState` on join.
 13. Regular program started with a download running → program unaffected; entry remains `downloading`.
-14. API unreachable → report retried on the next transition; socket state still correct throughout.
-15. `PUT` body matches the socket `videoLibraryState` byte-for-byte apart from `deviceId`; a `ready` video never appears in a report before its final-file rename has completed.
-16. Delete three videos in a row → a single (or coalesced) `PUT` with the final state; server rows match the manifest.
+14. API unreachable → descriptor fetch retried with backoff (§3.3); socket state still correct throughout.
+15. A `ready` video never appears in `videoLibraryState` before its final-file rename has completed.
+16. Delete three videos in a row → one `videoLibraryState` after the last removal; console rows match the manifest.
 17. `videoDelete` while that video plays.
 18. Descriptor 404 → `videoDownloadFailed {unavailable}`, no `.part` left.
 19. CDN 403 → descriptor re-fetched, resumes with the new URL at the same offset; size matches.
