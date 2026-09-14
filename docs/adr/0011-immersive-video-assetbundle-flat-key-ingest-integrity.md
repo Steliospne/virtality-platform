@@ -1,6 +1,6 @@
 # Immersive Video: AssetBundle file kind, admin Video ID, one object per video, ingest-side integrity
 
-**Status:** accepted
+**Status:** accepted; decision 3 (`immersive-videos/<videoId>.<ext>` for every file) and the "ship videos through Unity Addressables" rejection are superseded for bundles by [ADR 0012](./0012-immersive-video-addressables-catalog-on-cdn.md). Raw video still lands on `<videoId>.<ext>`; decisions 1, 2 and 4 stand.
 
 The headset app (`Virtality-app/Virtality`, `Run_Cycle`) plays Immersive Video from Unity AssetBundles built in the editor, one `VideoClip` per bundle. ADR 0010 routed the bytes through CloudFront and the Download Descriptor but assumed raw video files, versioned object keys and a SHA-256 the headset would verify. Four things changed once the bundle workflow was on the table.
 

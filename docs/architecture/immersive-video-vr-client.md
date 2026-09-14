@@ -1,6 +1,6 @@
 # Immersive Video: VR Client Requirements (Step 8)
 
-**Status:** Accepted (VR team sign-off pending; changes return as a new ticket); companion to `immersive-video-shared-contract.md` (wire contract) and `immersive-video-lifecycle.md` (state machines). Decisions recorded in [ADR 0009](../adr/0009-headset-owned-video-library-mirror.md) and [ADR 0010](../adr/0010-immersive-video-cdn-byte-path-relay-control-path.md).  
+**Status:** Accepted (VR team sign-off pending; changes return as a new ticket); companion to `immersive-video-shared-contract.md` (wire contract) and `immersive-video-lifecycle.md` (state machines). Decisions recorded in [ADR 0009](../adr/0009-headset-owned-video-library-mirror.md), [ADR 0010](../adr/0010-immersive-video-cdn-byte-path-relay-control-path.md), [ADR 0011](../adr/0011-immersive-video-assetbundle-flat-key-ingest-integrity.md) and [ADR 0012](../adr/0012-immersive-video-addressables-catalog-on-cdn.md).  
 **Applies to:** VR headset app (Unity)  
 **Scope:** Everything the headset must implement for the 180° FPV video mode. Event names, payload types, and status values are defined in the shared contract and are not repeated here beyond what is needed to read this document. Items marked **(open)** are decisions the VR team owns.
 
@@ -8,7 +8,7 @@
 
 - **The physio drives everything from the console.** The headset never starts a download on its own; the one exception is finishing a `downloading` `.part` it was already asked for.
 - **No headset UI** beyond a passive progress indicator. No menus, dialogs, confirmations, or error text on the headset. Every error travels to the console as an event.
-- **The headset's disk is the source of truth.** It reports Library State live over the socket and durably to the API; it never reads the catalog. The only thing it fetches from the API is the **Download Descriptor** for a video the console asked it to download.
+- **The headset's disk is the source of truth.** It reports Library State over the socket; the console persists what it hears (ADR 0013), so the headset makes no HTTP call except the Download Descriptor. It never reads the console's video catalog (`immersiveVideo.list`). The only thing it fetches from the API is the **Download Descriptor** for a video the console asked it to download. The **Addressables Catalog** (§2.1) is a different thing: a Unity artefact on the CDN, not an API.
 - **Downloads never block a session.** A regular program must launch and run normally while a download is in flight.
 
 ## 1. Socket: `VIDEO_RELAY`
@@ -36,7 +36,7 @@ A socket disconnect must never abort a download or stop playback.
 
 ## 2. Local storage and manifest
 
-- Directory `<persistentDataPath>/videos/`. Files: `{videoId}.{ext}` (final; `ext` taken from the Download Descriptor URL's path, ignoring the query string: `bundle` for a Unity AssetBundle, or one of `mp4, m4v, mov, webm, mkv` for raw video; the catalog applies no encoding constraint), `{videoId}.part` (in progress or paused).
+- Directory `<persistentDataPath>/videos/`. Files: `{videoId}.{ext}` (final; `ext` taken from the Download Descriptor URL's path, ignoring the query string: `bundle` for a Unity AssetBundle, or one of `mp4, m4v, mov, webm, mkv` for raw video; the platform applies no encoding constraint), `{videoId}.part` (in progress or paused). A bundle fetched through Addressables instead (§2.1) lives wherever the Addressables cache puts it; the manifest entry is keyed by `videoId` either way.
 - `videos/manifest.json` is the on-disk source of truth. One entry per video:
 
   ```json
@@ -46,7 +46,7 @@ A socket disconnect must never abort a download or stop playback.
         "status": "downloading | paused | ready | failed",
         "version": 3,
         "sizeBytes": 4831838208,
-        "url": "https://cdn.virtality.app/immersive-videos/<id>.bundle?v=3",
+        "url": "https://cdn.virtality.app/immersive-videos/<unity filename>.bundle?v=3",
         "reason": "insufficient_storage | network | checksum_mismatch | url_expired | unavailable"
       }
     }
@@ -59,6 +59,13 @@ A socket disconnect must never abort a download or stop playback.
 - **Reconcile on launch and on wake:** `ready` with no final file → entry removed; `.part` with no entry → deleted; `downloading` → resume (§3.4); `paused` → left alone.
 - `freeBytes` = free space on the volume holding `videos/`, refreshed for every `videoLibraryState` and API report.
 - `bytesDownloaded` for `downloading`/`paused` = current `.part` size.
+
+### 2.1 Addressables Catalog (ADR 0012)
+
+- `https://cdn.virtality.app/immersive-videos` is the headset project's `Remote.LoadPath`. Every bundle sits flat under it under the filename Unity generated, and the catalog pair the same build wrote (`catalog_<ts>.bin|json` + `catalog_<ts>.hash`) is uploaded by an admin next to them. A video's Addressables address is its `videoId`, which is what `videoDownloadStart [videoId]` and the Download Descriptor already carry.
+- The `.hash` is the only object served with `Cache-Control: no-cache`; bundle and catalog filenames are unique per build and cache normally. Poll the `.hash`, not the catalog.
+- **(open, VR team):** whether a bundle is fetched through the Download Descriptor (§3, with pause/resume and `.part` semantics) or through Addressables (`DownloadDependenciesAsync`, no pause/resume). The platform serves both from the same objects; whichever path is chosen, Library State (§1) and the events in §3 stay the contract the console relies on.
+- A catalog uploaded before the bundles it names are `Published` makes those addresses 403 until they are. Report that as `videoDownloadFailed {unavailable}`, not as a crash.
 
 ## 3. Download engine
 
@@ -208,8 +215,8 @@ None in v1. Both `PUT /api/v1/device-videos` and `GET /api/v1/device-videos/:vid
 
 ## 5. Playback
 
-- **Two file kinds, by extension.** `{videoId}.bundle` is a Unity AssetBundle built from the headset project (Android target, same Unity version as the app, one `VideoClip` per bundle): `AssetBundle.LoadFromFileAsync(path)` → `LoadAllAssetsAsync<VideoClip>()` → `videoPlayer.clip`; unload the bundle on `videoStop`/`videoEnded`. Any other extension is raw video: `videoPlayer.source = VideoSource.Url`, `videoPlayer.url = file://{path}`. Neither path needs the Addressables catalog or a remote load path; the platform is the distribution layer. A bundle built for the wrong Unity version or target loads as null: log it and report `videoEnded` so the console does not hang in Starting.
-- Player for 180° stereoscopic video: hemisphere mesh (or SDK sky renderer), inside-out UVs, per-eye layout. **(open, with content team):** SBS vs. top-bottom, resolution, codec and bitrate. Prefer H.265 hardware decode; keep the bitrate within what the device decoder sustains at the target resolution. The platform applies **no encoding constraint in v1** (the catalog accepts any `mp4, m4v, mov, webm, mkv` file and nothing server-side inspects the stream), so playback compatibility is agreed between the VR and content teams, not enforced by upload.
+- **Two file kinds, by extension.** A `.bundle` is a Unity AssetBundle from the headset project's Addressables build (Android target, same Unity version as the app, one `VideoClip` per bundle). Fetched via the descriptor: `AssetBundle.LoadFromFileAsync(path)` → `LoadAllAssetsAsync<VideoClip>()` → `videoPlayer.clip`. Fetched via Addressables: `Addressables.LoadAssetAsync<VideoClip>(videoId)`. Unload on `videoStop`/`videoEnded` either way. Any other extension is raw video: `videoPlayer.source = VideoSource.Url`, `videoPlayer.url = file://{path}`; raw video is never in the Addressables Catalog. A bundle built for the wrong Unity version or target loads as null: log it and report `videoEnded` so the console does not hang in Starting.
+- Player for 180° stereoscopic video: hemisphere mesh (or SDK sky renderer), inside-out UVs, per-eye layout. **(open, with content team):** SBS vs. top-bottom, resolution, codec and bitrate. Prefer H.265 hardware decode; keep the bitrate within what the device decoder sustains at the target resolution. The platform applies **no encoding constraint in v1** (upload accepts any `mp4, m4v, mov, webm, mkv` file and nothing server-side inspects the stream), so playback compatibility is agreed between the VR and content teams, not enforced by upload.
 - Head tracking is rotation only. No translation, no locomotion, no controller requirement.
 - `videoRecenter`: rotate the hemisphere so the video's forward aligns with the current head yaw. Stateless; safe to send repeatedly.
 - `videoPlaybackProgress {positionSec, durationSec, paused}` ≤ 1/s while playing **and while paused** (`paused: true`); `videoEnded` on natural end and after `videoStop`. A console joining mid-playback relies on this tick to re-attach its controls within 2 s.
