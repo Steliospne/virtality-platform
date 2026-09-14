@@ -103,6 +103,7 @@ function createS3(overrides: Partial<ImmersiveVideoS3> = {}): ImmersiveVideoS3 {
     abortMultipartUpload: vi.fn(async () => undefined),
     putObject: vi.fn(async () => undefined),
     deleteObject: vi.fn(async () => undefined),
+    listObjects: vi.fn(async () => []),
     headObject: vi.fn(async () => ({
       contentLength: 0,
       checksumSha256: null,
@@ -234,7 +235,7 @@ describe('immersive video catalog', () => {
     })
   })
 
-  it('upload.start accepts a Unity AssetBundle as an octet stream', async () => {
+  it('upload.start keeps the Unity filename for an AssetBundle so the Addressables catalog resolves it', async () => {
     const { prisma, state } = createPrisma(baseRow())
     const s3 = createS3()
 
@@ -247,11 +248,24 @@ describe('immersive video catalog', () => {
       },
     )
 
-    expect(state.row.uploadObjectKey).toBe('immersive-videos/video-1.bundle')
+    expect(state.row.uploadObjectKey).toBe(
+      'immersive-videos/videos_assets_assets_videos_mono.mp4_fa26855d.bundle',
+    )
     expect(s3.createMultipartUpload).toHaveBeenCalledWith({
-      key: 'immersive-videos/video-1.bundle',
+      key: 'immersive-videos/videos_assets_assets_videos_mono.mp4_fa26855d.bundle',
       contentType: 'application/octet-stream',
     })
+  })
+
+  it('upload.start rejects a bundle filename that is not a safe key segment', async () => {
+    const { prisma } = createPrisma(baseRow())
+
+    await expect(
+      startImmersiveVideoUpload(
+        { prisma, s3: createS3() },
+        { id: 'video-1', filename: 'nested/dir.bundle', sizeBytes: 10 },
+      ),
+    ).rejects.toThrow('INVALID_BUNDLE_FILENAME')
   })
 
   it('upload.start rejects an extension outside the allowlist', async () => {
@@ -281,9 +295,7 @@ describe('immersive video catalog', () => {
 
     expect(result.id).toBe('cycle-coast_01')
     expect(state.row.id).toBe('cycle-coast_01')
-    expect(state.row.uploadObjectKey).toBe(
-      'immersive-videos/cycle-coast_01.bundle',
-    )
+    expect(state.row.uploadObjectKey).toBe('immersive-videos/coast.bundle')
   })
 
   it('upload.start keeps the generated id when the Video ID is blank', async () => {

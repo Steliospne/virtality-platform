@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 import { authed } from '../middleware/auth.ts'
@@ -7,6 +8,10 @@ import {
   ImmersiveVideoNotFoundError,
 } from './immersive-video-constants.ts'
 import { createImmersiveVideoS3 } from './immersive-video-s3.ts'
+import {
+  listAddressablesCatalogReleases,
+  uploadAddressablesCatalog,
+} from './addressables-catalog-service.ts'
 import {
   abortImmersiveVideoUpload,
   completeImmersiveVideoUpload,
@@ -47,6 +52,11 @@ const uploadStartInput = z.object({
   filename: z.string().min(1),
   sizeBytes: z.number().int().nonnegative(),
   durationSec: z.number().int().nonnegative().nullable().optional(),
+})
+
+const catalogUploadInput = z.object({
+  catalog: z.instanceof(File),
+  hash: z.instanceof(File),
 })
 
 const uploadPartInput = z.object({
@@ -213,6 +223,33 @@ const uploadAbort = adminAuthed
     ),
   )
 
+const catalogList = adminAuthed
+  .route({ path: '/immersive-video/addressables-catalog/list', method: 'GET' })
+  .handler(async ({ context }) =>
+    listAddressablesCatalogReleases(depsFromContext(context).s3),
+  )
+
+const catalogUpload = adminAuthed
+  .route({
+    path: '/immersive-video/addressables-catalog/upload',
+    method: 'POST',
+  })
+  .input(catalogUploadInput)
+  .handler(async ({ context, input }) =>
+    withImmersiveVideoErrors(async () =>
+      uploadAddressablesCatalog(depsFromContext(context).s3, {
+        catalog: {
+          filename: input.catalog.name,
+          body: Buffer.from(await input.catalog.arrayBuffer()),
+        },
+        hash: {
+          filename: input.hash.name,
+          body: Buffer.from(await input.hash.arrayBuffer()),
+        },
+      }),
+    ),
+  )
+
 export const immersiveVideo = {
   list,
   listCatalog,
@@ -230,5 +267,9 @@ export const immersiveVideo = {
     status: uploadStatus,
     complete: uploadComplete,
     abort: uploadAbort,
+  },
+  addressablesCatalog: {
+    list: catalogList,
+    upload: catalogUpload,
   },
 }

@@ -4,6 +4,7 @@ import {
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   ListPartsCommand,
   PutObjectCommand,
   UploadPartCommand,
@@ -21,6 +22,12 @@ export type ImmersiveVideoObjectHead = {
   contentLength: number
   /** Composite SHA-256 S3 recorded at Complete (`<base64>-<partCount>`); null when the object was not checksummed. */
   checksumSha256: string | null
+}
+
+export type ImmersiveVideoListedObject = {
+  key: string
+  size: number
+  lastModified: string | null
 }
 
 export type ImmersiveVideoS3 = {
@@ -52,9 +59,14 @@ export type ImmersiveVideoS3 = {
     key: string
     body: Buffer
     contentType: string
+    cacheControl?: string
   }) => Promise<void>
   deleteObject: (input: { key: string }) => Promise<void>
   headObject: (input: { key: string }) => Promise<ImmersiveVideoObjectHead>
+  /** Every object whose key starts with `prefix`, flat (no delimiter). */
+  listObjects: (input: {
+    prefix: string
+  }) => Promise<ImmersiveVideoListedObject[]>
 }
 
 function requireBucket(): string {
@@ -166,13 +178,14 @@ export function createImmersiveVideoS3(
       )
     },
 
-    async putObject({ key, body, contentType }) {
+    async putObject({ key, body, contentType, cacheControl }) {
       await client.send(
         new PutObjectCommand({
           Bucket,
           Key: key,
           Body: body,
           ContentType: contentType,
+          ...(cacheControl ? { CacheControl: cacheControl } : {}),
         }),
       )
     },
@@ -198,6 +211,37 @@ export function createImmersiveVideoS3(
         contentLength: response.ContentLength ?? 0,
         checksumSha256: response.ChecksumSHA256 ?? null,
       }
+    },
+
+    async listObjects({ prefix }) {
+      const objects: ImmersiveVideoListedObject[] = []
+      let continuationToken: string | undefined
+
+      for (;;) {
+        const response = await client.send(
+          new ListObjectsV2Command({
+            Bucket,
+            Prefix: prefix,
+            ContinuationToken: continuationToken,
+          }),
+        )
+        for (const object of response.Contents ?? []) {
+          if (!object.Key) {
+            continue
+          }
+          objects.push({
+            key: object.Key,
+            size: object.Size ?? 0,
+            lastModified: object.LastModified?.toISOString() ?? null,
+          })
+        }
+        if (!response.IsTruncated || !response.NextContinuationToken) {
+          break
+        }
+        continuationToken = response.NextContinuationToken
+      }
+
+      return objects
     },
   }
 }

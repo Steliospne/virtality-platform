@@ -19,5 +19,6 @@ export function createORPCClient(link: RPCLinkOptions<any>): ORPCClient {
 export type { RPCLinkOptions } from '@orpc/client/fetch'
 export type { Router } from './router.ts'
 export type { ImmersiveVideoAdminRow } from './procedures/immersive-video-constants.ts'
+export type { AddressablesCatalogRelease } from './procedures/addressables-catalog-service.ts'
 export type { ImmersiveVideoConsoleListItem } from './procedures/immersive-video-service.ts'
 export type { DeviceVideoListForUserResult } from './procedures/device-video.ts'

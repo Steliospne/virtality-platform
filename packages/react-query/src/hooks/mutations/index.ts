@@ -151,6 +151,7 @@ export {
   useUpdateImmersiveVideo,
   useUploadImmersiveVideoPart,
 } from './immersive-video/use-immersive-video-mutations.js'
+export { useUploadAddressablesCatalog } from './immersive-video/use-upload-addressables-catalog.js'
 
 // Partner logo mutations
 export { useCreatePartnerLogo } from './partner-logo/use-create-partner-logo.js'

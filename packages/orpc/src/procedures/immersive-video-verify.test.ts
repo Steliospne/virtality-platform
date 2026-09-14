@@ -71,6 +71,7 @@ function createS3(overrides: Partial<ImmersiveVideoS3> = {}): ImmersiveVideoS3 {
     abortMultipartUpload: vi.fn(async () => undefined),
     putObject: vi.fn(async () => undefined),
     deleteObject: vi.fn(async () => undefined),
+    listObjects: vi.fn(async () => []),
     headObject: vi.fn(async () => ({
       contentLength: 4,
       checksumSha256: 'c29tZS1zdW0=-1',

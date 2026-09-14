@@ -1,7 +1,7 @@
 /**
- * What an admin hands the catalog. The kind is a picker-side choice only: the
- * platform stores the file under its own extension and the headset branches
- * on that extension when it downloads.
+ * What an admin hands the catalog. The kind is a picker-side choice only: a
+ * bundle keeps the filename Unity generated so the Addressables catalog can
+ * resolve it; a raw video is stored as `<videoId>.<ext>`.
  */
 export type ImmersiveVideoFileKind = 'bundle' | 'video'
 
@@ -21,7 +21,7 @@ const FILE_KINDS: Record<ImmersiveVideoFileKind, FileKindSpec> = {
     label: 'Unity AssetBundle',
     extensions: ['bundle'],
     accept: '.bundle',
-    hint: 'A .bundle built from the headset project for Android, one video per bundle. The headset loads it directly; duration is not read from bundles.',
+    hint: "A .bundle from the headset project's Addressables build for Android, one video per bundle. It keeps the filename Unity gave it (the catalog resolves it by name), and the Video ID must match its Addressables address. Duration is not read from bundles.",
     unsupported: "This file isn't a Unity AssetBundle. Pick a .bundle file.",
   },
   video: {

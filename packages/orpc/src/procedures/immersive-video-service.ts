@@ -5,11 +5,14 @@ import {
   IMMERSIVE_VIDEO_PART_SIZE_BYTES,
   immersiveVideoContentType,
   immersiveVideoFileExtension,
+  immersiveVideoObjectKey,
   immersiveVideoPartCount,
   ImmersiveVideoError,
   ImmersiveVideoNotFoundError,
   isAllowedImmersiveVideoExtension,
+  isBundleExtension,
   isImmersiveVideoDiscardEmpty,
+  isValidImmersiveVideoBundleFilename,
   isValidImmersiveVideoId,
   LIVE_IMMERSIVE_VIDEO_STATES,
   toSizeBytesNumber,
@@ -346,13 +349,6 @@ async function resolveUploadVideoId(
   return videoId
 }
 
-export function immersiveVideoObjectKey(
-  videoId: string,
-  extension: string,
-): string {
-  return `immersive-videos/${videoId}.${extension}`
-}
-
 export async function startImmersiveVideoUpload(
   deps: ServiceDeps,
   input: {
@@ -379,6 +375,12 @@ export async function startImmersiveVideoUpload(
   if (!extension || !isAllowedImmersiveVideoExtension(extension)) {
     throw new ImmersiveVideoError('INVALID_FILENAME')
   }
+  if (
+    isBundleExtension(extension) &&
+    !isValidImmersiveVideoBundleFilename(input.filename.trim())
+  ) {
+    throw new ImmersiveVideoError('INVALID_BUNDLE_FILENAME')
+  }
 
   const id = await resolveUploadVideoId(
     deps.prisma,
@@ -386,9 +388,10 @@ export async function startImmersiveVideoUpload(
     input.videoId ?? undefined,
   )
 
-  // One object per video: a republish uploads onto the live key and S3 swaps
-  // the bytes at Complete. Versioned keys return with versioned distribution.
-  const uploadObjectKey = immersiveVideoObjectKey(id, extension)
+  // One object per video. A raw video republish uploads onto the live key and
+  // S3 swaps the bytes at Complete; a bundle republish lands on the new Unity
+  // filename and verify deletes the previous key.
+  const uploadObjectKey = immersiveVideoObjectKey(id, extension, input.filename)
   const { uploadId } = await deps.s3.createMultipartUpload({
     key: uploadObjectKey,
     contentType: immersiveVideoContentType(extension),
@@ -614,7 +617,8 @@ export async function runImmersiveVideoVerify(
     },
   })
 
-  // A replace that changed extension leaves the previous key behind.
+  // A replace that changed the key (new bundle filename, or a different
+  // extension) leaves the previous object behind.
   if (row.objectKey && row.objectKey !== row.uploadObjectKey) {
     await deps.s3.deleteObject({ key: row.objectKey })
   }

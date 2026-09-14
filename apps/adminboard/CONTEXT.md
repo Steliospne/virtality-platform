@@ -117,16 +117,20 @@ _Avoid_: Publish, go live
 ### Immersive Video
 
 **Immersive Video**:
-A catalog entry for one 180° FPV clip (cycling or walking) that physios push to headsets from the console. Owns title, activity, description, thumbnail and one bucket object at `immersive-videos/<Video ID>.<ext>`, replaced in place.
+A catalog entry for one 180° FPV clip (cycling or walking) that physios push to headsets from the console. Owns title, activity, description, thumbnail and one bucket object under `immersive-videos/`: a bundle under the filename Unity gave it, a raw video as `<Video ID>.<ext>`.
 _Avoid_: FPV video, 360 video, movie, clip (as the entity name)
 
 **Video ID**:
-The identifier headsets, the console and the object key share for an Immersive Video. Chosen by the admin on the first Video Upload (lowercase letters, digits, `.`, `_`, `-`; up to 64) or generated when left blank; fixed once a file has verified.
-_Avoid_: Slug, key, name (as the id), row id (in copy)
+The identifier headsets, the console and the catalog share for an Immersive Video; for a bundle it is also the video's Addressables address. Chosen by the admin on the first Video Upload (lowercase letters, digits, `.`, `_`, `-`; up to 64) or generated when left blank; fixed once a file has verified.
+_Avoid_: Slug, key, name (as the id), row id (in copy), address (in copy)
 
 **File Kind**:
-What the admin hands the catalog: a **Unity AssetBundle** (`.bundle`, the default; one video per bundle, built for Android from the headset project) or a raw video (`mp4, m4v, mov, webm, mkv`). A picker-side choice only; the stored extension is what the headset branches on. Duration is read for raw video only.
+What the admin hands the catalog: a **Unity AssetBundle** (`.bundle`, the default; one video per bundle, from the headset project's Addressables build for Android) or a raw video (`mp4, m4v, mov, webm, mkv`). A picker-side choice only. A bundle keeps its Unity filename so the **Addressables Catalog** can resolve it; duration is read for raw video only.
 _Avoid_: Format, codec, asset type, "bundle" for a raw video
+
+**Addressables Catalog**:
+The catalog pair (`catalog_<ts>.bin` or `.json`, plus `catalog_<ts>.hash`) the headset project's Addressables build writes next to its bundles, uploaded as a unit to the same prefix the bundles live in. The `.hash` is the one pointer headsets poll, so uploading it is what makes a release live; every bundle the catalog names must be published first. Older pairs stay on the CDN and are inert.
+_Avoid_: Manifest, release (as the entity name), catalog (unqualified, which is the console's video list)
 
 **Catalog State**:
 Where an Immersive Video is in its lifecycle: `Draft` (may not yet have a file), `Uploading`, `Verifying`, `Published`, `Republishing`, `Unpublished`. Only `Published` rows reach the console.

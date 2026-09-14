@@ -1,7 +1,32 @@
 export const IMMERSIVE_VIDEO_PART_SIZE_BYTES = 67_108_864
 
-/** Unity AssetBundle built from the headset project; the headset loads it with `AssetBundle.LoadFromFile`. */
+/**
+ * Every Immersive Video object lives flat under this prefix, which is also the
+ * headset's Addressables `Remote.LoadPath` (`https://cdn.virtality.app/immersive-videos`).
+ */
+export const IMMERSIVE_VIDEO_OBJECT_PREFIX = 'immersive-videos'
+
+/** Unity AssetBundle built from the headset project's Addressables group, one video per bundle. */
 export const IMMERSIVE_VIDEO_BUNDLE_EXTENSIONS = ['bundle'] as const
+
+/**
+ * A bundle keeps the filename Unity generated: the Addressables catalog refers
+ * to it by that name relative to the load path, so renaming it would break
+ * resolution on the headset. Restricted to a safe S3 key / URL path segment.
+ */
+export const IMMERSIVE_VIDEO_BUNDLE_FILENAME_PATTERN =
+  /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}\.bundle$/
+
+/**
+ * The Addressables catalog pair Unity writes next to the bundles. The `.hash`
+ * is the one mutable pointer headsets poll, so it must never be cached.
+ */
+export const ADDRESSABLES_CATALOG_FILENAME_PATTERN =
+  /^catalog_[A-Za-z0-9._-]{1,120}\.(bin|json)$/
+export const ADDRESSABLES_CATALOG_HASH_FILENAME_PATTERN =
+  /^catalog_[A-Za-z0-9._-]{1,120}\.hash$/
+export const ADDRESSABLES_CATALOG_HASH_CACHE_CONTROL = 'no-cache'
+export const ADDRESSABLES_CATALOG_MAX_BYTES = 8 * 1024 * 1024
 
 /** Raw video the headset plays through `VideoPlayer.url`. */
 export const IMMERSIVE_VIDEO_RAW_EXTENSIONS = [
@@ -141,6 +166,50 @@ export function immersiveVideoContentType(extension: string): string {
 
 export function isValidImmersiveVideoId(id: string): boolean {
   return IMMERSIVE_VIDEO_ID_PATTERN.test(id)
+}
+
+export function isBundleExtension(extension: string): boolean {
+  return (IMMERSIVE_VIDEO_BUNDLE_EXTENSIONS as readonly string[]).includes(
+    extension,
+  )
+}
+
+export function isValidImmersiveVideoBundleFilename(filename: string): boolean {
+  return IMMERSIVE_VIDEO_BUNDLE_FILENAME_PATTERN.test(filename)
+}
+
+/**
+ * Where a video's file lands. A bundle keeps its Unity filename (the catalog
+ * resolves it by name); a raw video is renamed to `<videoId>.<ext>` so the
+ * headset's `VideoPlayer.url` path stays the Video ID.
+ */
+export function immersiveVideoObjectKey(
+  videoId: string,
+  extension: string,
+  filename: string,
+): string {
+  const name = isBundleExtension(extension)
+    ? filename.trim()
+    : `${videoId}.${extension}`
+  return `${IMMERSIVE_VIDEO_OBJECT_PREFIX}/${name}`
+}
+
+export function isAddressablesCatalogFilename(filename: string): boolean {
+  return ADDRESSABLES_CATALOG_FILENAME_PATTERN.test(filename)
+}
+
+export function isAddressablesCatalogHashFilename(filename: string): boolean {
+  return ADDRESSABLES_CATALOG_HASH_FILENAME_PATTERN.test(filename)
+}
+
+/** `catalog_<ts>.bin` and `catalog_<ts>.hash` must share the same `<ts>` stem. */
+export function addressablesCatalogStem(filename: string): string | null {
+  const dot = filename.lastIndexOf('.')
+  return dot > 0 ? filename.slice(0, dot) : null
+}
+
+export function addressablesCatalogObjectKey(filename: string): string {
+  return `${IMMERSIVE_VIDEO_OBJECT_PREFIX}/${filename.trim()}`
 }
 
 export function toSizeBytesNumber(
