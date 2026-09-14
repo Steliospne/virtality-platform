@@ -96,7 +96,7 @@ Notes on the less obvious transitions:
 
 ## 3. Download request lifecycle
 
-A Download Request is the headset's unit of work. It starts at `videoDownloadStart {videoId}`, begins with the headset fetching the **Download Descriptor** for that video, and ends at `Complete`, `Failed`, or `Cancel`. What makes it interesting is what happens when something in the environment changes mid-request.
+A Download Request is the headset's unit of work. It starts at `videoDownloadStart [videoId]`, begins with the headset fetching the **Download Descriptor** for that video, and ends at `Complete`, `Failed`, or `Cancel`. What makes it interesting is what happens when something in the environment changes mid-request.
 
 ```mermaid
 sequenceDiagram
@@ -105,7 +105,7 @@ sequenceDiagram
     participant API
     participant CDN
 
-    Console->>VR: videoDownloadStart {videoId}
+    Console->>VR: videoDownloadStart [videoId]
     VR-->>Console: videoDownloadAck
     VR->>API: GET /api/v1/device-videos/{videoId}?deviceId=…
     API-->>VR: Download Descriptor {version, url, sizeBytes}\n(404 → Failed(unavailable))

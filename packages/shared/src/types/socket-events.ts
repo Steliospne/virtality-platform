@@ -336,6 +336,12 @@ export type VideoIdPayload = {
   videoId: string
 }
 
+/**
+ * `videoDownloadStart` is the one command the headset reads as a positional
+ * string array: `[videoId]`. Every other video event carries an object.
+ */
+export type VideoDownloadStartPayload = [videoId: string, ...rest: string[]]
+
 export const VIDEO_DEVICE_STATUS = {
   Absent: 'absent',
   Downloading: 'downloading',
@@ -482,7 +488,7 @@ export type CastingEventPayloads = {
 export type VideoEventPayloads = {
   LibraryStateRequest: []
   LibraryState: [payload: VideoLibraryStatePayload]
-  DownloadStart: [payload: VideoIdPayload]
+  DownloadStart: [payload: VideoDownloadStartPayload]
   DownloadAck: [payload: VideoIdPayload]
   DownloadProgress: [payload: VideoDownloadProgressPayload]
   DownloadComplete: [payload: VideoDownloadCompletePayload]

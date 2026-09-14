@@ -151,7 +151,7 @@ export function useHeadsetLibrary(
       if (!target || pendingDownloadRef.current != null) return
 
       pendingDownloadRef.current = videoId
-      target.events.video.DownloadStart({ videoId })
+      target.events.video.DownloadStart([videoId])
       timeoutRef.current = setTimeout(() => {
         if (pendingDownloadRef.current === videoId) {
           clearPendingDownload()

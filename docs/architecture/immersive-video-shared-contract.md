@@ -42,7 +42,7 @@ All events are relayed unchanged to the other peer in the room. Names are the wi
 | Key                   | Wire name                  | Payload            | Notes                                                                                                                                                                                                                                                                   |
 | --------------------- | -------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `LibraryStateRequest` | `videoLibraryStateRequest` | none               | Sent on every console (re)connect to the room. VR must answer with `LibraryState`.                                                                                                                                                                                      |
-| `DownloadStart`       | `videoDownloadStart`       | `VideoIdPayload`   | Queue a download, or resume a `paused` one. The headset fetches the **Download Descriptor** (`GET /api/v1/device-videos/:videoId`) for the current version, URL and size. Idempotent: already `ready` at the descriptor's version → ack + immediate `DownloadComplete`. |
+| `DownloadStart`       | `videoDownloadStart`       | `[videoId]`        | Queue a download, or resume a `paused` one. The headset fetches the **Download Descriptor** (`GET /api/v1/device-videos/:videoId`) for the current version, URL and size. Idempotent: already `ready` at the descriptor's version → ack + immediate `DownloadComplete`. |
 | `DownloadPause`       | `videoDownloadPause`       | `VideoIdPayload`   | Abort the transfer, keep the `.part`, status becomes `paused`. Not auto-resumed.                                                                                                                                                                                        |
 | `DownloadCancel`      | `videoDownloadCancel`      | `VideoIdPayload`   | Abort (running, queued, or paused) and discard the `.part`.                                                                                                                                                                                                             |
 | `Delete`              | `videoDelete`              | `VideoIdPayload`   | Remove the final file (and any `.part`).                                                                                                                                                                                                                                |
@@ -74,6 +74,9 @@ export type VideoIdPayload = {
 }
 
 export const VIDEO_DEVICE_STATUS = {
+/** `videoDownloadStart` only: a string array, `videoId` at index 0. */
+export type VideoDownloadStartPayload = [videoId: string, ...rest: string[]]
+
   Absent: 'absent',
   Downloading: 'downloading',
   /** Physio paused it. `.part` kept; resumed only by a new `DownloadStart`. */
@@ -251,7 +254,7 @@ sequenceDiagram
         Console->>VR: videoDownloadPause
         VR-->>Console: videoDownloadPaused {bytesDownloaded}
         Note over VR: .part kept, not auto-resumed
-        Console->>VR: videoDownloadStart {videoId} → re-fetches descriptor, resumes
+        Console->>VR: videoDownloadStart [videoId] → re-fetches descriptor, resumes
     end
     VR->>VR: .part size == sizeBytes, rename .part → final
     VR-->>Console: videoDownloadComplete {videoId,version}
