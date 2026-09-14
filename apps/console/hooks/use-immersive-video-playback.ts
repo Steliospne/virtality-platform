@@ -4,7 +4,6 @@ import { useEffect, useReducer, useRef } from 'react'
 import {
   ROOM_EVENT,
   VIDEO_EVENT,
-  type VideoIdArrayPayload,
   type VideoPlaybackProgressPayload,
 } from '@virtality/shared/types'
 import { subscribe } from '@/lib/device-event-controller'
@@ -73,7 +72,7 @@ export function useImmersiveVideoPlayback(
     })
 
     const unsubscribeVideo = subscribe(socket, VIDEO_EVENT, {
-      PlayAck: ([videoId]: VideoIdArrayPayload) => {
+      PlayAck: (videoId: string) => {
         clearPlayTimeout()
         dispatch({ type: 'playAck', videoId })
       },
@@ -115,7 +114,7 @@ export function useImmersiveVideoPlayback(
     const target = readyDevice()
     if (!target || state.pendingPlay != null) return
     dispatch({ type: 'playSent', videoId })
-    target.events.video.Play([videoId])
+    target.events.video.Play(videoId)
     clearPlayTimeout()
     playTimeoutRef.current = setTimeout(() => {
       dispatch({ type: 'playTimeout' })

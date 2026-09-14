@@ -337,13 +337,14 @@ export type VideoIdPayload = {
 }
 
 /**
- * The headset reads and writes the single-id video events as a positional
- * string array: `[videoId]`. Used by `videoDownloadStart`, `videoDownloadCancel`,
- * `videoDelete`, `videoPlay`, `videoDownloadAck`, `videoDownloadComplete` and
- * `videoPlayAck`.
- * Every other video event carries an object.
+ * The headset reads and writes the single-id video events positionally:
+ * the `videoId` is the first Socket.IO argument (a bare string), so the
+ * headset sees args `[videoId]`. Used by `videoDownloadStart`,
+ * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
+ * `videoDownloadComplete` and `videoPlayAck`. Every other video event
+ * carries an object.
  */
-export type VideoIdArrayPayload = [videoId: string, ...rest: string[]]
+export type VideoIdArgs = [videoId: string]
 
 export const VIDEO_DEVICE_STATUS = {
   Absent: 'absent',
@@ -475,17 +476,17 @@ export type CastingEventPayloads = {
 export type VideoEventPayloads = {
   LibraryStateRequest: []
   LibraryState: [payload: VideoLibraryStatePayload]
-  DownloadStart: [payload: VideoIdArrayPayload]
-  DownloadAck: [payload: VideoIdArrayPayload]
+  DownloadStart: VideoIdArgs
+  DownloadAck: VideoIdArgs
   DownloadProgress: [payload: VideoDownloadProgressPayload]
-  DownloadComplete: [payload: VideoIdArrayPayload]
+  DownloadComplete: VideoIdArgs
   DownloadFailed: [payload: VideoDownloadFailedPayload]
   DownloadPause: [payload: VideoIdPayload]
   DownloadPaused: [payload: VideoDownloadPausedPayload]
-  DownloadCancel: [payload: VideoIdArrayPayload]
-  Delete: [payload: VideoIdArrayPayload]
-  Play: [payload: VideoIdArrayPayload]
-  PlayAck: [payload: VideoIdArrayPayload]
+  DownloadCancel: VideoIdArgs
+  Delete: VideoIdArgs
+  Play: VideoIdArgs
+  PlayAck: VideoIdArgs
   Pause: []
   Resume: []
   Stop: []

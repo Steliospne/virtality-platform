@@ -38,6 +38,8 @@ Domain terms: **Immersive Video** (a catalog entry for one 180° FPV clip; `apps
 
 All events are relayed unchanged to the other peer in the room. Names are the wire strings; keys are the `RelayEventMap` entries.
 
+A payload written as `[videoId]` is the Socket.IO argument list: the id is emitted as a bare string (`socket.emit('videoPlay', videoId)`), so the headset reads it at argument index 0. It is **not** an array wrapped in an argument (`socket.emit('videoPlay', [videoId])` would arrive as `[[videoId]]`).
+
 ### Console → VR
 
 | Key                   | Wire name                  | Payload          | Notes                                                                                                                                                                                                                                                                   |
@@ -75,13 +77,14 @@ export type VideoIdPayload = {
 }
 
 /**
- * The headset reads and writes the single-id video events as a positional
- * string array: `[videoId]`. Used by `videoDownloadStart`, `videoDownloadCancel`,
- * `videoDelete`, `videoPlay`, `videoDownloadAck`, `videoDownloadComplete` and
- * `videoPlayAck`.
- * Every other video event carries an object.
+ * The headset reads and writes the single-id video events positionally:
+ * the `videoId` is the first Socket.IO argument (a bare string), so the
+ * headset sees args `[videoId]`. Used by `videoDownloadStart`,
+ * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
+ * `videoDownloadComplete` and `videoPlayAck`. Every other video event
+ * carries an object.
  */
-export type VideoIdArrayPayload = [videoId: string, ...rest: string[]]
+export type VideoIdArgs = [videoId: string]
 
 export const VIDEO_DEVICE_STATUS = {
   Absent: 'absent',

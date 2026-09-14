@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ROOM_EVENT,
   VIDEO_EVENT,
-  type VideoIdArrayPayload,
   type VideoLibraryStatePayload,
 } from '@virtality/shared/types'
 import useSocketConnection from '@/hooks/use-socket-connection'
@@ -117,7 +116,7 @@ export function useHeadsetLibrary(
         setRoomComplete(true)
         mirror.onLibraryState(next)
       },
-      DownloadAck: ([videoId]: VideoIdArrayPayload) => {
+      DownloadAck: (videoId: string) => {
         if (pendingDownloadRef.current === videoId) {
           clearPendingDownload()
         }
@@ -128,7 +127,7 @@ export function useHeadsetLibrary(
         setLibraryState((current) => applyDownloadProgress(current, payload))
         mirror.onProgress(payload)
       },
-      DownloadComplete: ([videoId]: VideoIdArrayPayload) => {
+      DownloadComplete: (videoId: string) => {
         setLibraryState((current) => applyDownloadComplete(current, videoId))
         mirror.onComplete(videoId)
         // The complete event has no version; ask for the state that does.
@@ -168,7 +167,7 @@ export function useHeadsetLibrary(
       if (!target || pendingDownloadRef.current != null) return
 
       pendingDownloadRef.current = videoId
-      target.events.video.DownloadStart([videoId])
+      target.events.video.DownloadStart(videoId)
       setLibraryState((current) => applyDownloadRequested(current, videoId))
       mirror.onRequested(videoId)
       timeoutRef.current = setTimeout(() => {
@@ -192,7 +191,7 @@ export function useHeadsetLibrary(
     (videoId: string) => {
       const target = readyDevice()
       if (!target) return
-      target.events.video.DownloadCancel([videoId])
+      target.events.video.DownloadCancel(videoId)
       // A `requested` row is console intent; withdraw it without waiting for
       // a headset that may never have seen the request.
       const entry = libraryStateRef.current?.videos.find(
@@ -212,7 +211,7 @@ export function useHeadsetLibrary(
 
   const sendDelete = useCallback(
     (videoId: string) => {
-      readyDevice()?.events.video.Delete([videoId])
+      readyDevice()?.events.video.Delete(videoId)
     },
     [readyDevice],
   )
