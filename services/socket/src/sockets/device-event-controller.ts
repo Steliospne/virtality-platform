@@ -4,6 +4,7 @@ import {
   CASTING_RELAY,
   DEVICE_RELAY,
   VIDEO_RELAY,
+  VIDEO_EVENT,
   CONNECTION_EVENT,
   ROOM_EVENT,
   ROOM_PEER_ROLE,
@@ -99,6 +100,19 @@ function logRelayBlocked(
 
 // ── Relay registration ─────────────────────────────────────────────────────
 
+/**
+ * Periodic events a headset emits many times a second while a download or
+ * playback runs. Logging each at `info` floods Grafana; keep them at `debug`.
+ */
+const HIGH_VOLUME_RELAY_EVENTS: ReadonlySet<string> = new Set([
+  VIDEO_EVENT.DownloadProgress,
+  VIDEO_EVENT.PlaybackProgress,
+])
+
+function relayEmitLogLevel(eventName: string): 'info' | 'debug' {
+  return HIGH_VOLUME_RELAY_EVENTS.has(eventName) ? 'debug' : 'info'
+}
+
 function registerRelayEvents(
   eventMap: RelayEventMap,
   roomCode: string | string[],
@@ -143,7 +157,7 @@ function registerRelayEvents(
         return
       }
 
-      logger.info('socket.relay.emit', {
+      logger[relayEmitLogLevel(entry.name)]('socket.relay.emit', {
         eventName: entry.name,
         role: roomPeerRole,
         roomCode: resolvedRoomCode,
