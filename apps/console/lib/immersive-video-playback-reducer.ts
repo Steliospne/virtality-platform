@@ -34,6 +34,7 @@ export type ImmersivePlaybackAction =
   | { type: 'pause' }
   | { type: 'resume' }
   | { type: 'ended' }
+  | { type: 'stopAck'; videoId: string }
   | { type: 'recenter'; now: number }
   | { type: 'dismissConfirm' }
   | { type: 'enterImmersive'; now: number }
@@ -182,6 +183,16 @@ export function reduceImmersivePlayback(
       return { ...state, status: 'Playing' }
     case 'ended':
       if (!isImmersivePlaybackBlocking(state.status)) return state
+      return toIdle(state, {
+        confirmReason: state.confirmReason,
+        lastProgress: state.lastProgress,
+        lastProgressAt: state.lastProgressAt,
+      })
+    case 'stopAck':
+      // `videoStop` honoured for the named video; a stale ack for another
+      // video (the physio already started the next one) changes nothing.
+      if (!isImmersivePlaybackBlocking(state.status)) return state
+      if (state.videoId !== action.videoId) return state
       return toIdle(state, {
         confirmReason: state.confirmReason,
         lastProgress: state.lastProgress,

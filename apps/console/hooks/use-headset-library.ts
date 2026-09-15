@@ -191,6 +191,15 @@ export function useHeadsetLibrary(
         setLibraryState((current) => applyDownloadPaused(current, payload))
         mirror.onPaused(payload)
       },
+      // The headset confirmed the file (or `.part`) is gone: no row.
+      DownloadCancelAck: (videoId: string) => {
+        setLibraryState((current) => removeLibraryEntry(current, videoId))
+        mirror.onRemoved(videoId)
+      },
+      DeleteAck: (videoId: string) => {
+        setLibraryState((current) => removeLibraryEntry(current, videoId))
+        mirror.onRemoved(videoId)
+      },
     })
 
     socket.on('disconnect', markIncomplete)

@@ -57,17 +57,20 @@ A payload written as `[videoId]` is the Socket.IO argument list: the id is emitt
 
 ### VR → Console
 
-| Key                | Wire name               | Payload                        | Notes                                                                                                                                                                                             |
-| ------------------ | ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LibraryState`     | `videoLibraryState`     | `VideoLibraryStatePayload`     | Full Library State. Also sent unsolicited on VR (re)connect if a console is in the room.                                                                                                          |
-| `DownloadAck`      | `videoDownloadAck`      | `[videoId]`                    | Download accepted and queued. Console times out at 5 s without this.                                                                                                                              |
-| `DownloadProgress` | `videoDownloadProgress` | `VideoDownloadProgressPayload` | Throttled headset-side to **at most 1 per second** per video. `stalled: true` while retrying a lost connection.                                                                                   |
-| `DownloadComplete` | `videoDownloadComplete` | `[videoId]`                    | Emitted after the byte count matched `sizeBytes` and the atomic rename. Carries no version: the console answers with `LibraryStateRequest` to learn the version on disk.                          |
-| `DownloadFailed`   | `videoDownloadFailed`   | `VideoDownloadFailedPayload`   | Terminal for this request. The `.part` is kept for `url_expired` only (after the headset has already refreshed the descriptor once). Transient network loss is **not** a failure (see `stalled`). |
-| `DownloadPaused`   | `videoDownloadPaused`   | `VideoDownloadPausedPayload`   | `DownloadPause` honoured; carries the kept byte count.                                                                                                                                            |
-| `PlayAck`          | `videoPlayAck`          | `[videoId]`                    | Playback started.                                                                                                                                                                                 |
-| `PlaybackProgress` | `videoPlaybackProgress` | `VideoPlaybackProgressPayload` | At most 1 per second while playing **and while paused** (`paused: true`); this is how a (re)joining console re-attaches its controls.                                                             |
-| `Ended`            | `videoEnded`            | none                           | Video reached its end, or `Stop` was honoured. The console already knows which video is playing.                                                                                                  |
+| Key                 | Wire name                | Payload                        | Notes                                                                                                                                                                                             |
+| ------------------- | ------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LibraryState`      | `videoLibraryState`      | `VideoLibraryStatePayload`     | Full Library State. Also sent unsolicited on VR (re)connect if a console is in the room.                                                                                                          |
+| `DownloadAck`       | `videoDownloadAck`       | `[videoId]`                    | Download accepted and queued. Console times out at 5 s without this.                                                                                                                              |
+| `DownloadProgress`  | `videoDownloadProgress`  | `VideoDownloadProgressPayload` | Throttled headset-side to **at most 1 per second** per video. `stalled: true` while retrying a lost connection.                                                                                   |
+| `DownloadComplete`  | `videoDownloadComplete`  | `[videoId]`                    | Emitted after the byte count matched `sizeBytes` and the atomic rename. Carries no version: the console answers with `LibraryStateRequest` to learn the version on disk.                          |
+| `DownloadFailed`    | `videoDownloadFailed`    | `VideoDownloadFailedPayload`   | Terminal for this request. The `.part` is kept for `url_expired` only (after the headset has already refreshed the descriptor once). Transient network loss is **not** a failure (see `stalled`). |
+| `DownloadPaused`    | `videoDownloadPaused`    | `VideoDownloadPausedPayload`   | `DownloadPause` honoured; carries the kept byte count.                                                                                                                                            |
+| `DownloadCancelAck` | `videoDownloadCancelAck` | `[videoId]`                    | `DownloadCancel` honoured: the `.part` and the entry are gone. Sent alongside `videoDownloadFailed {cancelled}`; the console removes the row on either.                                           |
+| `DeleteAck`         | `videoDeleteAck`         | `[videoId]`                    | `Delete` honoured: the file and the entry are gone. The console removes the row at once instead of waiting for the next `videoLibraryState`.                                                      |
+| `PlayAck`           | `videoPlayAck`           | `[videoId]`                    | Playback started.                                                                                                                                                                                 |
+| `PlaybackProgress`  | `videoPlaybackProgress`  | `VideoPlaybackProgressPayload` | At most 1 per second while playing **and while paused** (`paused: true`); this is how a (re)joining console re-attaches its controls.                                                             |
+| `Ended`             | `videoEnded`             | none                           | Video reached its end, or `Stop` was honoured. The console already knows which video is playing.                                                                                                  |
+| `StopAck`           | `videoStopAck`           | `[videoId]`                    | `Stop` honoured for that video. Sent alongside `videoEnded`; the console returns to Idle on either, ignoring a `StopAck` for a video it is no longer playing.                                     |
 
 ## Payload types
 
@@ -81,8 +84,9 @@ export type VideoIdPayload = {
  * the `videoId` is the first Socket.IO argument (a bare string), so the
  * headset sees args `[videoId]`. Used by `videoDownloadStart`,
  * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
- * `videoDownloadComplete` and `videoPlayAck`. Every other video event
- * carries an object.
+ * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
+ * `videoPlayAck` and `videoStopAck`. Every other video event carries an
+ * object.
  */
 export type VideoIdArgs = [videoId: string]
 
@@ -173,12 +177,15 @@ export const VIDEO_EVENT = {
   DownloadPause: 'videoDownloadPause',
   DownloadPaused: 'videoDownloadPaused',
   DownloadCancel: 'videoDownloadCancel',
+  DownloadCancelAck: 'videoDownloadCancelAck',
   Delete: 'videoDelete',
+  DeleteAck: 'videoDeleteAck',
   Play: 'videoPlay',
   PlayAck: 'videoPlayAck',
   Pause: 'videoPause',
   Resume: 'videoResume',
   Stop: 'videoStop',
+  StopAck: 'videoStopAck',
   Recenter: 'videoRecenter',
   PlaybackProgress: 'videoPlaybackProgress',
   Ended: 'videoEnded',
@@ -198,12 +205,15 @@ export const VIDEO_RELAY: RelayEventMap = {
   DownloadPause: { name: VIDEO_EVENT.DownloadPause, payload: true },
   DownloadPaused: { name: VIDEO_EVENT.DownloadPaused, payload: true },
   DownloadCancel: { name: VIDEO_EVENT.DownloadCancel, payload: true },
+  DownloadCancelAck: { name: VIDEO_EVENT.DownloadCancelAck, payload: true },
   Delete: { name: VIDEO_EVENT.Delete, payload: true },
+  DeleteAck: { name: VIDEO_EVENT.DeleteAck, payload: true },
   Play: { name: VIDEO_EVENT.Play, payload: true },
   PlayAck: { name: VIDEO_EVENT.PlayAck, payload: true },
   Pause: { name: VIDEO_EVENT.Pause, payload: false },
   Resume: { name: VIDEO_EVENT.Resume, payload: false },
   Stop: { name: VIDEO_EVENT.Stop, payload: false },
+  StopAck: { name: VIDEO_EVENT.StopAck, payload: true },
   Recenter: { name: VIDEO_EVENT.Recenter, payload: false },
   PlaybackProgress: { name: VIDEO_EVENT.PlaybackProgress, payload: true },
   Ended: { name: VIDEO_EVENT.Ended, payload: true },
@@ -272,13 +282,15 @@ sequenceDiagram
     end
     Console->>VR: videoPause / videoResume / videoRecenter
     Console->>VR: videoStop
+    VR-->>Console: videoStopAck [videoId]
     VR-->>Console: videoEnded
 ```
 
 ## Console obligations
 
 - Gate every command on **room membership** (`RoomComplete` → enabled, `MemberLeft`/disconnect → disabled). Presence polling only selects copy and data source while no room exists; a stale poll never disables a live panel. Never show a Download or Play button as enabled when the headset is not in the room.
-- Wait for `DownloadAck` / `PlayAck` with a 5 s timeout. On timeout, or if the room goes incomplete before the ack, open the `HeadsetDidNotConfirmDialog` (reasons: didn't respond / disconnected) and re-request Library State on rejoin. Never re-send the command automatically.
+- Wait for `DownloadAck` / `PlayAck` with a 5 s timeout. On timeout, or if the room goes incomplete before the ack, open the `HeadsetDidNotConfirmDialog` (reasons: didn't respond / disconnected) and re-request Library State on rejoin. Never re-send `videoPlay` automatically.
+- A Download Request the headset never acknowledged survives as a `requested` row in the Library Mirror. Once the headset is in the room and has reported its Library State, re-send `videoDownloadStart` for every `requested` row it does not report: one at a time, at most once per connection, and quietly (no dialog on timeout, no second mirror write).
 - Show `sizeBytes` (from `immersiveVideo.list`) on every Download button and warn when `sizeBytes > freeBytes` before sending.
 - Map `VideoDownloadFailureReason` to physio-actionable copy:
   - `insufficient_storage` → "Headset storage is full. Delete videos from this page to free space."

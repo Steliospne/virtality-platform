@@ -114,12 +114,15 @@ export const VIDEO_EVENT = {
   DownloadPause: 'videoDownloadPause',
   DownloadPaused: 'videoDownloadPaused',
   DownloadCancel: 'videoDownloadCancel',
+  DownloadCancelAck: 'videoDownloadCancelAck',
   Delete: 'videoDelete',
+  DeleteAck: 'videoDeleteAck',
   Play: 'videoPlay',
   PlayAck: 'videoPlayAck',
   Pause: 'videoPause',
   Resume: 'videoResume',
   Stop: 'videoStop',
+  StopAck: 'videoStopAck',
   Recenter: 'videoRecenter',
   PlaybackProgress: 'videoPlaybackProgress',
   Ended: 'videoEnded',
@@ -203,12 +206,15 @@ export const VIDEO_RELAY = {
   DownloadPause: { name: VIDEO_EVENT.DownloadPause, payload: true },
   DownloadPaused: { name: VIDEO_EVENT.DownloadPaused, payload: true },
   DownloadCancel: { name: VIDEO_EVENT.DownloadCancel, payload: true },
+  DownloadCancelAck: { name: VIDEO_EVENT.DownloadCancelAck, payload: true },
   Delete: { name: VIDEO_EVENT.Delete, payload: true },
+  DeleteAck: { name: VIDEO_EVENT.DeleteAck, payload: true },
   Play: { name: VIDEO_EVENT.Play, payload: true },
   PlayAck: { name: VIDEO_EVENT.PlayAck, payload: true },
   Pause: { name: VIDEO_EVENT.Pause, payload: false },
   Resume: { name: VIDEO_EVENT.Resume, payload: false },
   Stop: { name: VIDEO_EVENT.Stop, payload: false },
+  StopAck: { name: VIDEO_EVENT.StopAck, payload: true },
   Recenter: { name: VIDEO_EVENT.Recenter, payload: false },
   PlaybackProgress: { name: VIDEO_EVENT.PlaybackProgress, payload: true },
   Ended: { name: VIDEO_EVENT.Ended, payload: false },
@@ -341,8 +347,9 @@ export type VideoIdPayload = {
  * the `videoId` is the first Socket.IO argument (a bare string), so the
  * headset sees args `[videoId]`. Used by `videoDownloadStart`,
  * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
- * `videoDownloadComplete` and `videoPlayAck`. Every other video event
- * carries an object.
+ * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
+ * `videoPlayAck` and `videoStopAck`. Every other video event carries an
+ * object.
  */
 export type VideoIdArgs = [videoId: string]
 
@@ -484,12 +491,15 @@ export type VideoEventPayloads = {
   DownloadPause: [payload: VideoIdPayload]
   DownloadPaused: [payload: VideoDownloadPausedPayload]
   DownloadCancel: VideoIdArgs
+  DownloadCancelAck: VideoIdArgs
   Delete: VideoIdArgs
+  DeleteAck: VideoIdArgs
   Play: VideoIdArgs
   PlayAck: VideoIdArgs
   Pause: []
   Resume: []
   Stop: []
+  StopAck: VideoIdArgs
   Recenter: []
   PlaybackProgress: [payload: VideoPlaybackProgressPayload]
   Ended: []

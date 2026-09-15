@@ -92,7 +92,7 @@ Notes on the less obvious transitions:
 - **Connection loss is not `Failed`.** Wifi drop, sleep, and relaunch all keep the entry `downloading`; the headset retries with capped backoff and resumes from the `.part` offset by itself, reporting `stalled: true` while a console is watching. `Failed(network)` is reserved for non-recoverable errors.
 - **`Paused` is the physio's stop.** It keeps the `.part` but is _never_ auto-resumed: that is the only difference between a `paused` and a `downloading` `.part` on disk. Resume is the same `videoDownloadStart` the console sent originally.
 - **`Failed` keeps its `.part` only for `url_expired`**, which the headset reports only after it has already refreshed the Download Descriptor once and the CDN still refused; the physio's next Download resumes with `Range`. `insufficient_storage`, `checksum_mismatch`, `network` and `unavailable` discard it.
-- **`Absent` after `videoDelete` is immediate** from the console's point of view; the headset removes the file asynchronously and reports the new Library State when done.
+- **`Absent` after `videoDelete` is immediate** from the console's point of view; the headset removes the file asynchronously, replies `videoDeleteAck [videoId]` (the console drops the row and its mirror entry), and reports the new Library State when done.
 
 ## 3. Download request lifecycle
 
@@ -153,8 +153,8 @@ stateDiagram-v2
     Playing --> Paused : videoPause\n(progress keeps emitting, paused: true)
     Paused --> Playing : videoResume
     Paused --> Paused : videoRecenter
-    Playing --> Idle : videoStop → videoEnded
-    Paused --> Idle : videoStop → videoEnded
+    Playing --> Idle : videoStop → videoStopAck / videoEnded
+    Paused --> Idle : videoStop → videoStopAck / videoEnded
     Playing --> Idle : video reaches end → videoEnded
 ```
 

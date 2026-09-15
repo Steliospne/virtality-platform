@@ -61,6 +61,31 @@ describe('reduceImmersivePlayback', () => {
     )
   })
 
+  it('returns Idle on videoStopAck for the playing video only', () => {
+    const starting = reduceImmersivePlayback(initialImmersivePlaybackState, {
+      type: 'playSent',
+      videoId: 'trail',
+    })
+    const playing = reduceImmersivePlayback(starting, {
+      type: 'playAck',
+      videoId: 'trail',
+    })
+
+    expect(
+      reduceImmersivePlayback(playing, { type: 'stopAck', videoId: 'trail' })
+        .status,
+    ).toBe('Idle')
+    expect(
+      reduceImmersivePlayback(playing, { type: 'stopAck', videoId: 'lake' }),
+    ).toBe(playing)
+    expect(
+      reduceImmersivePlayback(initialImmersivePlaybackState, {
+        type: 'stopAck',
+        videoId: 'trail',
+      }),
+    ).toBe(initialImmersivePlaybackState)
+  })
+
   it('re-attaches as Playing from progress with paused:false', () => {
     const waiting = reduceImmersivePlayback(initialImmersivePlaybackState, {
       type: 'roomComplete',

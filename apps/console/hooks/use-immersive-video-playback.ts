@@ -84,6 +84,10 @@ export function useImmersiveVideoPlayback(
         clearPlayTimeout()
         dispatch({ type: 'ended' })
       },
+      StopAck: (videoId: string) => {
+        clearPlayTimeout()
+        dispatch({ type: 'stopAck', videoId })
+      },
     })
 
     const onDisconnect = () => {
