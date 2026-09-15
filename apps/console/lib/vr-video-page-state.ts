@@ -1,6 +1,7 @@
 import type { VideoDownloadFailureReason } from '@virtality/shared/types'
 import type {
   HeadsetCatalogVideo,
+  HeadsetLibraryEntry,
   HeadsetLibrarySnapshot,
 } from '@/lib/headset-library-rows'
 
@@ -97,4 +98,48 @@ export function overlayRequestedRows(
   return requested.length === 0
     ? live
     : { ...live, videos: [...live.videos, ...requested] }
+}
+
+/**
+ * A `videoLibraryState` report lists a ready video as just videoId + status.
+ * The mirror kept the version and byte counts recorded during the download;
+ * carry them into the live entry so a version-less report is not mistaken
+ * for an outdated file.
+ */
+export function fillLiveEntriesFromMirror(
+  live: HeadsetLibrarySnapshot,
+  mirror: HeadsetLibrarySnapshot | null,
+): HeadsetLibrarySnapshot {
+  if (!mirror) return live
+  const stored = new Map(mirror.videos.map((video) => [video.videoId, video]))
+  return {
+    ...live,
+    videos: live.videos.map((entry): HeadsetLibraryEntry => {
+      const known = stored.get(entry.videoId)
+      if (!known) return entry
+      return {
+        ...entry,
+        version: entry.version ?? known.version,
+        bytesDownloaded: entry.bytesDownloaded ?? known.bytesDownloaded,
+        sizeBytes: entry.sizeBytes ?? known.sizeBytes,
+      }
+    }),
+  }
+}
+
+/**
+ * What a page shows for one headset: the live report while the headset is in
+ * the room, the Library Mirror otherwise. The mirror is refreshed by every
+ * `videoLibraryState` the console relays, so it is the headset's last word.
+ */
+export function resolveHeadsetSnapshot(input: {
+  live: HeadsetLibrarySnapshot
+  mirror: HeadsetLibrarySnapshot | null
+  online: boolean
+}): HeadsetLibrarySnapshot | null {
+  if (!input.online) return input.mirror
+  return overlayRequestedRows(
+    fillLiveEntriesFromMirror(input.live, input.mirror),
+    input.mirror,
+  )
 }
