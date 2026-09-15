@@ -76,6 +76,7 @@ export function LibraryCell({
           >
             Update
           </Button>
+          <DeleteFromHeadsetButton disabled={disabled} onDelete={onDelete} />
         </div>
       )
       break

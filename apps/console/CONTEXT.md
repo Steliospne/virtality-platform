@@ -219,7 +219,7 @@ The state of a **Download Request** the headset has not yet acknowledged. It is 
 _Avoid_: Pending (in copy), queued (that is the headset's `downloading` at 0 bytes), scheduled
 
 **Update Available**:
-The console-derived state of a `ready` **Headset Library** entry whose version is older than the catalog's. The old file stays playable until the newer one is `ready`; the headset never knows it is out of date.
+The console-derived state of a `ready` **Headset Library** entry whose version is older than the catalog's. The old file stays playable until the newer one is `ready`; the headset never knows it is out of date. It is still on the headset, so Delete is offered alongside Update.
 _Avoid_: Outdated, stale, needs sync, error
 
 **Not in catalog**:
