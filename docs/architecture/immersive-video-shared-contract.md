@@ -52,7 +52,7 @@ A payload written as `[videoId]` is the Socket.IO argument list: the id is emitt
 | `Play`                | `videoPlay`                | `[videoId]`      | Start playback of a `ready` video from the beginning.                                                                                                                                                                                                                   |
 | `Pause`               | `videoPause`               | none             |                                                                                                                                                                                                                                                                         |
 | `Resume`              | `videoResume`              | none             |                                                                                                                                                                                                                                                                         |
-| `Stop`                | `videoStop`                | none             | Return the headset to its idle scene.                                                                                                                                                                                                                                   |
+| `Stop`                | `videoStop`                | `[videoId]`      | Return the headset to its idle scene.                                                                                                                                                                                                                                   |
 | `Recenter`            | `videoRecenter`            | none             | Re-align the 180° sphere to the patient's current forward direction.                                                                                                                                                                                                    |
 
 ### VR → Console
@@ -83,9 +83,9 @@ export type VideoIdPayload = {
  * The headset reads and writes the single-id video events positionally:
  * the `videoId` is the first Socket.IO argument (a bare string), so the
  * headset sees args `[videoId]`. Used by `videoDownloadStart`,
- * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
- * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
- * `videoPlayAck` and `videoStopAck`. Every other video event carries an
+ * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoStop`,
+ * `videoDownloadAck`, `videoDownloadComplete`, `videoDownloadCancelAck`,
+ * `videoDeleteAck`, `videoPlayAck` and `videoStopAck`. Every other video event carries an
  * object.
  */
 export type VideoIdArgs = [videoId: string]
@@ -281,7 +281,7 @@ sequenceDiagram
         VR-->>Console: videoPlaybackProgress {positionSec,durationSec,paused}
     end
     Console->>VR: videoPause / videoResume / videoRecenter
-    Console->>VR: videoStop
+    Console->>VR: videoStop [videoId]
     VR-->>Console: videoStopAck [videoId]
     VR-->>Console: videoEnded
 ```

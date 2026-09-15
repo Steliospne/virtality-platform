@@ -213,7 +213,7 @@ export const VIDEO_RELAY = {
   PlayAck: { name: VIDEO_EVENT.PlayAck, payload: true },
   Pause: { name: VIDEO_EVENT.Pause, payload: false },
   Resume: { name: VIDEO_EVENT.Resume, payload: false },
-  Stop: { name: VIDEO_EVENT.Stop, payload: false },
+  Stop: { name: VIDEO_EVENT.Stop, payload: true },
   StopAck: { name: VIDEO_EVENT.StopAck, payload: true },
   Recenter: { name: VIDEO_EVENT.Recenter, payload: false },
   PlaybackProgress: { name: VIDEO_EVENT.PlaybackProgress, payload: true },
@@ -346,9 +346,9 @@ export type VideoIdPayload = {
  * The headset reads and writes the single-id video events positionally:
  * the `videoId` is the first Socket.IO argument (a bare string), so the
  * headset sees args `[videoId]`. Used by `videoDownloadStart`,
- * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoDownloadAck`,
- * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
- * `videoPlayAck` and `videoStopAck`. Every other video event carries an
+ * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoStop`,
+ * `videoDownloadAck`, `videoDownloadComplete`, `videoDownloadCancelAck`,
+ * `videoDeleteAck`, `videoPlayAck` and `videoStopAck`. Every other video event carries an
  * object.
  *
  * The headset emits an object payload as the JSON text it serialised
@@ -504,7 +504,7 @@ export type VideoEventPayloads = {
   PlayAck: VideoIdArgs
   Pause: []
   Resume: []
-  Stop: []
+  Stop: VideoIdArgs
   StopAck: VideoIdArgs
   Recenter: []
   PlaybackProgress: [payload: VideoPlaybackProgressPayload]

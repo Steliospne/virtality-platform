@@ -141,8 +141,8 @@ export function useImmersiveVideoPlayback(
 
   const sendStop = () => {
     const target = readyDevice()
-    if (!target) return
-    target.events.video.Stop()
+    if (!target || state.videoId == null) return
+    target.events.video.Stop(state.videoId)
   }
 
   const sendRecenter = () => {
