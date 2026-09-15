@@ -8,7 +8,10 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { useImmersiveVideoList } from '@virtality/react-query'
+import {
+  useDeviceVideosForUser,
+  useImmersiveVideoList,
+} from '@virtality/react-query'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { useHeadsetLibrary } from '@/hooks/use-headset-library'
 import { useImmersiveVideoPlayback } from '@/hooks/use-immersive-video-playback'
@@ -19,7 +22,11 @@ import {
   buildHeadsetLibraryRows,
   type HeadsetLibraryRow,
 } from '@/lib/headset-library-rows'
-import { toCatalogVideos } from '@/lib/vr-video-page-state'
+import {
+  resolveHeadsetSnapshot,
+  toCatalogVideos,
+  toLibrarySnapshot,
+} from '@/lib/vr-video-page-state'
 import { isReplacementNoticeError } from '@/lib/socket-replacement-notice'
 import useSocketConnection from '@/hooks/use-socket-connection'
 
@@ -79,6 +86,13 @@ export function ImmersiveVideoSessionProvider({
       : [],
   })
 
+  // The Library Mirror stands in for the headset until it joins the room, so
+  // a downloaded video is offered before the physio connects.
+  const mirrorQuery = useDeviceVideosForUser()
+  const mirrorReport = mirrorQuery.data?.devices.find(
+    (device) => device.id === selectedDevice?.data.id,
+  )?.report
+
   const rows = useMemo(() => {
     const liveSnapshot = library.libraryState
       ? {
@@ -86,13 +100,24 @@ export function ImmersiveVideoSessionProvider({
           freeBytes: library.libraryState.freeBytes,
         }
       : { videos: [], freeBytes: 0 }
+    const online = library.roomComplete && !replaced
 
     return buildHeadsetLibraryRows(
       catalog,
-      liveSnapshot,
-      library.roomComplete && !replaced,
+      resolveHeadsetSnapshot({
+        live: liveSnapshot,
+        mirror: toLibrarySnapshot(mirrorReport),
+        online,
+      }),
+      online,
     ).filter((row) => row.inCatalog)
-  }, [catalog, library.libraryState, library.roomComplete, replaced])
+  }, [
+    catalog,
+    library.libraryState,
+    library.roomComplete,
+    mirrorReport,
+    replaced,
+  ])
 
   const selectedRow = rows.find((row) => row.videoId === selectedVideoId)
 

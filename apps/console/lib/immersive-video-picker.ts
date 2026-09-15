@@ -4,10 +4,14 @@ import {
   formatDurationLabel,
 } from '@/lib/headset-library-format'
 
+/**
+ * A video the mirror says the headset holds can be picked before the headset
+ * is in the room; the transport still waits for it.
+ */
 export function isImmersivePickerRowSelectable(
   cell: HeadsetLibraryCell,
 ): boolean {
-  return cell.type === 'on-headset'
+  return cell.type === 'on-headset' || cell.type === 'offline-on-headset'
 }
 
 export function immersivePickerMetaLine(input: {
