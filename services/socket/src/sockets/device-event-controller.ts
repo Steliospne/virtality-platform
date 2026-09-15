@@ -163,6 +163,8 @@ function registerRelayEvents(
         roomCode: resolvedRoomCode,
         socketId: socket.id,
         hasPayload: payload !== undefined,
+        // A JSON string and an object log alike; only the type tells them apart.
+        payloadType: typeof payload,
         payload,
       })
       socket

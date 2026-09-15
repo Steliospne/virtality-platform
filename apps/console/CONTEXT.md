@@ -206,6 +206,10 @@ _Avoid_: Device videos, downloaded videos, cache, mirror
 The headset's full report of its **Headset Library** (every video with its status, version and byte counts, plus free space). It is the only source the console renders from while the headset is in the room.
 _Avoid_: Manifest, sync status, device state
 
+**Headset Payload**:
+Any object the headset sends on the socket. The headset serialises it to JSON text itself and emits the text, so on the wire it is a string, not an object, and the relay log cannot tell the two apart. `subscribe()` in `lib/device-event-controller.ts` parses it before a handler runs; that is the only way console code may read a headset event. Bare-id events (`videoDownloadAck` etc.) are plain strings and pass through untouched.
+_Avoid_: Raw `socket.on` for headset events, `JSON.parse` in a handler, treating `payload.field === undefined` as a missing field before checking `typeof payload`
+
 **Download Request**:
 A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video**. Resuming a paused download is the same request sent again; the headset never starts one on its own. Recorded as **Requested** until the headset answers.
 _Avoid_: Push, sync, auto-download, preload

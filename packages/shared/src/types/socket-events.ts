@@ -350,6 +350,12 @@ export type VideoIdPayload = {
  * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
  * `videoPlayAck` and `videoStopAck`. Every other video event carries an
  * object.
+ *
+ * The headset emits an object payload as the JSON text it serialised
+ * itself (`SendSocketCall(FunctionsSent, string data)`), so it arrives as a
+ * string. The relay forwards it untouched; the console's `subscribe()`
+ * parses it before any handler runs. Read a headset payload only through
+ * `subscribe()`; a raw `socket.on` sees the string.
  */
 export type VideoIdArgs = [videoId: string]
 

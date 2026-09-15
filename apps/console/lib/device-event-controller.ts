@@ -20,9 +20,30 @@ import {
 type EventHandler = (...args: any[]) => void
 
 /**
+ * The headset's `SendSocketCall(FunctionsSent, string data)` emits every
+ * payload as the JSON *text* it serialised itself, so an object payload
+ * reaches the console as a string: `payload.videoId` is `undefined` and the
+ * relay log cannot tell the two apart. Only text that looks like a JSON
+ * object or array is parsed; a bare id such as `videoDownloadAck`'s videoId
+ * is passed through untouched (a digits-only id must not become a number).
+ */
+export function parseHeadsetPayload(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const first = value.trimStart()[0]
+  if (first !== '{' && first !== '[') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+/**
  * Subscribe to socket events using a shared event-constant object as the map.
  * Handler keys correspond to the keys of the event map (e.g. `PROGRAM_EVENT`),
- * and the wire name is looked up automatically.
+ * and the wire name is looked up automatically. Every argument goes through
+ * `parseHeadsetPayload` first, so handlers never see a JSON string where the
+ * payload type says object.
  *
  * Returns an unsubscribe function that removes all registered listeners.
  */
@@ -39,8 +60,10 @@ export function subscribe<M extends Record<string, string>>(
     const handler = handlers[key]
     if (!handler) continue
     const wireEvent = eventMap[key]
-    on(wireEvent, handler)
-    active.push([wireEvent, handler])
+    const parsed: EventHandler = (...args) =>
+      handler(...args.map(parseHeadsetPayload))
+    on(wireEvent, parsed)
+    active.push([wireEvent, parsed])
   }
 
   return () => {

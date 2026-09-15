@@ -74,13 +74,9 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
     }
   }, [])
 
-  const handleRemoteCandidate = useCallback(async (candidateJson: unknown) => {
+  // `subscribe()` has already parsed the headset's JSON text.
+  const handleRemoteCandidate = useCallback(async (candidate: unknown) => {
     try {
-      const candidate =
-        typeof candidateJson === 'string'
-          ? JSON.parse(candidateJson)
-          : candidateJson
-
       if (!candidate) return
 
       const pc = pcRef.current
@@ -98,15 +94,15 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
   }, [])
 
   const handleOffer = useCallback(
-    async (offerJson: unknown) => {
+    async (offer: unknown) => {
       if (!socket || !emitter) return
       try {
         setStatus('negotiating')
-        const offerDesc =
-          typeof offerJson === 'string' ? JSON.parse(offerJson) : offerJson
+        const offerDesc = offer as Record<string, unknown> &
+          RTCSessionDescriptionInit
         if (offerDesc && typeof offerDesc === 'object') {
-          offerDesc.type =
-            (offerDesc.type as string)?.toLowerCase?.() ?? 'offer'
+          offerDesc.type = ((offerDesc.type as string)?.toLowerCase?.() ??
+            'offer') as RTCSdpType
         }
 
         const pc = new RTCPeerConnection({ iceServers: iceServersRef.current })
