@@ -38,10 +38,15 @@ function createPrisma() {
     },
     deviceVideo: {
       deleteMany: vi.fn(async ({ where }) => {
+        const videoIdMatches = (videoId: string) =>
+          where.videoId == null ||
+          (typeof where.videoId === 'string'
+            ? videoId === where.videoId
+            : !where.videoId.notIn.includes(videoId))
         videos = videos.filter(
           (row) =>
             row.deviceId !== where.deviceId ||
-            (where.videoId != null && row.videoId !== where.videoId) ||
+            !videoIdMatches(row.videoId) ||
             (where.status != null && row.status === where.status.not),
         )
       }),
@@ -169,6 +174,36 @@ describe('replaceDeviceVideoLibraryState', () => {
         }),
       ]),
     )
+  })
+
+  it('a report that omits bytes and version keeps the stored ones', async () => {
+    const db = createPrisma()
+    db.seed([
+      row({
+        videoId: 'cyc_01',
+        status: 'downloading',
+        version: 2,
+        bytesDownloaded: 9n,
+        sizeBytes: 9n,
+      }),
+      row({ videoId: 'cyc_02', status: 'ready', sizeBytes: 4n }),
+    ])
+
+    await replaceDeviceVideoLibraryState(db.prisma, {
+      deviceId: 'headset-1',
+      freeBytes: 12,
+      videos: [{ videoId: 'cyc_01', status: 'ready' }],
+    })
+
+    expect(db.videos()).toEqual([
+      row({
+        videoId: 'cyc_01',
+        status: 'ready',
+        version: 2,
+        bytesDownloaded: 9n,
+        sizeBytes: 9n,
+      }),
+    ])
   })
 
   it('an empty report clears everything but requested rows', async () => {

@@ -54,7 +54,7 @@ export type MirrorPrisma = {
     deleteMany: (args: {
       where: {
         deviceId: string
-        videoId?: string
+        videoId?: string | { notIn: string[] }
         status?: { not: DeviceVideoStatus }
       }
     }) => Promise<unknown>
@@ -103,7 +103,33 @@ async function touchReport(
   })
 }
 
-/** Full replace from `videoLibraryState`; unmentioned `requested` rows survive. */
+/**
+ * A field the event or report does not carry keeps its stored value
+ * (`videoDownloadComplete` has no bytes or version; a `videoLibraryState`
+ * entry may be just `videoId` + `status`); `reason` belongs to `failed` alone and is cleared
+ * by any other status.
+ */
+function toPatch(
+  entry: DeviceVideoEntryInput,
+): Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>> {
+  return {
+    status: entry.status,
+    reason: entry.reason ?? null,
+    ...(entry.version != null && { version: entry.version }),
+    ...(entry.bytesDownloaded != null && {
+      bytesDownloaded: toOptionalBigInt(entry.bytesDownloaded),
+    }),
+    ...(entry.sizeBytes != null && {
+      sizeBytes: toOptionalBigInt(entry.sizeBytes),
+    }),
+  }
+}
+
+/**
+ * Full replace from `videoLibraryState`: the set of rows becomes what the
+ * headset listed, but a listed video keeps the bytes, size and version the
+ * report leaves out. Unmentioned `requested` rows survive.
+ */
 export async function replaceDeviceVideoLibraryState(
   prisma: MirrorPrisma,
   input: DeviceVideoLibraryStateInput,
@@ -113,12 +139,16 @@ export async function replaceDeviceVideoLibraryState(
 
   await prisma.$transaction(async (tx) => {
     await touchReport(tx, input.deviceId, reportedAt, freeBytes)
+    // Rows the headset stopped reporting go; listed ones are patched below.
     await tx.deviceVideo.deleteMany({
-      where: { deviceId: input.deviceId, status: { not: 'requested' } },
+      where: {
+        deviceId: input.deviceId,
+        videoId: { notIn: input.videos.map((video) => video.videoId) },
+        status: { not: 'requested' },
+      },
     })
     // upsert so a reported video overwrites its own `requested` row.
     for (const video of input.videos) {
-      const row = toRow(input.deviceId, video)
       await tx.deviceVideo.upsert({
         where: {
           deviceId_videoId: {
@@ -126,8 +156,8 @@ export async function replaceDeviceVideoLibraryState(
             videoId: video.videoId,
           },
         },
-        create: row,
-        update: row,
+        create: toRow(input.deviceId, video),
+        update: toPatch(video),
       })
     }
   })
@@ -163,27 +193,6 @@ export async function requestDeviceVideoDownload(
       data: { status: 'requested', reason: null },
     })
   })
-}
-
-/**
- * A field the event does not carry keeps its stored value (`videoDownloadComplete`
- * has no bytes or version); `reason` belongs to `failed` alone and is cleared
- * by any other status.
- */
-function toPatch(
-  entry: DeviceVideoEntryInput,
-): Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>> {
-  return {
-    status: entry.status,
-    reason: entry.reason ?? null,
-    ...(entry.version != null && { version: entry.version }),
-    ...(entry.bytesDownloaded != null && {
-      bytesDownloaded: toOptionalBigInt(entry.bytesDownloaded),
-    }),
-    ...(entry.sizeBytes != null && {
-      sizeBytes: toOptionalBigInt(entry.sizeBytes),
-    }),
-  }
 }
 
 /** One headset event (ack, progress, paused, complete, failed) patches one row. */
