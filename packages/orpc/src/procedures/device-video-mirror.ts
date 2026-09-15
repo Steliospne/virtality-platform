@@ -61,7 +61,11 @@ export type MirrorPrisma = {
     upsert: (args: {
       where: { deviceId_videoId: { deviceId: string; videoId: string } }
       create: DeviceVideoRow
-      update: Omit<DeviceVideoRow, 'deviceId' | 'videoId'>
+      update: Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>>
+    }) => Promise<unknown>
+    updateMany: (args: {
+      where: { deviceId: string; videoId: string; status: DeviceVideoStatus }
+      data: Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>>
     }) => Promise<unknown>
   }
   $transaction: <T>(fn: (tx: MirrorPrisma) => Promise<T>) => Promise<T>
@@ -129,7 +133,11 @@ export async function replaceDeviceVideoLibraryState(
   })
 }
 
-/** The physio asked for a download; recorded before the headset answers. */
+/**
+ * The physio asked for a download; recorded before the headset answers.
+ * The headset's ack can commit before this does, so an existing row is only
+ * re-marked `requested` when it was `failed`: never downgrade a live download.
+ */
 export async function requestDeviceVideoDownload(
   prisma: MirrorPrisma,
   input: { deviceId: string; videoId: string },
@@ -146,14 +154,36 @@ export async function requestDeviceVideoDownload(
   }
   await prisma.$transaction(async (tx) => {
     await touchReport(tx, input.deviceId, reportedAt)
-    await tx.deviceVideo.upsert({
-      where: {
-        deviceId_videoId: { deviceId: input.deviceId, videoId: input.videoId },
-      },
-      create: row,
-      update: row,
+    const where = {
+      deviceId_videoId: { deviceId: input.deviceId, videoId: input.videoId },
+    }
+    await tx.deviceVideo.upsert({ where, create: row, update: {} })
+    await tx.deviceVideo.updateMany({
+      where: { ...where.deviceId_videoId, status: 'failed' },
+      data: { status: 'requested', reason: null },
     })
   })
+}
+
+/**
+ * A field the event does not carry keeps its stored value (`videoDownloadComplete`
+ * has no bytes or version); `reason` belongs to `failed` alone and is cleared
+ * by any other status.
+ */
+function toPatch(
+  entry: DeviceVideoEntryInput,
+): Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>> {
+  return {
+    status: entry.status,
+    reason: entry.reason ?? null,
+    ...(entry.version != null && { version: entry.version }),
+    ...(entry.bytesDownloaded != null && {
+      bytesDownloaded: toOptionalBigInt(entry.bytesDownloaded),
+    }),
+    ...(entry.sizeBytes != null && {
+      sizeBytes: toOptionalBigInt(entry.sizeBytes),
+    }),
+  }
 }
 
 /** One headset event (ack, progress, paused, complete, failed) patches one row. */
@@ -171,11 +201,10 @@ export async function applyDeviceVideoEvent(
       })
       return
     }
-    const row = toRow(deviceId, entry)
     await tx.deviceVideo.upsert({
       where: { deviceId_videoId: { deviceId, videoId: entry.videoId } },
-      create: row,
-      update: row,
+      create: toRow(deviceId, entry),
+      update: toPatch(entry),
     })
   })
 }

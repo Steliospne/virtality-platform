@@ -56,6 +56,15 @@ function createPrisma() {
           videos[index] = { ...videos[index]!, ...update }
         }
       }),
+      updateMany: vi.fn(async ({ where, data }) => {
+        videos = videos.map((row) =>
+          row.deviceId === where.deviceId &&
+          row.videoId === where.videoId &&
+          row.status === where.status
+            ? { ...row, ...data }
+            : row,
+        )
+      }),
     },
     $transaction: async (fn) => fn(prisma),
   }
@@ -93,6 +102,36 @@ describe('requestDeviceVideoDownload', () => {
     })
 
     expect(db.reports.get('headset-1')?.freeBytes).toBeNull()
+    expect(db.videos()).toEqual([
+      row({ videoId: 'cyc_01', status: 'requested' }),
+    ])
+  })
+
+  it('does not downgrade a download the headset already acknowledged', async () => {
+    const db = createPrisma()
+    db.seed([
+      row({ videoId: 'cyc_01', status: 'downloading', bytesDownloaded: 3n }),
+    ])
+
+    await requestDeviceVideoDownload(db.prisma, {
+      deviceId: 'headset-1',
+      videoId: 'cyc_01',
+    })
+
+    expect(db.videos()).toEqual([
+      row({ videoId: 'cyc_01', status: 'downloading', bytesDownloaded: 3n }),
+    ])
+  })
+
+  it('re-requests a failed download', async () => {
+    const db = createPrisma()
+    db.seed([row({ videoId: 'cyc_01', status: 'failed', reason: 'network' })])
+
+    await requestDeviceVideoDownload(db.prisma, {
+      deviceId: 'headset-1',
+      videoId: 'cyc_01',
+    })
+
     expect(db.videos()).toEqual([
       row({ videoId: 'cyc_01', status: 'requested' }),
     ])
@@ -178,6 +217,51 @@ describe('applyDeviceVideoEvent', () => {
         bytesDownloaded: 3n,
         sizeBytes: 9n,
       }),
+    ])
+  })
+
+  it('a complete event keeps the bytes and size it does not carry', async () => {
+    const db = createPrisma()
+    db.seed([
+      row({
+        videoId: 'cyc_01',
+        status: 'downloading',
+        version: 2,
+        bytesDownloaded: 9n,
+        sizeBytes: 9n,
+      }),
+    ])
+
+    await applyDeviceVideoEvent(db.prisma, {
+      deviceId: 'headset-1',
+      videoId: 'cyc_01',
+      status: 'ready',
+    })
+
+    expect(db.videos()).toEqual([
+      row({
+        videoId: 'cyc_01',
+        status: 'ready',
+        version: 2,
+        bytesDownloaded: 9n,
+        sizeBytes: 9n,
+      }),
+    ])
+  })
+
+  it('a retry clears the failure reason', async () => {
+    const db = createPrisma()
+    db.seed([row({ videoId: 'cyc_01', status: 'failed', reason: 'network' })])
+
+    await applyDeviceVideoEvent(db.prisma, {
+      deviceId: 'headset-1',
+      videoId: 'cyc_01',
+      status: 'downloading',
+      bytesDownloaded: 0,
+    })
+
+    expect(db.videos()).toEqual([
+      row({ videoId: 'cyc_01', status: 'downloading', bytesDownloaded: 0n }),
     ])
   })
 
