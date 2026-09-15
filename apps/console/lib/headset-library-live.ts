@@ -76,13 +76,32 @@ export function upsertLibraryEntry(
   }
 }
 
+/**
+ * The headset counts progress in a 32-bit integer and wraps past 4 GiB, so a
+ * finished file can report `sizeBytes + 2^32`. Never show or store more bytes
+ * than the file has; a bogus size (missing or zero) leaves the count alone.
+ */
+export function clampBytesDownloaded(
+  bytesDownloaded: number,
+  sizeBytes: number | null | undefined,
+): number {
+  if (!Number.isFinite(bytesDownloaded) || bytesDownloaded < 0) return 0
+  if (sizeBytes == null || !Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return bytesDownloaded
+  }
+  return Math.min(bytesDownloaded, sizeBytes)
+}
+
 export function applyDownloadProgress(
   state: LiveLibraryState | VideoLibraryStatePayload | null,
   payload: VideoDownloadProgressPayload,
 ): LiveLibraryState {
   return upsertLibraryEntry(state, payload.videoId, {
     status: 'downloading',
-    bytesDownloaded: payload.bytesDownloaded,
+    bytesDownloaded: clampBytesDownloaded(
+      payload.bytesDownloaded,
+      payload.sizeBytes,
+    ),
     sizeBytes: payload.sizeBytes,
     stalled: payload.stalled,
   })
@@ -159,4 +178,47 @@ export function removeLibraryEntry(
       (entry) => entry.videoId !== videoId,
     ),
   }
+}
+
+type MirrorDeviceLike = {
+  deviceId: string
+  report: null | { videos: Array<{ videoId: string; status: string }> }
+}
+
+/** `requested` rows the mirror holds for one headset (console intent). */
+export function requestedVideoIds(
+  mirror: { devices: MirrorDeviceLike[] } | null | undefined,
+  deviceId: string | null | undefined,
+): string[] {
+  if (!mirror || !deviceId) return []
+  const device = mirror.devices.find((entry) => entry.deviceId === deviceId)
+  if (!device?.report) return []
+  return device.report.videos
+    .filter((video) => video.status === 'requested')
+    .map((video) => video.videoId)
+}
+
+/**
+ * A `requested` row is a Download Request the headset never acknowledged
+ * (it was offline, or the ack was lost). Once the headset reports its
+ * library, every such request it does not know about is sent again, once
+ * per connection. A video the headset already reports (in any state but
+ * `absent`) needs no resend.
+ */
+export function selectDownloadsToResume(input: {
+  requested: string[]
+  live: LiveLibraryState | null
+  alreadySent: ReadonlySet<string>
+}): string[] {
+  // `requested` in the live state is console-local, not headset knowledge.
+  const reported = new Set(
+    asLibraryVideos(input.live?.videos)
+      .filter(
+        (entry) => entry.status !== 'absent' && entry.status !== 'requested',
+      )
+      .map((entry) => entry.videoId),
+  )
+  return input.requested.filter(
+    (videoId) => !reported.has(videoId) && !input.alreadySent.has(videoId),
+  )
 }

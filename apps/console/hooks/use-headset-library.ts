@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ROOM_EVENT,
   VIDEO_EVENT,
   type VideoLibraryStatePayload,
 } from '@virtality/shared/types'
+import { useDeviceVideosForUser } from '@virtality/react-query'
 import useSocketConnection from '@/hooks/use-socket-connection'
 import { subscribe } from '@/lib/device-event-controller'
 import { isReplacementNoticeError } from '@/lib/socket-replacement-notice'
@@ -20,6 +21,8 @@ import {
   applyDownloadRequested,
   normalizeLiveLibraryState,
   removeLibraryEntry,
+  requestedVideoIds,
+  selectDownloadsToResume,
   type LiveLibraryState,
 } from '@/lib/headset-library-live'
 import type { VRDevice } from '@/types/models'
@@ -43,11 +46,18 @@ export function useHeadsetLibrary(
     useState<HeadsetDidNotConfirmReason | null>(null)
   const pendingDownloadRef = useRef<string | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Download Requests sent on this connection; resumed at most once each. */
+  const sentDownloadsRef = useRef(new Set<string>())
   const deviceRef = useRef(device)
   deviceRef.current = device
   const libraryStateRef = useRef(libraryState)
   libraryStateRef.current = libraryState
   const mirror = useHeadsetLibraryMirror(device?.data.deviceId)
+  const mirrorQuery = useDeviceVideosForUser()
+  const mirrorRequested = useMemo(
+    () => requestedVideoIds(mirrorQuery.data, device?.data.deviceId),
+    [mirrorQuery.data, device?.data.deviceId],
+  )
 
   const clearPendingDownload = useCallback(() => {
     if (timeoutRef.current) {
@@ -74,7 +84,45 @@ export function useHeadsetLibrary(
     setRoomComplete(false)
     setLibraryState(null)
     clearPendingDownload()
+    sentDownloadsRef.current.clear()
   }, [clearPendingDownload, device?.data.id, replaced])
+
+  /**
+   * Emits `videoDownloadStart` and waits for the ack. A physio's click that
+   * goes unanswered is reported; a resumed request stays quiet.
+   */
+  const startDownload = useCallback(
+    (videoId: string, options: { resumed: boolean }) => {
+      const target = deviceRef.current
+      if (!target || pendingDownloadRef.current != null) return
+
+      pendingDownloadRef.current = videoId
+      sentDownloadsRef.current.add(videoId)
+      target.events.video.DownloadStart(videoId)
+      setLibraryState((current) => applyDownloadRequested(current, videoId))
+      if (!options.resumed) mirror.onRequested(videoId)
+      timeoutRef.current = setTimeout(() => {
+        if (pendingDownloadRef.current !== videoId) return
+        clearPendingDownload()
+        if (!options.resumed) setConfirmReason('didnt-respond')
+      }, DOWNLOAD_ACK_TIMEOUT_MS)
+    },
+    [clearPendingDownload, mirror],
+  )
+
+  // A `requested` mirror row the headset does not report is a request it
+  // never received; send it again once the headset is in the room. One at a
+  // time: the next goes out when the current one is acknowledged.
+  useEffect(() => {
+    if (!roomComplete || replaced || !libraryState) return
+    if (pendingDownloadRef.current != null) return
+    const [next] = selectDownloadsToResume({
+      requested: mirrorRequested,
+      live: libraryState,
+      alreadySent: sentDownloadsRef.current,
+    })
+    if (next) startDownload(next, { resumed: true })
+  }, [libraryState, mirrorRequested, replaced, roomComplete, startDownload])
 
   useEffect(() => {
     if (!autoConnect || !device?.data.deviceId || replaced) return
@@ -98,6 +146,8 @@ export function useHeadsetLibrary(
         clearPendingDownload()
         setConfirmReason('disconnected')
       }
+      // The headset left; whatever it did not ack may be resent on return.
+      sentDownloadsRef.current.clear()
       setRoomComplete(false)
     }
 
@@ -163,21 +213,10 @@ export function useHeadsetLibrary(
 
   const sendDownloadStart = useCallback(
     (videoId: string) => {
-      const target = readyDevice()
-      if (!target || pendingDownloadRef.current != null) return
-
-      pendingDownloadRef.current = videoId
-      target.events.video.DownloadStart(videoId)
-      setLibraryState((current) => applyDownloadRequested(current, videoId))
-      mirror.onRequested(videoId)
-      timeoutRef.current = setTimeout(() => {
-        if (pendingDownloadRef.current === videoId) {
-          clearPendingDownload()
-          setConfirmReason('didnt-respond')
-        }
-      }, DOWNLOAD_ACK_TIMEOUT_MS)
+      if (!readyDevice()) return
+      startDownload(videoId, { resumed: false })
     },
-    [clearPendingDownload, mirror, readyDevice],
+    [readyDevice, startDownload],
   )
 
   const sendDownloadPause = useCallback(

@@ -3,7 +3,10 @@ import {
   applyDownloadComplete,
   applyDownloadFailed,
   applyDownloadProgress,
+  clampBytesDownloaded,
   normalizeLiveLibraryState,
+  requestedVideoIds,
+  selectDownloadsToResume,
   type LiveLibraryState,
 } from './headset-library-live.js'
 
@@ -100,5 +103,87 @@ describe('headset library live updates', () => {
         stalled: false,
       },
     ])
+  })
+
+  it('clamps a wrapped 32-bit progress counter to the file size', () => {
+    const wrapped = 1_116_782 + 2 ** 32
+    expect(clampBytesDownloaded(wrapped, 1_116_782)).toBe(1_116_782)
+    expect(clampBytesDownloaded(10, 40)).toBe(10)
+    expect(clampBytesDownloaded(10, 0)).toBe(10)
+    expect(clampBytesDownloaded(-5, 40)).toBe(0)
+
+    const next = applyDownloadProgress(
+      { videos: [], freeBytes: 0 },
+      {
+        videoId: 'trail',
+        bytesDownloaded: wrapped,
+        sizeBytes: 1_116_782,
+        stalled: false,
+      },
+    )
+    expect(next.videos[0]?.bytesDownloaded).toBe(1_116_782)
+  })
+})
+
+describe('resuming unacknowledged download requests', () => {
+  const mirror = {
+    devices: [
+      {
+        deviceId: 'hs-1',
+        report: {
+          videos: [
+            { videoId: 'trail', status: 'requested' },
+            { videoId: 'lake', status: 'requested' },
+            { videoId: 'city', status: 'ready' },
+          ],
+        },
+      },
+      { deviceId: 'hs-2', report: null },
+    ],
+  }
+
+  it('lists the requested rows of one headset', () => {
+    expect(requestedVideoIds(mirror, 'hs-1')).toEqual(['trail', 'lake'])
+    expect(requestedVideoIds(mirror, 'hs-2')).toEqual([])
+    expect(requestedVideoIds(mirror, null)).toEqual([])
+    expect(requestedVideoIds(undefined, 'hs-1')).toEqual([])
+  })
+
+  it('resends only what the headset does not report and was not sent yet', () => {
+    const live: LiveLibraryState = {
+      freeBytes: 0,
+      videos: [
+        { videoId: 'trail', status: 'downloading' },
+        { videoId: 'lake', status: 'absent' },
+      ],
+    }
+    expect(
+      selectDownloadsToResume({
+        requested: ['trail', 'lake', 'river'],
+        live,
+        alreadySent: new Set(['river']),
+      }),
+    ).toEqual(['lake'])
+  })
+
+  it('treats a console-local requested row as not reported', () => {
+    const live: LiveLibraryState = {
+      freeBytes: 0,
+      videos: [{ videoId: 'trail', status: 'requested' }],
+    }
+    expect(
+      selectDownloadsToResume({
+        requested: ['trail'],
+        live,
+        alreadySent: new Set(),
+      }),
+    ).toEqual(['trail'])
+    expect(
+      selectDownloadsToResume({
+        requested: ['trail'],
+        live: null,
+        alreadySent: new Set(),
+      }),
+    ).toEqual(['trail'])
   })
 })
