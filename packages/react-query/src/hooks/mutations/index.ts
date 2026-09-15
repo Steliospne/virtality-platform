@@ -46,7 +46,12 @@ export { useCreatePatientSessionExercises } from './patient-session-exercise/use
 export { useResetDeviceId } from './device/use-reset-device-id.js'
 
 // Headset library (Library Mirror) mutations
-export { useWriteHeadsetLibrary } from './device-video/use-write-headset-library.js'
+export {
+  useWriteHeadsetLibrary,
+  type HeadsetLibraryWriteError,
+  type HeadsetLibraryWriteProcedure,
+  type UseWriteHeadsetLibraryOptions,
+} from './device-video/use-write-headset-library.js'
 
 // Waitlist mutations
 export { useCreateWaitlist } from './waitlist/use-create-waitlist.js'

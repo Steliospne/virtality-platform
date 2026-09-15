@@ -6,9 +6,15 @@ import type {
   VideoDownloadPausedPayload,
   VideoDownloadProgressPayload,
 } from '@virtality/shared/types'
-import { useWriteHeadsetLibrary } from '@virtality/react-query'
+import {
+  useWriteHeadsetLibrary,
+  type HeadsetLibraryWriteError,
+} from '@virtality/react-query'
+import ErrorToasty from '@/components/ui/ErrorToasty'
+import { mirrorWriteErrorMessage } from '@/lib/headset-library-mirror-errors'
 import {
   asLibraryVideos,
+  clampBytesDownloaded,
   type LiveLibraryState,
 } from '@/lib/headset-library-live'
 
@@ -18,11 +24,16 @@ export const PROGRESS_WRITE_INTERVAL_MS = 10_000
 /**
  * Writes the Library Mirror from what the console sees on the socket
  * (ADR 0013). Fire-and-forget: the live view never waits on the API, and a
- * failed write is repaired by the next full `videoLibraryState`.
+ * failed write is repaired by the next full `videoLibraryState`. Every
+ * rejected write is logged; only a rejected Download Request is toasted.
  */
 export function useHeadsetLibraryMirror(deviceId: string | null | undefined) {
+  const onError = useCallback((error: HeadsetLibraryWriteError) => {
+    const message = mirrorWriteErrorMessage(error)
+    if (message) ErrorToasty(message)
+  }, [])
   const { reportLibraryState, requestDownload, applyEvent, remove } =
-    useWriteHeadsetLibrary()
+    useWriteHeadsetLibrary({ onError })
   // `mutate` is referentially stable, so callbacks only change with the headset.
   const writer = useMemo(
     () => ({
@@ -105,7 +116,10 @@ export function useHeadsetLibraryMirror(deviceId: string | null | undefined) {
           deviceId: headsetId,
           videoId: payload.videoId,
           status: 'downloading',
-          bytesDownloaded: payload.bytesDownloaded,
+          bytesDownloaded: clampBytesDownloaded(
+            payload.bytesDownloaded,
+            payload.sizeBytes,
+          ),
           sizeBytes: payload.sizeBytes,
         }),
       )
