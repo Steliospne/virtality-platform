@@ -12,10 +12,6 @@ _Avoid_: Password reset, immediate password change, password update
 The Postgres cache of one headset's **Library State** (`DeviceVideoReport` + `DeviceVideo` rows), keyed by **Headset Identity**, written by the console from the headset's socket events and read by the console when that headset is offline. It also holds the physio's pending **Download Request** rows (`requested`), which the headset never reports. The headset never writes it.
 _Avoid_: Mirror (as the term), device library table, server-owned library
 
-**Download Descriptor**:
-The server-issued description of one **Immersive Video** for a headset: the current verified version, its CDN URL (with `?v=<version>` as the per-version cache key) and byte size. It carries no checksum; integrity is verified when the file enters the platform, and the headset checks byte count only. The headset fetches it for each **Download Request** and refreshes it when the URL is rejected. Issued only for a **Headset Identity** bound to a non-deleted Device, and only for a `Published` or `Republishing` catalog entry (the last verified version). The console never handles it.
-_Avoid_: Manifest (the headset's on-disk file), download ticket, download link, presigned URL, `VideoDownloadStartPayload`
-
 ## Relationships
 
 - A **Pending Password Change** belongs to exactly one authenticated user.
@@ -36,8 +32,7 @@ _Avoid_: Manifest (the headset's on-disk file), download ticket, download link, 
 
 - A **Library Mirror** belongs to exactly one **Headset Identity**, not to a Device row; re-pairing does not move or clear it.
 - A **Library Mirror** full report replaces the snapshot for that **Headset Identity** except `requested` rows the report does not name; download events patch one row each.
-- A **Download Descriptor** is issued only for a **Headset Identity** currently bound to a non-deleted Device, and only for a `Published` or `Republishing` catalog entry (the last verified version).
-- A **Library Mirror** write is a console (oRPC) call scoped to a headset bound to a Device the caller owns. The **Download Descriptor** read is unauthenticated and not rate-limited in v1; it trusts the **Headset Identity** the way the pairing claim does.
+- A **Library Mirror** write is a console (oRPC) call scoped to a headset bound to a Device the caller owns. The headset never calls the platform API for **Immersive Video**; it downloads through its Addressables catalog on the CDN.
 
 ## Example Dialogue
 

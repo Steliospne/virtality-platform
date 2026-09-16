@@ -14,7 +14,6 @@ import { orpcMiddleware } from './middleware/orpc.ts'
 import { findDeviceByDeviceId } from './data/device.ts'
 import { ORPC_PREFIX } from '@virtality/shared/types'
 import { devicePairingRoutes } from './routes/device-pairing.ts'
-import { deviceVideoRoutes } from './routes/device-videos.ts'
 import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
 import { scheduleImmersiveVideoCleanup } from './lib/schedule-immersive-video-cleanup.ts'
 
@@ -125,7 +124,6 @@ app.use('/api/v1/devices/:deviceId', async (c) => {
 })
 
 app.route('/api/v1/device-pairing', devicePairingRoutes)
-app.route('/api/v1/device-videos', deviceVideoRoutes)
 
 app.use(`${ORPC_PREFIX}/*`, authMiddleware, orpcMiddleware)
 
