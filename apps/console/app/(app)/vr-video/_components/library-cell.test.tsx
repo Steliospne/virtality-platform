@@ -88,4 +88,27 @@ describe('LibraryCell', () => {
     expect(absentHandlers.onDownload).not.toHaveBeenCalled()
   })
 
+  it('asks for confirmation before deleting from the headset', () => {
+    render(
+      <LibraryCell
+        cell={{ type: 'on-headset' }}
+        roomComplete={true}
+        frozen={false}
+        sizeBytes={1_000_000}
+        freeBytes={10_000_000}
+        {...absentHandlers}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete from headset' }))
+
+    expect(
+      screen.getByText('Delete this video from the headset?'),
+    ).toBeInTheDocument()
+    expect(absentHandlers.onDelete).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(absentHandlers.onDelete).toHaveBeenCalledTimes(1)
+  })
 })
