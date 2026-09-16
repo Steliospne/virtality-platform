@@ -142,14 +142,7 @@ export function LibraryCell({
       break
     }
     case 'offline-absent':
-      content = (
-        <div className='text-right'>
-          <Badge variant='outline'>Not on headset</Badge>
-          <p className='text-muted-foreground mt-1 text-xs'>
-            Turn the headset on to download
-          </p>
-        </div>
-      )
+      content = <Badge variant='outline'>Not on headset</Badge>
       break
     case 'not-in-catalog':
       content = (
