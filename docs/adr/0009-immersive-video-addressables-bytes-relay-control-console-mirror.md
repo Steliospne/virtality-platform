@@ -1,0 +1,41 @@
+# Immersive Video: Addressables carries the bytes, the relay carries control, the console writes the Library Mirror
+
+**Status:** accepted. Replaces the five earlier Immersive Video ADRs (0009–0013), which were written before the headset implementation existed and recorded assumptions the VR build did not share.
+
+The 180° FPV **Immersive Video** mode puts multi-GB Unity AssetBundles on a headset's disk and lets a physio manage and play them from the console. The headset app (`Virtality-app/Virtality`, branch `Run_Cycle`) leads on how the bytes move; the platform hosts the files, relays commands and keeps a durable picture of each headset's library for when the headset is off.
+
+## Decision
+
+1. **Bytes: Unity Addressables from the CDN, nothing else.** `https://cdn.virtality.app/immersive-videos` is the headset's `Remote.LoadPath`. Every bundle sits flat under it under the filename Unity generated (a republish lands on a new hashed filename and verify deletes the previous key), and the Addressables catalog pair (`catalog_<ts>.bin|json` + `catalog_<ts>.hash`, the `.hash` served `no-cache`) is uploaded by an admin next to them. The headset downloads with `DownloadDependenciesAsync` into Unity's bundle cache and deletes with `ClearDependencyCacheAsync`. The platform API has no headset-facing video endpoint; neither the API nor the socket relay ever carries video bytes.
+2. **No version.** A bundle's filename changes whenever its content does, so CloudFront never serves stale bytes and the catalog is the only thing that needs to know a file was replaced. The platform keeps no version column, computes no "update available", and the headset reports none. Replacing stale files on a headset is the VR app's job once it refreshes its catalog.
+3. **Control: the existing Socket.IO relay, in the device room.** Console → VR commands and VR → console reports travel as relay events in the room addressed by **Headset Identity**. The relay stays a dumb forwarder registered from one `RelayEventMap`. Single-id events carry the `videoId` as a bare string argument; object payloads follow the headset's long-standing convention of a JSON string (ADR 0003), parsed once in the console's `subscribe()`.
+4. **The headset's disk is the source of truth; the console writes the Library Mirror.** The headset reports its **Library State** over the socket only. The console turns those events into `deviceVideo.*` writes: `videoLibraryState` replaces the headset's rows, the download events patch one row each, progress is sampled about every 10 s. Writes are fire-and-forget and scoped to a headset on one of the caller's Devices. A physio's **Download Request** is written as `requested` before the headset answers and survives a full replace the headset does not mention it in; the row leaves `requested` when the headset reports the video or the physio cancels. Absent is "no row".
+5. **Keyed by Headset Identity** (`Device.deviceId`), not `Device.id`, with no FK: re-pairing does not move or clear the rows, and a nightly job deletes reports of unpaired identities older than 180 days. `reportedAt` and `freeBytes` are null until the headset itself has reported once, so the offline view never dates a report the headset did not make.
+6. **Only the physio initiates**, from the console, with the file size visible. No auto-download, no preload. Playback is a live tool: no session row, no history.
+
+## Rejected alternatives
+
+| Alternative                                                                                                                       | Why rejected                                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A platform-minted Download Descriptor (`GET /api/v1/device-videos`) with HTTP `Range` resume, `.part` files and a `?v=` cache key | The headset downloads through Addressables, which has its own cache, catalog and integrity check; the endpoint would be dead code and a second, unauthenticated surface to keep. Re-download logic, if ever needed, is a later effort. |
+| A `version` column and an "Update available" state                                                                                | Nothing on the headset carries or compares one; hashed bundle filenames already make each content change a new object. The console spent a week deriving a state it could never populate.                                              |
+| A headset-written mirror over HTTP                                                                                                | A second channel with its own retry and coalescing for facts already on the socket. The one case it covers better (a download finishing with no console present) is accepted as bounded staleness.                                     |
+| The socket relay writes the mirror                                                                                                | One writer that sees every event, but `services/socket` has no database or API client and would stop being a dumb forwarder. Deferred, not rejected.                                                                                   |
+| API-proxied or relay-carried bytes                                                                                                | Multi-GB streams through one Node process with no CDN caching.                                                                                                                                                                         |
+| Pre-seeding rows for every catalog video at pairing                                                                               | Duplicates what a missing row already means and needs fan-out writes on every publish.                                                                                                                                                 |
+
+## Consequences
+
+- The wire contract is `docs/architecture/immersive-video.md`. Events the headset does not handle yet (`videoDownloadPause`, `videoPause`, `videoRecenter`) and reports it does not send yet (`videoDownloadPaused`, `videoPlaybackProgress`, `videoEnded`) stay in the map; the console hides the matching controls behind `apps/console/lib/immersive-video-headset-support.ts` until a VR build lands.
+- The headset's progress `sizeBytes` is an estimate and its byte counter can wrap; the console takes the real size from the catalog, clamps the count for the progress bar, and drops both once a download is `ready`.
+- If no console is in the room when a download finishes, the mirror stays at the last event a console saw until the next console joins and receives `videoLibraryState`. The offline view labels rows "as of `reportedAt`".
+- Two consoles in the same room write the same facts; the writes are idempotent upserts and last write wins.
+- An admin who uploads a catalog before the bundles it names leaves headsets with 403s on those bundles until they are published. Old catalog pairs accumulate; a sweep is a later concern.
+- **Open with the VR team:** the committed headset build resolves a `videoId` against a hard-wired `VideoDatabase.asset` (two entries) rather than the catalog's keys, so a video an admin uploads is not yet playable without a Unity build. The platform side assumes the catalog's addresses become the source; until then the admin's Video ID must be the Unity asset GUID.
+
+## References
+
+- Contract: `docs/architecture/immersive-video.md`
+- Code: `packages/shared/src/types/socket-events.ts` (event map), `packages/orpc/src/procedures/device-video-mirror.ts` (writer rules), `apps/console/hooks/use-headset-library.ts`, `apps/console/hooks/use-immersive-video-playback.ts`
+- Domain language: `apps/console/CONTEXT.md`, `apps/adminboard/CONTEXT.md`, `services/server/CONTEXT.md`
+- Payload convention: ADR 0003

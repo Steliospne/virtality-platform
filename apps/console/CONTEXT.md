@@ -203,7 +203,7 @@ The set of **Immersive Video** files present on one physical headset, keyed by i
 _Avoid_: Device videos, downloaded videos, cache, mirror
 
 **Library State**:
-The headset's full report of its **Headset Library** (every video with its status, version and byte counts, plus free space). It is the only source the console renders from while the headset is in the room.
+The headset's full report of its **Headset Library**: every downloaded video as `videoId` + `status`, plus free space. Sent only when the console asks (`videoLibraryStateRequest`). It is the only source the console renders from while the headset is in the room.
 _Avoid_: Manifest, sync status, device state
 
 **Headset Payload**:
@@ -211,16 +211,12 @@ Any object the headset sends on the socket. The headset serialises it to JSON te
 _Avoid_: Raw `socket.on` for headset events, `JSON.parse` in a handler, treating `payload.field === undefined` as a missing field before checking `typeof payload`
 
 **Download Request**:
-A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video**. Resuming a paused download is the same request sent again; the headset never starts one on its own. Recorded as **Requested** until the headset answers.
+A physio-initiated instruction, sent from the console, for one headset to fetch one **Immersive Video** through its Addressables catalog. The headset never starts one on its own. Recorded as **Requested** until the headset answers.
 _Avoid_: Push, sync, auto-download, preload
 
 **Requested**:
 The state of a **Download Request** the headset has not yet acknowledged. It is console intent, not **Library State**: the headset never reports it, a fresh **Library State** does not clear it, and only the headset reporting that video or the physio cancelling ends it. Shown with a Cancel while the headset is in the room and as "Waiting for the headset" offline.
 _Avoid_: Pending (in copy), queued (that is the headset's `downloading` at 0 bytes), scheduled
-
-**Update Available**:
-The console-derived state of a `ready` **Headset Library** entry whose version is older than the catalog's. The old file stays playable until the newer one is `ready`; the headset never knows it is out of date. It is still on the headset, so Delete is offered alongside Update.
-_Avoid_: Outdated, stale, needs sync, error
 
 **Not in catalog**:
 A **Headset Library** entry whose `videoId` is not in `immersiveVideo.list` (unpublished or deleted). Play is disabled; Delete is offered. Unpublished and deleted are indistinguishable to the physio. The console never auto-sends `videoDelete`.

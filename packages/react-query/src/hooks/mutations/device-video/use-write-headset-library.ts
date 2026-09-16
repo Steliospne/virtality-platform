@@ -43,7 +43,7 @@ function describeWriteError(
 
 /**
  * The four Library Mirror writes the console makes from a headset's socket
- * events (ADR 0013). Each invalidates the offline list so other views of the
+ * events (ADR 0009). Each invalidates the offline list so other views of the
  * same headset catch up without a reconnect.
  *
  * The writes are fire-and-forget for the caller, so a rejected write is
