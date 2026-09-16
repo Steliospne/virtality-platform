@@ -63,3 +63,9 @@ jobs:
           docker pull ghcr.io/virtality-app/virtality-server:preview
           cd ~/infra
           ./scripts/infra.sh server-preview-up
+
+      # Each pull re-tags :preview, leaving the previous image dangling on the
+      # VPS. Prune the ones older than a day so they do not pile up.
+      - name: Prune stale images
+        if: always()
+        run: docker image prune --force --filter "until=24h"
