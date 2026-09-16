@@ -1,6 +1,5 @@
 'use client'
 
-import { X } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 
 export function LibraryCellCancelButton({
@@ -13,13 +12,12 @@ export function LibraryCellCancelButton({
   return (
     <Button
       type='button'
-      variant='ghost'
-      size='icon-sm'
+      variant='outline'
+      size='sm'
       disabled={disabled}
-      aria-label='Cancel'
       onClick={onCancel}
     >
-      <X />
+      Cancel
     </Button>
   )
 }
