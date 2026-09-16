@@ -12,7 +12,7 @@ function createLogger() {
 }
 
 function createCleanupState(input?: {
-  reports?: Array<{ deviceId: string; reportedAt: Date }>
+  reports?: Array<{ deviceId: string; reportedAt: Date | null }>
   devices?: Array<{ deviceId: string; deletedAt: Date | null }>
 }) {
   const reports = [...(input?.reports ?? [])]
@@ -71,6 +71,20 @@ describe('runImmersiveVideoCleanup', () => {
           reportedAt: new Date(NOW.getTime() - 181 * DAY),
         },
       ],
+    })
+
+    await runImmersiveVideoCleanup({
+      prisma,
+      logger: createLogger(),
+      now: () => NOW,
+    })
+
+    expect(reports).toHaveLength(0)
+  })
+
+  it('deletes an unpaired header the headset never dated', async () => {
+    const { prisma, reports } = createCleanupState({
+      reports: [{ deviceId: 'old-headset', reportedAt: null }],
     })
 
     await runImmersiveVideoCleanup({

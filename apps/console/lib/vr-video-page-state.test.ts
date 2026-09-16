@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  fillLiveEntriesFromMirror,
   resolveHeadsetSnapshot,
   selectedHeadsetOnline,
   toLibrarySnapshot,
@@ -63,61 +62,6 @@ describe('toLibrarySnapshot', () => {
   })
 })
 
-describe('fillLiveEntriesFromMirror', () => {
-  const mirror = {
-    freeBytes: 1,
-    videos: [
-      {
-        videoId: 'v1',
-        status: 'ready' as const,
-        version: 2,
-        bytesDownloaded: 10,
-        sizeBytes: 10,
-      },
-    ],
-  }
-
-  it('fills version and bytes the headset left out of a ready entry', () => {
-    const live = {
-      freeBytes: 5,
-      videos: [{ videoId: 'v1', status: 'ready' as const }],
-    }
-    expect(fillLiveEntriesFromMirror(live, mirror).videos).toEqual([
-      {
-        videoId: 'v1',
-        status: 'ready',
-        version: 2,
-        bytesDownloaded: 10,
-        sizeBytes: 10,
-      },
-    ])
-  })
-
-  it('keeps the values the headset did report', () => {
-    const live = {
-      freeBytes: 5,
-      videos: [
-        { videoId: 'v1', status: 'ready' as const, version: 3, sizeBytes: 12 },
-      ],
-    }
-    expect(fillLiveEntriesFromMirror(live, mirror).videos[0]).toMatchObject({
-      version: 3,
-      sizeBytes: 12,
-      bytesDownloaded: 10,
-    })
-  })
-
-  it('leaves an entry the mirror does not know untouched', () => {
-    const live = {
-      freeBytes: 5,
-      videos: [{ videoId: 'v2', status: 'ready' as const }],
-    }
-    expect(fillLiveEntriesFromMirror(live, mirror).videos).toEqual([
-      { videoId: 'v2', status: 'ready' },
-    ])
-  })
-})
-
 describe('resolveHeadsetSnapshot', () => {
   const live = {
     freeBytes: 5,
@@ -127,7 +71,7 @@ describe('resolveHeadsetSnapshot', () => {
     freeBytes: 1,
     reportedAt: '2026-09-13T10:00:00.000Z',
     videos: [
-      { videoId: 'v1', status: 'ready' as const, version: 1 },
+      { videoId: 'v1', status: 'ready' as const },
       { videoId: 'v2', status: 'requested' as const },
     ],
   }
@@ -136,11 +80,11 @@ describe('resolveHeadsetSnapshot', () => {
     expect(resolveHeadsetSnapshot({ live, mirror, online: false })).toBe(mirror)
   })
 
-  it('shows the live report, filled from the mirror, once in the room', () => {
+  it('shows the live report with requested rows overlaid once in the room', () => {
     expect(resolveHeadsetSnapshot({ live, mirror, online: true })).toEqual({
       freeBytes: 5,
       videos: [
-        { videoId: 'v1', status: 'ready', version: 1 },
+        { videoId: 'v1', status: 'ready' },
         { videoId: 'v2', status: 'requested' },
       ],
     })

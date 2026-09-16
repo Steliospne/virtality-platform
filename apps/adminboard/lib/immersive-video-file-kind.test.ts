@@ -65,26 +65,14 @@ describe('immersive video id', () => {
   })
 
   it('can only be chosen before the row has ever held a file', () => {
+    expect(canChooseImmersiveVideoId({ filename: null, sizeBytes: null })).toBe(
+      true,
+    )
     expect(
-      canChooseImmersiveVideoId({
-        version: 0,
-        filename: null,
-        sizeBytes: null,
-      }),
-    ).toBe(true)
-    expect(
-      canChooseImmersiveVideoId({
-        version: 1,
-        filename: null,
-        sizeBytes: null,
-      }),
+      canChooseImmersiveVideoId({ filename: 'a.bundle', sizeBytes: null }),
     ).toBe(false)
-    expect(
-      canChooseImmersiveVideoId({
-        version: 0,
-        filename: 'a.bundle',
-        sizeBytes: 1,
-      }),
-    ).toBe(false)
+    expect(canChooseImmersiveVideoId({ filename: null, sizeBytes: 1 })).toBe(
+      false,
+    )
   })
 })

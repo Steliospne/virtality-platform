@@ -180,7 +180,7 @@ export function useHeadsetLibrary(
       DownloadComplete: (videoId: string) => {
         setLibraryState((current) => applyDownloadComplete(current, videoId))
         mirror.onComplete(videoId)
-        // The complete event has no version; ask for the state that does.
+        // Confirm the file is listed rather than trusting the event alone.
         deviceRef.current?.events.video.LibraryStateRequest()
       },
       DownloadFailed: (payload) => {
@@ -230,7 +230,7 @@ export function useHeadsetLibrary(
 
   const sendDownloadPause = useCallback(
     (videoId: string) => {
-      readyDevice()?.events.video.DownloadPause({ videoId })
+      readyDevice()?.events.video.DownloadPause(videoId)
     },
     [readyDevice],
   )

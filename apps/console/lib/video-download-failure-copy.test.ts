@@ -31,31 +31,22 @@ describe('videoDownloadFailureCopy', () => {
       action: 'Download (fresh)',
     })
   })
+})
 
-  it('maps cancelled to no copy so the row can return to absent', () => {
-    expect(
-      videoDownloadFailureCopy(VIDEO_DOWNLOAD_FAILURE_REASON.Cancelled),
-    ).toEqual({
-      copy: null,
-      action: 'Download',
-    })
+it('maps url_expired to the same retry copy as network', () => {
+  expect(
+    videoDownloadFailureCopy(VIDEO_DOWNLOAD_FAILURE_REASON.UrlExpired),
+  ).toEqual({
+    copy: 'The download failed. Try again.',
+    action: 'Download',
   })
+})
 
-  it('maps url_expired to the same retry copy as network', () => {
-    expect(
-      videoDownloadFailureCopy(VIDEO_DOWNLOAD_FAILURE_REASON.UrlExpired),
-    ).toEqual({
-      copy: 'The download failed. Try again.',
-      action: 'Download',
-    })
-  })
-
-  it('maps unavailable to no action', () => {
-    expect(
-      videoDownloadFailureCopy(VIDEO_DOWNLOAD_FAILURE_REASON.Unavailable),
-    ).toEqual({
-      copy: 'This video is no longer available.',
-      action: null,
-    })
+it('maps unavailable to no action', () => {
+  expect(
+    videoDownloadFailureCopy(VIDEO_DOWNLOAD_FAILURE_REASON.Unavailable),
+  ).toEqual({
+    copy: 'This video is no longer available.',
+    action: null,
   })
 })

@@ -1,4 +1,4 @@
-// Immersive Video catalog and headset-written Library Mirror.
+// Immersive Video catalog and the console-written Library Mirror.
 
 enum ImmersiveVideoActivity {
   CYCLING
@@ -29,7 +29,6 @@ enum DeviceVideoFailureReason {
   insufficient_storage
   network
   checksum_mismatch
-  cancelled
   url_expired
   unavailable
 }
@@ -42,7 +41,6 @@ model ImmersiveVideo {
   state       ImmersiveVideoCatalogState  @default(Draft)
   priorState  ImmersiveVideoCatalogState?
 
-  version      Int     @default(0)
   objectKey    String? @unique
   sizeBytes    BigInt?
   checksum     String?
@@ -66,14 +64,15 @@ model ImmersiveVideo {
 }
 
 /// Header of one headset's Library Mirror, written by the console from the
-/// headset's socket events (ADR 0013). Keyed by Headset Identity
-/// (`Device.deviceId`), not `Device.id`, and has no FK to Device: re-pairing
-/// must not move or clear the rows, and the retention job owns deletion.
-/// `freeBytes` is null until the headset has reported Library State once.
+/// headset's socket events. Keyed by Headset Identity (`Device.deviceId`),
+/// not `Device.id`, and has no FK to Device: re-pairing must not move or
+/// clear the rows, and the retention job owns deletion. `freeBytes` and
+/// `reportedAt` are null until the headset itself has reported once; a
+/// Download Request alone creates the row without either.
 model DeviceVideoReport {
-  deviceId   String   @id
+  deviceId   String    @id
   freeBytes  BigInt?
-  reportedAt DateTime @db.Timestamp(6)
+  reportedAt DateTime? @db.Timestamp(6)
 
   videos DeviceVideo[]
 }
@@ -84,7 +83,6 @@ model DeviceVideo {
   deviceId        String
   videoId         String
   status          DeviceVideoStatus
-  version         Int?
   bytesDownloaded BigInt?
   sizeBytes       BigInt?
   reason          DeviceVideoFailureReason?
@@ -92,5 +90,5 @@ model DeviceVideo {
   report DeviceVideoReport @relation(fields: [deviceId], references: [deviceId], onDelete: Cascade)
 
   @@id([deviceId, videoId])
-  @@index([videoId, version])
+  @@index([videoId])
 }

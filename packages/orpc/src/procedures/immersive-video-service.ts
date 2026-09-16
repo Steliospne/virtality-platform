@@ -66,7 +66,6 @@ export function toImmersiveVideoAdminRow(
     activity: row.activity,
     description: row.description,
     state: row.state,
-    version: row.version,
     sizeBytes: toSizeBytesNumber(row.sizeBytes),
     durationSec: row.durationSec,
     thumbnailUrl: row.thumbnailKey ? bucketCdnUrl(row.thumbnailKey) : null,
@@ -135,7 +134,6 @@ export type ImmersiveVideoConsoleListItem = {
   description: string | null
   durationSec: number | null
   sizeBytes: number
-  version: number
   thumbnailUrl: string | null
 }
 
@@ -154,7 +152,6 @@ export async function listPublishedImmersiveVideos(
     description: row.description,
     durationSec: row.durationSec,
     sizeBytes: toSizeBytesNumber(row.sizeBytes) ?? 0,
-    version: row.version,
     thumbnailUrl: row.thumbnailKey ? bucketCdnUrl(row.thumbnailKey) : null,
   }))
 }
@@ -332,7 +329,7 @@ async function resolveUploadVideoId(
   if (!isValidImmersiveVideoId(videoId)) {
     throw new ImmersiveVideoError('INVALID_VIDEO_ID')
   }
-  if (row.version > 0 || row.objectKey) {
+  if (row.objectKey) {
     throw new ImmersiveVideoError('VIDEO_ID_LOCKED')
   }
   const taken = await prisma.immersiveVideo.findUnique({
@@ -610,7 +607,6 @@ export async function runImmersiveVideoVerify(
       checksum,
       filename: row.uploadFilename,
       durationSec: row.uploadDurationSec,
-      version: row.version + 1,
       state: restoreState,
       priorState: null,
       ...UPLOAD_CLEAR,

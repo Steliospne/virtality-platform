@@ -1,22 +1,24 @@
 import type { DeviceVideoFailureReason, DeviceVideoStatus } from '@virtality/db'
 
 /**
- * Library Mirror writer (ADR 0013). The console is the only writer: it turns
- * the headset's socket events into rows, and records the physio's Download
+ * Library Mirror writer. The console is the only writer: it turns the
+ * headset's socket events into rows, and records the physio's Download
  * Request as `requested` before the headset has said anything.
  *
  * Two rules keep the mirror honest:
  * - `videoLibraryState` is a full replace, except that `requested` rows the
  *   headset does not mention survive: the headset cannot report an intent it
  *   never received.
- * - Every other event patches exactly one row; a `cancelled` failure removes
- *   it, because an absent video is "no row".
+ * - Every other event patches exactly one row. An absent video is "no row":
+ *   a cancel or delete the headset acknowledged removes it.
+ * - `reportedAt` is stamped only by headset-derived writes; a Download
+ *   Request alone leaves it null, so the offline view never dates a report
+ *   the headset did not make.
  */
 
 export type DeviceVideoEntryInput = {
   videoId: string
   status: Exclude<DeviceVideoStatus, 'requested'>
-  version?: number
   bytesDownloaded?: number
   sizeBytes?: number
   reason?: DeviceVideoFailureReason
@@ -36,7 +38,6 @@ type DeviceVideoRow = {
   deviceId: string
   videoId: string
   status: DeviceVideoStatus
-  version: number | null
   bytesDownloaded: bigint | null
   sizeBytes: bigint | null
   reason: DeviceVideoFailureReason | null
@@ -46,8 +47,12 @@ export type MirrorPrisma = {
   deviceVideoReport: {
     upsert: (args: {
       where: { deviceId: string }
-      create: { deviceId: string; freeBytes: bigint | null; reportedAt: Date }
-      update: { freeBytes?: bigint; reportedAt: Date }
+      create: {
+        deviceId: string
+        freeBytes: bigint | null
+        reportedAt: Date | null
+      }
+      update: { freeBytes?: bigint; reportedAt?: Date }
     }) => Promise<unknown>
   }
   deviceVideo: {
@@ -79,14 +84,14 @@ function toOptionalBigInt(value: number | undefined): bigint | null {
 }
 
 function toRow(deviceId: string, entry: DeviceVideoEntryInput): DeviceVideoRow {
+  const ready = entry.status === 'ready'
   return {
     deviceId,
     videoId: entry.videoId,
     status: entry.status,
-    version: entry.version ?? null,
-    bytesDownloaded: toOptionalBigInt(entry.bytesDownloaded),
-    sizeBytes: toOptionalBigInt(entry.sizeBytes),
-    reason: entry.reason ?? null,
+    bytesDownloaded: ready ? null : toOptionalBigInt(entry.bytesDownloaded),
+    sizeBytes: ready ? null : toOptionalBigInt(entry.sizeBytes),
+    reason: ready ? null : (entry.reason ?? null),
   }
 }
 
@@ -104,18 +109,26 @@ async function touchReport(
 }
 
 /**
- * A field the event or report does not carry keeps its stored value
- * (`videoDownloadComplete` has no bytes or version; a `videoLibraryState`
- * entry may be just `videoId` + `status`); `reason` belongs to `failed` alone and is cleared
- * by any other status.
+ * A byte field the event or report does not carry keeps its stored value
+ * while the download is in flight (a `videoLibraryState` entry may be just
+ * `videoId` + `status`). A `ready` row drops both: the file is whole, and
+ * the headset's final counter is an estimate. `reason` belongs to `failed`
+ * alone and is cleared by any other status.
  */
 function toPatch(
   entry: DeviceVideoEntryInput,
 ): Partial<Omit<DeviceVideoRow, 'deviceId' | 'videoId'>> {
+  if (entry.status === 'ready') {
+    return {
+      status: entry.status,
+      reason: null,
+      bytesDownloaded: null,
+      sizeBytes: null,
+    }
+  }
   return {
     status: entry.status,
     reason: entry.reason ?? null,
-    ...(entry.version != null && { version: entry.version }),
     ...(entry.bytesDownloaded != null && {
       bytesDownloaded: toOptionalBigInt(entry.bytesDownloaded),
     }),
@@ -127,8 +140,8 @@ function toPatch(
 
 /**
  * Full replace from `videoLibraryState`: the set of rows becomes what the
- * headset listed, but a listed video keeps the bytes, size and version the
- * report leaves out. Unmentioned `requested` rows survive.
+ * headset listed, but an in-flight video keeps the byte counts the report
+ * leaves out. Unmentioned `requested` rows survive.
  */
 export async function replaceDeviceVideoLibraryState(
   prisma: MirrorPrisma,
@@ -172,18 +185,21 @@ export async function requestDeviceVideoDownload(
   prisma: MirrorPrisma,
   input: { deviceId: string; videoId: string },
 ): Promise<void> {
-  const reportedAt = new Date()
   const row: DeviceVideoRow = {
     deviceId: input.deviceId,
     videoId: input.videoId,
     status: 'requested',
-    version: null,
     bytesDownloaded: null,
     sizeBytes: null,
     reason: null,
   }
   await prisma.$transaction(async (tx) => {
-    await touchReport(tx, input.deviceId, reportedAt)
+    // The headset has not spoken: create the header undated, leave one alone.
+    await tx.deviceVideoReport.upsert({
+      where: { deviceId: input.deviceId },
+      create: { deviceId: input.deviceId, freeBytes: null, reportedAt: null },
+      update: {},
+    })
     const where = {
       deviceId_videoId: { deviceId: input.deviceId, videoId: input.videoId },
     }
@@ -204,12 +220,6 @@ export async function applyDeviceVideoEvent(
   const { deviceId, ...entry } = input
   await prisma.$transaction(async (tx) => {
     await touchReport(tx, deviceId, reportedAt)
-    if (entry.status === 'failed' && entry.reason === 'cancelled') {
-      await tx.deviceVideo.deleteMany({
-        where: { deviceId, videoId: entry.videoId },
-      })
-      return
-    }
     await tx.deviceVideo.upsert({
       where: { deviceId_videoId: { deviceId, videoId: entry.videoId } },
       create: toRow(deviceId, entry),
@@ -218,15 +228,15 @@ export async function applyDeviceVideoEvent(
   })
 }
 
-/** `videoDelete` acknowledged, or the physio withdrew a `requested` download. */
+/**
+ * `videoDelete` / `videoDownloadCancel` acknowledged, or the physio withdrew a
+ * `requested` download. Deletes the row only; the header keeps its date.
+ */
 export async function removeDeviceVideo(
   prisma: MirrorPrisma,
   input: { deviceId: string; videoId: string },
 ): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    await touchReport(tx, input.deviceId, new Date())
-    await tx.deviceVideo.deleteMany({
-      where: { deviceId: input.deviceId, videoId: input.videoId },
-    })
+  await prisma.deviceVideo.deleteMany({
+    where: { deviceId: input.deviceId, videoId: input.videoId },
   })
 }

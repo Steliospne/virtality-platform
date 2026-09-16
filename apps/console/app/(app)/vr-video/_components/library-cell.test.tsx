@@ -26,24 +26,6 @@ describe('needsStorageWarning', () => {
 })
 
 describe('LibraryCell', () => {
-  it('offers Delete next to Update when a newer version exists', () => {
-    render(
-      <LibraryCell
-        cell={{ type: 'update-available' }}
-        roomComplete={true}
-        frozen={false}
-        sizeBytes={1_000_000}
-        freeBytes={10_000_000}
-        {...absentHandlers}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete from headset' }))
-
-    expect(absentHandlers.onDelete).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: 'Update' })).toBeEnabled()
-  })
-
   it('disables download when the room is not complete', () => {
     render(
       <LibraryCell

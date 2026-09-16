@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyDownloadComplete,
-  applyDownloadFailed,
   applyDownloadProgress,
   clampBytesDownloaded,
   normalizeLiveLibraryState,
@@ -33,31 +32,29 @@ describe('headset library live updates', () => {
     ])
   })
 
-  it('marks a completed video ready and keeps the version it already had', () => {
+  it('marks a completed video ready and drops its in-flight byte counts', () => {
     const next = applyDownloadComplete(
       {
-        videos: [{ videoId: 'trail', status: 'downloading', version: 4 }],
+        videos: [
+          {
+            videoId: 'trail',
+            status: 'downloading',
+            bytesDownloaded: 39,
+            sizeBytes: 40,
+          },
+        ],
         freeBytes: 9,
       },
       'trail',
     )
 
-    expect(next.videos[0]).toMatchObject({
+    expect(next.videos[0]).toEqual({
+      videoId: 'trail',
       status: 'ready',
-      version: 4,
+      bytesDownloaded: undefined,
+      sizeBytes: undefined,
+      stalled: false,
     })
-  })
-
-  it('drops a cancelled video so the row returns to absent', () => {
-    const next = applyDownloadFailed(
-      {
-        videos: [{ videoId: 'trail', status: 'downloading' }],
-        freeBytes: 9,
-      },
-      { videoId: 'trail', reason: 'cancelled' },
-    )
-
-    expect(next.videos).toEqual([])
   })
 
   it('treats a missing videos field as an empty library', () => {
@@ -71,18 +68,6 @@ describe('headset library live updates', () => {
     expect(normalizeLiveLibraryState({ videos: {}, freeBytes: 12 })).toEqual({
       videos: [],
       freeBytes: 12,
-    })
-  })
-
-  it('reads PascalCase Videos from a Unity-style payload', () => {
-    expect(
-      normalizeLiveLibraryState({
-        Videos: [{ videoId: 'trail', status: 'ready' }],
-        FreeBytes: 4,
-      }),
-    ).toEqual({
-      videos: [{ videoId: 'trail', status: 'ready' }],
-      freeBytes: 4,
     })
   })
 
@@ -154,7 +139,7 @@ describe('resuming unacknowledged download requests', () => {
       freeBytes: 0,
       videos: [
         { videoId: 'trail', status: 'downloading' },
-        { videoId: 'lake', status: 'absent' },
+        { videoId: 'lake', status: 'requested' },
       ],
     }
     expect(

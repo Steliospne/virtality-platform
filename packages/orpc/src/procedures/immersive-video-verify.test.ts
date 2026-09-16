@@ -18,7 +18,6 @@ function verifyingRow(
     description: null,
     state: 'Verifying',
     priorState: 'Draft',
-    version: 0,
     objectKey: null,
     sizeBytes: null,
     checksum: null,
@@ -81,13 +80,11 @@ function createS3(overrides: Partial<ImmersiveVideoS3> = {}): ImmersiveVideoS3 {
 }
 
 describe('immersive video verify', () => {
-  it('promotes upload columns, bumps version 0 to 1, and stores the S3 checksum', async () => {
+  it('promotes upload columns and stores the S3 checksum', async () => {
     const { prisma, state } = createPrisma(verifyingRow())
     const s3 = createS3()
 
     const row = await runImmersiveVideoVerify('video-1', { prisma, s3 })
-
-    expect(row?.version).toBe(1)
     expect(row?.filename).toBe('trail.mp4')
     expect(row?.sizeBytes).toBe(4)
     expect(row?.durationSec).toBe(12)
@@ -101,11 +98,10 @@ describe('immersive video verify', () => {
     expect(s3.deleteObject).not.toHaveBeenCalled()
   })
 
-  it('a republish onto the same key keeps one object and bumps the version', async () => {
+  it('a republish onto the same key keeps one object', async () => {
     const { prisma, state } = createPrisma(
       verifyingRow({
         priorState: 'Published',
-        version: 2,
         objectKey: 'immersive-videos/video-1.mp4',
         sizeBytes: BigInt(8),
         checksum: 'old-sum',
@@ -117,7 +113,6 @@ describe('immersive video verify', () => {
     const row = await runImmersiveVideoVerify('video-1', { prisma, s3 })
 
     expect(row?.state).toBe('Published')
-    expect(row?.version).toBe(3)
     expect(state.row.objectKey).toBe('immersive-videos/video-1.mp4')
     expect(state.row.checksum).toBe('c29tZS1zdW0=-1')
     expect(s3.deleteObject).not.toHaveBeenCalled()
@@ -127,7 +122,6 @@ describe('immersive video verify', () => {
     const { prisma, state } = createPrisma(
       verifyingRow({
         priorState: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         sizeBytes: BigInt(8),
         checksum: 'old-sum',
@@ -201,7 +195,6 @@ describe('immersive video verify', () => {
     const { prisma, state } = createPrisma(
       verifyingRow({
         priorState: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         sizeBytes: BigInt(8),
         checksum: 'live',
@@ -220,7 +213,6 @@ describe('immersive video verify', () => {
 
     expect(row?.state).toBe('Unpublished')
     expect(row?.verifyFailedAt).toBeInstanceOf(Date)
-    expect(state.row.version).toBe(1)
     expect(state.row.objectKey).toBeNull()
     expect(state.row.checksum).toBeNull()
     expect(state.row.filename).toBeNull()
@@ -234,7 +226,6 @@ describe('immersive video verify', () => {
     const { prisma, state } = createPrisma(
       verifyingRow({
         priorState: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         sizeBytes: BigInt(8),
         checksum: 'live',

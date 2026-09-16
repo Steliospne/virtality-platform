@@ -3,10 +3,12 @@ import { findPairedDeviceByHeadsetIdentity } from './device-video-pairing.ts'
 
 const RETENTION_MS = 180 * 24 * 60 * 60 * 1000
 
-/** Nightly Library Mirror retention. Catalog objects need no sweep: one key per video, replaced in place. */
+/** Nightly Library Mirror retention. Catalog objects are swept by nothing here: a republish deletes its predecessor. */
 export type ImmersiveVideoCleanupPrisma = {
   deviceVideoReport: {
-    findMany: () => Promise<Array<{ deviceId: string; reportedAt: Date }>>
+    findMany: () => Promise<
+      Array<{ deviceId: string; reportedAt: Date | null }>
+    >
     delete: (args: { where: { deviceId: string } }) => Promise<unknown>
   }
   device: {
@@ -31,7 +33,12 @@ async function deleteStaleUnpairedReports(input: {
   const reports = await prisma.deviceVideoReport.findMany()
   for (const report of reports) {
     try {
-      if (report.reportedAt.getTime() >= cutoff.getTime()) {
+      // A header the headset never dated only holds stale requests; once
+      // the headset is unpaired it goes with the dated ones.
+      if (
+        report.reportedAt &&
+        report.reportedAt.getTime() >= cutoff.getTime()
+      ) {
         continue
       }
       const paired = await findPairedDeviceByHeadsetIdentity(

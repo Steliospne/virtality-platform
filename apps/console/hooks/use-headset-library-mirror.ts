@@ -22,8 +22,8 @@ import {
 export const PROGRESS_WRITE_INTERVAL_MS = 10_000
 
 /**
- * Writes the Library Mirror from what the console sees on the socket
- * (ADR 0013). Fire-and-forget: the live view never waits on the API, and a
+ * Writes the Library Mirror from what the console sees on the socket.
+ * Fire-and-forget: the live view never waits on the API, and a
  * failed write is repaired by the next full `videoLibraryState`. Every
  * rejected write is logged; only a rejected Download Request is toasted.
  */
@@ -66,13 +66,12 @@ export function useHeadsetLibraryMirror(deviceId: string | null | undefined) {
           deviceId: headsetId,
           freeBytes: state.freeBytes,
           videos: asLibraryVideos(state.videos).flatMap((entry) =>
-            entry.status === 'absent' || entry.status === 'requested'
+            entry.status === 'requested'
               ? []
               : [
                   {
                     videoId: entry.videoId,
                     status: entry.status,
-                    version: entry.version,
                     bytesDownloaded: entry.bytesDownloaded,
                     sizeBytes: entry.sizeBytes,
                     reason: entry.reason,

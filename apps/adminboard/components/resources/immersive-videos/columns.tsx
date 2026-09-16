@@ -92,10 +92,6 @@ export function createImmersiveVideoColumns(
     },
     ...(options.showProgress ? [progressColumn] : []),
     {
-      accessorKey: 'version',
-      header: ({ column }) => <ColumnHeader column={column} title='Version' />,
-    },
-    {
       accessorKey: 'sizeBytes',
       header: ({ column }) => <ColumnHeader column={column} title='Size' />,
       cell: ({ row }) => formatImmersiveVideoSize(row.original.sizeBytes),

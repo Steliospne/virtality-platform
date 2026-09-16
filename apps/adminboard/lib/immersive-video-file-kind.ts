@@ -107,11 +107,8 @@ export function requestedImmersiveVideoId(
 }
 
 export function canChooseImmersiveVideoId(row: {
-  version: number
   filename: string | null
   sizeBytes: number | null
 }): boolean {
-  return (
-    row.version === 0 && !row.filename && !(row.sizeBytes && row.sizeBytes > 0)
-  )
+  return !row.filename && !(row.sizeBytes && row.sizeBytes > 0)
 }

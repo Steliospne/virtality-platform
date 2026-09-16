@@ -11,7 +11,6 @@ const trail: HeadsetCatalogVideo = {
   activity: 'CYCLING',
   durationSec: 90,
   sizeBytes: 2_000_000_000,
-  version: 3,
   thumbnailUrl: 'https://cdn.example/trail.jpg',
 }
 
@@ -26,24 +25,14 @@ function snapshot(
 }
 
 describe('buildHeadsetLibraryRows', () => {
-  it('renders online ready at catalog version as on-headset', () => {
+  it('renders online ready as on-headset', () => {
     const rows = buildHeadsetLibraryRows(
       [trail],
-      snapshot([{ videoId: 'trail', status: 'ready', version: 3 }]),
+      snapshot([{ videoId: 'trail', status: 'ready' }]),
       true,
     )
 
     expect(rows[0].cell).toEqual({ type: 'on-headset' })
-  })
-
-  it('renders online ready at an older version as update-available', () => {
-    const rows = buildHeadsetLibraryRows(
-      [trail],
-      snapshot([{ videoId: 'trail', status: 'ready', version: 2 }]),
-      true,
-    )
-
-    expect(rows[0].cell).toEqual({ type: 'update-available' })
   })
 
   it('renders online downloading with percent and stalled', () => {
@@ -99,16 +88,6 @@ describe('buildHeadsetLibraryRows', () => {
     expect(rows[0].cell).toEqual({ type: 'failed', reason: 'network' })
   })
 
-  it('treats cancelled as absent online', () => {
-    const rows = buildHeadsetLibraryRows(
-      [trail],
-      snapshot([{ videoId: 'trail', status: 'failed', reason: 'cancelled' }]),
-      true,
-    )
-
-    expect(rows[0].cell).toEqual({ type: 'absent' })
-  })
-
   it('renders online missing entries as absent', () => {
     const rows = buildHeadsetLibraryRows([trail], snapshot([]), true)
 
@@ -118,7 +97,7 @@ describe('buildHeadsetLibraryRows', () => {
   it('renders offline ready from the Mirror with reportedAt', () => {
     const rows = buildHeadsetLibraryRows(
       [trail],
-      snapshot([{ videoId: 'trail', status: 'ready', version: 3 }]),
+      snapshot([{ videoId: 'trail', status: 'ready' }]),
       false,
     )
 
@@ -138,8 +117,8 @@ describe('buildHeadsetLibraryRows', () => {
     const rows = buildHeadsetLibraryRows(
       [trail],
       snapshot([
-        { videoId: 'trail', status: 'ready', version: 3 },
-        { videoId: 'gone', status: 'ready', version: 1, sizeBytes: 10 },
+        { videoId: 'trail', status: 'ready' },
+        { videoId: 'gone', status: 'ready', sizeBytes: 10 },
       ]),
       true,
     )

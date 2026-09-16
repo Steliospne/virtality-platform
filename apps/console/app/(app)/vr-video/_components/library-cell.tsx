@@ -64,22 +64,6 @@ export function LibraryCell({
         </div>
       )
       break
-    case 'update-available':
-      content = (
-        <div className='flex items-center gap-2'>
-          <Badge>Update available</Badge>
-          <Button
-            type='button'
-            size='sm'
-            disabled={disabled}
-            onClick={requestDownload}
-          >
-            Update
-          </Button>
-          <DeleteFromHeadsetButton disabled={disabled} onDelete={onDelete} />
-        </div>
-      )
-      break
     case 'downloading':
       content = (
         <LibraryCellDownloading

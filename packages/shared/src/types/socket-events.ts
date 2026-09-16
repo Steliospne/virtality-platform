@@ -338,17 +338,13 @@ export type Room = {
   roleSlots: RoomRoleSlots
 }
 
-export type VideoIdPayload = {
-  videoId: string
-}
-
 /**
- * The headset reads and writes the single-id video events positionally:
- * the `videoId` is the first Socket.IO argument (a bare string), so the
- * headset sees args `[videoId]`. Used by `videoDownloadStart`,
- * `videoDownloadCancel`, `videoDelete`, `videoPlay`, `videoStop`,
- * `videoDownloadAck`, `videoDownloadComplete`, `videoDownloadCancelAck`,
- * `videoDeleteAck`, `videoPlayAck` and `videoStopAck`. Every other video event carries an
+ * Every single-id video event carries the `videoId` as the first Socket.IO
+ * argument, a bare string, so the headset reads it at argument index 0.
+ * Used by `videoDownloadStart`, `videoDownloadPause`, `videoDownloadCancel`,
+ * `videoDelete`, `videoPlay`, `videoStop`, `videoDownloadAck`,
+ * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
+ * `videoPlayAck` and `videoStopAck`. Every other video event carries an
  * object.
  *
  * The headset emits an object payload as the JSON text it serialised
@@ -359,10 +355,10 @@ export type VideoIdPayload = {
  */
 export type VideoIdArgs = [videoId: string]
 
+/** A video the headset does not list is absent; there is no `absent` status. */
 export const VIDEO_DEVICE_STATUS = {
-  Absent: 'absent',
   Downloading: 'downloading',
-  /** Physio paused it. `.part` kept; resumed only by a new `DownloadStart`. */
+  /** Physio paused it; resumed only by a new `DownloadStart`. Not yet sent by the headset. */
   Paused: 'paused',
   Ready: 'ready',
   Failed: 'failed',
@@ -371,12 +367,13 @@ export const VIDEO_DEVICE_STATUS = {
 export type VideoDeviceStatus =
   (typeof VIDEO_DEVICE_STATUS)[keyof typeof VIDEO_DEVICE_STATUS]
 
+/**
+ * The headset lists a ready video as `videoId` + `status` only; the byte
+ * fields are optional and only meaningful while `downloading` or `paused`.
+ */
 export type VideoLibraryEntry = {
   videoId: string
   status: VideoDeviceStatus
-  /** Version of the file on disk. Present when status is `ready`; also for a resumable `.part`. */
-  version?: number
-  /** Present while `downloading` or `paused`. */
   bytesDownloaded?: number
   sizeBytes?: number
   /** Present when status is `failed`. */
@@ -389,12 +386,17 @@ export type VideoLibraryStatePayload = {
   freeBytes: number
 }
 
+/**
+ * `sizeBytes` is the headset's estimate (`bytesDownloaded / PercentComplete`
+ * from Addressables), not the object length; the console takes the real
+ * size from the catalog and uses these only to draw the progress bar.
+ */
 export type VideoDownloadProgressPayload = {
   videoId: string
   bytesDownloaded: number
   sizeBytes: number
-  /** True while the headset is retrying after a lost connection; bytes are not advancing. */
-  stalled: boolean
+  /** True while the headset is retrying after a lost connection. Not yet sent by the headset. */
+  stalled?: boolean
 }
 
 export type VideoDownloadPausedPayload = {
@@ -402,16 +404,14 @@ export type VideoDownloadPausedPayload = {
   bytesDownloaded: number
 }
 
+/** The headset currently reports `unavailable` and `network` only. */
 export const VIDEO_DOWNLOAD_FAILURE_REASON = {
   InsufficientStorage: 'insufficient_storage',
-  /** Non-recoverable transport or I/O error (4xx other than 403/410, disk I/O). Transient loss is retried, not failed. */
+  /** Addressables failed to download the bundle. */
   Network: 'network',
-  /** Bytes received differ from the descriptor's `sizeBytes` (`Content-Length`/`Content-Range` or EOF). No content hash reaches the headset. */
   ChecksumMismatch: 'checksum_mismatch',
-  Cancelled: 'cancelled',
-  /** CDN still answered 403/410 after the headset refreshed the Download Descriptor once. `.part` kept. */
   UrlExpired: 'url_expired',
-  /** The API returned 404 for the descriptor: video unpublished/deleted, or this headset is no longer paired. */
+  /** The `videoId` is not an Addressables key the headset knows. */
   Unavailable: 'unavailable',
 } as const
 
@@ -494,7 +494,7 @@ export type VideoEventPayloads = {
   DownloadProgress: [payload: VideoDownloadProgressPayload]
   DownloadComplete: VideoIdArgs
   DownloadFailed: [payload: VideoDownloadFailedPayload]
-  DownloadPause: [payload: VideoIdPayload]
+  DownloadPause: VideoIdArgs
   DownloadPaused: [payload: VideoDownloadPausedPayload]
   DownloadCancel: VideoIdArgs
   DownloadCancelAck: VideoIdArgs

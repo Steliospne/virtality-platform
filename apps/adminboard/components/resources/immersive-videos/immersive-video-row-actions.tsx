@@ -122,7 +122,6 @@ export function ImmersiveVideoRowActions({
       <ImmersiveVideoReplaceFileDialog
         open={replaceOpen}
         onOpenChange={setReplaceOpen}
-        version={row.version}
         disabled={otherUploadActive}
         disabledReason={handlers.upload.otherRowsDisabledMessage}
         onFile={(picked) =>

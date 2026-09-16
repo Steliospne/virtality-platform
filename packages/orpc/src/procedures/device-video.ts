@@ -26,7 +26,6 @@ const deviceVideoLogger = createAppLogger({
 export type DeviceVideoListItem = {
   videoId: string
   status: DeviceVideoStatus
-  version: number | null
   bytesDownloaded: number | null
   sizeBytes: number | null
   reason: VideoDownloadFailureReason | null
@@ -38,7 +37,8 @@ export type DeviceVideoListForUserResult = {
     name: string
     deviceId: string
     report: null | {
-      reportedAt: string
+      /** Null until the headset itself has reported once. */
+      reportedAt: string | null
       freeBytes: number | null
       videos: DeviceVideoListItem[]
     }
@@ -48,11 +48,10 @@ export type DeviceVideoListForUserResult = {
 type DeviceVideoReportRow = {
   deviceId: string
   freeBytes: bigint | number | null
-  reportedAt: Date
+  reportedAt: Date | null
   videos: Array<{
     videoId: string
     status: DeviceVideoStatus
-    version: number | null
     bytesDownloaded: bigint | number | null
     sizeBytes: bigint | number | null
     reason: VideoDownloadFailureReason | null
@@ -78,12 +77,11 @@ function toListReport(
   }
 
   return {
-    reportedAt: report.reportedAt.toISOString(),
+    reportedAt: report.reportedAt?.toISOString() ?? null,
     freeBytes: toSizeBytesNumber(report.freeBytes),
     videos: report.videos.map((video) => ({
       videoId: video.videoId,
       status: video.status,
-      version: video.version,
       bytesDownloaded: toSizeBytesNumber(video.bytesDownloaded),
       sizeBytes: toSizeBytesNumber(video.sizeBytes),
       reason: video.reason,
@@ -139,7 +137,7 @@ const listForUser = authed
     listDeviceVideosForUser(context.prisma, context.user.id),
   )
 
-// ── Library Mirror writes (console only; ADR 0013) ───────────────────────
+// ── Library Mirror writes (console only) ─────────────────────────────────
 
 const HeadsetIdentitySchema = z.string().trim().min(1).max(128)
 const VideoIdSchema = z.string().min(1)
@@ -152,7 +150,6 @@ const LibraryEntrySchema = z.object({
     VIDEO_DEVICE_STATUS.Ready,
     VIDEO_DEVICE_STATUS.Failed,
   ]),
-  version: z.number().int().nonnegative().optional(),
   bytesDownloaded: z.number().finite().nonnegative().optional(),
   sizeBytes: z.number().finite().nonnegative().optional(),
   reason: z
@@ -160,7 +157,6 @@ const LibraryEntrySchema = z.object({
       VIDEO_DOWNLOAD_FAILURE_REASON.InsufficientStorage,
       VIDEO_DOWNLOAD_FAILURE_REASON.Network,
       VIDEO_DOWNLOAD_FAILURE_REASON.ChecksumMismatch,
-      VIDEO_DOWNLOAD_FAILURE_REASON.Cancelled,
       VIDEO_DOWNLOAD_FAILURE_REASON.UrlExpired,
       VIDEO_DOWNLOAD_FAILURE_REASON.Unavailable,
     ])

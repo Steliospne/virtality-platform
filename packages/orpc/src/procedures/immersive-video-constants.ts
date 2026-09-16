@@ -82,7 +82,6 @@ export type ImmersiveVideoRecord = {
   description: string | null
   state: ImmersiveVideoCatalogState
   priorState: ImmersiveVideoCatalogState | null
-  version: number
   objectKey: string | null
   sizeBytes: bigint | number | null
   checksum: string | null
@@ -106,7 +105,6 @@ export type ImmersiveVideoAdminRow = {
   activity: ImmersiveVideoActivity
   description: string | null
   state: ImmersiveVideoCatalogState
-  version: number
   sizeBytes: number | null
   durationSec: number | null
   thumbnailUrl: string | null

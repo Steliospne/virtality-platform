@@ -25,7 +25,6 @@ const rows: ImmersiveVideoAdminRow[] = [
     state: 'Published',
     filename: 'trail.mp4',
     sizeBytes: 1000,
-    version: 1,
   }),
   fixture({
     id: 'republishing',
@@ -33,7 +32,6 @@ const rows: ImmersiveVideoAdminRow[] = [
     state: 'Republishing',
     filename: 'trail.mp4',
     sizeBytes: 1000,
-    version: 1,
   }),
   fixture({
     id: 'unpublished',
@@ -41,7 +39,6 @@ const rows: ImmersiveVideoAdminRow[] = [
     state: 'Unpublished',
     filename: 'trail.mp4',
     sizeBytes: 1000,
-    version: 1,
   }),
 ]
 
@@ -52,7 +49,6 @@ function fixture(
   return {
     activity: 'CYCLING',
     description: null,
-    version: 0,
     sizeBytes: null,
     durationSec: null,
     thumbnailUrl: null,

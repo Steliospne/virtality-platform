@@ -23,10 +23,6 @@ const FAILURE_COPY: Record<
     copy: 'The file was corrupted in transfer. Try again.',
     action: 'Download (fresh)',
   },
-  cancelled: {
-    copy: null,
-    action: 'Download',
-  },
   url_expired: {
     copy: 'The download failed. Try again.',
     action: 'Download',

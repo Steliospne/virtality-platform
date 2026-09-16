@@ -13,11 +13,10 @@ type DeviceRow = {
 type ReportRow = {
   deviceId: string
   freeBytes: bigint
-  reportedAt: Date
+  reportedAt: Date | null
   videos: Array<{
     videoId: string
     status: 'downloading' | 'paused' | 'ready' | 'failed'
-    version: number | null
     bytesDownloaded: bigint | null
     sizeBytes: bigint | null
     reason: 'network' | null
@@ -131,7 +130,6 @@ describe('deviceVideo.listForUser', () => {
         {
           videoId: 'video-1',
           status: 'ready',
-          version: 2,
           bytesDownloaded: 100n,
           sizeBytes: 100n,
           reason: null,
@@ -161,7 +159,6 @@ describe('deviceVideo.listForUser', () => {
         {
           videoId: 'video-1',
           status: 'ready',
-          version: 2,
           bytesDownloaded: 100,
           sizeBytes: 100,
           reason: null,

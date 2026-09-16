@@ -19,7 +19,6 @@ export type LiveLibraryState = {
 
 const LIBRARY_STATUSES = new Set<LiveLibraryEntry['status']>([
   'requested',
-  'absent',
   'downloading',
   'paused',
   'ready',
@@ -33,28 +32,26 @@ function isLibraryEntry(value: unknown): value is LiveLibraryEntry {
 }
 
 export function asLibraryVideos(videos: unknown): LiveLibraryEntry[] {
-  if (Array.isArray(videos)) {
-    return videos.filter(isLibraryEntry)
-  }
-  if (videos != null && typeof videos === 'object') {
-    return Object.values(videos).filter(isLibraryEntry)
-  }
-  return []
+  return Array.isArray(videos) ? videos.filter(isLibraryEntry) : []
 }
 
+/**
+ * `videoLibraryState` arrives as `{ videos: [{ videoId, status }], freeBytes }`
+ * (camelCase, an array; `subscribe()` has already parsed the JSON text).
+ * Entries with an unknown status are dropped rather than crashing the page.
+ */
 export function normalizeLiveLibraryState(payload: unknown): LiveLibraryState {
   const record =
     payload != null && typeof payload === 'object'
       ? (payload as Record<string, unknown>)
       : {}
-  const freeBytesRaw = record.freeBytes ?? record.FreeBytes
-  const freeBytes =
-    typeof freeBytesRaw === 'number' && Number.isFinite(freeBytesRaw)
-      ? freeBytesRaw
-      : Number(freeBytesRaw)
+  const freeBytes = record.freeBytes
   return {
-    videos: asLibraryVideos(record.videos ?? record.Videos),
-    freeBytes: Number.isFinite(freeBytes) ? freeBytes : 0,
+    videos: asLibraryVideos(record.videos),
+    freeBytes:
+      typeof freeBytes === 'number' && Number.isFinite(freeBytes)
+        ? freeBytes
+        : 0,
   }
 }
 
@@ -77,9 +74,10 @@ export function upsertLibraryEntry(
 }
 
 /**
- * The headset counts progress in a 32-bit integer and wraps past 4 GiB, so a
- * finished file can report `sizeBytes + 2^32`. Never show or store more bytes
- * than the file has; a bogus size (missing or zero) leaves the count alone.
+ * Unity's download counter has been seen wrapping past 4 GiB, and the
+ * headset's `sizeBytes` is an estimate that jitters between ticks. Never show
+ * or store more bytes than the size we compare against; a bogus size
+ * (missing or zero) leaves the count alone.
  */
 export function clampBytesDownloaded(
   bytesDownloaded: number,
@@ -108,8 +106,8 @@ export function applyDownloadProgress(
 }
 
 /**
- * `videoDownloadComplete` carries no version; the row is `ready` at whatever
- * version it already had until the next `videoLibraryState` reports the file.
+ * A finished file is whole by definition; the headset's last byte count is
+ * an estimate and is dropped with the download.
  */
 export function applyDownloadComplete(
   state: LiveLibraryState | VideoLibraryStatePayload | null,
@@ -117,6 +115,8 @@ export function applyDownloadComplete(
 ): LiveLibraryState {
   return upsertLibraryEntry(state, videoId, {
     status: 'ready',
+    bytesDownloaded: undefined,
+    sizeBytes: undefined,
     stalled: false,
   })
 }
@@ -125,15 +125,6 @@ export function applyDownloadFailed(
   state: LiveLibraryState | VideoLibraryStatePayload | null,
   payload: VideoDownloadFailedPayload,
 ): LiveLibraryState {
-  if (payload.reason === 'cancelled') {
-    return {
-      freeBytes: state?.freeBytes ?? 0,
-      videos: asLibraryVideos(state?.videos).filter(
-        (entry) => entry.videoId !== payload.videoId,
-      ),
-    }
-  }
-
   return upsertLibraryEntry(state, payload.videoId, {
     status: 'failed',
     reason: payload.reason,
@@ -202,8 +193,7 @@ export function requestedVideoIds(
  * A `requested` row is a Download Request the headset never acknowledged
  * (it was offline, or the ack was lost). Once the headset reports its
  * library, every such request it does not know about is sent again, once
- * per connection. A video the headset already reports (in any state but
- * `absent`) needs no resend.
+ * per connection. A video the headset already reports needs no resend.
  */
 export function selectDownloadsToResume(input: {
   requested: string[]
@@ -213,9 +203,7 @@ export function selectDownloadsToResume(input: {
   // `requested` in the live state is console-local, not headset knowledge.
   const reported = new Set(
     asLibraryVideos(input.live?.videos)
-      .filter(
-        (entry) => entry.status !== 'absent' && entry.status !== 'requested',
-      )
+      .filter((entry) => entry.status !== 'requested')
       .map((entry) => entry.videoId),
   )
   return input.requested.filter(

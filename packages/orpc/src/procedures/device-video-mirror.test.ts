@@ -10,13 +10,12 @@ import {
 type ReportRow = {
   deviceId: string
   freeBytes: bigint | null
-  reportedAt: Date
+  reportedAt: Date | null
 }
 type VideoRow = {
   deviceId: string
   videoId: string
   status: string
-  version: number | null
   bytesDownloaded: bigint | null
   sizeBytes: bigint | null
   reason: string | null
@@ -89,7 +88,6 @@ function row(
 ): VideoRow {
   return {
     deviceId: 'headset-1',
-    version: null,
     bytesDownloaded: null,
     sizeBytes: null,
     reason: null,
@@ -98,7 +96,7 @@ function row(
 }
 
 describe('requestDeviceVideoDownload', () => {
-  it('creates the report header without free space and a requested row', async () => {
+  it('creates an undated report header without free space and a requested row', async () => {
     const db = createPrisma()
 
     await requestDeviceVideoDownload(db.prisma, {
@@ -107,9 +105,31 @@ describe('requestDeviceVideoDownload', () => {
     })
 
     expect(db.reports.get('headset-1')?.freeBytes).toBeNull()
+    expect(db.reports.get('headset-1')?.reportedAt).toBeNull()
     expect(db.videos()).toEqual([
       row({ videoId: 'cyc_01', status: 'requested' }),
     ])
+  })
+
+  it('leaves the date of a report the headset already made alone', async () => {
+    const db = createPrisma()
+    const reportedAt = new Date('2026-09-01T10:00:00.000Z')
+    db.reports.set('headset-1', {
+      deviceId: 'headset-1',
+      freeBytes: 7n,
+      reportedAt,
+    })
+
+    await requestDeviceVideoDownload(db.prisma, {
+      deviceId: 'headset-1',
+      videoId: 'cyc_01',
+    })
+
+    expect(db.reports.get('headset-1')).toEqual({
+      deviceId: 'headset-1',
+      freeBytes: 7n,
+      reportedAt,
+    })
   })
 
   it('does not downgrade a download the headset already acknowledged', async () => {
@@ -147,7 +167,7 @@ describe('replaceDeviceVideoLibraryState', () => {
   it('replaces reported rows and keeps unmentioned requested rows', async () => {
     const db = createPrisma()
     db.seed([
-      row({ videoId: 'old', status: 'ready', version: 1 }),
+      row({ videoId: 'old', status: 'ready' }),
       row({ videoId: 'pending', status: 'requested' }),
       row({ videoId: 'was-requested', status: 'requested' }),
     ])
@@ -156,7 +176,7 @@ describe('replaceDeviceVideoLibraryState', () => {
       deviceId: 'headset-1',
       freeBytes: 42,
       videos: [
-        { videoId: 'new', status: 'ready', version: 2, sizeBytes: 10 },
+        { videoId: 'new', status: 'ready', sizeBytes: 10 },
         { videoId: 'was-requested', status: 'downloading', bytesDownloaded: 5 },
       ],
     })
@@ -166,7 +186,7 @@ describe('replaceDeviceVideoLibraryState', () => {
     expect(db.videos()).toEqual(
       expect.arrayContaining([
         row({ videoId: 'pending', status: 'requested' }),
-        row({ videoId: 'new', status: 'ready', version: 2, sizeBytes: 10n }),
+        row({ videoId: 'new', status: 'ready' }),
         row({
           videoId: 'was-requested',
           status: 'downloading',
@@ -176,34 +196,51 @@ describe('replaceDeviceVideoLibraryState', () => {
     )
   })
 
-  it('a report that omits bytes and version keeps the stored ones', async () => {
+  it('a report that omits bytes keeps them while the download is in flight', async () => {
     const db = createPrisma()
     db.seed([
       row({
         videoId: 'cyc_01',
         status: 'downloading',
-        version: 2,
-        bytesDownloaded: 9n,
+        bytesDownloaded: 3n,
         sizeBytes: 9n,
       }),
-      row({ videoId: 'cyc_02', status: 'ready', sizeBytes: 4n }),
     ])
 
     await replaceDeviceVideoLibraryState(db.prisma, {
       deviceId: 'headset-1',
       freeBytes: 12,
-      videos: [{ videoId: 'cyc_01', status: 'ready' }],
+      videos: [{ videoId: 'cyc_01', status: 'downloading' }],
     })
 
     expect(db.videos()).toEqual([
       row({
         videoId: 'cyc_01',
-        status: 'ready',
-        version: 2,
+        status: 'downloading',
+        bytesDownloaded: 3n,
+        sizeBytes: 9n,
+      }),
+    ])
+  })
+
+  it('a ready entry drops the byte counts recorded during the download', async () => {
+    const db = createPrisma()
+    db.seed([
+      row({
+        videoId: 'cyc_01',
+        status: 'downloading',
         bytesDownloaded: 9n,
         sizeBytes: 9n,
       }),
     ])
+
+    await replaceDeviceVideoLibraryState(db.prisma, {
+      deviceId: 'headset-1',
+      freeBytes: 12,
+      videos: [{ videoId: 'cyc_01', status: 'ready', bytesDownloaded: 8 }],
+    })
+
+    expect(db.videos()).toEqual([row({ videoId: 'cyc_01', status: 'ready' })])
   })
 
   it('an empty report clears everything but requested rows', async () => {
@@ -244,7 +281,9 @@ describe('applyDeviceVideoEvent', () => {
     })
 
     expect(db.reports.get('headset-1')?.freeBytes).toBe(7n)
-    expect(db.reports.get('headset-1')?.reportedAt.getTime()).toBeGreaterThan(0)
+    expect(db.reports.get('headset-1')?.reportedAt?.getTime()).toBeGreaterThan(
+      0,
+    )
     expect(db.videos()).toEqual([
       row({
         videoId: 'cyc_01',
@@ -255,14 +294,13 @@ describe('applyDeviceVideoEvent', () => {
     ])
   })
 
-  it('a complete event keeps the bytes and size it does not carry', async () => {
+  it('a complete event clears the in-flight byte counts', async () => {
     const db = createPrisma()
     db.seed([
       row({
         videoId: 'cyc_01',
         status: 'downloading',
-        version: 2,
-        bytesDownloaded: 9n,
+        bytesDownloaded: 8n,
         sizeBytes: 9n,
       }),
     ])
@@ -273,15 +311,7 @@ describe('applyDeviceVideoEvent', () => {
       status: 'ready',
     })
 
-    expect(db.videos()).toEqual([
-      row({
-        videoId: 'cyc_01',
-        status: 'ready',
-        version: 2,
-        bytesDownloaded: 9n,
-        sizeBytes: 9n,
-      }),
-    ])
+    expect(db.videos()).toEqual([row({ videoId: 'cyc_01', status: 'ready' })])
   })
 
   it('a retry clears the failure reason', async () => {
@@ -298,23 +328,6 @@ describe('applyDeviceVideoEvent', () => {
     expect(db.videos()).toEqual([
       row({ videoId: 'cyc_01', status: 'downloading', bytesDownloaded: 0n }),
     ])
-  })
-
-  it('a cancelled failure removes the row', async () => {
-    const db = createPrisma()
-    db.seed([
-      row({ videoId: 'cyc_01', status: 'downloading' }),
-      row({ videoId: 'other', status: 'ready' }),
-    ])
-
-    await applyDeviceVideoEvent(db.prisma, {
-      deviceId: 'headset-1',
-      videoId: 'cyc_01',
-      status: 'failed',
-      reason: 'cancelled',
-    })
-
-    expect(db.videos()).toEqual([row({ videoId: 'other', status: 'ready' })])
   })
 })
 

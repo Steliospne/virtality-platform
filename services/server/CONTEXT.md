@@ -9,7 +9,7 @@ A short-lived request by an authenticated user to set or change their password t
 _Avoid_: Password reset, immediate password change, password update
 
 **Library Mirror**:
-The Postgres cache of one headset's **Library State** (`DeviceVideoReport` + `DeviceVideo` rows), keyed by **Headset Identity**, written by the console from the headset's socket events and read by the console when that headset is offline. It also holds the physio's pending **Download Request** rows (`requested`), which the headset never reports. The headset never writes it.
+The Postgres cache of one headset's **Library State** (`DeviceVideoReport` + `DeviceVideo` rows), keyed by **Headset Identity**, written by the console from the headset's socket events and read by the console when that headset is offline. It also holds the physio's pending **Download Request** rows (`requested`), which the headset never reports. The headset never writes it, and its header is undated until the headset has reported once.
 _Avoid_: Mirror (as the term), device library table, server-owned library
 
 ## Relationships

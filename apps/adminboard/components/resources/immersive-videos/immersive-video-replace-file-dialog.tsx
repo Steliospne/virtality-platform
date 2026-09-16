@@ -15,14 +15,12 @@ import type { ImmersiveVideoPickedFile } from '@/components/resources/immersive-
 export function ImmersiveVideoReplaceFileDialog({
   open,
   onOpenChange,
-  version,
   disabled,
   disabledReason,
   onFile,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  version: number
   disabled?: boolean
   disabledReason?: string
   onFile: (picked: ImmersiveVideoPickedFile) => void
@@ -33,9 +31,9 @@ export function ImmersiveVideoReplaceFileDialog({
         <DialogHeader>
           <DialogTitle>Replace file</DialogTitle>
           <DialogDescription>
-            Headsets that already have version {version} keep playing it.
-            They'll see an update available for version {version + 1} once this
-            upload finishes.
+            The new file replaces the current one once the upload finishes.
+            Headsets that already downloaded this video keep the copy they have
+            until the VR app refreshes its catalog.
           </DialogDescription>
         </DialogHeader>
         {disabled ? (

@@ -7,14 +7,12 @@ export type HeadsetCatalogVideo = {
   activity: 'CYCLING' | 'WALKING'
   durationSec: number | null
   sizeBytes: number
-  version: number
   thumbnailUrl: string | null
 }
 
 export type HeadsetLibraryEntry = {
   videoId: string
-  status: 'requested' | 'downloading' | 'paused' | 'ready' | 'failed' | 'absent'
-  version?: number | null
+  status: 'requested' | 'downloading' | 'paused' | 'ready' | 'failed'
   bytesDownloaded?: number | null
   sizeBytes?: number | null
   reason?: VideoDownloadFailureReason | null
@@ -24,12 +22,12 @@ export type HeadsetLibraryEntry = {
 export type HeadsetLibrarySnapshot = {
   videos: HeadsetLibraryEntry[]
   freeBytes: number | null
-  reportedAt?: string
+  /** When the headset last reported; absent until it has. */
+  reportedAt?: string | null
 }
 
 export type HeadsetLibraryCell =
   | { type: 'on-headset' }
-  | { type: 'update-available' }
   | {
       type: 'downloading'
       percent: number
@@ -44,7 +42,7 @@ export type HeadsetLibraryCell =
   | { type: 'absent' }
   | { type: 'requested' }
   | { type: 'offline-requested' }
-  | { type: 'offline-on-headset'; reportedAt?: string }
+  | { type: 'offline-on-headset'; reportedAt?: string | null }
   | { type: 'offline-absent' }
   | { type: 'not-in-catalog' }
   | {
@@ -65,7 +63,6 @@ export type HeadsetLibraryRow = {
   activity: HeadsetCatalogVideo['activity'] | null
   durationSec: number | null
   sizeBytes: number
-  version: number | null
   thumbnailUrl: string | null
   inCatalog: boolean
   cell: HeadsetLibraryCell
@@ -125,30 +122,21 @@ function pausedCell(
   }
 }
 
-function isCancelledOrAbsent(entry: HeadsetLibraryEntry): boolean {
-  return (
-    entry.status === 'absent' ||
-    (entry.status === 'failed' && entry.reason === 'cancelled')
-  )
-}
-
+/** No row is "absent": the headset lists only videos it holds. */
 function cellForCatalogEntry(
   entry: HeadsetLibraryEntry | undefined,
   catalog: HeadsetCatalogVideo,
   online: boolean,
-  reportedAt: string | undefined,
+  reportedAt: string | null | undefined,
 ): HeadsetLibraryCell {
-  if (!entry || isCancelledOrAbsent(entry)) {
+  if (!entry) {
     return online ? { type: 'absent' } : { type: 'offline-absent' }
   }
 
   switch (entry.status) {
-    case 'ready': {
-      const needsUpdate = (entry.version ?? 0) < catalog.version
-      if (online && needsUpdate) return { type: 'update-available' }
+    case 'ready':
       if (online) return { type: 'on-headset' }
       return { type: 'offline-on-headset', reportedAt }
-    }
     case 'downloading':
       return downloadingCell(entry, catalog.sizeBytes, online)
     case 'paused':
@@ -159,8 +147,6 @@ function cellForCatalogEntry(
         : { type: 'offline-failed', reason: entry.reason ?? 'network' }
     case 'requested':
       return online ? { type: 'requested' } : { type: 'offline-requested' }
-    case 'absent':
-      return online ? { type: 'absent' } : { type: 'offline-absent' }
   }
 }
 
@@ -179,7 +165,6 @@ export function buildHeadsetLibraryRows(
     activity: video.activity,
     durationSec: video.durationSec,
     sizeBytes: video.sizeBytes,
-    version: video.version,
     thumbnailUrl: video.thumbnailUrl,
     inCatalog: true,
     cell: cellForCatalogEntry(entries.get(video.id), video, online, reportedAt),
@@ -194,7 +179,6 @@ export function buildHeadsetLibraryRows(
       activity: null,
       durationSec: null,
       sizeBytes: entry.sizeBytes ?? 0,
-      version: entry.version ?? null,
       thumbnailUrl: null,
       inCatalog: false,
       cell: { type: 'not-in-catalog' },

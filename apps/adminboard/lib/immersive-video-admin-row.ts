@@ -14,7 +14,6 @@ export type ImmersiveVideoAdminRow = {
   activity: ImmersiveVideoActivity
   description: string | null
   state: ImmersiveVideoCatalogState
-  version: number
   sizeBytes: number | null
   durationSec: number | null
   thumbnailUrl: string | null

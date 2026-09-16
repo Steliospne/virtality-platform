@@ -26,7 +26,6 @@ function baseRow(
     description: null,
     state: 'Draft',
     priorState: null,
-    version: 0,
     objectKey: null,
     sizeBytes: null,
     checksum: null,
@@ -203,7 +202,6 @@ describe('immersive video catalog', () => {
       baseRow({
         title: 'Trail',
         state: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         checksum: 'abc',
         filename: 'trail.mp4',
@@ -352,7 +350,6 @@ describe('immersive video catalog', () => {
     const { prisma } = createPrisma(
       baseRow({
         state: 'Unpublished',
-        version: 1,
         objectKey: 'immersive-videos/video-1.bundle',
       }),
     )
@@ -411,7 +408,6 @@ describe('immersive video catalog', () => {
       baseRow({
         state: 'Republishing',
         priorState: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         uploadId: 'upload-1',
         uploadObjectKey: 'immersive-videos/video-1.mp4',
@@ -435,7 +431,6 @@ describe('immersive video catalog', () => {
       key: 'immersive-videos/video-1.mp4',
     })
     expect(row.state).toBe('Published')
-    expect(row.version).toBe(2)
     expect(state.row.checksum).toBe('composite-sum')
     // The dead UploadId is gone (S3 answers NoSuchUpload once Complete
     // succeeds), so abort/status/complete cannot route at it again.
@@ -481,7 +476,6 @@ describe('immersive video catalog', () => {
       baseRow({
         state: 'Republishing',
         priorState: 'Published',
-        version: 1,
         objectKey: 'immersive-videos/video-1.mp4',
         uploadId: 'upload-1',
         uploadObjectKey: 'immersive-videos/video-1.mp4',
@@ -553,14 +547,13 @@ function createListPrisma(rows: ImmersiveVideoRecord[]) {
 }
 
 describe('immersiveVideo.list', () => {
-  it('returns Published and Republishing at live version, omitting other states', async () => {
+  it('returns Published and Republishing, omitting other states', async () => {
     const videos = await listPublishedImmersiveVideos(
       createListPrisma([
         baseRow({
           id: 'draft',
           title: 'Draft trail',
           state: 'Draft',
-          version: 1,
           sizeBytes: 1n,
         }),
         baseRow({
@@ -577,7 +570,6 @@ describe('immersiveVideo.list', () => {
           id: 'unpublished',
           title: 'Unpublished',
           state: 'Unpublished',
-          version: 3,
         }),
         baseRow({
           id: 'pub',
@@ -586,7 +578,6 @@ describe('immersiveVideo.list', () => {
           description: 'A walk',
           durationSec: 90,
           state: 'Published',
-          version: 2,
           sizeBytes: 1_024n,
           objectKey: 'immersive-videos/pub.mp4',
           checksum: 'secret',
@@ -597,7 +588,6 @@ describe('immersiveVideo.list', () => {
           title: 'Alpha loop',
           activity: 'CYCLING',
           state: 'Republishing',
-          version: 4,
           sizeBytes: 2_048n,
           objectKey: 'immersive-videos/repub.mp4',
           checksum: 'live-sum',
@@ -616,13 +606,11 @@ describe('immersiveVideo.list', () => {
       description: null,
       durationSec: null,
       sizeBytes: 2048,
-      version: 4,
       thumbnailUrl:
         'https://cdn.virtality.app/immersive-videos/repub/thumb.jpg',
     })
     expect(videos[1]).toMatchObject({
       id: 'pub',
-      version: 2,
       sizeBytes: 1024,
       thumbnailUrl: 'https://cdn.virtality.app/immersive-videos/pub/thumb.jpg',
     })
