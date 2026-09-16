@@ -41,7 +41,31 @@ describe('LibraryCell', () => {
     expect(screen.getByRole('button', { name: /Download/ })).toBeDisabled()
   })
 
-  it('opens a storage warning when the video is larger than free space', () => {
+  it('shows the preparation steps before starting a download', () => {
+    render(
+      <LibraryCell
+        cell={{ type: 'absent' }}
+        roomComplete={true}
+        frozen={false}
+        sizeBytes={1_000_000}
+        freeBytes={10_000_000}
+        {...absentHandlers}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Download/ }))
+
+    expect(screen.getByText('Before you download')).toBeInTheDocument()
+    expect(screen.getByText('Keep the headset charging')).toBeInTheDocument()
+    expect(screen.getByText('Set sleep mode to 4 hours')).toBeInTheDocument()
+    expect(absentHandlers.onDownload).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start download' }))
+
+    expect(absentHandlers.onDownload).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens a storage warning after the steps when the video is larger than free space', () => {
     render(
       <LibraryCell
         cell={{ type: 'absent' }}
@@ -54,6 +78,7 @@ describe('LibraryCell', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: /Download/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start download' }))
 
     expect(
       screen.getByText(
@@ -62,4 +87,5 @@ describe('LibraryCell', () => {
     ).toBeInTheDocument()
     expect(absentHandlers.onDownload).not.toHaveBeenCalled()
   })
+
 })

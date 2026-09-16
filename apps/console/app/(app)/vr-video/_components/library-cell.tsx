@@ -11,6 +11,7 @@ import {
 } from '@/lib/headset-library-format'
 import type { HeadsetLibraryCell } from '@/lib/headset-library-rows'
 import { DeleteFromHeadsetButton } from './delete-from-headset-button'
+import { DownloadPrepDialog } from './download-prep-dialog'
 import { FailedLibraryCell } from './failed-library-cell'
 import { LibraryCellCancelButton } from './library-cell-cancel-button'
 import { LibraryCellDownloading } from './library-cell-downloading'
@@ -42,11 +43,17 @@ export function LibraryCell({
   onCancel: () => void
   onDelete: () => void
 }) {
+  const [prepOpen, setPrepOpen] = useState(false)
   const [warningOpen, setWarningOpen] = useState(false)
   const disabled = !roomComplete || frozen
 
   const requestDownload = () => {
     if (disabled) return
+    setPrepOpen(true)
+  }
+
+  const confirmPrep = () => {
+    setPrepOpen(false)
     if (needsStorageWarning(sizeBytes, freeBytes)) {
       setWarningOpen(true)
       return
@@ -174,6 +181,11 @@ export function LibraryCell({
   return (
     <div className='flex flex-col items-end gap-1'>
       {content}
+      <DownloadPrepDialog
+        open={prepOpen}
+        onCancel={() => setPrepOpen(false)}
+        onConfirm={confirmPrep}
+      />
       <StorageWarningDialog
         open={warningOpen}
         description={storageWarningCopy(
