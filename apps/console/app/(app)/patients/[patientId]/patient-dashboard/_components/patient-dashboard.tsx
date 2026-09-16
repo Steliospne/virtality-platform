@@ -16,9 +16,7 @@ import { trackAnalyticsEvent } from '@/lib/analytics-contract'
 import useNow from '@/hooks/use-now'
 import { CastingPanel } from '@/components/ui/casting-panel'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
-import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 import { ImmersiveVideoPanel } from './immersive-video-panel'
-import { VideoActiveBanner } from './video-active-banner'
 import { PatientDashboardVideoDialogs } from './patient-dashboard-video-dialogs'
 import {
   dashboardCastingClassName,
@@ -35,9 +33,7 @@ const PatientDashboard = () => {
   const { canLaunchVr } = useLiveEntitlementStanding()
   const showExpiredBanner = !canLaunchVr
   const { state } = usePatientDashboard()
-  const { videoActive } = useImmersiveVideoSession()
   const isImmersive = state.selectedMode === 'immersive'
-  const showVideoBanner = videoActive && !isImmersive
   const gridFlags = {
     showExpiredBanner,
     showCasting,
@@ -61,7 +57,6 @@ const PatientDashboard = () => {
           )}
         >
           <VrAccessExpiredBanner />
-          {showVideoBanner ? <VideoActiveBanner /> : null}
           <div className='bg-card rounded-xl border p-4 shadow'>
             <ControlPanel
               showCasting={showCasting}

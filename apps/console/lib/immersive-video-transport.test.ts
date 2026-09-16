@@ -41,7 +41,7 @@ describe('resolveImmersivePlayPauseControl', () => {
         commandsEnabled: true,
         readySelected: true,
       }),
-    ).toEqual({ icon: 'play', disabled: false, action: 'resume' })
+    ).toEqual({ icon: 'play', disabled: false, action: 'pause' })
   })
 
   it('disables the control while Starting', () => {

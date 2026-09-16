@@ -50,7 +50,6 @@ const ControlPanel = ({
     selectedDevice,
     missingSettings,
     GuardDialog,
-    isStartBlockedByVideo,
   } = useControlPanel()
   const { playback, frozen } = useImmersiveVideoSession()
   const isImmersive = selectedMode === 'immersive'
@@ -76,9 +75,7 @@ const ControlPanel = ({
             isProgramInactive={isProgramInactive}
             isProgramActive={isProgramActive}
             isProgramLaunching={isProgramLaunching}
-            treatmentLaunchReady={
-              treatmentLaunchReady && !isStartBlockedByVideo && !frozen
-            }
+            treatmentLaunchReady={treatmentLaunchReady && !frozen}
             programStart={programStart}
             programEnd={programEnd}
             handleWarmupStart={handleWarmupStart}

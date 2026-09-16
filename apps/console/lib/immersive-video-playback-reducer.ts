@@ -4,7 +4,6 @@ import type { HeadsetDidNotConfirmReason } from './headset-did-not-confirm'
 export const PLAY_ACK_TIMEOUT_MS = 5_000
 export const REATTACH_WAIT_MS = 2_000
 export const RECENTER_HINT_MS = 1_000
-export const VIDEO_ACTIVE_WINDOW_MS = 3_000
 
 export type ImmersivePlaybackStatus = 'Idle' | 'Starting' | 'Playing' | 'Paused'
 
@@ -31,13 +30,11 @@ export type ImmersivePlaybackAction =
   | { type: 'roomComplete' }
   | { type: 'reattachTimeout' }
   | { type: 'progress'; payload: VideoPlaybackProgressPayload; now: number }
-  | { type: 'pause' }
-  | { type: 'resume' }
+  | { type: 'pauseToggle' }
   | { type: 'ended' }
   | { type: 'stopAck'; videoId: string }
   | { type: 'recenter'; now: number }
   | { type: 'dismissConfirm' }
-  | { type: 'enterImmersive'; now: number }
 
 export const initialImmersivePlaybackState: ImmersivePlaybackState = {
   status: 'Idle',
@@ -175,12 +172,11 @@ export function reduceImmersivePlayback(
       }
       return next
     }
-    case 'pause':
-      if (state.status !== 'Playing') return state
-      return { ...state, status: 'Paused' }
-    case 'resume':
-      if (state.status !== 'Paused') return state
-      return { ...state, status: 'Playing' }
+    // One `videoPause` toggles, like the program's pause.
+    case 'pauseToggle':
+      if (state.status === 'Playing') return { ...state, status: 'Paused' }
+      if (state.status === 'Paused') return { ...state, status: 'Playing' }
+      return state
     case 'ended':
       if (!isImmersivePlaybackBlocking(state.status)) return state
       return toIdle(state, {
@@ -203,17 +199,6 @@ export function reduceImmersivePlayback(
       return { ...state, recenterHintUntil: action.now + RECENTER_HINT_MS }
     case 'dismissConfirm':
       return { ...state, confirmReason: null }
-    case 'enterImmersive': {
-      const tick = state.lastProgress
-      if (
-        tick &&
-        state.lastProgressAt != null &&
-        action.now - state.lastProgressAt <= VIDEO_ACTIVE_WINDOW_MS
-      ) {
-        return attachFromProgress(state, tick, action.now)
-      }
-      return state
-    }
     default:
       return state
   }

@@ -21,7 +21,6 @@ import {
 } from '@/lib/patient-dashboard-treatment-launch'
 import { useVrHeadsetPresence } from '@/hooks/use-vr-headset-presence'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
-import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 import {
   resolveCurrentExerciseIndex,
   type SkipDirection,
@@ -59,7 +58,6 @@ const useControlPanel = () => {
 
   const { connected } = useSocketConnection({ device: selectedDevice })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
-  const { videoActive } = useImmersiveVideoSession()
   const { canLaunchVr } = useLiveEntitlementStanding()
   const treatmentLaunchReady = canLaunchTreatment({
     consoleConnected: connected,
@@ -92,10 +90,7 @@ const useControlPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [devices, patientLocalData, lastPairedDeviceId, selectedDevice])
 
-  const isStartBlockedByVideo = videoActive && selectedMode !== 'immersive'
-
   const programStart = () => {
-    if (isStartBlockedByVideo) return
     if (!exercises?.length)
       return ErrorToasty('Please select program or use quick start!')
 
@@ -159,7 +154,6 @@ const useControlPanel = () => {
   }
 
   const handleWarmupStart = () => {
-    if (isStartBlockedByVideo) return
     if (missingSettings)
       return toast.error(
         'You need to select both an avatar and map. Find them in Scene Settings.',
@@ -240,7 +234,6 @@ const useControlPanel = () => {
     defaultExercises,
     selectedDevice,
     missingSettings,
-    isStartBlockedByVideo,
     GuardDialog,
   }
 }

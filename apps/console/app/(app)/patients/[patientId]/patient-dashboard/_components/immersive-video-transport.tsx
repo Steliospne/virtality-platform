@@ -4,6 +4,7 @@ import { Crosshair, PauseCircle, PlayCircle, StopCircle } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 import { isImmersivePickerRowSelectable } from '@/lib/immersive-video-picker'
+import { HEADSET_VIDEO_SUPPORT } from '@/lib/immersive-video-headset-support'
 import {
   isImmersiveRecenterEnabled,
   isImmersiveStopEnabled,
@@ -14,8 +15,7 @@ import {
 export function ImmersiveVideoTransport() {
   const { selectedRow, playback, roomComplete, frozen } =
     useImmersiveVideoSession()
-  const { state, sendPlay, sendPause, sendResume, sendStop, sendRecenter } =
-    playback
+  const { state, sendPlay, sendPause, sendStop, sendRecenter } = playback
   const readySelected =
     selectedRow != null && isImmersivePickerRowSelectable(selectedRow.cell)
   const commandsEnabled = roomComplete && !frozen
@@ -24,6 +24,9 @@ export function ImmersiveVideoTransport() {
     commandsEnabled,
     readySelected,
   })
+  // Until the headset handles `videoPause`, the primary button only plays.
+  const showPlayPause =
+    HEADSET_VIDEO_SUPPORT.playbackPause || playPause.action === 'play'
   const showStop = shouldShowImmersiveStop(state.status)
   const stopEnabled = isImmersiveStopEnabled({
     status: state.status,
@@ -39,28 +42,26 @@ export function ImmersiveVideoTransport() {
       if (selectedRow) sendPlay(selectedRow.videoId)
       return
     }
-    if (playPause.action === 'pause') {
-      sendPause()
-      return
-    }
-    sendResume()
+    sendPause()
   }
 
   return (
     <>
-      <Button
-        variant='primary'
-        size='icon'
-        aria-label={playPause.icon === 'play' ? 'Play' : 'Pause'}
-        disabled={playPause.disabled}
-        onClick={handlePlayPause}
-      >
-        {playPause.icon === 'play' ? (
-          <PlayCircle className='size-6' />
-        ) : (
-          <PauseCircle className='size-6' />
-        )}
-      </Button>
+      {showPlayPause ? (
+        <Button
+          variant='primary'
+          size='icon'
+          aria-label={playPause.icon === 'play' ? 'Play' : 'Pause'}
+          disabled={playPause.disabled}
+          onClick={handlePlayPause}
+        >
+          {playPause.icon === 'play' ? (
+            <PlayCircle className='size-6' />
+          ) : (
+            <PauseCircle className='size-6' />
+          )}
+        </Button>
+      ) : null}
       {showStop ? (
         <Button
           size='icon'
@@ -72,15 +73,17 @@ export function ImmersiveVideoTransport() {
           <StopCircle className='size-6' />
         </Button>
       ) : null}
-      <Button
-        variant='outline'
-        size='icon'
-        aria-label='Recenter'
-        disabled={!recenterEnabled}
-        onClick={sendRecenter}
-      >
-        <Crosshair className='size-6' />
-      </Button>
+      {HEADSET_VIDEO_SUPPORT.recenter ? (
+        <Button
+          variant='outline'
+          size='icon'
+          aria-label='Recenter'
+          disabled={!recenterEnabled}
+          onClick={sendRecenter}
+        >
+          <Crosshair className='size-6' />
+        </Button>
+      ) : null}
     </>
   )
 }

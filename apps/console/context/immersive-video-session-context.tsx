@@ -16,8 +16,6 @@ import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { useHeadsetLibrary } from '@/hooks/use-headset-library'
 import { useImmersiveVideoPlayback } from '@/hooks/use-immersive-video-playback'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
-import { isVideoPlaybackActive } from '@/lib/video-playback-active'
-import { isImmersivePlaybackBlocking } from '@/lib/immersive-video-playback-reducer'
 import {
   buildHeadsetLibraryRows,
   type HeadsetLibraryRow,
@@ -41,7 +39,6 @@ export type ImmersiveVideoSessionValue = {
   replacementDialogOpen: boolean
   dismissReplacementDialog: () => void
   pollOnline: boolean
-  videoActive: boolean
   frozen: boolean
 }
 
@@ -58,12 +55,20 @@ export function ImmersiveVideoSessionProvider({
   const { connectionError, connectionState } = useSocketConnection({
     device: selectedDevice,
   })
-  const library = useHeadsetLibrary(selectedDevice, { autoConnect: false })
+  // Both hooks stay mounted so the value keeps its shape, but only listen in
+  // Immersive Video mode: the mode selector is locked while a video is
+  // Starting/Playing/Paused, so no other mode ever has a video running.
+  const immersive = selectedMode === 'immersive'
+  const library = useHeadsetLibrary(selectedDevice, {
+    autoConnect: false,
+    enabled: immersive,
+  })
   const replaced =
     library.replaced ||
     (connectionState === 'failed' && isReplacementNoticeError(connectionError))
   const playback = useImmersiveVideoPlayback(selectedDevice, {
     frozen: replaced,
+    enabled: immersive,
   })
   const catalogQuery = useImmersiveVideoList()
   const catalog = useMemo(
@@ -72,7 +77,6 @@ export function ImmersiveVideoSessionProvider({
   )
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
   const [replacementAcked, setReplacementAcked] = useState(false)
-  const [, setNowTick] = useState(0)
 
   const presenceByDeviceId = useVrPresencePolling({
     enabled: Boolean(selectedDevice),
@@ -128,35 +132,8 @@ export function ImmersiveVideoSessionProvider({
   }, [playback.state.videoId])
 
   useEffect(() => {
-    if (selectedMode === 'immersive') {
-      playback.enterImmersive()
-    }
-    // enterImmersive is stable enough per render; mode transitions are the trigger.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMode])
-
-  useEffect(() => {
     if (!replaced) setReplacementAcked(false)
   }, [replaced])
-
-  useEffect(() => {
-    if (
-      playback.state.status !== 'Idle' ||
-      playback.state.lastProgressAt == null
-    ) {
-      return
-    }
-    const id = setInterval(() => setNowTick((tick) => tick + 1), 500)
-    return () => clearInterval(id)
-  }, [playback.state.status, playback.state.lastProgressAt])
-
-  const recentProgressActive = isVideoPlaybackActive({
-    status: playback.state.status,
-    lastProgressAt: playback.state.lastProgressAt,
-    now: Date.now(),
-  })
-  const videoActive =
-    recentProgressActive || isImmersivePlaybackBlocking(playback.state.status)
 
   const replacementDialogOpen = replaced && !replacementAcked
 
@@ -174,7 +151,6 @@ export function ImmersiveVideoSessionProvider({
       library.dismissReplacementDialog()
     },
     pollOnline: presenceByDeviceId[selectedDevice?.data.id ?? ''] === 'online',
-    videoActive,
     frozen: replaced,
   }
 

@@ -30,9 +30,9 @@ describe('reduceImmersivePlayback', () => {
       videoId: 'trail',
     })
     expect(state.status).toBe('Playing')
-    state = reduceImmersivePlayback(state, { type: 'pause' })
+    state = reduceImmersivePlayback(state, { type: 'pauseToggle' })
     expect(state.status).toBe('Paused')
-    state = reduceImmersivePlayback(state, { type: 'resume' })
+    state = reduceImmersivePlayback(state, { type: 'pauseToggle' })
     expect(state.status).toBe('Playing')
     state = reduceImmersivePlayback(state, { type: 'ended' })
     expect(state.status).toBe('Idle')
@@ -48,7 +48,7 @@ describe('reduceImmersivePlayback', () => {
       type: 'playAck',
       videoId: 'trail',
     })
-    const paused = reduceImmersivePlayback(playing, { type: 'pause' })
+    const paused = reduceImmersivePlayback(playing, { type: 'pauseToggle' })
 
     expect(reduceImmersivePlayback(starting, { type: 'ended' }).status).toBe(
       'Idle',

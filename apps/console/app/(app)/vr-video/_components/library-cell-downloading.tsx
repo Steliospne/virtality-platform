@@ -2,6 +2,7 @@
 
 import { Button } from '@virtality/ui/components/button'
 import { stalledSuffix } from '@/lib/headset-library-format'
+import { HEADSET_VIDEO_SUPPORT } from '@/lib/immersive-video-headset-support'
 import { LibraryCellCancelButton } from './library-cell-cancel-button'
 
 export function LibraryCellDownloading({
@@ -26,15 +27,17 @@ export function LibraryCellDownloading({
         {percent} %{stalledSuffix(stalled)}
       </span>
       <LibraryCellCancelButton disabled={disabled} onCancel={onCancel} />
-      <Button
-        type='button'
-        variant='outline'
-        size='sm'
-        disabled={disabled}
-        onClick={onPause}
-      >
-        Pause
-      </Button>
+      {HEADSET_VIDEO_SUPPORT.downloadPause ? (
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          disabled={disabled}
+          onClick={onPause}
+        >
+          Pause
+        </Button>
+      ) : null}
     </div>
   )
 }

@@ -29,11 +29,17 @@ import type { VRDevice } from '@/types/models'
 
 export const DOWNLOAD_ACK_TIMEOUT_MS = 5_000
 
+/**
+ * Live Headset Library for one headset. `enabled: false` (the patient
+ * dashboard outside Immersive Video mode) keeps the hook mounted but silent:
+ * no socket subscription, no `videoLibraryStateRequest`, no mirror writes.
+ */
 export function useHeadsetLibrary(
   device?: VRDevice | null,
-  options?: { autoConnect?: boolean },
+  options?: { autoConnect?: boolean; enabled?: boolean },
 ) {
   const autoConnect = options?.autoConnect ?? true
+  const enabled = options?.enabled ?? true
   const { connect, disconnect, connectionState, connectionError } =
     useSocketConnection({ device })
   const [roomComplete, setRoomComplete] = useState(false)
@@ -139,7 +145,7 @@ export function useHeadsetLibrary(
 
   useEffect(() => {
     const socket = device?.socket
-    if (!socket) return
+    if (!socket || !enabled) return
 
     const markIncomplete = () => {
       if (pendingDownloadRef.current != null) {
@@ -213,12 +219,12 @@ export function useHeadsetLibrary(
       unsubscribeVideo()
       socket.off('disconnect', markIncomplete)
     }
-  }, [mirror, clearPendingDownload, device])
+  }, [mirror, clearPendingDownload, device, enabled])
 
   const readyDevice = useCallback((): VRDevice | null => {
-    if (!device || !roomComplete || replaced) return null
+    if (!device || !enabled || !roomComplete || replaced) return null
     return device
-  }, [device, replaced, roomComplete])
+  }, [device, enabled, replaced, roomComplete])
 
   const sendDownloadStart = useCallback(
     (videoId: string) => {

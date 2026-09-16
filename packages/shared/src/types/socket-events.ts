@@ -120,7 +120,6 @@ export const VIDEO_EVENT = {
   Play: 'videoPlay',
   PlayAck: 'videoPlayAck',
   Pause: 'videoPause',
-  Resume: 'videoResume',
   Stop: 'videoStop',
   StopAck: 'videoStopAck',
   Recenter: 'videoRecenter',
@@ -212,7 +211,6 @@ export const VIDEO_RELAY = {
   Play: { name: VIDEO_EVENT.Play, payload: true },
   PlayAck: { name: VIDEO_EVENT.PlayAck, payload: true },
   Pause: { name: VIDEO_EVENT.Pause, payload: false },
-  Resume: { name: VIDEO_EVENT.Resume, payload: false },
   Stop: { name: VIDEO_EVENT.Stop, payload: true },
   StopAck: { name: VIDEO_EVENT.StopAck, payload: true },
   Recenter: { name: VIDEO_EVENT.Recenter, payload: false },
@@ -503,7 +501,6 @@ export type VideoEventPayloads = {
   Play: VideoIdArgs
   PlayAck: VideoIdArgs
   Pause: []
-  Resume: []
   Stop: VideoIdArgs
   StopAck: VideoIdArgs
   Recenter: []

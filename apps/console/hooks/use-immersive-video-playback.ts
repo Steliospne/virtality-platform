@@ -15,11 +15,17 @@ import {
 } from '@/lib/immersive-video-playback-reducer'
 import type { VRDevice } from '@/types/models'
 
+/**
+ * Playback transport for one headset. `enabled: false` keeps it silent; the
+ * mode selector is locked while a video is Starting/Playing/Paused, so the
+ * dashboard can only leave Immersive Video mode from Idle.
+ */
 export function useImmersiveVideoPlayback(
   device?: VRDevice | null,
-  options?: { frozen?: boolean },
+  options?: { frozen?: boolean; enabled?: boolean },
 ) {
   const frozen = options?.frozen === true
+  const enabled = options?.enabled ?? true
   const [state, dispatch] = useReducer(
     reduceImmersivePlayback,
     initialImmersivePlaybackState,
@@ -52,7 +58,7 @@ export function useImmersiveVideoPlayback(
 
   useEffect(() => {
     const socket = device?.socket
-    if (!socket) return
+    if (!socket || !enabled) return
 
     const startReattachWait = () => {
       clearReattachTimeout()
@@ -107,10 +113,10 @@ export function useImmersiveVideoPlayback(
       unsubscribeVideo()
       socket.off('disconnect', onDisconnect)
     }
-  }, [device])
+  }, [device, enabled])
 
   const readyDevice = () => {
-    if (!device || frozen) return null
+    if (!device || frozen || !enabled) return null
     return device
   }
 
@@ -125,18 +131,12 @@ export function useImmersiveVideoPlayback(
     }, PLAY_ACK_TIMEOUT_MS)
   }
 
+  /** One `videoPause` toggles pause and resume, like the program's pause. */
   const sendPause = () => {
     const target = readyDevice()
     if (!target) return
-    dispatch({ type: 'pause' })
+    dispatch({ type: 'pauseToggle' })
     target.events.video.Pause()
-  }
-
-  const sendResume = () => {
-    const target = readyDevice()
-    if (!target) return
-    dispatch({ type: 'resume' })
-    target.events.video.Resume()
   }
 
   const sendStop = () => {
@@ -152,10 +152,6 @@ export function useImmersiveVideoPlayback(
     target.events.video.Recenter()
   }
 
-  const enterImmersive = () => {
-    dispatch({ type: 'enterImmersive', now: Date.now() })
-  }
-
   const dismissConfirm = () => {
     dispatch({ type: 'dismissConfirm' })
   }
@@ -164,10 +160,8 @@ export function useImmersiveVideoPlayback(
     state,
     sendPlay,
     sendPause,
-    sendResume,
     sendStop,
     sendRecenter,
-    enterImmersive,
     dismissConfirm,
   }
 }

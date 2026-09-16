@@ -3,7 +3,7 @@ import {
   type ImmersivePlaybackStatus,
 } from './immersive-video-playback-reducer'
 
-export type ImmersivePlayPauseAction = 'play' | 'pause' | 'resume'
+export type ImmersivePlayPauseAction = 'play' | 'pause'
 
 export type ImmersivePlayPauseControl = {
   icon: 'play' | 'pause'
@@ -22,7 +22,7 @@ export function resolveImmersivePlayPauseControl(input: {
     return { icon: 'pause', disabled: !commandsEnabled, action: 'pause' }
   }
   if (status === 'Paused') {
-    return { icon: 'play', disabled: !commandsEnabled, action: 'resume' }
+    return { icon: 'play', disabled: !commandsEnabled, action: 'pause' }
   }
   if (status === 'Starting') {
     return { icon: 'play', disabled: true, action: 'play' }
