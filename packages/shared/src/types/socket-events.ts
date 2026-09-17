@@ -61,6 +61,7 @@ export const PROGRAM_EVENT = {
   ResetPositionAck: 'resetPositionAck',
   SittingChange: 'onSittingChange',
   SittingChangeAck: 'onSittingChangeAck',
+  ToggleCoach: 'onToggleCoach',
 } as const
 
 export type ProgramEventKey = keyof typeof PROGRAM_EVENT
@@ -162,6 +163,7 @@ export const PROGRAM_RELAY: RelayEventMap = {
   ResetPositionAck: { name: PROGRAM_EVENT.ResetPositionAck, payload: false },
   SittingChange: { name: PROGRAM_EVENT.SittingChange, payload: true },
   SittingChangeAck: { name: PROGRAM_EVENT.SittingChangeAck, payload: false },
+  ToggleCoach: { name: PROGRAM_EVENT.ToggleCoach, payload: true },
 } as const
 
 export const DEVICE_RELAY: RelayEventMap = {
@@ -236,7 +238,7 @@ export type VRPayloadSettings = {
 
 export type ProgramStartPayload = {
   exerciseData: ExercisePayload[]
-  settings: VRPayloadSettings
+  settings: VRPayloadSettings & { coachEnabled: boolean }
 }
 
 export type WarmupPayload = {
@@ -421,6 +423,7 @@ export type ProgramEventPayloads = {
   ResetPositionAck: []
   SittingChange: [sitting: boolean]
   SittingChangeAck: []
+  ToggleCoach: [coachEnabled: boolean]
 }
 
 export type DeviceEventPayloads = {

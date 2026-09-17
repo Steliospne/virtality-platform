@@ -15,13 +15,20 @@ import { PROGRAM_EVENT } from '@virtality/shared/types'
 import { subscribe } from '@/lib/device-event-controller'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'
+import { cn } from '@/lib/utils'
 
 interface SceneSettingsProps {
+  coachEnabled: boolean
+  onCoachEnabledChange: (enabled: boolean) => void
+  coachToggleDisabled: boolean
   missingSettings: boolean
   selectedDevice: PatientDashboardValue['state']['selectedDevice']
 }
 
 const SceneSettings = ({
+  coachEnabled,
+  onCoachEnabledChange,
+  coachToggleDisabled,
   missingSettings,
   selectedDevice,
 }: SceneSettingsProps) => {
@@ -96,6 +103,15 @@ const SceneSettings = ({
               onCheckedChange={sittingChangeHandler}
             />
             <Label htmlFor='sitting'>Sitting</Label>
+          </div>
+          <div className={cn('flex gap-3')}>
+            <Switch
+              id='coach-enabled'
+              checked={coachEnabled}
+              onCheckedChange={onCoachEnabledChange}
+              disabled={coachToggleDisabled}
+            />
+            <Label htmlFor='coach-enabled'>Coach</Label>
           </div>
           <h4>Avatar</h4>
           <Separator className='dark:bg-zinc-600' />

@@ -26,6 +26,7 @@ import {
   type SkipDirection,
 } from '@/lib/session-exercise-skip'
 import { resolveSkipControlUiState } from '@/lib/session-exercise-change-ui'
+import useCoachSettings from './use-coach-settings'
 
 const useControlPanel = () => {
   const { devices } = useDeviceContext()
@@ -58,6 +59,14 @@ const useControlPanel = () => {
 
   const { connected } = useSocketConnection({ device: selectedDevice })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
+  const { coachEnabled, changeCoachEnabled, coachToggleDisabled } =
+    useCoachSettings({
+      patientId,
+      programState,
+      selectedMode,
+      selectedDevice,
+      headsetReady: connected && headsetPresent,
+    })
   const { canLaunchVr, isPending: entitlementPending } =
     useLiveEntitlementStanding()
   const treatmentLaunchReady = canLaunchTreatment({
@@ -130,6 +139,7 @@ const useControlPanel = () => {
           mapId: selectedMap?.id ?? '',
           sessionNumber,
           language: patient?.language,
+          coachEnabled,
         },
       }
 
@@ -214,6 +224,9 @@ const useControlPanel = () => {
   })
 
   return {
+    coachEnabled,
+    changeCoachEnabled,
+    coachToggleDisabled,
     devices,
     connected,
     selectedMode,
