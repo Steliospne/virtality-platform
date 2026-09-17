@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 type DashboardGridFlags = {
   showExpiredBanner: boolean
   showCasting: boolean
+  /** Immersive Video mode: no exercise list and no session notes. */
   hideExerciseList?: boolean
 }
 
@@ -45,21 +46,19 @@ const GRID_ROWS: Record<CompactLayout, string> = {
   base: 'grid-rows-[repeat(55,24px)]',
 }
 
+// Info panel plus the video/casting panel; nothing below them.
 const GRID_ROWS_WITHOUT_LIST: Record<CompactLayout, string> = {
-  expiredCasting: 'grid-rows-[repeat(47,24px)]',
-  expired: 'grid-rows-[repeat(44,24px)]',
-  casting: 'grid-rows-[repeat(44,24px)]',
-  base: 'grid-rows-[repeat(41,24px)]',
+  expiredCasting: 'grid-rows-[repeat(36,24px)]',
+  expired: 'grid-rows-[repeat(36,24px)]',
+  casting: 'grid-rows-[repeat(33,24px)]',
+  base: 'grid-rows-[repeat(33,24px)]',
 }
 
-const SESSION_NOTES_WITHOUT_LIST: Record<CompactLayout, string> = {
-  expiredCasting:
-    'max-[1526px]:row-start-31 max-[1526px]:row-end-47 lg:max-[1526px]:row-start-37 lg:max-[1526px]:row-end-53',
-  expired:
-    'max-[1526px]:row-start-28 max-[1526px]:row-end-44 lg:max-[1526px]:row-start-34 lg:max-[1526px]:row-end-50',
-  casting:
-    'max-[1526px]:row-start-28 max-[1526px]:row-end-44 lg:max-[1526px]:row-start-34 lg:max-[1526px]:row-end-50',
-  base: 'max-[1526px]:row-start-25 max-[1526px]:row-end-41 lg:max-[1526px]:row-start-31 lg:max-[1526px]:row-end-47',
+const GRID_ROWS_WITHOUT_LIST_COMPACT: Record<CompactLayout, string> = {
+  expiredCasting: 'lg:max-[1526px]:grid-rows-[repeat(35,24px)]',
+  expired: 'lg:max-[1526px]:grid-rows-[repeat(32,24px)]',
+  casting: 'lg:max-[1526px]:grid-rows-[repeat(32,24px)]',
+  base: 'lg:max-[1526px]:grid-rows-[repeat(29,24px)]',
 }
 
 function mainColumnStart(hideExerciseList: boolean | undefined): string {
@@ -68,16 +67,19 @@ function mainColumnStart(hideExerciseList: boolean | undefined): string {
 
 export function dashboardGridClassName(flags: DashboardGridFlags): string {
   const layout = compactLayout(flags)
+  if (flags.hideExerciseList) {
+    return cn(
+      'container grid grid-cols-12 gap-x-4 p-8',
+      GRID_ROWS_WITHOUT_LIST_COMPACT[layout],
+      GRID_ROWS_WITHOUT_LIST[layout],
+    )
+  }
   return cn(
     'container grid grid-cols-12 gap-x-4 p-8',
-    flags.hideExerciseList
-      ? flags.showExpiredBanner
-        ? 'lg:max-[1526px]:grid-rows-[repeat(50,24px)]'
-        : 'lg:max-[1526px]:grid-rows-[repeat(47,24px)]'
-      : flags.showExpiredBanner
-        ? 'lg:max-[1526px]:grid-rows-[repeat(68,24px)]'
-        : 'lg:max-[1526px]:grid-rows-[repeat(65,24px)]',
-    flags.hideExerciseList ? GRID_ROWS_WITHOUT_LIST[layout] : GRID_ROWS[layout],
+    flags.showExpiredBanner
+      ? 'lg:max-[1526px]:grid-rows-[repeat(68,24px)]'
+      : 'lg:max-[1526px]:grid-rows-[repeat(65,24px)]',
+    GRID_ROWS[layout],
   )
 }
 
@@ -134,11 +136,8 @@ export function dashboardSessionNotesClassName(
 ): string {
   const layout = compactLayout(flags)
   return cn(
-    'col-span-full row-span-16 max-[1526px]:col-start-1',
-    mainColumnStart(flags.hideExerciseList),
+    'col-span-full col-start-4 row-span-16 max-[1526px]:col-start-1',
     flags.showExpiredBanner ? 'row-start-38' : 'row-start-35',
-    flags.hideExerciseList
-      ? SESSION_NOTES_WITHOUT_LIST[layout]
-      : SESSION_NOTES_COMPACT[layout],
+    SESSION_NOTES_COMPACT[layout],
   )
 }

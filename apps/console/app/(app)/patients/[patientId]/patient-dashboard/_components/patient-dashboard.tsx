@@ -79,9 +79,11 @@ const PatientDashboard = () => {
           <ChartCard className={chartClassName} />
         )}
 
-        <SessionNotesCard
-          className={dashboardSessionNotesClassName(gridFlags)}
-        />
+        {isImmersive ? null : (
+          <SessionNotesCard
+            className={dashboardSessionNotesClassName(gridFlags)}
+          />
+        )}
 
         <SessionDialog />
         <PatientDashboardVideoDialogs />

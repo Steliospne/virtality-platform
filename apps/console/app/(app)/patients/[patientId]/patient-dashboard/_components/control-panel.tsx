@@ -119,10 +119,12 @@ const ControlPanel = ({
         {isProgramInactive && isMain && <ProgramSelector className='flex-1' />}
         {isImmersive && <ImmersiveVideoPicker className='flex-1' />}
 
-        <SceneSettings
-          selectedDevice={selectedDevice}
-          missingSettings={missingSettings}
-        />
+        {isImmersive ? null : (
+          <SceneSettings
+            selectedDevice={selectedDevice}
+            missingSettings={missingSettings}
+          />
+        )}
       </div>
 
       <GuardDialog
