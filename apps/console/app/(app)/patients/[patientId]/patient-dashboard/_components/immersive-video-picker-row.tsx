@@ -59,7 +59,7 @@ export function ImmersiveVideoPickerRow({
             <span className='text-muted-foreground text-xs'>
               Download this video to the headset from{' '}
               <Link href='/vr-video' className='underline'>
-                VR video
+                VR Experiences
               </Link>
               .
             </span>
