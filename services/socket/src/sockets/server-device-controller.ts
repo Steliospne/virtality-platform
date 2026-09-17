@@ -144,17 +144,15 @@ export function createServerDeviceController(
 
   function registerRelayEvents(
     eventMap: RelayEventMap,
-    roomCode: string | string[],
+    roomCode: string,
     socket: SocketWithRole,
   ) {
-    const resolvedRoomCode = Array.isArray(roomCode) ? roomCode[0] : roomCode
-
     for (const key in eventMap) {
       const entry = eventMap[key]
       logger.debug('registerRelayEvents', {
         role: socket.data.roomPeerRole ?? 'unknown',
         eventName: entry.name,
-        roomCode: resolvedRoomCode,
+        roomCode: roomCode,
         socketId: socket.id,
       })
       socket.on(entry.name, (payload: unknown) => {
@@ -163,7 +161,7 @@ export function createServerDeviceController(
         if (!roomPeerRole) {
           logger.warn('socket.relay.blocked', {
             eventName: entry.name,
-            roomCode: resolvedRoomCode,
+            roomCode: roomCode,
             socketId: socket.id,
             reason: 'missing_room_or_role',
           })
@@ -171,7 +169,7 @@ export function createServerDeviceController(
         }
 
         const authorization = registry.authorizeRelay({
-          roomCode: resolvedRoomCode,
+          roomCode: roomCode,
           peerSocketId: socket.id,
           roomPeerRole,
         })
@@ -179,7 +177,7 @@ export function createServerDeviceController(
         if (authorization.kind === 'relay_blocked') {
           logRelayBlocked(authorization, {
             eventName: entry.name,
-            roomCode: resolvedRoomCode,
+            roomCode: roomCode,
             socketId: socket.id,
             role: roomPeerRole,
           })
@@ -189,7 +187,7 @@ export function createServerDeviceController(
         logger[relayEmitLogLevel(entry.name)]('socket.relay.emit', {
           eventName: entry.name,
           role: roomPeerRole,
-          roomCode: resolvedRoomCode,
+          roomCode: roomCode,
           socketId: socket.id,
           hasPayload: payload !== undefined,
           // A JSON string and an object log alike; only the type tells them apart.
@@ -197,7 +195,7 @@ export function createServerDeviceController(
           payload,
         })
         socket
-          .to(resolvedRoomCode)
+          .to(roomCode)
           .emit(entry.name, entry.payload ? payload : undefined)
       })
     }
