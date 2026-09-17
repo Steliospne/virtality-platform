@@ -4,11 +4,9 @@ import {
   CASTING_RELAY,
   DEVICE_RELAY,
   VIDEO_RELAY,
-  VIDEO_EVENT,
   CONNECTION_EVENT,
   ROOM_EVENT,
   ROOM_PEER_ROLE,
-  type RelayEventMap,
   type RoomPeerRole,
   type DeviceStatusResponse,
   type RoomJoinedPayload,
@@ -25,13 +23,13 @@ import {
   EMPTY_ROLE_SLOT_PEER_LOG_CONTEXT,
   roleSlotPeerLogContext,
   type DisconnectRolePeerOutcome,
-  type RelayBlockedOutcome,
   type RolePeerReplacedOutcome,
   type RoleSlotJoinedOutcome,
   type RoleSlotPeerLogContext,
   type RoleSlotRoomRegistry,
   type RoomEvictedOutcome,
 } from '../domain/role-slot-room-registry'
+import { buildRelayTable, createRelay, type RelayOutcome } from './relay'
 
 const logger = createAppLogger({
   serviceName: 'socket',
@@ -59,24 +57,34 @@ export type ServerDeviceControllerOptions = {
 // ── Stateless helpers ──────────────────────────────────────────────────────
 
 function logRelayBlocked(
-  authorization: RelayBlockedOutcome,
+  outcome: Extract<RelayOutcome, { kind: 'blocked' }>,
   context: {
     eventName: string
     roomCode: string
     socketId: string
-    role: RoomPeerRole
+    role: RoomPeerRole | undefined
   },
 ) {
+  if (outcome.reason === 'missing_room_or_role') {
+    logger.warn('socket.relay.blocked', {
+      eventName: context.eventName,
+      roomCode: context.roomCode,
+      socketId: context.socketId,
+      reason: outcome.reason,
+    })
+    return
+  }
+
   const payload = {
     eventName: context.eventName,
     roomCode: context.roomCode,
     socketId: context.socketId,
     role: context.role,
-    reason: authorization.reason,
-    activePeerSocketId: authorization.activePeerSocketId,
+    reason: outcome.reason,
+    activePeerSocketId: outcome.activePeerSocketId,
   }
 
-  if (authorization.reason === 'room_not_found') {
+  if (outcome.reason === 'room_not_found') {
     logger.warn('socket.relay.blocked', payload)
     return
   }
@@ -85,17 +93,26 @@ function logRelayBlocked(
 }
 
 /**
- * Periodic events a headset emits many times a second while a download or
- * playback runs. Logging each at `info` floods Grafana; keep them at `debug`.
+ * The Relay Families a seated peer's events are forwarded from. `GAME_RELAY`
+ * is deliberately absent: game mode was built for an event and is sidelined;
+ * the map stays in shared for when it returns.
  */
-const HIGH_VOLUME_RELAY_EVENTS: ReadonlySet<string> = new Set([
-  VIDEO_EVENT.DownloadProgress,
-  VIDEO_EVENT.PlaybackProgress,
+const RELAY_TABLE = buildRelayTable([
+  PROGRAM_RELAY,
+  CASTING_RELAY,
+  DEVICE_RELAY,
+  VIDEO_RELAY,
 ])
 
-function relayEmitLogLevel(eventName: string): 'info' | 'debug' {
-  return HIGH_VOLUME_RELAY_EVENTS.has(eventName) ? 'debug' : 'info'
-}
+/**
+ * Events the controller answers itself. They never reach the Relay, so an
+ * `onAny` sighting of one is not an unknown event.
+ */
+const CONNECTION_HANDLED_EVENTS: ReadonlySet<string> = new Set([
+  CONNECTION_EVENT.DEVICE_STATUS,
+  CONNECTION_EVENT.VR_PRESENCE,
+  CONNECTION_EVENT.DISCONNECTION,
+])
 
 function rejectConnection(
   socket: Socket,
@@ -127,6 +144,7 @@ export function createServerDeviceController(
   options: ServerDeviceControllerOptions,
 ): ServerDeviceController {
   const { registry } = options
+  const relay = createRelay({ table: RELAY_TABLE, registry })
 
   function getRoleSlotLogContext(roomCode: string): RoleSlotPeerLogContext {
     const snapshot = registry.getRoomSnapshot(roomCode)
@@ -137,65 +155,50 @@ export function createServerDeviceController(
     return roleSlotPeerLogContext(snapshot.roleSlots)
   }
 
-  // ── Relay registration ───────────────────────────────────────────────────
+  // ── Relay ────────────────────────────────────────────────────────────────
 
-  function registerRelayEvents(
-    eventMap: RelayEventMap,
-    roomCode: string,
-    socket: SocketWithRole,
-  ) {
-    for (const key in eventMap) {
-      const entry = eventMap[key]
-      logger.debug('registerRelayEvents', {
-        role: socket.data.roomPeerRole ?? 'unknown',
-        eventName: entry.name,
-        roomCode: roomCode,
-        socketId: socket.id,
-      })
-      socket.on(entry.name, (payload: unknown) => {
-        const roomPeerRole = socket.data.roomPeerRole
+  function registerRelayListener(roomCode: string, socket: SocketWithRole) {
+    socket.onAny((event: string, payload?: unknown) => {
+      if (CONNECTION_HANDLED_EVENTS.has(event)) return
 
-        if (!roomPeerRole) {
-          logger.warn('socket.relay.blocked', {
-            eventName: entry.name,
-            roomCode: roomCode,
+      const roomPeerRole = socket.data.roomPeerRole
+      const outcome = relay.forward(
+        { socketId: socket.id, roomCode, roomPeerRole },
+        event,
+        payload,
+      )
+
+      switch (outcome.kind) {
+        case 'forwarded':
+          logger[outcome.logLevel]('socket.relay.emit', {
+            eventName: event,
+            role: roomPeerRole,
+            roomCode,
             socketId: socket.id,
-            reason: 'missing_room_or_role',
+            hasPayload: payload !== undefined,
+            // A JSON string and an object log alike; only the type tells them apart.
+            payloadType: typeof payload,
+            payload,
           })
+          socket.to(roomCode).emit(event, outcome.payload)
           return
-        }
-
-        const authorization = registry.authorizeRelay({
-          roomCode: roomCode,
-          peerSocketId: socket.id,
-          roomPeerRole,
-        })
-
-        if (authorization.kind === 'relay_blocked') {
-          logRelayBlocked(authorization, {
-            eventName: entry.name,
-            roomCode: roomCode,
+        case 'blocked':
+          logRelayBlocked(outcome, {
+            eventName: event,
+            roomCode,
             socketId: socket.id,
             role: roomPeerRole,
           })
           return
-        }
-
-        logger[relayEmitLogLevel(entry.name)]('socket.relay.emit', {
-          eventName: entry.name,
-          role: roomPeerRole,
-          roomCode: roomCode,
-          socketId: socket.id,
-          hasPayload: payload !== undefined,
-          // A JSON string and an object log alike; only the type tells them apart.
-          payloadType: typeof payload,
-          payload,
-        })
-        socket
-          .to(roomCode)
-          .emit(entry.name, entry.payload ? payload : undefined)
-      })
-    }
+        case 'not_relayed':
+          logger.debug('socket.relay.unknown_event', {
+            eventName: event,
+            roomCode,
+            socketId: socket.id,
+          })
+          return
+      }
+    })
   }
 
   // ── Room lifecycle ───────────────────────────────────────────────────────
@@ -392,10 +395,7 @@ export function createServerDeviceController(
 
   function registerSocketHandlers(roomCode: string, socket: SocketWithRole) {
     registerConnectionEvents(roomCode, socket)
-    registerRelayEvents(PROGRAM_RELAY, roomCode, socket)
-    registerRelayEvents(CASTING_RELAY, roomCode, socket)
-    registerRelayEvents(DEVICE_RELAY, roomCode, socket)
-    registerRelayEvents(VIDEO_RELAY, roomCode, socket)
+    registerRelayListener(roomCode, socket)
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
