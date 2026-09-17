@@ -1,14 +1,42 @@
-import {
-  createEmptyRoleSlots,
-  isRoomComplete,
-  isRoomEmpty,
-  ROOM_PEER_ROLE,
-  type Room,
-  type RoomPeerRole,
-  type RoomRoleSlots,
-} from '@virtality/shared/types'
+import { ROOM_PEER_ROLE, type RoomPeerRole } from '@virtality/shared/types'
 
 const DEFAULT_ROOM_TTL_MS = 5 * 60 * 60 * 1000
+
+// ── Role Slot model ────────────────────────────────────────────────────────
+// Private to the registry; only RoleSlot and RoomRoleSlots surface through
+// RoomSnapshot and SeededRoom.
+
+export type RoleSlot = {
+  activePeerSocketId: string | null
+}
+
+export type RoomRoleSlots = Record<RoomPeerRole, RoleSlot>
+
+type Room = {
+  createdAt: number
+  roleSlots: RoomRoleSlots
+}
+
+function createEmptyRoleSlots(): RoomRoleSlots {
+  return {
+    [ROOM_PEER_ROLE.Console]: { activePeerSocketId: null },
+    [ROOM_PEER_ROLE.Vr]: { activePeerSocketId: null },
+  }
+}
+
+function isRoomComplete(roleSlots: RoomRoleSlots): boolean {
+  return (
+    roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId !== null &&
+    roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId !== null
+  )
+}
+
+function isRoomEmpty(roleSlots: RoomRoleSlots): boolean {
+  return (
+    roleSlots[ROOM_PEER_ROLE.Console].activePeerSocketId === null &&
+    roleSlots[ROOM_PEER_ROLE.Vr].activePeerSocketId === null
+  )
+}
 
 export type RoleSlotJoinedOutcome = {
   kind: 'role_slot_joined'
@@ -160,7 +188,6 @@ export function createRoleSlotRoomRegistry(
 
   for (const seededRoom of options.seedRooms ?? []) {
     rooms.set(seededRoom.roomCode, {
-      id: seededRoom.roomCode,
       createdAt: seededRoom.createdAt,
       roleSlots: seededRoom.roleSlots ?? createEmptyRoleSlots(),
     })
@@ -180,7 +207,6 @@ export function createRoleSlotRoomRegistry(
     }
 
     const room: Room = {
-      id: roomCode,
       createdAt: Date.now(),
       roleSlots: createEmptyRoleSlots(),
     }
