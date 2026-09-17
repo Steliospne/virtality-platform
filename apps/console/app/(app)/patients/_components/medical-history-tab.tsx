@@ -17,6 +17,7 @@ import { useRef, useState } from 'react'
 import { HumanState } from '@/data/static/human-body'
 import useBeforeUnload from '@/hooks/use-before-unload'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
+import { NavigationGuardDialog } from '@/components/ui/navigation-guard-dialog'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 /** Compare by which parts are active; null and all-inactive are treated as equal. */
@@ -87,11 +88,12 @@ const MedicalHistory = ({
   const quillRef = useRef(undefined)
   const [dirty, setDirty] = useState(false)
   useBeforeUnload(dirty)
-  const { GuardDialog } = useNavigationGuard(dirty)
+  const { guard } = useNavigationGuard(dirty)
 
   return (
     <div className='flex flex-col gap-4 xl:grid xl:grid-cols-2'>
-      <GuardDialog
+      <NavigationGuardDialog
+        {...guard}
         title='Unsaved changes'
         description='You have unsaved changes. Are you sure you want to leave this page?'
       />

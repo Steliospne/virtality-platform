@@ -12,6 +12,7 @@ import { BodyAreas } from '@/types/models'
 import Link from 'next/link'
 import { getUUID } from '@/lib/utils'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
+import { NavigationGuardDialog } from '@/components/ui/navigation-guard-dialog'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { useClientT } from '@/i18n/use-client-t'
@@ -139,7 +140,7 @@ const PatientForm = () => {
   }, [isSubmitting, hasErrors])
 
   useBeforeUnload(isDirty)
-  const { GuardDialog } = useNavigationGuard(isDirty)
+  const { guard } = useNavigationGuard(isDirty)
 
   return (
     <div className='h-screen-with-header relative flex flex-col gap-4 overflow-auto overflow-x-hidden bg-zinc-100 p-6 dark:bg-zinc-950'>
@@ -204,12 +205,11 @@ const PatientForm = () => {
       )}
 
       {/* Unsaved changes confirmation dialog (from hook) */}
-      {
-        <GuardDialog
-          title='Unsaved changes'
-          description='You have unsaved changes. Are you sure you want to leave this page?'
-        />
-      }
+      <NavigationGuardDialog
+        {...guard}
+        title='Unsaved changes'
+        description='You have unsaved changes. Are you sure you want to leave this page?'
+      />
     </div>
   )
 }

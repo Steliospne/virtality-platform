@@ -11,6 +11,7 @@ import { Form } from '@/components/ui/form'
 import { BodyAreas, MedHistoryDeltas } from '@/types/models'
 import { cn } from '@/lib/utils'
 import useNavigationGuard from '@/hooks/use-navigation-guard'
+import { NavigationGuardDialog } from '@/components/ui/navigation-guard-dialog'
 import { toast } from 'react-toastify'
 import { useClientT } from '@/i18n/use-client-t'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -249,7 +250,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
   ])
 
   useBeforeUnload(isDirty)
-  const { GuardDialog } = useNavigationGuard(isDirty)
+  const { guard } = useNavigationGuard(isDirty)
 
   return (
     <div
@@ -340,7 +341,8 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
       )}
 
       {/* Unsaved changes confirmation dialog (from hook) */}
-      <GuardDialog
+      <NavigationGuardDialog
+        {...guard}
         title='Unsaved changes'
         description='You have unsaved changes. Are you sure you want to leave this page?'
       />

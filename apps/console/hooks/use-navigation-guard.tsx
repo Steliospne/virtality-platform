@@ -1,15 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@virtality/ui/components/button'
+import type { NavigationGuardDialogProps } from '@/components/ui/navigation-guard-dialog'
+
+/** Props for `NavigationGuardDialog`; callers spread `guard` and add title/description. */
+export type NavigationGuardState = Pick<
+  NavigationGuardDialogProps,
+  'open' | 'onStay' | 'onLeave'
+>
 
 export default function useNavigationGuard(
   shouldPrevent: boolean,
@@ -93,30 +91,11 @@ export default function useNavigationGuard(
     setPendingHref(null)
   }
 
-  const GuardDialog = ({
-    title,
-    description,
-  }: {
-    title: string
-    description: string
-  }) => (
-    <Dialog open={open} onOpenChange={(o) => setOpen(o)}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant='primary' onClick={cancelLeave}>
-            Stay
-          </Button>
-          <Button variant='destructive' onClick={confirmLeave}>
-            Leave
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
+  const guard: NavigationGuardState = {
+    open,
+    onStay: cancelLeave,
+    onLeave: confirmLeave,
+  }
 
-  return { GuardDialog, confirmLeave, cancelLeave, isOpen: open }
+  return { guard, confirmLeave, cancelLeave, isOpen: open }
 }

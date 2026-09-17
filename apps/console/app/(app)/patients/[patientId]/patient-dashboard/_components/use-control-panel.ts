@@ -205,7 +205,7 @@ const useControlPanel = () => {
   const isSkipBlockedByProgramState =
     isProgramInactive || isProgramPaused || isProgramLaunching
 
-  const { GuardDialog } = useNavigationGuard(connected, () => {
+  const { guard } = useNavigationGuard(connected, () => {
     selectedDevice?.socket.disconnect()
   })
 
@@ -234,7 +234,7 @@ const useControlPanel = () => {
     defaultExercises,
     selectedDevice,
     missingSettings,
-    GuardDialog,
+    guard,
   }
 }
 
