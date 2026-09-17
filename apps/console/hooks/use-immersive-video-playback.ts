@@ -145,13 +145,6 @@ export function useImmersiveVideoPlayback(
     target.events.video.Stop(state.videoId)
   }
 
-  const sendRecenter = () => {
-    const target = readyDevice()
-    if (!target) return
-    dispatch({ type: 'recenter', now: Date.now() })
-    target.events.video.Recenter()
-  }
-
   const dismissConfirm = () => {
     dispatch({ type: 'dismissConfirm' })
   }
@@ -161,7 +154,6 @@ export function useImmersiveVideoPlayback(
     sendPlay,
     sendPause,
     sendStop,
-    sendRecenter,
     dismissConfirm,
   }
 }

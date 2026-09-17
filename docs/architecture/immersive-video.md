@@ -39,7 +39,6 @@ Keys are `VIDEO_EVENT` / `VIDEO_RELAY` entries in `packages/shared/src/types/soc
 | `Play`                | `videoPlay`                | `[videoId]` | handled             | Start playback of a `ready` video from the beginning.                                                            |
 | `Pause`               | `videoPause`               | none        | **not handled**     | One event toggles pause and resume, like the program's pause. Control hidden until handled.                      |
 | `Stop`                | `videoStop`                | `[videoId]` | handled             | Return the headset to its idle scene; the id is checked against the running clip.                                |
-| `Recenter`            | `videoRecenter`            | none        | **not handled**     | Control hidden until handled.                                                                                    |
 
 ### VR → Console
 

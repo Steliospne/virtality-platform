@@ -32,7 +32,7 @@ export function ImmersiveVideoSelectedCard({
     replaced,
     pollOnline,
   })
-  const now = Date.now()
+  const hintLine = immersiveHintLine({ status: playback.state.status })
 
   return (
     <Card className={cn('flex flex-col', className)}>
@@ -51,13 +51,7 @@ export function ImmersiveVideoSelectedCard({
             headsetName: state.selectedDevice?.data.name ?? null,
           })}
         </Badge>
-        <p className='text-sm'>
-          {immersiveHintLine({
-            status: playback.state.status,
-            now,
-            recenterHintUntil: playback.state.recenterHintUntil,
-          })}
-        </p>
+        {hintLine ? <p className='text-sm'>{hintLine}</p> : null}
         {gateCopy ? (
           <p className='text-muted-foreground text-sm'>{gateCopy}</p>
         ) : null}

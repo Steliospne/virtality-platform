@@ -11,6 +11,4 @@ export const HEADSET_VIDEO_SUPPORT = {
   downloadPause: false,
   /** `videoPause` (toggle) */
   playbackPause: false,
-  /** `videoRecenter` */
-  recenter: false,
 } as const

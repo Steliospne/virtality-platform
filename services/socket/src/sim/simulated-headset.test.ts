@@ -257,7 +257,6 @@ describe('video library', () => {
   it.each([
     VIDEO_EVENT.DownloadPause,
     VIDEO_EVENT.Pause,
-    VIDEO_EVENT.Recenter,
     'onRequestOffer',
     'roomComplete',
     'something-unknown',

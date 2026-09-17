@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  isImmersiveRecenterEnabled,
   isImmersiveStopEnabled,
   resolveImmersivePlayPauseControl,
   shouldShowImmersiveStop,
@@ -55,7 +54,7 @@ describe('resolveImmersivePlayPauseControl', () => {
   })
 })
 
-describe('immersive stop and recenter', () => {
+describe('immersive stop', () => {
   it('shows stop only while playing or paused', () => {
     expect(shouldShowImmersiveStop('Idle')).toBe(false)
     expect(shouldShowImmersiveStop('Starting')).toBe(false)
@@ -63,12 +62,12 @@ describe('immersive stop and recenter', () => {
     expect(shouldShowImmersiveStop('Paused')).toBe(true)
   })
 
-  it('enables stop and recenter only while held and commands are live', () => {
+  it('enables stop only while held and commands are live', () => {
     expect(
       isImmersiveStopEnabled({ status: 'Playing', commandsEnabled: true }),
     ).toBe(true)
     expect(
-      isImmersiveRecenterEnabled({ status: 'Paused', commandsEnabled: true }),
+      isImmersiveStopEnabled({ status: 'Paused', commandsEnabled: true }),
     ).toBe(true)
     expect(
       isImmersiveStopEnabled({ status: 'Playing', commandsEnabled: false }),

@@ -3,7 +3,6 @@ import type { HeadsetDidNotConfirmReason } from './headset-did-not-confirm'
 
 export const PLAY_ACK_TIMEOUT_MS = 5_000
 export const REATTACH_WAIT_MS = 2_000
-export const RECENTER_HINT_MS = 1_000
 
 export type ImmersivePlaybackStatus = 'Idle' | 'Starting' | 'Playing' | 'Paused'
 
@@ -19,7 +18,6 @@ export type ImmersivePlaybackState = {
   reattaching: boolean
   lastProgress: VideoPlaybackProgressPayload | null
   lastProgressAt: number | null
-  recenterHintUntil: number | null
 }
 
 export type ImmersivePlaybackAction =
@@ -33,7 +31,6 @@ export type ImmersivePlaybackAction =
   | { type: 'pauseToggle' }
   | { type: 'ended' }
   | { type: 'stopAck'; videoId: string }
-  | { type: 'recenter'; now: number }
   | { type: 'dismissConfirm' }
 
 export const initialImmersivePlaybackState: ImmersivePlaybackState = {
@@ -46,7 +43,6 @@ export const initialImmersivePlaybackState: ImmersivePlaybackState = {
   reattaching: false,
   lastProgress: null,
   lastProgressAt: null,
-  recenterHintUntil: null,
 }
 
 export function isPlayingOrPaused(status: ImmersivePlaybackStatus): boolean {
@@ -74,7 +70,6 @@ function toIdle(
     durationSec: 0,
     pendingPlay: null,
     reattaching: false,
-    recenterHintUntil: null,
     confirmReason: keep.confirmReason,
     lastProgress: keep.lastProgress,
     lastProgressAt: keep.lastProgressAt,
@@ -194,9 +189,6 @@ export function reduceImmersivePlayback(
         lastProgress: state.lastProgress,
         lastProgressAt: state.lastProgressAt,
       })
-    case 'recenter':
-      if (!isPlayingOrPaused(state.status)) return state
-      return { ...state, recenterHintUntil: action.now + RECENTER_HINT_MS }
     case 'dismissConfirm':
       return { ...state, confirmReason: null }
     default:

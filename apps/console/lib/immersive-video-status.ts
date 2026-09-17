@@ -33,14 +33,7 @@ export function immersiveStatusBadge(input: {
 
 export function immersiveHintLine(input: {
   status: ImmersivePlaybackStatus
-  now: number
-  recenterHintUntil: number | null
-}): string {
-  if (input.recenterHintUntil != null && input.now < input.recenterHintUntil) {
-    return 'View recentred on the patient'
-  }
-  if (isPlayingOrPaused(input.status)) {
-    return 'Press recentre if the patient turned away from the road.'
-  }
+}): string | null {
+  if (isPlayingOrPaused(input.status)) return null
   return 'Ask the patient to face forward, then press play.'
 }

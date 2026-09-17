@@ -26,7 +26,7 @@ The 180° FPV **Immersive Video** mode puts multi-GB Unity AssetBundles on a hea
 
 ## Consequences
 
-- The wire contract is `docs/architecture/immersive-video.md`. Events the headset does not handle yet (`videoDownloadPause`, `videoPause`, `videoRecenter`) and reports it does not send yet (`videoDownloadPaused`, `videoPlaybackProgress`, `videoEnded`) stay in the map; the console hides the matching controls behind `apps/console/lib/immersive-video-headset-support.ts` until a VR build lands.
+- The wire contract is `docs/architecture/immersive-video.md`. Events the headset does not handle yet (`videoDownloadPause`, `videoPause`) and reports it does not send yet (`videoDownloadPaused`, `videoPlaybackProgress`, `videoEnded`) stay in the map; the console hides the matching controls behind `apps/console/lib/immersive-video-headset-support.ts` until a VR build lands.
 - The headset's progress `sizeBytes` is an estimate and its byte counter can wrap; the console takes the real size from the catalog, clamps the count for the progress bar, and drops both once a download is `ready`.
 - If no console is in the room when a download finishes, the mirror stays at the last event a console saw until the next console joins and receives `videoLibraryState`. The offline view labels rows "as of `reportedAt`".
 - Two consoles in the same room write the same facts; the writes are idempotent upserts and last write wins.

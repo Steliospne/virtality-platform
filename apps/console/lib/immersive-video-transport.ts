@@ -47,10 +47,3 @@ export function isImmersiveStopEnabled(input: {
 }): boolean {
   return input.commandsEnabled && isPlayingOrPaused(input.status)
 }
-
-export function isImmersiveRecenterEnabled(input: {
-  status: ImmersivePlaybackStatus
-  commandsEnabled: boolean
-}): boolean {
-  return input.commandsEnabled && isPlayingOrPaused(input.status)
-}
