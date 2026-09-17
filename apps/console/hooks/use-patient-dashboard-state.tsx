@@ -18,6 +18,8 @@ import {
   resolveLastUsedProgram,
 } from '@/lib/patient-dashboard-program-selection'
 import type { PendingExerciseChange } from '@/lib/session-exercise-skip'
+import { useRememberedDashboardMode } from '@/hooks/use-remembered-dashboard-mode'
+import type { DashboardMode } from '@/types/models'
 
 type State = {
   isSettingsOpen: { id: string; open: boolean } | null
@@ -27,7 +29,7 @@ type State = {
   programState: 'ready' | 'launching' | 'started' | 'paused'
   selectedDevice: VRDevice | null
   selectedProgram: CompleteReusableProgram | null
-  selectedMode: 'main' | 'free' | 'immersive'
+  selectedMode: DashboardMode
   selectedAvatar: Avatar | null
   selectedMap: Map | null
   inQuickStart: boolean
@@ -120,6 +122,13 @@ const usePatientDashboardState = ({
   const { data: maps } = useMap()
   const { data: programs } = useReusablePrograms()
   const { data: patient } = usePatient({ patientId })
+  const { rememberedMode, rememberMode } = useRememberedDashboardMode()
+
+  // Restore the user's last mode once the persisted store has loaded.
+  useEffect(() => {
+    if (rememberedMode)
+      dispatch({ type: 'setSelectedMode', payload: rememberedMode })
+  }, [rememberedMode])
 
   useEffect(() => {
     const program = resolveLastUsedProgram(
@@ -150,6 +159,7 @@ const usePatientDashboardState = ({
 
   const setSelectedMode = (value: State['selectedMode']) => {
     dispatch({ type: 'setSelectedMode', payload: value })
+    rememberMode(value)
   }
 
   const setSelectedAvatar = (payload: State['selectedAvatar']) => {

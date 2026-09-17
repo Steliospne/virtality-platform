@@ -83,7 +83,10 @@ export type UserLocalData = {
   program: boolean
   dashboardSuggestionSidebar: boolean
   dashboardSuggestionDropdown: boolean
+  lastDashboardMode?: DashboardMode
 }
+
+export type DashboardMode = 'main' | 'free' | 'immersive'
 
 export type ProgressDataPoint =
   | {
