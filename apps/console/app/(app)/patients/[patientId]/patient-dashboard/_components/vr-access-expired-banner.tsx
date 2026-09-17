@@ -9,9 +9,11 @@ import { TREATMENT_LAUNCH_ERROR } from '@/lib/patient-dashboard-treatment-launch
  * clinician knows why the VR program can't be launched before they try.
  */
 export function VrAccessExpiredBanner() {
-  const { canLaunchVr } = useLiveEntitlementStanding()
+  const { canLaunchVr, isPending } = useLiveEntitlementStanding()
 
-  if (canLaunchVr) return null
+  // Nothing until standing resolves: the server has no standing, so rendering
+  // the banner there caused a hydration mismatch against the client.
+  if (isPending || canLaunchVr) return null
 
   return (
     <div

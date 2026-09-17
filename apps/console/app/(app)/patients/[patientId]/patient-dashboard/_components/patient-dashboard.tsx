@@ -30,8 +30,10 @@ import {
 const PatientDashboard = () => {
   useIsAuthed()
   const [showCasting, setShowCasting] = useState(false)
-  const { canLaunchVr } = useLiveEntitlementStanding()
-  const showExpiredBanner = !canLaunchVr
+  const { canLaunchVr, isPending: entitlementPending } =
+    useLiveEntitlementStanding()
+  // Hold the banner until standing has loaded so server and client agree.
+  const showExpiredBanner = !entitlementPending && !canLaunchVr
   const { state } = usePatientDashboard()
   const isImmersive = state.selectedMode === 'immersive'
   const gridFlags = {

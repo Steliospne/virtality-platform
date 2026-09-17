@@ -58,11 +58,13 @@ const useControlPanel = () => {
 
   const { connected } = useSocketConnection({ device: selectedDevice })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
-  const { canLaunchVr } = useLiveEntitlementStanding()
+  const { canLaunchVr, isPending: entitlementPending } =
+    useLiveEntitlementStanding()
   const treatmentLaunchReady = canLaunchTreatment({
     consoleConnected: connected,
     headsetPresent,
     entitlementAllowsLaunch: canLaunchVr,
+    entitlementPending,
   })
 
   const missingSettings = !selectedAvatar || !selectedMap
@@ -98,6 +100,7 @@ const useControlPanel = () => {
       consoleConnected: connected,
       headsetPresent,
       entitlementAllowsLaunch: canLaunchVr,
+      entitlementPending,
     })
     if (launchError) return ErrorToasty(launchError)
 
@@ -163,6 +166,7 @@ const useControlPanel = () => {
       consoleConnected: connected,
       headsetPresent,
       entitlementAllowsLaunch: canLaunchVr,
+      entitlementPending,
     })
     if (launchError) return ErrorToasty(launchError)
 

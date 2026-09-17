@@ -55,6 +55,19 @@ describe('patient dashboard treatment launch gating', () => {
 })
 
 describe('getTreatmentLaunchError', () => {
+  it('holds launch while entitlement standing is still loading', () => {
+    const pending = {
+      consoleConnected: true,
+      headsetPresent: true,
+      entitlementAllowsLaunch: true,
+      entitlementPending: true,
+    }
+    expect(canLaunchTreatment(pending)).toBe(false)
+    expect(getTreatmentLaunchError(pending)).toBe(
+      TREATMENT_LAUNCH_ERROR.entitlementPending,
+    )
+  })
+
   it('reports entitlement expiry before connection errors', () => {
     expect(
       getTreatmentLaunchError({
