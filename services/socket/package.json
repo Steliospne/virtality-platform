@@ -5,8 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "doppler run -- tsx watch ./src/app.ts --host 0.0.0.0",
-    "dev_sim": "SIM=true doppler run -- tsx watch ./src/app.ts",
-    "test_client": "tsx watch --env-file=.env src/tests/test_client.ts ",
+    "dev_sim": "tsx src/sim/main.ts",
     "build": "tsc --build",
     "start": "node --env-file=.env ./dist/src/app.js",
     "type-check": "tsc --noEmit",

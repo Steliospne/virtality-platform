@@ -32,7 +32,6 @@ import {
   type RoleSlotRoomRegistry,
   type RoomEvictedOutcome,
 } from '../domain/role-slot-room-registry'
-import vrCommSim from './vrCommsTesting'
 
 const logger = createAppLogger({
   serviceName: 'socket',
@@ -55,7 +54,6 @@ export type ServerDeviceController = {
 
 export type ServerDeviceControllerOptions = {
   registry: RoleSlotRoomRegistry
-  simulation?: boolean
 }
 
 // ── Stateless helpers ──────────────────────────────────────────────────────
@@ -129,7 +127,6 @@ export function createServerDeviceController(
   options: ServerDeviceControllerOptions,
 ): ServerDeviceController {
   const { registry } = options
-  const simulation = options.simulation ?? false
 
   function getRoleSlotLogContext(roomCode: string): RoleSlotPeerLogContext {
     const snapshot = registry.getRoomSnapshot(roomCode)
@@ -395,14 +392,6 @@ export function createServerDeviceController(
 
   function registerSocketHandlers(roomCode: string, socket: SocketWithRole) {
     registerConnectionEvents(roomCode, socket)
-
-    if (simulation) {
-      for (const key in vrCommSim) {
-        vrCommSim[key as keyof typeof vrCommSim](roomCode, socket)
-      }
-      return
-    }
-
     registerRelayEvents(PROGRAM_RELAY, roomCode, socket)
     registerRelayEvents(CASTING_RELAY, roomCode, socket)
     registerRelayEvents(DEVICE_RELAY, roomCode, socket)
@@ -428,7 +417,6 @@ export function createServerDeviceController(
       roomCode: roomCode || 'missing',
       hasRoomCode: Boolean(roomCode),
       role: typeof roleQuery === 'string' ? roleQuery : 'missing',
-      simulationEnabled: simulation,
     })
 
     if (!roomCode) {

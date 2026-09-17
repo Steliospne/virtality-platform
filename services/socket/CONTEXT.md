@@ -35,3 +35,7 @@ _Avoid_: Room store, active rooms, room map
 **Presence Check**:
 A console-side socket connection that only asks which rooms currently have an **Active Role Peer** in the `vr` slot. It occupies no **Role Slot** and joins no room.
 _Avoid_: Presence-only socket, presence mode, polling client
+
+**Simulated Headset**:
+A standalone client process that connects to the socket server as the `vr` **Active Role Peer** of one room and behaves like the headset build for program and video events. The server carries no simulation code; the seam is the socket, the same one a real headset uses. Its core is pure (`handle`/`tick` return emits as data) and a thin socket.io-client adapter pipes them to the wire.
+_Avoid_: Sim mode, `SIM=true`, test client, vrCommsTesting

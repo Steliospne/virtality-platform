@@ -26,7 +26,6 @@ const httpServer = createServer(app)
 logger.info('service.bootstrap', {
   env: process.env.ENV ?? 'development',
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  simulationEnabled: process.env.SIM === 'true',
 })
 
 const socketOptions = {
@@ -54,10 +53,7 @@ const PORT = process.env.PORT || '8081'
 
 // Composition root: one registry, one controller, timers owned here.
 const registry = createRoleSlotRoomRegistry()
-const controller = createServerDeviceController({
-  registry,
-  simulation: process.env.SIM === 'true',
-})
+const controller = createServerDeviceController({ registry })
 io.on(CONNECTION_EVENT.CONNECTION, controller.connectionHandler)
 
 const cleanupTimer = setInterval(
