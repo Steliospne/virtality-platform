@@ -13,11 +13,8 @@ import {
   ROOM_PEER_ROLE,
   type VrPresenceResponse,
 } from '@virtality/shared/types'
-import {
-  connectionHandler,
-  hasActiveRoomForTests,
-  resetActiveRoomsForTests,
-} from './device-event-controller'
+import { createRoleSlotRoomRegistry } from '../domain/role-slot-room-registry'
+import { createServerDeviceController } from './server-device-controller'
 import {
   createSocketTestHarness,
   expectNoEvent,
@@ -48,13 +45,15 @@ async function queryVrPresence(
 }
 
 describe('read-only VR presence', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -70,7 +69,7 @@ describe('read-only VR presence', () => {
 
     await roomJoined
     expect(response).toEqual({ presence: { 'unused-room': false } })
-    expect(hasActiveRoomForTests('unused-room')).toBe(false)
+    expect(registry.hasRoom('unused-room')).toBe(false)
   })
 
   it('reports VR presence for active, inactive, and missing rooms', async () => {
@@ -163,7 +162,7 @@ describe('read-only VR presence', () => {
 
     const afterReplacement = await queryVrPresence(presenceSocket, [roomCode])
     expect(afterReplacement).toEqual({ presence: { [roomCode]: true } })
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
   })
 })
 

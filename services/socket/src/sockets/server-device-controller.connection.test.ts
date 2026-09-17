@@ -8,25 +8,24 @@ import {
   it,
 } from 'vitest'
 import { ROOM_EVENT, ROOM_PEER_ROLE } from '@virtality/shared/types'
-import {
-  connectionHandler,
-  hasActiveRoomForTests,
-  resetActiveRoomsForTests,
-} from './device-event-controller'
+import { createRoleSlotRoomRegistry } from '../domain/role-slot-room-registry'
+import { createServerDeviceController } from './server-device-controller'
 import {
   createSocketTestHarness,
   waitForConnect,
   waitForEvent,
 } from './socket-test-helpers'
 
-describe('device event controller connection handler', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+describe('server device controller connection handler', () => {
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -44,7 +43,7 @@ describe('device event controller connection handler', () => {
       waitForConnect(firstConsole),
       waitForEvent(firstConsole, ROOM_EVENT.RoomJoined),
     ])
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
 
     const secondConsole = connectClient({
       roomCode,
@@ -57,7 +56,7 @@ describe('device event controller connection handler', () => {
       waitForEvent(secondConsole, ROOM_EVENT.RoomJoined),
     ])
 
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
     expect(secondConsole.connected).toBe(true)
   })
 })

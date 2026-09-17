@@ -13,10 +13,8 @@ import {
   VIDEO_EVENT,
   VIDEO_RELAY,
 } from '@virtality/shared/types'
-import {
-  connectionHandler,
-  resetActiveRoomsForTests,
-} from './device-event-controller'
+import { createRoleSlotRoomRegistry } from '../domain/role-slot-room-registry'
+import { createServerDeviceController } from './server-device-controller'
 import {
   createSocketTestHarness,
   expectNoEvent,
@@ -34,13 +32,15 @@ const noPayloadRelayEntries = Object.entries(VIDEO_RELAY).filter(
 )
 
 describe('immersive video relay', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())

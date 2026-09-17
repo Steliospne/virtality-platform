@@ -18,10 +18,10 @@ import {
   ROOM_PEER_ROLE,
 } from '@virtality/shared/types'
 import {
-  connectionHandler,
-  hasActiveRoomForTests,
-  resetActiveRoomsForTests,
-} from '../sockets/device-event-controller'
+  createRoleSlotRoomRegistry,
+  type RoleSlotRoomRegistry,
+} from '../domain/role-slot-room-registry'
+import { createServerDeviceController } from './server-device-controller'
 import {
   createSocketTestHarness,
   expectNoEvent,
@@ -31,12 +31,13 @@ import {
 } from './socket-test-helpers'
 
 async function waitForRoomRemoval(
+  registry: RoleSlotRoomRegistry,
   roomCode: string,
   timeoutMs = 3000,
 ): Promise<void> {
   const start = Date.now()
 
-  while (hasActiveRoomForTests(roomCode)) {
+  while (registry.hasRoom(roomCode)) {
     if (Date.now() - start > timeoutMs) {
       throw new Error(`Timed out waiting for room "${roomCode}" to be removed`)
     }
@@ -45,13 +46,15 @@ async function waitForRoomRemoval(
 }
 
 describe('role-slot room entry', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -124,13 +127,15 @@ describe('role-slot room entry', () => {
 })
 
 describe('Console role peer replacement', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -289,13 +294,15 @@ describe('Console role peer replacement', () => {
 })
 
 describe('VR role peer replacement', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -410,7 +417,9 @@ describe('VR role peer replacement', () => {
 })
 
 describe('relay protection from replaced peers', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
   let originalDisconnect: ServerSocket['disconnect']
   const deferredServerDisconnects: ServerSocket[] = []
 
@@ -418,7 +427,7 @@ describe('relay protection from replaced peers', () => {
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
     deferredServerDisconnects.length = 0
     originalDisconnect = ServerSocket.prototype.disconnect
     ServerSocket.prototype.disconnect = function (
@@ -542,13 +551,15 @@ describe('relay protection from replaced peers', () => {
 })
 
 describe('active role peer departure', () => {
-  const harness = createSocketTestHarness(connectionHandler)
+  const registry = createRoleSlotRoomRegistry()
+  const controller = createServerDeviceController({ registry })
+  const harness = createSocketTestHarness(controller.connectionHandler)
 
   beforeAll(() => harness.start())
   afterAll(() => harness.stop())
 
   beforeEach(() => {
-    resetActiveRoomsForTests()
+    registry.reset()
   })
 
   afterEach(() => harness.disconnectClients())
@@ -605,7 +616,7 @@ describe('active role peer departure', () => {
 
     expect(leftPayload).toMatchObject({ memberId: consoleSocketId })
     expect(vrSocket.connected).toBe(true)
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
 
     const replacementConsole = connectClient({
       roomCode,
@@ -640,7 +651,7 @@ describe('active role peer departure', () => {
 
     expect(leftPayload).toMatchObject({ memberId: vrSocketId })
     expect(consoleSocket.connected).toBe(true)
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
 
     const replacementVr = connectClient({
       roomCode,
@@ -676,19 +687,19 @@ describe('active role peer departure', () => {
     const roomCode = 'empty-room-cleanup'
     const { consoleSocket, vrSocket } = await joinCompleteRoom(roomCode)
 
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
 
     const vrMemberLeft = waitForEvent(vrSocket, ROOM_EVENT.MemberLeft)
     consoleSocket.disconnect()
     await Promise.all([waitForDisconnect(consoleSocket), vrMemberLeft])
 
-    expect(hasActiveRoomForTests(roomCode)).toBe(true)
+    expect(registry.hasRoom(roomCode)).toBe(true)
 
     vrSocket.disconnect()
     await waitForDisconnect(vrSocket)
-    await waitForRoomRemoval(roomCode)
+    await waitForRoomRemoval(registry, roomCode)
 
-    expect(hasActiveRoomForTests(roomCode)).toBe(false)
+    expect(registry.hasRoom(roomCode)).toBe(false)
   })
 
   it('ignores a stale disconnect from the replaced VR peer', async () => {

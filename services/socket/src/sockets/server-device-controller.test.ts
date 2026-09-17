@@ -1,17 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ROOM_PEER_ROLE } from '@virtality/shared/types'
 import { createRoleSlotRoomRegistry } from '../domain/role-slot-room-registry'
-import {
-  hasActiveRoomForTests,
-  replaceRoleSlotRoomRegistryForTests,
-  runStaleRoomCleanup,
-} from './device-event-controller'
+import { createServerDeviceController } from './server-device-controller'
 
-describe('device-event-controller stale room cleanup', () => {
-  afterEach(() => {
-    replaceRoleSlotRoomRegistryForTests(createRoleSlotRoomRegistry())
-  })
-
+describe('server-device-controller stale room cleanup', () => {
   it('delegates scheduled cleanup to the Room Registry eviction seam', () => {
     const now = 1_700_000_000_000
     const registry = createRoleSlotRoomRegistry({
@@ -27,10 +19,9 @@ describe('device-event-controller stale room cleanup', () => {
         },
       ],
     })
+    const controller = createServerDeviceController({ registry })
 
-    replaceRoleSlotRoomRegistryForTests(registry)
-
-    const outcomes = runStaleRoomCleanup(now + 61_000)
+    const outcomes = controller.runStaleRoomCleanup(now + 61_000)
 
     expect(outcomes).toEqual([
       {
@@ -42,6 +33,6 @@ describe('device-event-controller stale room cleanup', () => {
         vrActivePeerSocketId: null,
       },
     ])
-    expect(hasActiveRoomForTests('adapter-ttl-room')).toBe(false)
+    expect(registry.hasRoom('adapter-ttl-room')).toBe(false)
   })
 })

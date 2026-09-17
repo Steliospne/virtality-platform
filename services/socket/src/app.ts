@@ -6,7 +6,12 @@ import {
   createAppLogger,
   shutdownObservability,
 } from '@virtality/shared/observability'
-import { connectionHandler } from './sockets/device-event-controller'
+import { createRoleSlotRoomRegistry } from './domain/role-slot-room-registry'
+import { createServerDeviceController } from './sockets/server-device-controller'
+
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000
+const SNAPSHOT_INTERVAL_MS = 0.5 * 60 * 1000
+
 // Initialize Socket.IO
 const app = express()
 const logger = createAppLogger({
@@ -47,8 +52,22 @@ app.get('/warmup', (_req, res) => {
 
 const PORT = process.env.PORT || '8081'
 
-// Socket.IO connection handler
-io.on(CONNECTION_EVENT.CONNECTION, (socket) => connectionHandler(socket))
+// Composition root: one registry, one controller, timers owned here.
+const registry = createRoleSlotRoomRegistry()
+const controller = createServerDeviceController({
+  registry,
+  simulation: process.env.SIM === 'true',
+})
+io.on(CONNECTION_EVENT.CONNECTION, controller.connectionHandler)
+
+const cleanupTimer = setInterval(
+  () => controller.runStaleRoomCleanup(),
+  CLEANUP_INTERVAL_MS,
+)
+const snapshotTimer = setInterval(
+  () => controller.logRoomSnapshot(),
+  SNAPSHOT_INTERVAL_MS,
+)
 
 const httpServerOptions =
   process.env.NODE_ENV !== 'production'
@@ -69,6 +88,8 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
       service: 'socket',
     })
 
+    clearInterval(cleanupTimer)
+    clearInterval(snapshotTimer)
     io.close(() => {
       void shutdownObservability().finally(() => {
         process.exit(0)
