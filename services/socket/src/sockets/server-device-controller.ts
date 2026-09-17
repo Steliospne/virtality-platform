@@ -191,7 +191,7 @@ export function createServerDeviceController(
           })
           return
         case 'not_relayed':
-          logger.debug('socket.relay.unknown_event', {
+          logger.warn('socket.relay.unknown_event', {
             eventName: event,
             roomCode,
             socketId: socket.id,
