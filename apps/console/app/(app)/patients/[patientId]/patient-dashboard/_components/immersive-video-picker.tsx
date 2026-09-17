@@ -39,7 +39,7 @@ export function ImmersiveVideoPicker({ className }: { className?: string }) {
           <ChevronsUpDown className='opacity-50' />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-96 p-1'>
+      <PopoverContent className='w-(--radix-popover-trigger-width) p-1'>
         {rows.length === 0 ? (
           <p className='text-muted-foreground p-3 text-sm'>
             No published immersive videos.

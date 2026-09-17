@@ -1,14 +1,21 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { ImmersiveVideoProgress } from './immersive-video-progress'
 import { ImmersiveVideoSelectedCard } from './immersive-video-selected-card'
 
-export function ImmersiveVideoPanel({ className }: { className?: string }) {
+/** The selected-video card, with anything stacked under it (casting). */
+export function ImmersiveVideoPanel({
+  className,
+  children,
+}: {
+  className?: string
+  children?: ReactNode
+}) {
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      <ImmersiveVideoSelectedCard />
-      <ImmersiveVideoProgress />
+      <ImmersiveVideoSelectedCard className='shrink-0' />
+      {children}
     </div>
   )
 }

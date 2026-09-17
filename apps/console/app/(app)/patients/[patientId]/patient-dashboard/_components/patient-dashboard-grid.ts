@@ -46,19 +46,30 @@ const GRID_ROWS: Record<CompactLayout, string> = {
   base: 'grid-rows-[repeat(55,24px)]',
 }
 
-// Info panel plus the video/casting panel; nothing below them.
+// Info panel plus the immersive stack (video card, then casting under it
+// when it is open); nothing below them.
 const GRID_ROWS_WITHOUT_LIST: Record<CompactLayout, string> = {
-  expiredCasting: 'grid-rows-[repeat(36,24px)]',
+  expiredCasting: 'grid-rows-[repeat(48,24px)]',
   expired: 'grid-rows-[repeat(36,24px)]',
-  casting: 'grid-rows-[repeat(33,24px)]',
+  casting: 'grid-rows-[repeat(45,24px)]',
   base: 'grid-rows-[repeat(33,24px)]',
 }
 
 const GRID_ROWS_WITHOUT_LIST_COMPACT: Record<CompactLayout, string> = {
-  expiredCasting: 'lg:max-[1526px]:grid-rows-[repeat(35,24px)]',
+  expiredCasting: 'lg:max-[1526px]:grid-rows-[repeat(47,24px)]',
   expired: 'lg:max-[1526px]:grid-rows-[repeat(32,24px)]',
-  casting: 'lg:max-[1526px]:grid-rows-[repeat(32,24px)]',
+  casting: 'lg:max-[1526px]:grid-rows-[repeat(44,24px)]',
   base: 'lg:max-[1526px]:grid-rows-[repeat(29,24px)]',
+}
+
+// Immersive Video mode: the video card sits where the chart would, and the
+// casting panel stacks under it instead of replacing it.
+const IMMERSIVE_STACK_SPAN: Record<CompactLayout, string> = {
+  expiredCasting:
+    'row-span-41 max-[1526px]:row-end-42 lg:max-[1526px]:row-end-48',
+  expired: 'row-span-29 max-[1526px]:row-end-30 lg:max-[1526px]:row-end-36',
+  casting: 'row-span-41 max-[1526px]:row-end-39 lg:max-[1526px]:row-end-45',
+  base: 'row-span-29 max-[1526px]:row-end-27 lg:max-[1526px]:row-end-33',
 }
 
 function mainColumnStart(hideExerciseList: boolean | undefined): string {
@@ -103,13 +114,9 @@ export function dashboardExerciseListClassName(
   )
 }
 
-export function dashboardChartClassName(
-  showExpiredBanner: boolean,
-  hideExerciseList = false,
-): string {
+export function dashboardChartClassName(showExpiredBanner: boolean): string {
   return cn(
-    'relative col-span-full row-span-29 max-[1526px]:col-start-1',
-    mainColumnStart(hideExerciseList),
+    'relative col-span-full col-start-4 row-span-29 max-[1526px]:col-start-1',
     showExpiredBanner ? 'row-start-8' : 'row-start-5',
     showExpiredBanner
       ? 'max-[1526px]:row-end-27 lg:max-[1526px]:row-end-33'
@@ -117,17 +124,23 @@ export function dashboardChartClassName(
   )
 }
 
-export function dashboardCastingClassName(
-  showExpiredBanner: boolean,
-  hideExerciseList = false,
-): string {
+export function dashboardCastingClassName(showExpiredBanner: boolean): string {
   return cn(
-    'relative col-span-full row-span-29 max-[1526px]:col-start-1',
-    mainColumnStart(hideExerciseList),
+    'relative col-span-full col-start-4 row-span-29 max-[1526px]:col-start-1',
     showExpiredBanner ? 'row-start-8' : 'row-start-5',
     showExpiredBanner
       ? 'max-[1526px]:row-end-30 lg:max-[1526px]:row-end-36'
       : 'max-[1526px]:row-end-27 lg:max-[1526px]:row-end-33',
+  )
+}
+
+export function dashboardImmersiveStackClassName(
+  flags: DashboardGridFlags,
+): string {
+  return cn(
+    'relative col-span-full col-start-1',
+    flags.showExpiredBanner ? 'row-start-8' : 'row-start-5',
+    IMMERSIVE_STACK_SPAN[compactLayout(flags)],
   )
 }
 

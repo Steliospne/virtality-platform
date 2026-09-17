@@ -23,6 +23,7 @@ import {
   dashboardChartClassName,
   dashboardExerciseListClassName,
   dashboardGridClassName,
+  dashboardImmersiveStackClassName,
   dashboardInfoPanelClassName,
   dashboardSessionNotesClassName,
 } from './patient-dashboard-grid'
@@ -42,11 +43,8 @@ const PatientDashboard = () => {
     hideExerciseList: isImmersive,
   }
   const exerciseListClassName = dashboardExerciseListClassName(gridFlags)
-  const chartClassName = dashboardChartClassName(showExpiredBanner, isImmersive)
-  const castingClassName = dashboardCastingClassName(
-    showExpiredBanner,
-    isImmersive,
-  )
+  const chartClassName = dashboardChartClassName(showExpiredBanner)
+  const castingClassName = dashboardCastingClassName(showExpiredBanner)
 
   return (
     <div className='min-h-screen-with-nav flex justify-center'>
@@ -71,13 +69,15 @@ const PatientDashboard = () => {
           <ExerciseList className={exerciseListClassName} />
         )}
 
-        {isImmersive && !showCasting ? (
-          <ImmersiveVideoPanel className={chartClassName} />
-        ) : null}
-
-        {showCasting ? (
+        {isImmersive ? (
+          <ImmersiveVideoPanel
+            className={dashboardImmersiveStackClassName(gridFlags)}
+          >
+            {showCasting ? <CastingContent className='min-h-0 flex-1' /> : null}
+          </ImmersiveVideoPanel>
+        ) : showCasting ? (
           <CastingContent className={castingClassName} />
-        ) : isImmersive ? null : (
+        ) : (
           <ChartCard className={chartClassName} />
         )}
 

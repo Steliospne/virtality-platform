@@ -41,7 +41,7 @@ describe('casting surfaces', () => {
     expect(dashboardSource).toMatch(
       /const \[showCasting, setShowCasting\] = useState\(false\)/,
     )
-    expect(dashboardSource).toMatch(/\{showCasting \? \(/)
+    expect(dashboardSource).toMatch(/showCasting \? /)
     expect(dashboardSource).toMatch(/<CastingContent/)
     expect(dashboardSource).toMatch(/useCastingHandshake\(/)
 
