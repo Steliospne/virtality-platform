@@ -76,11 +76,11 @@ const ModeSelector = ({
           trigger
         )}
         <SelectContent className='dark:bg-zinc-900'>
-          <SelectItem key='main' value='main'>
-            Normal Mode
-          </SelectItem>
           <SelectItem key='free' value='free'>
             Free Mode
+          </SelectItem>
+          <SelectItem key='main' value='main'>
+            Normal Mode
           </SelectItem>
           <SelectItem
             key='immersive'

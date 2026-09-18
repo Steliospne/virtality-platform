@@ -21,13 +21,6 @@ type SidebarLink = {
 }
 
 const sidebarLinks: SidebarLink[] = [
-  { title: 'devices', url: '/devices', icon: RectangleGogglesIcon },
-  {
-    title: 'VR experiences',
-    url: '/vr-video',
-    icon: Film,
-    enabled: resolveVrExperiencesNavEnabled,
-  },
   {
     title: 'patients',
     url: '/patients',
@@ -38,6 +31,13 @@ const sidebarLinks: SidebarLink[] = [
     url: '/programs',
     icon: BookMarkedIcon,
   },
+  {
+    title: 'VR experiences',
+    url: '/vr-video',
+    icon: Film,
+    enabled: resolveVrExperiencesNavEnabled,
+  },
+  { title: 'devices', url: '/devices', icon: RectangleGogglesIcon },
   {
     title: 'guides',
     url: '/guides',
