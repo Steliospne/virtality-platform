@@ -69,17 +69,27 @@ const updateReusableProgramExercises = authed
       toUpdate: exercisesToUpdate,
     } = diffById(prevExercises, input.exercises)
 
-    await prisma.$transaction(async () => {
+    await prisma.$transaction(async (tx) => {
       if (exercisesToDelete.length > 0) {
-        await prisma.reusableProgramExercise.deleteMany({
+        await tx.reusableProgramExercise.deleteMany({
           where: {
             id: { in: exercisesToDelete.map((exercise) => exercise.id) },
           },
         })
       }
 
+      // `position` is unique per program, so a reorder written row by row
+      // collides with a row that has not moved yet. Park the survivors at
+      // negative positions first so every final position is free.
+      for (const [index, exercise] of exercisesToUpdate.entries()) {
+        await tx.reusableProgramExercise.update({
+          where: { id: exercise.id },
+          data: { position: -(index + 1) },
+        })
+      }
+
       if (exercisesToCreate.length > 0) {
-        await prisma.reusableProgramExercise.createMany({
+        await tx.reusableProgramExercise.createMany({
           data: exercisesToCreate.map((exercise) => ({
             ...exercise,
             reusableProgramId: input.reusableProgramId,
@@ -87,13 +97,11 @@ const updateReusableProgramExercises = authed
         })
       }
 
-      if (exercisesToUpdate.length > 0) {
-        for (const exercise of exercisesToUpdate) {
-          await prisma.reusableProgramExercise.update({
-            where: { id: exercise.id },
-            data: exercise,
-          })
-        }
+      for (const exercise of exercisesToUpdate) {
+        await tx.reusableProgramExercise.update({
+          where: { id: exercise.id },
+          data: exercise,
+        })
       }
     })
   })
