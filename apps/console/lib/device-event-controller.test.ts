@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Socket } from 'socket.io-client'
-import { parseHeadsetPayload, subscribe } from './device-event-controller.js'
+import {
+  parseHeadsetBoolean,
+  parseHeadsetPayload,
+  subscribe,
+} from './device-event-controller.js'
 
 type Listener = (...args: unknown[]) => void
 
@@ -47,6 +51,27 @@ describe('parseHeadsetPayload', () => {
     expect(parseHeadsetPayload(undefined)).toBeUndefined()
     expect(parseHeadsetPayload('{not json')).toBe('{not json')
   })
+})
+
+describe('parseHeadsetBoolean', () => {
+  it.each([
+    [true, true],
+    [false, false],
+    ['true', true],
+    ['false', false],
+    ['True', true],
+    ['False', false],
+    [' false ', false],
+  ])('reads %j as %j', (input, expected) => {
+    expect(parseHeadsetBoolean(input)).toBe(expected)
+  })
+
+  it.each(['', 'yes', '0', 1, null, undefined, {}])(
+    'returns null for %j',
+    (input) => {
+      expect(parseHeadsetBoolean(input)).toBeNull()
+    },
+  )
 })
 
 describe('subscribe', () => {

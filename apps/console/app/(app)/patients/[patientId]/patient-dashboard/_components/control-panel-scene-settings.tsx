@@ -12,7 +12,7 @@ import AvatarSelector from './avatar-selector'
 import { PatientDashboardValue } from '@/context/patient-dashboard-context'
 import { Button } from '@virtality/ui/components/button'
 import { PROGRAM_EVENT } from '@virtality/shared/types'
-import { subscribe } from '@/lib/device-event-controller'
+import { parseHeadsetBoolean, subscribe } from '@/lib/device-event-controller'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@virtality/ui/components/label'
 import { cn } from '@/lib/utils'
@@ -51,8 +51,10 @@ const SceneSettings = ({
     selectedDevice?.events.program.SittingChange(value)
   }
 
-  const sittingChangeSocketHandler = (payload: boolean) => {
-    setSitting(payload)
+  // The headset sends the flag as text ("true"/"False"); a raw string is truthy.
+  const sittingChangeSocketHandler = (payload: unknown) => {
+    const sitting = parseHeadsetBoolean(payload)
+    if (sitting !== null) setSitting(sitting)
   }
 
   useEffect(() => {

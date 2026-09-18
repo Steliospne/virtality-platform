@@ -39,6 +39,20 @@ export function parseHeadsetPayload(value: unknown): unknown {
 }
 
 /**
+ * A boolean the headset sends arrives as text (`"true"`, or C#'s `"True"`),
+ * and a non-empty string is truthy, so it must not be used as a boolean
+ * directly. Anything unrecognised is `null` so the caller can ignore it.
+ */
+export function parseHeadsetBoolean(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'true') return true
+  if (normalized === 'false') return false
+  return null
+}
+
+/**
  * Subscribe to socket events using a shared event-constant object as the map.
  * Handler keys correspond to the keys of the event map (e.g. `PROGRAM_EVENT`),
  * and the wire name is looked up automatically. Every argument goes through
