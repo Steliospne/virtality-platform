@@ -220,6 +220,7 @@ describe('video library', () => {
     headset.handle(VIDEO_EVENT.DownloadStart, 'vid-1')
     expect(headset.handle(VIDEO_EVENT.DownloadCancel, 'vid-1')).toEqual([
       { event: VIDEO_EVENT.DownloadCancelAck, payload: 'vid-1' },
+      { event: VIDEO_EVENT.DownloadCancelComplete, payload: 'vid-1' },
     ])
     expect(collect(headset, 0, 1000, 50).at(-1)?.event).toBe(
       VIDEO_EVENT.DownloadComplete,
@@ -232,6 +233,7 @@ describe('video library', () => {
     collect(headset, 0, 1000, 50)
     expect(headset.handle(VIDEO_EVENT.Delete, 'vid-1')).toEqual([
       { event: VIDEO_EVENT.DeleteAck, payload: 'vid-1' },
+      { event: VIDEO_EVENT.DeleteComplete, payload: 'vid-1' },
     ])
     const [state] = headset.handle(VIDEO_EVENT.LibraryStateRequest)
     expect(JSON.parse(state.payload as string).videos).toEqual([])

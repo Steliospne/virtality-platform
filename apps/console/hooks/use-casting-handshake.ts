@@ -184,8 +184,7 @@ export function useCastingHandshake(socket: SocketWithQuery | null) {
     const payload = await getCastingIceServers()
     iceServersRef.current = payload
     setStatus('requesting')
-    emitter.casting.RequestOffer()
-    emitter.casting.RequestOfferV2(JSON.stringify(payload))
+    emitter.casting.RequestOffer(JSON.stringify(payload))
   }, [socket, emitter])
 
   const stopCasting = useCallback(() => {

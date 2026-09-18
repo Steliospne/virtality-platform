@@ -252,11 +252,17 @@ export function createSimulatedHeadset(
         return startDownload(payload)
       case VIDEO_EVENT.DownloadCancel:
         // The headset build acks a cancel but does not stop a running download.
-        return [{ event: VIDEO_EVENT.DownloadCancelAck, payload }]
+        return [
+          { event: VIDEO_EVENT.DownloadCancelAck, payload },
+          { event: VIDEO_EVENT.DownloadCancelComplete, payload },
+        ]
       case VIDEO_EVENT.Delete:
         library.delete(payload)
         downloads.delete(payload)
-        return [{ event: VIDEO_EVENT.DeleteAck, payload }]
+        return [
+          { event: VIDEO_EVENT.DeleteAck, payload },
+          { event: VIDEO_EVENT.DeleteComplete, payload },
+        ]
       case VIDEO_EVENT.Play:
         return [{ event: VIDEO_EVENT.PlayAck, payload }]
       case VIDEO_EVENT.Stop:

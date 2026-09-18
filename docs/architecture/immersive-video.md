@@ -42,20 +42,24 @@ Keys are `VIDEO_EVENT` / `VIDEO_RELAY` entries in `packages/shared/src/types/soc
 
 ### VR → Console
 
-| Key                 | Wire name                | Payload                        | Headset      | Notes                                                                                                                        |
-| ------------------- | ------------------------ | ------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `LibraryState`      | `videoLibraryState`      | `VideoLibraryStatePayload`     | sent         | Only on request. Lists downloaded videos, each as `{videoId, status: "ready"}`; `freeBytes` from `StatFs` (0 in the Editor). |
-| `DownloadAck`       | `videoDownloadAck`       | `[videoId]`                    | sent         | Console times out at 5 s without it. For an unknown id the headset sends `videoDownloadFailed` first.                        |
-| `DownloadProgress`  | `videoDownloadProgress`  | `VideoDownloadProgressPayload` | sent         | `sizeBytes` is `bytesDownloaded / PercentComplete`, an estimate. An already-cached bundle ticks `0/0`.                       |
-| `DownloadComplete`  | `videoDownloadComplete`  | `[videoId]`                    | sent         | The console marks the row `ready` and re-requests Library State.                                                             |
-| `DownloadFailed`    | `videoDownloadFailed`    | `VideoDownloadFailedPayload`   | sent         | Reasons today: `unavailable`, `network`.                                                                                     |
-| `DownloadPaused`    | `videoDownloadPaused`    | `VideoDownloadPausedPayload`   | **not sent** |                                                                                                                              |
-| `DownloadCancelAck` | `videoDownloadCancelAck` | `[videoId]`                    | sent         | The console removes the row.                                                                                                 |
-| `DeleteAck`         | `videoDeleteAck`         | `[videoId]`                    | sent         | The console removes the row. (`videoDeleteComplete` / `videoDeleteFailed` are also sent; not relayed.)                       |
-| `PlayAck`           | `videoPlayAck`           | `[videoId]`                    | sent         | Sent on receipt, before playback starts.                                                                                     |
-| `PlaybackProgress`  | `videoPlaybackProgress`  | `VideoPlaybackProgressPayload` | **not sent** | When sent: ≤1/s while playing and while paused, so a rejoining console can re-attach.                                        |
-| `Ended`             | `videoEnded`             | none                           | **not sent** | Until sent, the console only leaves Playing on `videoStopAck`.                                                               |
-| `StopAck`           | `videoStopAck`           | `[videoId]`                    | sent         | The console returns to Idle; a stale ack for another video is ignored.                                                       |
+| Key                      | Wire name                     | Payload                        | Headset      | Notes                                                                                                                        |
+| ------------------------ | ----------------------------- | ------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `LibraryState`           | `videoLibraryState`           | `VideoLibraryStatePayload`     | sent         | Only on request. Lists downloaded videos, each as `{videoId, status: "ready"}`; `freeBytes` from `StatFs` (0 in the Editor). |
+| `DownloadAck`            | `videoDownloadAck`            | `[videoId]`                    | sent         | Console times out at 5 s without it. For an unknown id the headset sends `videoDownloadFailed` first.                        |
+| `DownloadProgress`       | `videoDownloadProgress`       | `VideoDownloadProgressPayload` | sent         | `sizeBytes` is `bytesDownloaded / PercentComplete`, an estimate. An already-cached bundle ticks `0/0`.                       |
+| `DownloadComplete`       | `videoDownloadComplete`       | `[videoId]`                    | sent         | The console marks the row `ready` and re-requests Library State.                                                             |
+| `DownloadFailed`         | `videoDownloadFailed`         | `VideoDownloadFailedPayload`   | sent         | Reasons today: `unavailable`, `network`.                                                                                     |
+| `DownloadPaused`         | `videoDownloadPaused`         | `VideoDownloadPausedPayload`   | **not sent** |                                                                                                                              |
+| `DownloadCancelAck`      | `videoDownloadCancelAck`      | `[videoId]`                    | sent         | The console removes the row.                                                                                                 |
+| `DownloadCancelComplete` | `videoDownloadCancelComplete` | `[videoId]`                    | sent         | The console shows a success toast; the row is already gone from the ack.                                                     |
+| `DownloadCancelFailed`   | `videoDownloadCancelFailed`   | `VideoDownloadFailedPayload`   | sent         | The console shows an error toast with the reason.                                                                            |
+| `DeleteAck`              | `videoDeleteAck`              | `[videoId]`                    | sent         | The console removes the row.                                                                                                 |
+| `DeleteComplete`         | `videoDeleteComplete`         | `[videoId]`                    | sent         | The console shows a success toast; the row is already gone from the ack.                                                     |
+| `DeleteFailed`           | `videoDeleteFailed`           | `VideoDownloadFailedPayload`   | sent         | The console shows an error toast with the reason.                                                                            |
+| `PlayAck`                | `videoPlayAck`                | `[videoId]`                    | sent         | Sent on receipt, before playback starts.                                                                                     |
+| `PlaybackProgress`       | `videoPlaybackProgress`       | `VideoPlaybackProgressPayload` | **not sent** | When sent: ≤1/s while playing and while paused, so a rejoining console can re-attach.                                        |
+| `Ended`                  | `videoEnded`                  | none                           | **not sent** | Until sent, the console only leaves Playing on `videoStopAck`.                                                               |
+| `StopAck`                | `videoStopAck`                | `[videoId]`                    | sent         | The console returns to Idle; a stale ack for another video is ignored.                                                       |
 
 Payload types are the source in `packages/shared/src/types/socket-events.ts`; the doc does not repeat them.
 

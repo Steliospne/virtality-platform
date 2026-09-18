@@ -85,10 +85,10 @@ export type GameEventKey = keyof typeof GAME_EVENT
 
 export const CASTING_EVENT = {
   RequestOffer: 'onRequestOffer',
-  RequestOfferV2: 'onRequestOfferV2',
   Offer: 'onOffer',
   Answer: 'onAnswer',
   StopCasting: 'onStopCasting',
+  StopCastingAck: 'onStopCastingAck',
   Candidate: 'onIceCandidate',
 } as const
 
@@ -116,8 +116,12 @@ export const VIDEO_EVENT = {
   DownloadPaused: 'videoDownloadPaused',
   DownloadCancel: 'videoDownloadCancel',
   DownloadCancelAck: 'videoDownloadCancelAck',
+  DownloadCancelComplete: 'videoDownloadCancelComplete',
+  DownloadCancelFailed: 'videoDownloadCancelFailed',
   Delete: 'videoDelete',
   DeleteAck: 'videoDeleteAck',
+  DeleteComplete: 'videoDeleteComplete',
+  DeleteFailed: 'videoDeleteFailed',
   Play: 'videoPlay',
   PlayAck: 'videoPlayAck',
   Pause: 'videoPause',
@@ -184,11 +188,11 @@ export const GAME_RELAY: RelayEventMap = {
 } as const
 
 export const CASTING_RELAY: RelayEventMap = {
-  RequestOffer: { name: CASTING_EVENT.RequestOffer, payload: false },
-  RequestOfferV2: { name: CASTING_EVENT.RequestOfferV2, payload: true },
+  RequestOffer: { name: CASTING_EVENT.RequestOffer, payload: true },
   Offer: { name: CASTING_EVENT.Offer, payload: true },
   Answer: { name: CASTING_EVENT.Answer, payload: true },
   StopCasting: { name: CASTING_EVENT.StopCasting, payload: false },
+  StopCastingAck: { name: CASTING_EVENT.StopCastingAck, payload: false },
   Candidate: { name: CASTING_EVENT.Candidate, payload: true },
 } as const
 
@@ -207,8 +211,18 @@ export const VIDEO_RELAY = {
   DownloadPaused: { name: VIDEO_EVENT.DownloadPaused, payload: true },
   DownloadCancel: { name: VIDEO_EVENT.DownloadCancel, payload: true },
   DownloadCancelAck: { name: VIDEO_EVENT.DownloadCancelAck, payload: true },
+  DownloadCancelComplete: {
+    name: VIDEO_EVENT.DownloadCancelComplete,
+    payload: true,
+  },
+  DownloadCancelFailed: {
+    name: VIDEO_EVENT.DownloadCancelFailed,
+    payload: true,
+  },
   Delete: { name: VIDEO_EVENT.Delete, payload: true },
   DeleteAck: { name: VIDEO_EVENT.DeleteAck, payload: true },
+  DeleteComplete: { name: VIDEO_EVENT.DeleteComplete, payload: true },
+  DeleteFailed: { name: VIDEO_EVENT.DeleteFailed, payload: true },
   Play: { name: VIDEO_EVENT.Play, payload: true },
   PlayAck: { name: VIDEO_EVENT.PlayAck, payload: true },
   Pause: { name: VIDEO_EVENT.Pause, payload: false },
@@ -308,7 +322,8 @@ export function parseRoomPeerRole(role: unknown): RoomPeerRole | null {
  * argument, a bare string, so the headset reads it at argument index 0.
  * Used by `videoDownloadStart`, `videoDownloadPause`, `videoDownloadCancel`,
  * `videoDelete`, `videoPlay`, `videoStop`, `videoDownloadAck`,
- * `videoDownloadComplete`, `videoDownloadCancelAck`, `videoDeleteAck`,
+ * `videoDownloadComplete`, `videoDownloadCancelAck`,
+ * `videoDownloadCancelComplete`, `videoDeleteAck`, `videoDeleteComplete`,
  * `videoPlayAck` and `videoStopAck`. Every other video event carries an
  * object.
  *
@@ -388,6 +403,10 @@ export type VideoDownloadFailedPayload = {
   reason: VideoDownloadFailureReason
 }
 
+/** `videoDownloadCancelFailed` and `videoDeleteFailed` share the download-failure shape. */
+export type VideoDownloadCancelFailedPayload = VideoDownloadFailedPayload
+export type VideoDeleteFailedPayload = VideoDownloadFailedPayload
+
 export type VideoPlaybackProgressPayload = {
   videoId: string
   positionSec: number
@@ -444,11 +463,11 @@ export type GameEventPayloads = {
 }
 
 export type CastingEventPayloads = {
-  RequestOffer: []
-  RequestOfferV2: [payload: string]
+  RequestOffer: [payload: string]
   Offer: [offer: unknown]
   Answer: [answer: SDPDescription]
   StopCasting: []
+  StopCastingAck: []
   Candidate: [candidate: unknown]
 }
 
@@ -464,8 +483,12 @@ export type VideoEventPayloads = {
   DownloadPaused: [payload: VideoDownloadPausedPayload]
   DownloadCancel: VideoIdArgs
   DownloadCancelAck: VideoIdArgs
+  DownloadCancelComplete: VideoIdArgs
+  DownloadCancelFailed: [payload: VideoDownloadCancelFailedPayload]
   Delete: VideoIdArgs
   DeleteAck: VideoIdArgs
+  DeleteComplete: VideoIdArgs
+  DeleteFailed: [payload: VideoDeleteFailedPayload]
   Play: VideoIdArgs
   PlayAck: VideoIdArgs
   Pause: []
