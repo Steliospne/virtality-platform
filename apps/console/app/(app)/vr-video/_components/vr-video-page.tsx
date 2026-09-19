@@ -12,6 +12,7 @@ import { headsetStorageSubtitle } from '@/lib/headset-library-format'
 import { HeadsetDidNotConfirmDialog } from './headset-did-not-confirm-dialog'
 import { HeadsetLibrary } from './headset-library'
 import { HeadsetList } from './headset-list'
+import { VrVideoPageSkeleton } from './vr-video-page-skeleton'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 
 export function VrVideoPage() {
@@ -24,6 +25,8 @@ export function VrVideoPage() {
     freeBytes: page.selectedFreeBytes,
     reportedAt: page.selectedReportedAt,
   })
+
+  if (page.catalogPending) return <VrVideoPageSkeleton />
 
   return (
     <div className='flex flex-col gap-6 p-8'>
