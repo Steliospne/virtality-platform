@@ -9,9 +9,12 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { tableDefaults } from '@virtality/ui/lib/table-defaults'
+import { usePersistedPageSize } from '@virtality/ui/lib/use-persisted-page-size'
 import { useState } from 'react'
 
 type UseResourceTableOptions<TData> = {
+  /** Stable per-table id; keys the remembered rows-per-page choice in localStorage. */
+  tableId: string
   data: TData[]
   columns: ColumnDef<TData, unknown>[]
   enableColumnFilters?: boolean
@@ -21,6 +24,7 @@ type UseResourceTableOptions<TData> = {
 }
 
 export function useResourceTable<TData>({
+  tableId,
   data,
   columns,
   enableColumnFilters = false,
@@ -33,6 +37,7 @@ export function useResourceTable<TData>({
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const { pagination, onPaginationChange } = usePersistedPageSize(tableId)
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -44,12 +49,14 @@ export function useResourceTable<TData>({
       globalFilter,
       rowSelection,
       columnVisibility,
+      pagination,
       ...(enableColumnFilters ? { columnFilters } : {}),
     },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange,
     ...(enableColumnFilters ? { onColumnFiltersChange: setColumnFilters } : {}),
     ...(getRowId ? { getRowId } : {}),
     ...(meta ? { meta } : {}),

@@ -27,6 +27,7 @@ const TrialRedeemCodeTable = () => {
   const { data, isPending } = useTrialRedeemCodes()
   const { table, globalFilter, setGlobalFilter, setColumnFilters } =
     useResourceTable({
+      tableId: 'trial-redeem-codes',
       data: data ?? [],
       columns,
       getRowId: (row) => String(row.id),

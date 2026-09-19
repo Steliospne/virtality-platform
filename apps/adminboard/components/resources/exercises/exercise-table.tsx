@@ -21,6 +21,7 @@ const ExerciseTable = () => {
   const [enabledFilter, setEnabledFilter] = useState(false)
   const { table, globalFilter, setGlobalFilter, setColumnFilters } =
     useResourceTable({
+      tableId: 'exercises',
       data: data ?? [],
       columns,
       enableColumnFilters: true,

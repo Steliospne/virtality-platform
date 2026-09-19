@@ -17,6 +17,7 @@ const TesterCodeTable = () => {
   const { mutate: createTesterCode, isPending: isGenerating } =
     useCreateTesterCode()
   const { table, globalFilter, setGlobalFilter } = useResourceTable({
+    tableId: 'tester-codes',
     data: data ?? [],
     columns,
     getRowId: (row) => String(row.id),

@@ -110,6 +110,7 @@ export default function ImmersiveVideoTable() {
 
   const { table, globalFilter, setGlobalFilter, setColumnFilters } =
     useResourceTable({
+      tableId: 'immersive-videos',
       data,
       columns,
       enableColumnFilters: true,

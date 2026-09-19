@@ -16,6 +16,7 @@ export function CustomerTable() {
   const { data, isPending } = useAdminCustomers()
   const columns = useMemo(() => createCustomerColumns(), [])
   const { table, globalFilter, setGlobalFilter } = useResourceTable({
+    tableId: 'customers',
     data: data ?? [],
     columns,
     getRowId: (row) => row.userId,

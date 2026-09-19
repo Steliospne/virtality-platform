@@ -47,6 +47,7 @@ export function CouponPromotionCodeTable({
   const tableData = useMemo(() => [...codes], [codes])
   const { table, globalFilter, setGlobalFilter, setColumnFilters } =
     useResourceTable({
+      tableId: 'coupon-promotion-codes',
       data: tableData,
       columns,
       getRowId: (row) => row.id,
