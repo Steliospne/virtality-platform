@@ -11,6 +11,7 @@ import {
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
 import { tableDefaults } from '@virtality/ui/lib/table-defaults'
+import { usePersistedPageSize } from '@virtality/ui/lib/use-persisted-page-size'
 import { useMemo, useState } from 'react'
 import { useReusablePrograms } from '@virtality/react-query'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
@@ -29,6 +30,8 @@ export default function ProgramLibraryTable() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const { pagination, onPaginationChange } =
+    usePersistedPageSize('program-library')
 
   const { data: programs, isPending } = useReusablePrograms()
   const filteredPrograms = useMemo(
@@ -45,10 +48,12 @@ export default function ProgramLibraryTable() {
       sorting,
       globalFilter,
       columnVisibility,
+      pagination,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange,
   })
 
   const rowNavigation = (id: string) => {

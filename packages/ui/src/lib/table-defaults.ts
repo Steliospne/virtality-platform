@@ -5,7 +5,10 @@ import {
   getSortedRowModel,
 } from '@tanstack/react-table'
 
+export const tablePageSizeOptions = [10, 20, 25, 30, 40, 50] as const
+
 export const tableDefaults = {
+  pageSize: tablePageSizeOptions[0],
   models: {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),

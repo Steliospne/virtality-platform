@@ -17,6 +17,10 @@
       "types": "./src/lib/use-resource-table.ts",
       "default": "./dist/src/lib/use-resource-table.js"
     },
+    "./lib/use-persisted-page-size": {
+      "types": "./src/lib/use-persisted-page-size.ts",
+      "default": "./dist/src/lib/use-persisted-page-size.js"
+    },
     "./hooks/*": {
       "types": "./src/hooks/*.ts",
       "default": "./dist/src/hooks/*.js"

@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@virtality/ui/components/table'
+import { tablePageSizeOptions } from '@virtality/ui/lib/table-defaults'
 import { cn } from '@virtality/ui/lib/utils'
 import { AlertCircle } from 'lucide-react'
 import { ReactNode, useEffect } from 'react'
@@ -290,7 +291,7 @@ export function DataTableFooter<TData>({ table }: DataTableFooterProps<TData>) {
             <SelectValue placeholder={table.getState().pagination.pageSize} />
           </SelectTrigger>
           <SelectContent side='top'>
-            {[10, 20, 25, 30, 40, 50].map((pageSize) => (
+            {tablePageSizeOptions.map((pageSize) => (
               <SelectItem key={pageSize} value={`${pageSize}`}>
                 {pageSize}
               </SelectItem>

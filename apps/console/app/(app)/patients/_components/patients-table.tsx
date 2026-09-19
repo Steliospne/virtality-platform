@@ -11,6 +11,7 @@ import {
   DataTableHeader,
 } from '@virtality/ui/components/data-table'
 import { tableDefaults } from '@virtality/ui/lib/table-defaults'
+import { usePersistedPageSize } from '@virtality/ui/lib/use-persisted-page-size'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@virtality/ui/components/button'
@@ -41,6 +42,7 @@ const PatientsTable = () => {
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const { pagination, onPaginationChange } = usePersistedPageSize('patients')
 
   const { data: tableData, isPending } = usePatients()
   const filteredPatients = useMemo(
@@ -58,11 +60,13 @@ const PatientsTable = () => {
       globalFilter,
       rowSelection,
       columnVisibility,
+      pagination,
     },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange,
   })
 
   const selectedRows = table
