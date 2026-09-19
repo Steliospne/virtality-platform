@@ -100,12 +100,14 @@ export function overlayRequestedRows(
  * What a page shows for one headset: the live report while the headset is in
  * the room, the Library Mirror otherwise. The mirror is refreshed by every
  * `videoLibraryState` the console relays, so it is the headset's last word.
+ * A sleeping headset can complete the room without ever reporting; until a
+ * live report arrives the mirror stays on screen.
  */
 export function resolveHeadsetSnapshot(input: {
-  live: HeadsetLibrarySnapshot
+  live: HeadsetLibrarySnapshot | null
   mirror: HeadsetLibrarySnapshot | null
   online: boolean
 }): HeadsetLibrarySnapshot | null {
-  if (!input.online) return input.mirror
+  if (!input.online || !input.live) return input.mirror
   return overlayRequestedRows(input.live, input.mirror)
 }

@@ -70,7 +70,7 @@ export function useVrVideoPage() {
             videos: library.libraryState.videos,
             freeBytes: library.libraryState.freeBytes,
           }
-        : { videos: [], freeBytes: 0 },
+        : null,
     [library.libraryState],
   )
 
@@ -86,7 +86,9 @@ export function useVrVideoPage() {
     return mirrorDevices.map((device) => {
       const isSelected = device.id === selectedId
       const snapshot =
-        isSelected && useLive ? liveSnapshot : toLibrarySnapshot(device.report)
+        isSelected && useLive && liveSnapshot
+          ? liveSnapshot
+          : toLibrarySnapshot(device.report)
       const roomOnline = isSelected && library.roomComplete
       const online = roomOnline || presenceByDeviceId[device.id] === 'online'
 

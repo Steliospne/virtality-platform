@@ -103,7 +103,7 @@ export function ImmersiveVideoSessionProvider({
           videos: library.libraryState.videos,
           freeBytes: library.libraryState.freeBytes,
         }
-      : { videos: [], freeBytes: 0 }
+      : null
     const online = library.roomComplete && !replaced
 
     return buildHeadsetLibraryRows(

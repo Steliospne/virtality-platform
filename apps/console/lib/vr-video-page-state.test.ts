@@ -90,6 +90,12 @@ describe('resolveHeadsetSnapshot', () => {
     })
   })
 
+  it('keeps the mirror while the room is complete but the headset has not reported', () => {
+    expect(resolveHeadsetSnapshot({ live: null, mirror, online: true })).toBe(
+      mirror,
+    )
+  })
+
   it('shows nothing offline without a mirror', () => {
     expect(resolveHeadsetSnapshot({ live, mirror: null, online: false })).toBe(
       null,
