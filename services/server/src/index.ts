@@ -13,7 +13,7 @@ import {
 import { authMiddleware } from './middleware/auth.ts'
 import { orpcMiddleware } from './middleware/orpc.ts'
 import { findDeviceByDeviceId } from './data/device.ts'
-import { ORPC_PREFIX } from '@virtality/shared/types'
+import { API_PREFIX, ORPC_PREFIX } from '@virtality/shared/types'
 import { devicePairingRoutes } from './routes/device-pairing.ts'
 import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
 import { scheduleImmersiveVideoCleanup } from './lib/schedule-immersive-video-cleanup.ts'
@@ -48,9 +48,17 @@ const httpLogger = logger.child({
 })
 const httpMetrics = createHttpMetrics(createAppMeter({ serviceName: 'server' }))
 
+// oRPC procedures and Better Auth endpoints are mounted as one `/*` route
+// each, but their paths are static (inputs travel in the body or query), so
+// the raw path is already a bounded grouping key that names the procedure.
+const STATIC_PATH_PREFIXES = [`${ORPC_PREFIX}/`, `${API_PREFIX}/auth/`]
+
 // The route pattern (`/api/v1/devices/:deviceId`) keeps path-parameter
 // values out of the grouping key; the raw path stays alongside for drill-down.
 function resolveRoute(c: Context) {
+  if (STATIC_PATH_PREFIXES.some((prefix) => c.req.path.startsWith(prefix))) {
+    return c.req.path
+  }
   const patterns = c.req.matchedRoutes
     .map((r) => r.path)
     .filter((path) => path !== '*')
