@@ -11,6 +11,14 @@ import { completePatientSessionWithSaveChoice } from './session-completion.ts'
 import { createPatientSessionFromAck } from './session-start-from-ack.ts'
 import { interruptPatientSession } from './session-interruption.ts'
 import { syncSessionWorkingCopy } from './session-working-copy.ts'
+import { createAppLogger } from '@virtality/shared/observability'
+
+const patientSessionLogger = createAppLogger({
+  serviceName: 'server',
+  defaultAttributes: {
+    component: 'patient-session',
+  },
+})
 
 const StartPatientSessionFromAckSchema = z.object({
   session: PatientSessionSchema,
@@ -19,6 +27,10 @@ const StartPatientSessionFromAckSchema = z.object({
       patientSessionId: z.string().optional(),
     }),
   ),
+  // The socket room the session runs in (the headset's deviceId). Logged, not
+  // stored: it is the join key from a patient session to the socket and VR
+  // logs of the same room.
+  roomCode: z.string().optional(),
 })
 
 const listPatientSessions = authed
@@ -103,7 +115,7 @@ const startPatientSessionFromAck = authed
   .handler(async ({ context, input }) => {
     const { prisma } = context
 
-    return prisma.$transaction(async (tx) =>
+    const patientSession = await prisma.$transaction(async (tx) =>
       createPatientSessionFromAck(
         {
           patientSession: tx.patientSession,
@@ -112,6 +124,17 @@ const startPatientSessionFromAck = authed
         input,
       ),
     )
+
+    patientSessionLogger.info('patient_session.started', {
+      patientSessionId: patientSession.id,
+      patientId: patientSession.patientId,
+      userId: context.user.id,
+      roomCode: input.roomCode,
+      exerciseCount: input.exercises.length,
+      sourceReusableProgramId: patientSession.sourceReusableProgramId,
+    })
+
+    return patientSession
   })
 
 const CompletePatientSessionSchema = z.object({

@@ -347,6 +347,7 @@ const usePatientDashboardSocketSetup = ({
       await startPatientSessionFromAck({
         session: persistenceInput.session,
         exercises: persistenceInput.exercises,
+        roomCode: socket?.io.opts.query.roomCode,
       })
 
       patientSessionId.current = persistenceInput.sessionId
