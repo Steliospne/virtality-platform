@@ -11,11 +11,12 @@ function readConsoleFile(relativePath: string): string {
 
 describe('patient session history surfaces', () => {
   it('shows stored source program context in the sessions table', () => {
+    const rowSource = readConsoleFile('lib/session-list-row.ts')
     const columnsSource = readConsoleFile(
       'app/(app)/patients/[patientId]/profile/_components/sessions-columns.tsx',
     )
 
-    expect(columnsSource).toMatch(/getSessionSourceProgramDisplayName/)
+    expect(rowSource).toMatch(/getSessionSourceProgramDisplayName/)
     expect(columnsSource).toMatch(/header: \(\) => 'Program'/)
   })
 
@@ -32,9 +33,12 @@ describe('patient session history surfaces', () => {
     const cardSource = readConsoleFile(
       'app/(app)/patients/[patientId]/profile/_components/session-card.tsx',
     )
+    const rowsSource = readConsoleFile('lib/session-exercise-metrics.ts')
 
-    expect(cardSource).toMatch(/session\.sessionExercise/)
+    expect(cardSource).toMatch(/SessionExerciseMetricsTable/)
+    expect(rowsSource).toMatch(/session\.sessionExercise/)
     expect(cardSource).not.toMatch(/programExercise/)
+    expect(rowsSource).not.toMatch(/programExercise/)
   })
 
   it('loads clinical history from patient sessions without patient-program filters', () => {
