@@ -411,8 +411,6 @@ export type VideoPlaybackProgressPayload = {
   videoId: string
   positionSec: number
   durationSec: number
-  /** True while playback is paused; progress keeps emitting so a (re)joining console can re-attach. */
-  paused: boolean
 }
 
 // ── Emit payload maps (keyed by event‑constant key) ─────────────────────────

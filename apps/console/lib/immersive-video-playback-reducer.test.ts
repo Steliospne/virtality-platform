@@ -12,7 +12,6 @@ function progress(
     videoId: 'trail',
     positionSec: 12,
     durationSec: 180,
-    paused: false,
     ...patch,
   }
 }
@@ -86,13 +85,13 @@ describe('reduceImmersivePlayback', () => {
     ).toBe(initialImmersivePlaybackState)
   })
 
-  it('re-attaches as Playing from progress with paused:false', () => {
+  it('re-attaches as Playing from progress', () => {
     const waiting = reduceImmersivePlayback(initialImmersivePlaybackState, {
       type: 'roomComplete',
     })
     const attached = reduceImmersivePlayback(waiting, {
       type: 'progress',
-      payload: progress({ paused: false }),
+      payload: progress(),
       now: 1_000,
     })
 
@@ -100,17 +99,24 @@ describe('reduceImmersivePlayback', () => {
     expect(attached.reattaching).toBe(false)
   })
 
-  it('re-attaches as Paused from progress with paused:true', () => {
-    const waiting = reduceImmersivePlayback(initialImmersivePlaybackState, {
-      type: 'roomComplete',
+  it('keeps Paused when progress arrives while paused', () => {
+    let state = reduceImmersivePlayback(initialImmersivePlaybackState, {
+      type: 'playSent',
+      videoId: 'trail',
     })
-    const attached = reduceImmersivePlayback(waiting, {
+    state = reduceImmersivePlayback(state, {
+      type: 'playAck',
+      videoId: 'trail',
+    })
+    state = reduceImmersivePlayback(state, { type: 'pauseToggle' })
+    const next = reduceImmersivePlayback(state, {
       type: 'progress',
-      payload: progress({ paused: true }),
+      payload: progress({ positionSec: 20 }),
       now: 1_000,
     })
 
-    expect(attached.status).toBe('Paused')
+    expect(next.status).toBe('Paused')
+    expect(next.positionSec).toBe(20)
   })
 
   it('returns Idle when no progress arrives within 2 s', () => {

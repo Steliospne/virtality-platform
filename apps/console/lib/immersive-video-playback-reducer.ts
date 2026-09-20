@@ -76,6 +76,10 @@ function toIdle(
   }
 }
 
+/**
+ * Progress carries no pause flag, so a rejoining console always lands on
+ * Playing; the physio's next `videoPause` toggles from there.
+ */
 function attachFromProgress(
   state: ImmersivePlaybackState,
   payload: VideoPlaybackProgressPayload,
@@ -83,7 +87,7 @@ function attachFromProgress(
 ): ImmersivePlaybackState {
   return {
     ...state,
-    status: payload.paused ? 'Paused' : 'Playing',
+    status: 'Playing',
     videoId: payload.videoId,
     positionSec: payload.positionSec,
     durationSec: payload.durationSec,
@@ -159,7 +163,6 @@ export function reduceImmersivePlayback(
       if (isPlayingOrPaused(state.status)) {
         return {
           ...next,
-          status: action.payload.paused ? 'Paused' : 'Playing',
           videoId: action.payload.videoId,
           positionSec: action.payload.positionSec,
           durationSec: action.payload.durationSec,
