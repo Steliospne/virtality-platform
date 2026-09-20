@@ -10,7 +10,6 @@ import {
 } from '@virtality/ui/components/card'
 import { Separator } from '@virtality/ui/components/separator'
 
-import { getDisplayName } from '@/lib/utils'
 import { ExtendedPatientSession } from '@/types/models'
 import { useExercise, useUserName } from '@virtality/react-query'
 import { format } from 'date-fns'
@@ -23,6 +22,7 @@ import {
   getSessionSourceProgramDisplayName,
 } from '@/lib/session-history'
 import MetricSection from './session-metric-section'
+import SessionExerciseMetricsTable from './session-exercise-metrics-table'
 import SessionCardNotes from './session-card-notes'
 import SessionCardChart from './session-card-chart'
 
@@ -130,37 +130,19 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
                           </div>
                         </div>
                       </div>
-
-                      {session.sessionExercise?.length > 0 && (
-                        <div>
-                          <h3 className='mb-2 font-medium'>
-                            Exercises Performed
-                          </h3>
-                          <div className='space-y-2'>
-                            {session.sessionExercise?.map((exercise, index) => {
-                              const ex = exercises?.find(
-                                (ex) => ex.id === exercise.exerciseId,
-                              )
-                              return (
-                                <div
-                                  key={index}
-                                  className='flex items-center gap-2'
-                                >
-                                  <div className='bg-primary h-2 w-2 rounded-full' />
-                                  <span className='text-sm'>
-                                    {getDisplayName(ex)}
-                                  </span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
 
                   {/* Session metrics */}
                   <MetricSection session={session} exercises={exercises} />
+
+                  <Separator />
+
+                  {/* Per-exercise metrics */}
+                  <SessionExerciseMetricsTable
+                    session={session}
+                    exercises={exercises}
+                  />
 
                   <Separator />
 
