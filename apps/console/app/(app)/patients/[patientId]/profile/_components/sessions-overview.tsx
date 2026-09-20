@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  GAP_THRESHOLD_DAYS,
   getVisitConsistency,
   getSessionDurationTrend,
   getDoseTrend,
@@ -9,7 +10,6 @@ import {
   DATE_RANGE_PRESETS,
   DATE_RANGE_PRESET_LABELS,
   filterSessionsByDateRange,
-  getRangeSpanDays,
   type DateRangePreset,
 } from '@/lib/session-date-range'
 import { filterCompletedClinicalSessions } from '@/lib/session-history'
@@ -48,11 +48,7 @@ export function SessionsOverview({
     startDate,
     endDate,
   })
-  const gapThresholdDays = getRangeSpanDays({ startDate, endDate })
-  const { avgDaysBetween, gaps } = getVisitConsistency(
-    filtered,
-    gapThresholdDays,
-  )
+  const { avgDaysBetween, gaps } = getVisitConsistency(filtered)
   const durationTrend = getSessionDurationTrend(filtered)
   const doseTrend = getDoseTrend(filtered)
   const avgDuration =
@@ -142,7 +138,7 @@ export function SessionsOverview({
                 <div className='mt-auto rounded-lg border border-amber-200/80 bg-amber-50/80 p-2 dark:border-amber-800/60 dark:bg-amber-950/30'>
                   <p className='text-xs font-medium text-amber-800 dark:text-amber-200'>
                     {gaps.length} gap{gaps.length !== 1 ? 's' : ''} &gt;
-                    {gapThresholdDays}d
+                    {GAP_THRESHOLD_DAYS}d
                   </p>
                   <ul className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
                     {gaps.slice(0, 3).map((g, i) => (

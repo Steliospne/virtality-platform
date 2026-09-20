@@ -8,6 +8,9 @@ import { filterCompletedClinicalSessions } from '@/lib/session-history'
 
 const MS_PER_DAY = 86400000
 
+/** Days between completed visits above which a gap is flagged (a "missed week"). */
+export const GAP_THRESHOLD_DAYS = 7
+
 /** Parse SessionData.value safely; returns array of progress points. */
 function parseSessionDataValue(value: string): ProgressDataPoint[] {
   try {
@@ -18,12 +21,17 @@ function parseSessionDataValue(value: string): ProgressDataPoint[] {
   }
 }
 
-/** Get numeric "rep score" keys from a point (exclude 'rep' / first key). */
+const SET_KEY_PREFIX = 'set_'
+
+/** Get "rep score" keys from a point: the set_N keys the headset writes. */
 function getScoreKeys(point: ProgressDataPoint): string[] {
-  const keys = Object.keys(point)
-  if (keys.length <= 1) return []
-  const first = keys[0]
-  return keys.filter((k) => k !== first)
+  return Object.keys(point).filter((k) => k.startsWith(SET_KEY_PREFIX))
+}
+
+/** Numeric set index from a set_N key; 0 when the key is missing or malformed. */
+function getSetNumber(setKey?: string): number {
+  const n = Number(setKey?.slice(SET_KEY_PREFIX.length))
+  return Number.isFinite(n) ? n : 0
 }
 
 /** Single rep score: average of all set/axis values in that point. */
@@ -259,8 +267,13 @@ export function getFatigueIndex(
         dropOffPct,
       })
     } else {
+      // Chronological order: every rep of set 1, then every rep of set 2, ...
       const scores = getRepScoresByExercise(data.value)
-        .sort((a, b) => a.repIndex - b.repIndex)
+        .sort(
+          (a, b) =>
+            getSetNumber(a.setKey) - getSetNumber(b.setKey) ||
+            a.repIndex - b.repIndex,
+        )
         .map((r) => r.score)
       if (scores.length < 2) {
         perExercise.push({
@@ -426,7 +439,7 @@ function toDayKey(d: Date): string {
 /** Visit consistency: average days between completed sessions; gaps above threshold. Ignores multiple sessions on the same day (one visit per day). */
 export function getVisitConsistency(
   sessions: ExtendedPatientSession[],
-  gapThresholdDays: number,
+  gapThresholdDays: number = GAP_THRESHOLD_DAYS,
 ): {
   avgDaysBetween: number | null
   gaps: {

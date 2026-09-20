@@ -11,7 +11,7 @@ import {
 import { Separator } from '@virtality/ui/components/separator'
 
 import { getDisplayName } from '@/lib/utils'
-import { ExtendedPatientSession, ProgressDataPoint } from '@/types/models'
+import { ExtendedPatientSession } from '@/types/models'
 import { useExercise, useUserName } from '@virtality/react-query'
 import { format } from 'date-fns'
 import { ChartArea, List, MoveLeft } from 'lucide-react'
@@ -59,37 +59,6 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
       : new Date(session.createdAt)
 
   const completedAtTime = () => format(historyDate, 'H:mm')
-
-  const sessionProgress = () => {
-    const count = session?.sessionData?.reduce((acc, next) => {
-      const arr = JSON.parse(next.value) as ProgressDataPoint[]
-      if (arr.length === 0) return acc
-      return acc + 1
-    }, 0)
-
-    if (count === 0 || !count || !session) return 0
-
-    const sessionAvg =
-      session?.sessionData?.reduce((acc, next) => {
-        const values = JSON.parse(next.value) as ProgressDataPoint[]
-
-        if (values.length === 0) return acc
-        const keys = Object.keys(values[0]).slice(1)
-        const avg =
-          values.reduce((acc, point) => {
-            const pointSum = Object.values(point).reduce((sum, val, idx) => {
-              if (idx === 0) return sum
-              return sum + val
-            }, 0)
-            const avgValue = pointSum / keys.length
-            return acc + avgValue
-          }, 0) / values.length
-
-        return acc + avg
-      }, 0) / count
-
-    return sessionAvg
-  }
 
   const sourceProgramName = getSessionSourceProgramDisplayName(session)
 
@@ -158,13 +127,6 @@ const SessionCard = ({ session, patientId, onBack }: SessionCardProps) => {
                               Therapist:
                             </span>
                             <span>{userName ?? 'Unknown'}</span>
-                          </div>
-
-                          <div className='flex justify-between'>
-                            <span className='text-muted-foreground'>
-                              Progress:
-                            </span>
-                            <span>{sessionProgress().toFixed(1)}%</span>
                           </div>
                         </div>
                       </div>
