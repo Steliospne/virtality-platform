@@ -18,7 +18,10 @@ import {
   type VrPresenceResponse,
   parseRoomPeerRole,
 } from '@virtality/shared/types'
-import { createAppLogger } from '@virtality/shared/observability'
+import {
+  createAppLogger,
+  createAppMeter,
+} from '@virtality/shared/observability'
 import {
   EMPTY_ROLE_SLOT_PEER_LOG_CONTEXT,
   roleSlotPeerLogContext,
@@ -30,6 +33,7 @@ import {
   type RoomEvictedOutcome,
 } from '../domain/role-slot-room-registry'
 import { buildRelayTable, createRelay, type RelayOutcome } from './relay'
+import { createSocketMetrics, type SocketMetrics } from './socket-metrics'
 
 const logger = createAppLogger({
   serviceName: 'socket',
@@ -37,6 +41,7 @@ const logger = createAppLogger({
     component: 'device-event-controller',
   },
 })
+const meter = createAppMeter({ serviceName: 'socket' })
 
 type SocketWithRole = Socket & {
   data: {
@@ -57,6 +62,7 @@ export type ServerDeviceControllerOptions = {
 // ── Stateless helpers ──────────────────────────────────────────────────────
 
 function logRelayBlocked(
+  metrics: SocketMetrics,
   outcome: Extract<RelayOutcome, { kind: 'blocked' }>,
   context: {
     eventName: string
@@ -66,6 +72,7 @@ function logRelayBlocked(
   },
 ) {
   if (outcome.reason === 'missing_room_or_role') {
+    metrics.relay(context.eventName, 'blocked')
     logger.warn('socket.relay.blocked', {
       eventName: context.eventName,
       roomCode: context.roomCode,
@@ -85,10 +92,12 @@ function logRelayBlocked(
   }
 
   if (outcome.reason === 'room_not_found') {
+    metrics.relay(context.eventName, 'blocked')
     logger.warn('socket.relay.blocked', payload)
     return
   }
 
+  metrics.relay(context.eventName, 'stale_peer_blocked')
   logger.info('socket.relay.stale_peer_blocked', payload)
 }
 
@@ -115,11 +124,13 @@ const CONNECTION_HANDLED_EVENTS: ReadonlySet<string> = new Set([
 ])
 
 function rejectConnection(
+  metrics: SocketMetrics,
   socket: Socket,
   reason: string,
   message: string,
   details: Record<string, unknown> = {},
 ) {
+  metrics.connection('rejected', reason)
   logger.warn('socket.connection.rejected', {
     socketId: socket.id,
     reason,
@@ -145,6 +156,7 @@ export function createServerDeviceController(
 ): ServerDeviceController {
   const { registry } = options
   const relay = createRelay({ table: RELAY_TABLE, registry })
+  const metrics = createSocketMetrics(meter, registry)
 
   function getRoleSlotLogContext(roomCode: string): RoleSlotPeerLogContext {
     const snapshot = registry.getRoomSnapshot(roomCode)
@@ -170,6 +182,7 @@ export function createServerDeviceController(
 
       switch (outcome.kind) {
         case 'forwarded':
+          metrics.relay(event, 'forwarded')
           logger[outcome.logLevel]('socket.relay.emit', {
             eventName: event,
             role: roomPeerRole,
@@ -183,7 +196,7 @@ export function createServerDeviceController(
           socket.to(roomCode).emit(event, outcome.payload)
           return
         case 'blocked':
-          logRelayBlocked(outcome, {
+          logRelayBlocked(metrics, outcome, {
             eventName: event,
             roomCode,
             socketId: socket.id,
@@ -191,6 +204,7 @@ export function createServerDeviceController(
           })
           return
         case 'not_relayed':
+          metrics.relay(event, 'unknown_event')
           logger.warn('socket.relay.unknown_event', {
             eventName: event,
             roomCode,
@@ -217,6 +231,7 @@ export function createServerDeviceController(
       roomCode,
       timestamp: Date.now(),
     } satisfies RoomCompletePayload)
+    metrics.roomEvent('complete', { role: roomPeerRole })
     logger.info('socket.room.complete', {
       roomCode,
       socketId: socket.id,
@@ -233,6 +248,9 @@ export function createServerDeviceController(
       case 'room_not_found':
         return
       case 'stale_disconnect_ignored':
+        metrics.roomEvent('stale_disconnect_ignored', {
+          role: outcome.roomPeerRole,
+        })
         logger.info('socket.room.stale_disconnect_ignored', {
           roomCode: outcome.roomCode,
           socketId: outcome.peerSocketId,
@@ -241,6 +259,7 @@ export function createServerDeviceController(
         })
         return
       case 'room_deleted':
+        metrics.roomEvent('deleted')
         logger.info('socket.room.deleted', {
           roomCode: outcome.roomCode,
         })
@@ -250,6 +269,7 @@ export function createServerDeviceController(
           memberId: outcome.departedPeerSocketId,
           timestamp: Date.now(),
         } satisfies MemberLeftPayload)
+        metrics.roomEvent('role_slot_cleared', { role: outcome.roomPeerRole })
         logger.info('socket.room.role_slot_cleared', {
           roomCode: outcome.roomCode,
           socketId: outcome.departedPeerSocketId,
@@ -287,6 +307,7 @@ export function createServerDeviceController(
     emitRoomCompleteIfNeeded(socket, roomCode, roomPeerRole, roomComplete)
 
     socket.on(CONNECTION_EVENT.DISCONNECTION, () => {
+      metrics.connection('closed')
       logger.info('socket.connection.closed', {
         roomCode,
         socketId: socket.id,
@@ -353,6 +374,7 @@ export function createServerDeviceController(
     } = outcome
     const replacedSocket = incomingSocket.nsp.sockets.get(replacedPeerSocketId)
 
+    metrics.roomEvent('peer_replaced', { role: roomPeerRole })
     logger.info(ROLE_PEER_REPLACED_LOG_EVENT[roomPeerRole], {
       roomCode,
       replacedSocketId: replacedPeerSocketId,
@@ -383,6 +405,7 @@ export function createServerDeviceController(
   ) {
     const { roomCode, roomPeerRole, roomComplete } = outcome
 
+    metrics.roomEvent('role_slot_joined', { role: roomPeerRole })
     logger.info('socket.room.role_slot_joined', {
       socketId: socket.id,
       roomCode,
@@ -412,6 +435,7 @@ export function createServerDeviceController(
     const roomCode = socket.handshake.query.roomCode as string
     const roleQuery = socket.handshake.query.role
 
+    metrics.connection('open')
     logger.info('socket.connection.open', {
       socketId: socket.id,
       roomCode: roomCode || 'missing',
@@ -421,6 +445,7 @@ export function createServerDeviceController(
 
     if (!roomCode) {
       rejectConnection(
+        metrics,
         socket,
         'missing_room_code',
         'Room code was not received.',
@@ -439,7 +464,7 @@ export function createServerDeviceController(
       } else {
         message = 'Unknown room peer role.'
       }
-      rejectConnection(socket, 'invalid_room_peer_role', message, {
+      rejectConnection(metrics, socket, 'invalid_room_peer_role', message, {
         roomCode,
         role: roleQuery,
       })
@@ -479,6 +504,7 @@ export function createServerDeviceController(
         consoleActivePeerSocketId,
         vrActivePeerSocketId,
       } = outcome
+      metrics.roomEvent('cleaned', { reason })
       logger.info('socket.room.cleaned', {
         roomCode,
         ageMs,
