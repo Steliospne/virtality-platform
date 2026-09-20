@@ -1,4 +1,5 @@
 import { z } from 'zod/v4'
+import type { Prisma } from '@virtality/db'
 import {
   PatientFindManyZodSchema,
   PatientSchema,
@@ -21,6 +22,12 @@ const CombinedPatientSchema = z.object({
   }),
 })
 
+// Sessions that count as clinical history: matches the patient profile Sessions tab.
+const clinicalHistorySessionWhere = {
+  deletedAt: null,
+  status: { in: ['COMPLETED', 'INTERRUPTED'] as const },
+} satisfies Prisma.PatientSessionWhereInput
+
 const listPatients = authed
   .route({ path: '/patient/list', method: 'GET', inputStructure: 'detailed' })
   .input(PatientListInputSchema)
@@ -37,11 +44,14 @@ const listPatients = authed
       cursor: input?.cursor,
       orderBy: input?.orderBy,
       include: {
-        _count: { select: { patientSession: true } },
+        _count: {
+          select: { patientSession: { where: clinicalHistorySessionWhere } },
+        },
         patientSession: {
+          where: clinicalHistorySessionWhere,
           orderBy: { createdAt: 'desc' },
           take: 1,
-          select: { createdAt: true },
+          select: { createdAt: true, completedAt: true },
         },
         patientProgram: {
           where: { deletedAt: null },
@@ -56,7 +66,10 @@ const listPatients = authed
       ({ _count, patientSession, patientProgram, ...patient }) => ({
         ...patient,
         totalSessions: _count.patientSession,
-        lastSessionAt: patientSession[0]?.createdAt ?? null,
+        lastSessionAt:
+          patientSession[0]?.completedAt ??
+          patientSession[0]?.createdAt ??
+          null,
         activeProgramName: patientProgram[0]?.name ?? null,
       }),
     )
