@@ -1,10 +1,15 @@
 import { SeverityNumber } from '@opentelemetry/api-logs'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
-import { resourceFromAttributes } from '@opentelemetry/resources'
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs'
+
+import { shutdownMetrics } from './metrics.js'
+import { createServiceResource, resolveServiceIdentity } from './resource.js'
+
+export { createAppMeter, shutdownMetrics } from './metrics.js'
+export type { AppMeter, MeterOptions } from './metrics.js'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
@@ -49,7 +54,6 @@ declare global {
 
 const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warn', 'error']
 
-const DEFAULT_SERVICE_NAMESPACE = 'virtality'
 const DEFAULT_LOG_LEVEL: LogLevel = 'debug'
 
 function getRuntimeRegistry() {
@@ -64,15 +68,6 @@ function resolveLogLevel(value?: string): LogLevel {
   return LOG_LEVELS.includes(normalized as LogLevel)
     ? (normalized as LogLevel)
     : DEFAULT_LOG_LEVEL
-}
-
-function getDeploymentEnvironment() {
-  return (
-    process.env.OTEL_DEPLOYMENT_ENVIRONMENT ??
-    process.env.ENV ??
-    process.env.NODE_ENV ??
-    'development'
-  )
 }
 
 function shouldEmit(level: LogLevel, minLevel: LogLevel) {
@@ -132,10 +127,8 @@ function normalizeAttributes(attributes: LogAttributes = {}) {
 }
 
 function getRuntimeState(options: LoggerOptions): RuntimeState {
-  const serviceNamespace = options.serviceNamespace ?? DEFAULT_SERVICE_NAMESPACE
-  const serviceVersion =
-    options.serviceVersion ?? process.env.npm_package_version ?? '0.0.0'
-  const deploymentEnvironment = getDeploymentEnvironment()
+  const { serviceNamespace, serviceVersion, deploymentEnvironment } =
+    resolveServiceIdentity(options)
   const cacheKey = `${serviceNamespace}:${options.serviceName}:${deploymentEnvironment}`
 
   const registry = getRuntimeRegistry()
@@ -147,11 +140,11 @@ function getRuntimeState(options: LoggerOptions): RuntimeState {
 
   const logLevel = resolveLogLevel(process.env.OTEL_LOG_LEVEL)
   const shouldEnableOtel = process.env.OTEL_LOGS_ENABLED !== 'false'
-  const resource = resourceFromAttributes({
-    'service.name': options.serviceName,
-    'service.namespace': serviceNamespace,
-    'service.version': serviceVersion,
-    'deployment.environment.name': deploymentEnvironment,
+  const resource = createServiceResource({
+    serviceName: options.serviceName,
+    serviceNamespace,
+    serviceVersion,
+    deploymentEnvironment,
   })
 
   let provider: LoggerProvider | undefined
@@ -284,12 +277,13 @@ export function createAppLogger(options: LoggerOptions): AppLogger {
 export async function shutdownObservability() {
   const registry = getRuntimeRegistry()
 
-  await Promise.all(
-    [...registry.values()].map(async (runtime) => {
+  await Promise.all([
+    shutdownMetrics(),
+    ...[...registry.values()].map(async (runtime) => {
       if (!runtime.provider) return
       await runtime.provider.shutdown()
     }),
-  )
+  ])
 }
 
 export function createRequestId() {
@@ -300,6 +294,9 @@ export const OBSERVABILITY_ENV_KEYS = {
   deploymentEnvironment: 'OTEL_DEPLOYMENT_ENVIRONMENT',
   logLevel: 'OTEL_LOG_LEVEL',
   logsEnabled: 'OTEL_LOGS_ENABLED',
+  metricsEnabled: 'OTEL_METRICS_ENABLED',
+  metricExportInterval: 'OTEL_METRIC_EXPORT_INTERVAL',
   otlpEndpoint: 'OTEL_EXPORTER_OTLP_ENDPOINT',
   otlpLogsEndpoint: 'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT',
+  otlpMetricsEndpoint: 'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
 } as const
