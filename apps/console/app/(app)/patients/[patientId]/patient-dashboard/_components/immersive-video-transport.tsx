@@ -1,11 +1,12 @@
 'use client'
 
-import { PauseCircle, PlayCircle, StopCircle } from 'lucide-react'
+import { Crosshair, PauseCircle, PlayCircle, StopCircle } from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 import { isImmersivePickerRowSelectable } from '@/lib/immersive-video-picker'
 import { HEADSET_VIDEO_SUPPORT } from '@/lib/immersive-video-headset-support'
 import {
+  isImmersiveRecenterEnabled,
   isImmersiveStopEnabled,
   resolveImmersivePlayPauseControl,
   shouldShowImmersiveStop,
@@ -14,7 +15,7 @@ import {
 export function ImmersiveVideoTransport() {
   const { selectedRow, playback, roomComplete, frozen } =
     useImmersiveVideoSession()
-  const { state, sendPlay, sendPause, sendStop } = playback
+  const { state, sendPlay, sendPause, sendStop, sendRecenter } = playback
   const readySelected =
     selectedRow != null && isImmersivePickerRowSelectable(selectedRow.cell)
   const commandsEnabled = roomComplete && !frozen
@@ -28,6 +29,10 @@ export function ImmersiveVideoTransport() {
     HEADSET_VIDEO_SUPPORT.playbackPause || playPause.action === 'play'
   const showStop = shouldShowImmersiveStop(state.status)
   const stopEnabled = isImmersiveStopEnabled({
+    status: state.status,
+    commandsEnabled,
+  })
+  const recenterEnabled = isImmersiveRecenterEnabled({
     status: state.status,
     commandsEnabled,
   })
@@ -68,6 +73,14 @@ export function ImmersiveVideoTransport() {
           <StopCircle className='size-6' />
         </Button>
       ) : null}
+      <Button
+        variant='outline'
+        disabled={!recenterEnabled}
+        onClick={sendRecenter}
+      >
+        <Crosshair className='size-6' />
+        Center
+      </Button>
     </>
   )
 }

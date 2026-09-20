@@ -47,3 +47,11 @@ export function isImmersiveStopEnabled(input: {
 }): boolean {
   return input.commandsEnabled && isPlayingOrPaused(input.status)
 }
+
+/** Recentre reuses the program's `resetPosition`; its ack is toasted by the dashboard. */
+export function isImmersiveRecenterEnabled(input: {
+  status: ImmersivePlaybackStatus
+  commandsEnabled: boolean
+}): boolean {
+  return input.commandsEnabled && isPlayingOrPaused(input.status)
+}
