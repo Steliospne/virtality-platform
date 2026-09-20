@@ -1,7 +1,7 @@
 'use client'
 
 import { Separator } from '@virtality/ui/components/separator'
-import { cn, getDisplayName } from '@/lib/utils'
+import { getDisplayName } from '@/lib/utils'
 import {
   getSessionDurationMinutes,
   getExerciseQualityScore,
@@ -11,14 +11,11 @@ import {
   getSetToSetAdaptation,
   getDosePerSession,
   getDosePerExercise,
-  type StabilityMode,
-  type FatigueMode,
 } from '@/lib/session-metrics'
 import { ExtendedPatientSession } from '@/types/models'
 import { Exercise } from '@virtality/db'
 import { BarChart3, Zap, Target } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { useState } from 'react'
 import MetricInfo from './session-metric-info'
 
 const MetricSection = ({
@@ -28,17 +25,14 @@ const MetricSection = ({
   session: ExtendedPatientSession
   exercises?: Exercise[]
 }) => {
-  const [stabilityMode, setStabilityMode] = useState<StabilityMode>('cv')
-  const [fatigueMode, setFatigueMode] = useState<FatigueMode>('across-exercise')
-
   const durationMin = getSessionDurationMinutes(session)
   const quality = getExerciseQualityScore(session)
   const qualityAvg = quality.length
     ? quality.reduce((a, b) => a + b.avgProgressPct, 0) / quality.length
     : 0
   const peak = getPeakCapability(session)
-  const stability = getStabilityScore(session, stabilityMode)
-  const fatigue = getFatigueIndex(session, fatigueMode)
+  const stability = getStabilityScore(session, 'sd')
+  const fatigue = getFatigueIndex(session, 'within-set')
   const setToSet = getSetToSetAdaptation(session)
   const doseTotal = getDosePerSession(session)
   const dosePerEx = getDosePerExercise(session)
@@ -48,65 +42,7 @@ const MetricSection = ({
       <Separator />
       <TooltipProvider delayDuration={200}>
         <div className='space-y-4'>
-          <div className='flex flex-wrap items-center justify-between gap-2'>
-            <h3 className='font-medium'>Session metrics</h3>
-            <div className='flex flex-wrap gap-3 text-xs'>
-              <div className='flex items-center gap-1.5'>
-                <span className='text-muted-foreground'>Stability:</span>
-                <button
-                  type='button'
-                  onClick={() => setStabilityMode('cv')}
-                  className={cn(
-                    'rounded px-2 py-0.5 font-medium',
-                    stabilityMode === 'cv'
-                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
-                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  )}
-                >
-                  CV
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setStabilityMode('sd')}
-                  className={cn(
-                    'rounded px-2 py-0.5 font-medium',
-                    stabilityMode === 'sd'
-                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
-                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  )}
-                >
-                  SD
-                </button>
-              </div>
-              <div className='flex items-center gap-1.5'>
-                <span className='text-muted-foreground'>Fatigue:</span>
-                <button
-                  type='button'
-                  onClick={() => setFatigueMode('across-exercise')}
-                  className={cn(
-                    'rounded px-2 py-0.5 font-medium',
-                    fatigueMode === 'across-exercise'
-                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
-                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  )}
-                >
-                  Across
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setFatigueMode('within-set')}
-                  className={cn(
-                    'rounded px-2 py-0.5 font-medium',
-                    fatigueMode === 'within-set'
-                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
-                      : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  )}
-                >
-                  Within set
-                </button>
-              </div>
-            </div>
-          </div>
+          <h3 className='font-medium'>Session metrics</h3>
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
             {durationMin != null && (
               <div className='flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-700/80 dark:bg-zinc-800/40'>
@@ -129,10 +65,13 @@ const MetricSection = ({
               <Target className='size-4 shrink-0 text-teal-600 dark:text-teal-400' />
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-1.5'>
-                  <p className='text-muted-foreground text-xs'>Quality (avg)</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Average progress
+                  </p>
                   <MetricInfo
-                    title='Quality (average)'
-                    description='Average rep progress (%) across all exercises in this session. Reflects how well the patient performed relative to the target.'
+                    title='Average progress'
+                    description='Average progress (%) across all exercises in this session.'
+                    footnote='Range: 0% – 100%'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>
@@ -145,11 +84,12 @@ const MetricSection = ({
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-1.5'>
                   <p className='text-muted-foreground text-xs'>
-                    Peak capability
+                    Best repetition
                   </p>
                   <MetricInfo
-                    title='Peak capability'
-                    description='Best single rep score (%) in this session across all exercises. Your session “highscore”.'
+                    title='Best repetition'
+                    description='Your highest movement score from a single repetition in this session.'
+                    footnote='Range: 0% – 100%'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>
@@ -164,12 +104,12 @@ const MetricSection = ({
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-1.5'>
                   <p className='text-muted-foreground text-xs'>
-                    Stability ({stabilityMode === 'cv' ? 'CV' : 'SD'})
+                    Movement consistency
                   </p>
                   <MetricInfo
-                    title='Stability'
-                    description='Consistency of rep scores. Lower values usually indicate more stable motor control.'
-                    options='Options: CV (coefficient of variation = σ/mean) or SD (standard deviation). Use the Stability toggle above to switch.'
+                    title='Movement consistency'
+                    description='How much your repetition scores varied. Lower values mean more consistent scores, even if those scores were low.'
+                    footnote='Range: 0 – 50 points'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>
@@ -188,8 +128,8 @@ const MetricSection = ({
                   </p>
                   <MetricInfo
                     title='Fatigue drop-off'
-                    description='Compares rep quality in the first third vs the last third. Positive % means quality dropped toward the end (possible fatigue or pain).'
-                    options='Options: “Across exercise” (all reps in order) or “Within set” (per set). Use the Fatigue toggle above to switch.'
+                    description='Compares earlier and later repetition scores. Positive values mean scores dropped; negative values mean scores improved.'
+                    footnote='Range: -∞% – +100%'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>
@@ -201,11 +141,12 @@ const MetricSection = ({
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-1.5'>
                   <p className='text-muted-foreground text-xs'>
-                    Set 1 → last set
+                    First set → Last set
                   </p>
                   <MetricInfo
-                    title='Set-to-set adaptation'
-                    description='Percentage change in average progress from the first set to the last. Positive = improving (warm-up/motor learning); negative = declining (fatigue).'
+                    title='First set → Last set'
+                    description='Compares your average score in the first and last sets. Positive values mean improvement; negative values mean a decline.'
+                    footnote='Range: -100% – +∞%'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>
@@ -214,15 +155,15 @@ const MetricSection = ({
                 </p>
               </div>
             </div>
-            <div className='flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 sm:col-span-2 dark:border-zinc-700/80 dark:bg-zinc-800/40'>
+            <div className='flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 sm:col-span-2 lg:col-span-3 dark:border-zinc-700/80 dark:bg-zinc-800/40'>
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-1.5'>
                   <p className='text-muted-foreground text-xs'>
-                    Dose (volume proxy)
+                    Total Repetitions (Volume)
                   </p>
                   <MetricInfo
-                    title='Dose (volume proxy)'
-                    description='Planned volume proxy = sets × reps × holdTime × speed for each exercise; total is the sum. Shown per session and per exercise below. Trends over time can indicate load progression.'
+                    title='Total Repetitions (Volume)'
+                    description='An estimate based on sets, repetitions, hold time and speed. Higher values represent more planned load.'
                   />
                 </div>
                 <p className='font-semibold tabular-nums'>

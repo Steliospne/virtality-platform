@@ -11,11 +11,11 @@ import {
 const MetricInfo = ({
   title,
   description,
-  options,
+  footnote,
 }: {
   title: string
   description: string
-  options?: string
+  footnote?: string
 }) => {
   const [open, setOpen] = useState(false)
   const handleToggleTooltip = () => setOpen(!open)
@@ -30,9 +30,9 @@ const MetricInfo = ({
       <TooltipContent side='top' className='max-w-70 px-3 py-2 text-left'>
         <p className='font-medium'>{title}</p>
         <p className='mt-1 text-zinc-300 dark:text-zinc-600'>{description}</p>
-        {options && (
+        {footnote && (
           <p className='mt-1.5 border-t border-zinc-700 pt-1.5 text-zinc-400 dark:border-zinc-600 dark:text-zinc-500'>
-            {options}
+            {footnote}
           </p>
         )}
       </TooltipContent>

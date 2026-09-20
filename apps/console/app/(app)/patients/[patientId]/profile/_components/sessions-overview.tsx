@@ -24,7 +24,9 @@ import { Button } from '@virtality/ui/components/button'
 import { format } from 'date-fns'
 import { Activity, Calendar as CalendarIcon, TrendingUp } from 'lucide-react'
 import { motion } from 'motion/react'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { SessionDatePicker } from './session-date-picker'
+import MetricInfo from './session-metric-info'
 
 interface SessionsOverviewProps {
   sessions: ExtendedPatientSession[]
@@ -103,125 +105,140 @@ export function SessionsOverview({
         </div>
       </div>
 
-      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-        <motion.div
-          className='flex h-full'
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.05,
-            duration: 0.3,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
-                <CalendarIcon className='size-4 text-teal-600 dark:text-teal-400' />
-                Visit consistency
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-1 flex-col space-y-3'>
-              {avgDaysBetween != null ? (
-                <p className='text-2xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100'>
-                  {avgDaysBetween.toFixed(1)}{' '}
-                  <span className='text-sm font-normal text-zinc-500 dark:text-zinc-400'>
-                    days avg
-                  </span>
-                </p>
-              ) : (
-                <p className='text-sm text-zinc-500 dark:text-zinc-400'>
-                  Need 2+ sessions
-                </p>
-              )}
-              {gaps.length > 0 && (
-                <div className='mt-auto rounded-lg border border-amber-200/80 bg-amber-50/80 p-2 dark:border-amber-800/60 dark:bg-amber-950/30'>
-                  <p className='text-xs font-medium text-amber-800 dark:text-amber-200'>
-                    {gaps.length} gap{gaps.length !== 1 ? 's' : ''} &gt;
-                    {GAP_THRESHOLD_DAYS}d
+      <TooltipProvider delayDuration={200}>
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <motion.div
+            className='flex h-full'
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.05,
+              duration: 0.3,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+          >
+            <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
+                  <CalendarIcon className='size-4 text-teal-600 dark:text-teal-400' />
+                  Visit consistency
+                  <MetricInfo
+                    title='Visit consistency'
+                    description='Average number of days between completed sessions in the selected range. Sessions on the same day count as one visit.'
+                    footnote={`Gaps longer than ${GAP_THRESHOLD_DAYS} days are listed below.`}
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='flex flex-1 flex-col space-y-3'>
+                {avgDaysBetween != null ? (
+                  <p className='text-2xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100'>
+                    {avgDaysBetween.toFixed(1)}{' '}
+                    <span className='text-sm font-normal text-zinc-500 dark:text-zinc-400'>
+                      days avg
+                    </span>
                   </p>
-                  <ul className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
-                    {gaps.slice(0, 3).map((g, i) => (
-                      <li key={i}>
-                        {format(g.prevCompletedAt, 'd MMM')} →{' '}
-                        {format(g.nextCompletedAt, 'd MMM')}:{' '}
-                        {g.daysBetween.toFixed(0)}d
-                      </li>
-                    ))}
-                    {gaps.length > 3 && <li>+{gaps.length - 3} more</li>}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                ) : (
+                  <p className='text-sm text-zinc-500 dark:text-zinc-400'>
+                    Need 2+ sessions
+                  </p>
+                )}
+                {gaps.length > 0 && (
+                  <div className='mt-auto rounded-lg border border-amber-200/80 bg-amber-50/80 p-2 dark:border-amber-800/60 dark:bg-amber-950/30'>
+                    <p className='text-xs font-medium text-amber-800 dark:text-amber-200'>
+                      {gaps.length} gap{gaps.length !== 1 ? 's' : ''} &gt;
+                      {GAP_THRESHOLD_DAYS}d
+                    </p>
+                    <ul className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
+                      {gaps.slice(0, 3).map((g, i) => (
+                        <li key={i}>
+                          {format(g.prevCompletedAt, 'd MMM')} →{' '}
+                          {format(g.nextCompletedAt, 'd MMM')}:{' '}
+                          {g.daysBetween.toFixed(0)}d
+                        </li>
+                      ))}
+                      {gaps.length > 3 && <li>+{gaps.length - 3} more</li>}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        <motion.div
-          className='flex h-full'
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.1,
-            duration: 0.3,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
-                <Activity className='size-4 text-teal-600 dark:text-teal-400' />
-                Session duration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-1 flex-col'>
-              {avgDuration != null ? (
+          <motion.div
+            className='flex h-full'
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.1,
+              duration: 0.3,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+          >
+            <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
+                  <Activity className='size-4 text-teal-600 dark:text-teal-400' />
+                  Session duration
+                  <MetricInfo
+                    title='Session duration'
+                    description='Average time from session start to completion across completed sessions in the selected range.'
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='flex flex-1 flex-col'>
+                {avgDuration != null ? (
+                  <p className='text-2xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100'>
+                    {avgDuration.toFixed(1)}{' '}
+                    <span className='text-sm font-normal text-zinc-500 dark:text-zinc-400'>
+                      min avg
+                    </span>
+                  </p>
+                ) : (
+                  <p className='text-sm text-zinc-500 dark:text-zinc-400'>
+                    No completed sessions
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            className='flex h-full'
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.15,
+              duration: 0.3,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+          >
+            <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
+                  <TrendingUp className='size-4 text-teal-600 dark:text-teal-400' />
+                  Total Repetitions (Volume)
+                  <MetricInfo
+                    title='Total Repetitions (Volume)'
+                    description='Sum of the planned load (sets, repetitions, hold time and speed) across completed sessions in the selected range. Higher values represent more planned load.'
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='flex flex-1 flex-col space-y-1'>
                 <p className='text-2xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100'>
-                  {avgDuration.toFixed(1)}{' '}
-                  <span className='text-sm font-normal text-zinc-500 dark:text-zinc-400'>
-                    min avg
-                  </span>
+                  {totalDose.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
                 </p>
-              ) : (
-                <p className='text-sm text-zinc-500 dark:text-zinc-400'>
-                  No completed sessions
+                <p className='text-xs text-zinc-500 dark:text-zinc-400'>
+                  {avgDosePerSession > 0
+                    ? `~${avgDosePerSession.toLocaleString(undefined, { maximumFractionDigits: 0 })} per session`
+                    : 'sets × reps × hold × speed'}
                 </p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          className='flex h-full'
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.15,
-            duration: 0.3,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          <Card className='flex h-full w-full flex-col overflow-hidden border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950'>
-            <CardHeader className='pb-2'>
-              <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300'>
-                <TrendingUp className='size-4 text-teal-600 dark:text-teal-400' />
-                Dose (volume proxy)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-1 flex-col space-y-1'>
-              <p className='text-2xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100'>
-                {totalDose.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}
-              </p>
-              <p className='text-xs text-zinc-500 dark:text-zinc-400'>
-                {avgDosePerSession > 0
-                  ? `~${avgDosePerSession.toLocaleString(undefined, { maximumFractionDigits: 0 })} per session`
-                  : 'sets × reps × hold × speed'}
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </TooltipProvider>
     </motion.div>
   )
 }
