@@ -5,7 +5,6 @@ import SessionsTable from './sessions-table'
 import { SessionsOverview } from './sessions-overview'
 import { usePatientSession, usePatientSessions } from '@virtality/react-query'
 import SessionCard from './session-card'
-import { filterCompletedClinicalSessions } from '@/lib/session-history'
 import { filterSessionsByDateRange } from '@/lib/session-date-range'
 import usePageViewTracking from '@/hooks/analytics/use-page-view-tracking'
 import { usePatientSessionDateRange } from '@/hooks/use-patient-session-date-range'
@@ -40,9 +39,6 @@ export default function SessionTab({ patientId }: SessionTabProps) {
     })
 
   const clinicalHistorySessions = allSessions ?? []
-  const completedSessions = filterCompletedClinicalSessions(
-    clinicalHistorySessions,
-  )
 
   const filteredSessions = useMemo(() => {
     if (!clinicalHistorySessions.length) return []
@@ -90,7 +86,7 @@ export default function SessionTab({ patientId }: SessionTabProps) {
   return (
     <div className='flex flex-1 flex-col gap-8'>
       <SessionsOverview
-        sessions={completedSessions}
+        sessions={clinicalHistorySessions}
         startDate={startDate}
         endDate={endDate}
         onStartDateChange={setStartDate}

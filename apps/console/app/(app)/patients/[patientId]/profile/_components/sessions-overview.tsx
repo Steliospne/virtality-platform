@@ -10,6 +10,8 @@ import {
   DATE_RANGE_PRESETS,
   DATE_RANGE_PRESET_LABELS,
   filterSessionsByDateRange,
+  getFirstCompletedSessionDay,
+  getSessionCalendarDays,
   type DateRangePreset,
 } from '@/lib/session-date-range'
 import { filterCompletedClinicalSessions } from '@/lib/session-history'
@@ -62,6 +64,10 @@ export function SessionsOverview({
   const avgDosePerSession =
     doseTrend.length > 0 ? totalDose / doseTrend.length : 0
   const today = new Date()
+  const sessionDays = getSessionCalendarDays(sessions)
+  const firstSessionDay = getFirstCompletedSessionDay(sessions)
+  const isBeforeFirstSession = (date: Date) =>
+    firstSessionDay != null && date < firstSessionDay
 
   return (
     <motion.div
@@ -76,13 +82,19 @@ export function SessionsOverview({
             label='Start date'
             selected={startDate}
             onSelect={onStartDateChange}
-            isDateDisabled={(date) => date > endDate || date > today}
+            isDateDisabled={(date) =>
+              date > endDate || date > today || isBeforeFirstSession(date)
+            }
+            sessionDays={sessionDays}
           />
           <SessionDatePicker
             label='End date'
             selected={endDate}
             onSelect={onEndDateChange}
-            isDateDisabled={(date) => date < startDate || date > today}
+            isDateDisabled={(date) =>
+              date < startDate || date > today || isBeforeFirstSession(date)
+            }
+            sessionDays={sessionDays}
           />
           <p className='ml-auto text-sm text-zinc-500 dark:text-zinc-400'>
             {filtered.length} completed session

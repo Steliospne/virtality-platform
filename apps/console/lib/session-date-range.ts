@@ -1,6 +1,7 @@
-import { endOfDay, startOfDay, subDays } from 'date-fns'
+import { endOfDay, isSameDay, startOfDay, subDays } from 'date-fns'
 import {
   filterClinicalHistorySessions,
+  filterCompletedClinicalSessions,
   getClinicalHistorySessionDate,
 } from '@/lib/session-history'
 import type { ExtendedPatientSession } from '@/types/models'
@@ -112,6 +113,33 @@ export function filterSessionsByDateRange(
     const timestamp = historyDate.getTime()
     return timestamp >= startMs && timestamp <= endMs
   })
+}
+
+/** Calendar days (local, start of day) that have at least one clinical-history session. */
+export function getSessionCalendarDays(
+  sessions: ExtendedPatientSession[],
+): Date[] {
+  const days: Date[] = []
+  for (const session of filterClinicalHistorySessions(sessions)) {
+    const historyDate = getClinicalHistorySessionDate(session)
+    if (!historyDate) continue
+    const day = startOfDay(historyDate)
+    if (!days.some((existing) => isSameDay(existing, day))) days.push(day)
+  }
+  return days.sort((a, b) => a.getTime() - b.getTime())
+}
+
+/** Start of the day of the earliest completed session, or null when there is none. */
+export function getFirstCompletedSessionDay(
+  sessions: ExtendedPatientSession[],
+): Date | null {
+  let earliest: Date | null = null
+  for (const session of filterCompletedClinicalSessions(sessions)) {
+    if (!session.completedAt) continue
+    const completedAt = new Date(session.completedAt)
+    if (!earliest || completedAt < earliest) earliest = completedAt
+  }
+  return earliest ? startOfDay(earliest) : null
 }
 
 export function readPersistedSessionDateRange(

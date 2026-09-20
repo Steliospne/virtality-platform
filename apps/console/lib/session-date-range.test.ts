@@ -7,6 +7,8 @@ import {
   normalizeSessionDateRange,
   readPersistedSessionDateRange,
   persistSessionDateRange,
+  getFirstCompletedSessionDay,
+  getSessionCalendarDays,
 } from './session-date-range'
 
 const baseSession = {
@@ -120,5 +122,46 @@ describe('session date range helpers', () => {
         getItem: (key) => storage.get(key) ?? null,
       }),
     ).toEqual(range)
+  })
+})
+
+describe('calendar helpers', () => {
+  const session = (
+    id: string,
+    status: 'COMPLETED' | 'INTERRUPTED',
+    at: string,
+  ) =>
+    ({
+      id,
+      status,
+      createdAt: new Date(at),
+      completedAt: status === 'COMPLETED' ? new Date(at) : null,
+      deletedAt: null,
+    }) as unknown as ExtendedPatientSession
+
+  it('lists each day with a session once, including interrupted sessions', () => {
+    const days = getSessionCalendarDays([
+      session('a', 'COMPLETED', '2026-09-05T09:00:00'),
+      session('b', 'COMPLETED', '2026-09-05T15:00:00'),
+      session('c', 'INTERRUPTED', '2026-09-02T09:00:00'),
+    ])
+
+    expect(days.map((d) => d.toISOString())).toEqual([
+      new Date('2026-09-02T00:00:00').toISOString(),
+      new Date('2026-09-05T00:00:00').toISOString(),
+    ])
+  })
+
+  it('returns the day of the earliest completed session, ignoring interrupted ones', () => {
+    const first = getFirstCompletedSessionDay([
+      session('a', 'COMPLETED', '2026-09-05T09:00:00'),
+      session('b', 'INTERRUPTED', '2026-09-01T09:00:00'),
+      session('c', 'COMPLETED', '2026-09-03T18:00:00'),
+    ])
+
+    expect(first?.toISOString()).toBe(
+      new Date('2026-09-03T00:00:00').toISOString(),
+    )
+    expect(getFirstCompletedSessionDay([])).toBeNull()
   })
 })
