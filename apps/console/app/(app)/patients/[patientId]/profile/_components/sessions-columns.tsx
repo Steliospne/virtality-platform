@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@virtality/ui/components/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,99 +8,56 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ColumnDef } from '@tanstack/react-table'
-import { Copy, Ellipsis } from 'lucide-react'
+import { Copy, Ellipsis, NotebookPen } from 'lucide-react'
+import { format } from 'date-fns'
 import ColumnHeader from '@/components/tables/header-cell'
-import DateCell from '@/components/tables/date-cell'
-import { PatientSession } from '@virtality/db'
-import { getSessionDurationMinutes } from '@/lib/session-metrics'
-import {
-  getClinicalHistorySessionStatusLabel,
-  getSessionSourceProgramDisplayName,
-} from '@/lib/session-history'
-import type { ExtendedPatientSession } from '@/types/models'
+import { getClinicalHistorySessionStatusLabel } from '@/lib/session-history'
+import type { SessionListRowModel } from '@/lib/session-list-row'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import SessionProgressDelta from './session-progress-delta'
 
-export const sessionsColumns: ColumnDef<
-  PatientSession & { sessionData?: unknown[]; sessionExercise?: unknown[] }
->[] = [
+const NUMERIC_CELL_CLASS = 'text-right tabular-nums'
+
+const formatPct = (value: number | null) =>
+  value == null ? '—' : `${value.toFixed(1)}%`
+
+export const sessionsColumns: ColumnDef<SessionListRowModel>[] = [
   {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        id='select'
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: '#',
-    cell: ({ cell }) => <div>{cell.row.index + 1}</div>,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'id',
-    cell({ row }) {
-      const id: string = row.getValue('id')
-      return <div>{id.split('-')[0]}</div>
-    },
-  },
-  {
-    accessorKey: 'createdAt',
-    header: ({ column, header }) => (
-      <ColumnHeader
-        column={column}
-        title={header.id}
-        className='*:capitalize'
-      />
-    ),
-    cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
-  },
-  {
-    id: 'sourceProgram',
-    header: () => 'Program',
+    id: 'date',
+    accessorFn: (row) => row.date?.getTime() ?? 0,
+    header: ({ column }) => <ColumnHeader column={column} title='Date' />,
     cell: ({ row }) => {
-      const session = row.original as ExtendedPatientSession
+      const { date } = row.original
+      if (!date) return '—'
       return (
-        <span className='text-sm'>
-          {getSessionSourceProgramDisplayName(session)}
-        </span>
+        <div className='whitespace-nowrap'>
+          {format(date, 'PP')}
+          <span className='text-muted-foreground ml-2 text-xs'>
+            {format(date, 'H:mm')}
+          </span>
+        </div>
       )
     },
   },
   {
-    accessorKey: 'completedAt',
-    header: ({ column, header }) => (
-      <ColumnHeader
-        column={column}
-        title={header.id}
-        className='*:capitalize'
-      />
+    id: 'program',
+    accessorFn: (row) => row.programName,
+    header: () => 'Program',
+    cell: ({ row }) => (
+      <span className='text-sm'>{row.original.programName}</span>
     ),
-    cell: ({ row, column }) => <DateCell row={row} id={column.id} />,
+    enableSorting: false,
   },
   {
     id: 'status',
+    accessorFn: (row) => row.session.status,
     header: () => 'Status',
     cell: ({ row }) => {
-      const session = row.original as ExtendedPatientSession
-      const label = getClinicalHistorySessionStatusLabel(session.status)
-
+      const label = getClinicalHistorySessionStatusLabel(
+        row.original.session.status,
+      )
       if (!label) return '—'
-
       return (
         <Badge
           variant={label === 'Interrupted' ? 'secondary' : 'outline'}
@@ -111,28 +67,101 @@ export const sessionsColumns: ColumnDef<
         </Badge>
       )
     },
+    enableSorting: false,
   },
   {
     id: 'duration',
-    header: () => 'Duration',
+    accessorFn: (row) => row.durationMin ?? -1,
+    header: ({ column }) => (
+      <ColumnHeader column={column} title='Duration' className='justify-end' />
+    ),
     cell: ({ row }) => {
-      const session = row.original as ExtendedPatientSession
-      const min = getSessionDurationMinutes(session)
-      return min != null ? (
-        <span className='tabular-nums'>{min.toFixed(1)} min</span>
-      ) : (
-        '—'
+      const min = row.original.durationMin
+      return (
+        <div className={NUMERIC_CELL_CLASS}>
+          {min == null ? '—' : `${min.toFixed(1)} min`}
+        </div>
       )
     },
   },
   {
+    id: 'exercises',
+    accessorFn: (row) => row.exercisesDone,
+    header: () => <div className='text-right'>Exercises</div>,
+    cell: ({ row }) => {
+      const { exercisesDone, exercisesPlanned } = row.original
+      return (
+        <div
+          className={cn(
+            NUMERIC_CELL_CLASS,
+            exercisesPlanned > 0 &&
+              exercisesDone < exercisesPlanned &&
+              'text-amber-700 dark:text-amber-300',
+          )}
+        >
+          {exercisesDone}/{exercisesPlanned}
+        </div>
+      )
+    },
+    enableSorting: false,
+  },
+  {
+    id: 'avgProgress',
+    accessorFn: (row) => row.avgProgressPct ?? -1,
+    header: ({ column }) => (
+      <ColumnHeader
+        column={column}
+        title='Average progress'
+        className='justify-end'
+      />
+    ),
+    cell: ({ row }) => {
+      const { avgProgressPct, progressDeltaPct } = row.original
+      return (
+        <div
+          className={cn(
+            NUMERIC_CELL_CLASS,
+            'flex items-center justify-end gap-1.5',
+          )}
+        >
+          <span>{formatPct(avgProgressPct)}</span>
+          <SessionProgressDelta deltaPct={progressDeltaPct} />
+        </div>
+      )
+    },
+  },
+  {
+    id: 'bestRep',
+    accessorFn: (row) => row.bestRepPct ?? -1,
+    header: () => <div className='text-right'>Best repetition</div>,
+    cell: ({ row }) => (
+      <div className={NUMERIC_CELL_CLASS}>
+        {formatPct(row.original.bestRepPct)}
+      </div>
+    ),
+    enableSorting: false,
+  },
+  {
+    id: 'notes',
+    accessorFn: (row) => row.hasNotes,
+    header: () => <span className='sr-only'>Notes</span>,
+    cell: ({ row }) =>
+      row.original.hasNotes ? (
+        <NotebookPen
+          className='text-muted-foreground size-4'
+          aria-label='Has notes'
+        />
+      ) : null,
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     id: 'actions',
     enableHiding: false,
+    enableSorting: false,
     cell: function ActionCell({ row }) {
-      const session = row.original
-
       const copyId = () => {
-        navigator.clipboard.writeText(session.id)
+        navigator.clipboard.writeText(row.original.id)
       }
 
       return (

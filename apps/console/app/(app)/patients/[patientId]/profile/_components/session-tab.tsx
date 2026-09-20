@@ -98,6 +98,7 @@ export default function SessionTab({ patientId }: SessionTabProps) {
           patientId={patientId}
           onSessionSelect={setSessionViewing}
           sessions={filteredSessions}
+          historySessions={clinicalHistorySessions}
           isLoading={isSessionsPending}
         />
       </div>
