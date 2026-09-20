@@ -5,6 +5,7 @@ import { auth } from '@virtality/auth'
 import type { AuthContext } from '@virtality/auth'
 import {
   createAppLogger,
+  createAppMeter,
   createRequestId,
   shutdownObservability,
 } from '@virtality/shared/observability'
@@ -16,6 +17,7 @@ import { ORPC_PREFIX } from '@virtality/shared/types'
 import { devicePairingRoutes } from './routes/device-pairing.ts'
 import { scheduleStripeSubscriptionReconciliation } from './lib/schedule-stripe-subscription-reconciliation.ts'
 import { scheduleImmersiveVideoCleanup } from './lib/schedule-immersive-video-cleanup.ts'
+import { createHttpMetrics } from './lib/http-metrics.ts'
 
 const ENV =
   process.env.ENV === 'production'
@@ -44,6 +46,7 @@ const logger = createAppLogger({
 const httpLogger = logger.child({
   component: 'http',
 })
+const httpMetrics = createHttpMetrics(createAppMeter({ serviceName: 'server' }))
 
 // The route pattern (`/api/v1/devices/:deviceId`) keeps path-parameter
 // values out of the grouping key; the raw path stays alongside for drill-down.
@@ -63,6 +66,13 @@ app.use('*', async (c, next) => {
 
   try {
     await next()
+
+    httpMetrics.record({
+      method: c.req.method,
+      route: resolveRoute(c),
+      statusCode: c.res.status,
+      durationMs: Date.now() - startedAt,
+    })
 
     if (ENV === 'development') {
       console.log(`${c.req.method} ${c.req.path} ${c.res.status}`)
