@@ -491,13 +491,19 @@ export function createServerDeviceController(
     return evictedRooms
   }
 
+  // The snapshot timer fires every SNAPSHOT_INTERVAL_MS; only the transitions
+  // are worth a log line, so an unchanged snapshot is skipped. The empty
+  // snapshot still logs once so a room's disappearance shows up.
+  let lastRoomSnapshotKey: string | undefined
   function logRoomSnapshot() {
-    const activeRoomCount = registry.getActiveRoomCount()
-    if (activeRoomCount === 0) return
+    const rooms = registry.listRoomSnapshots()
+    const snapshotKey = JSON.stringify(rooms)
+    if (snapshotKey === lastRoomSnapshotKey) return
+    lastRoomSnapshotKey = snapshotKey
 
     logger.debug('socket.rooms.snapshot', {
-      activeRoomCount,
-      rooms: registry.listRoomSnapshots(),
+      activeRoomCount: registry.getActiveRoomCount(),
+      rooms,
     })
   }
 
