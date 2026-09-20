@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
 import { auth } from '@virtality/auth'
@@ -45,6 +45,15 @@ const httpLogger = logger.child({
   component: 'http',
 })
 
+// The route pattern (`/api/v1/devices/:deviceId`) keeps path-parameter
+// values out of the grouping key; the raw path stays alongside for drill-down.
+function resolveRoute(c: Context) {
+  const patterns = c.req.matchedRoutes
+    .map((r) => r.path)
+    .filter((path) => path !== '*')
+  return patterns.at(-1) ?? c.req.path
+}
+
 app.use('*', async (c, next) => {
   const startedAt = Date.now()
   const requestId = c.req.header('x-request-id') ?? createRequestId()
@@ -60,13 +69,19 @@ app.use('*', async (c, next) => {
       return
     }
 
-    httpLogger.info('http.request.completed', {
+    // Handled 5xx responses never throw, so this is the only place they can
+    // surface at error level.
+    const level = c.res.status >= 500 ? 'error' : 'info'
+    httpLogger[level]('http.request.completed', {
       requestId,
       method: c.req.method,
       path: c.req.path,
+      route: resolveRoute(c),
       statusCode: c.res.status,
       durationMs: Date.now() - startedAt,
       userAgent: c.req.header('user-agent') ?? 'unknown',
+      // Set by authMiddleware on authenticated routes; absent elsewhere.
+      userId: c.get('user')?.id,
     })
   } catch (error) {
     httpLogger.error(
@@ -75,6 +90,7 @@ app.use('*', async (c, next) => {
         requestId,
         method: c.req.method,
         path: c.req.path,
+        route: resolveRoute(c),
         durationMs: Date.now() - startedAt,
         error,
       },
@@ -194,7 +210,9 @@ export default app
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
-    logger.info('service.shutdown', { signal, service: 'server' })
+    // Production logs ~60 shutdowns per start; until that is understood the
+    // line is debug-level so it does not drown the info stream.
+    logger.debug('service.shutdown', { signal, service: 'server' })
     const closeServer = () =>
       new Promise<void>((resolve) => {
         if (!server) return resolve()
