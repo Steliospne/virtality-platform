@@ -1,11 +1,16 @@
 import { AdminAuthoredEmail } from '../components/email/admin-authored/admin-authored-email.js'
 import { reactToHTML } from './react-to-html.js'
 import type { AdminEmailBodyBlock } from '../components/email/admin-authored/email-body-blocks.js'
+import type { AdminEmailOptOutLinks } from '../components/email/admin-authored/admin-email-opt-out-footer.js'
+
+export type { AdminEmailOptOutLinks }
 
 export type RenderAdminAuthoredEmailInput = {
   subject: string
   previewText?: string
   bodyBlocks: AdminEmailBodyBlock[]
+  /** Opt-out footer links; omit for preview renders. */
+  optOut?: AdminEmailOptOutLinks
 }
 
 export type RenderedAdminAuthoredEmail = {
@@ -21,6 +26,7 @@ export const renderAdminAuthoredEmail = async (
       subject={input.subject}
       previewText={input.previewText}
       bodyBlocks={input.bodyBlocks}
+      optOut={input.optOut}
     />,
   )
 
