@@ -144,13 +144,6 @@ const BucketBrowser = () => {
 
   return (
     <div className='flex min-w-0 flex-col gap-4 p-4 sm:p-8'>
-      <div className='min-w-0'>
-        <h1 className='text-2xl font-semibold'>Bucket manager</h1>
-        <p className='text-sm text-zinc-500'>
-          Browse CDN-backed bucket objects one folder at a time.
-        </p>
-      </div>
-
       <nav
         aria-label='Bucket breadcrumbs'
         className='flex min-w-0 flex-wrap items-center gap-1 text-sm'

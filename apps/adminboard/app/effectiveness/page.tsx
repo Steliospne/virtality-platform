@@ -180,16 +180,7 @@ const EffectivenessReportPage = () => {
 
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
-      <div className='flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
-        <div className='min-w-0'>
-          <h1 className='text-3xl font-semibold tracking-tight md:text-4xl'>
-            {EFFECTIVENESS_REPORT_COPY.pageTitle}
-          </h1>
-          <p className='text-muted-foreground mt-2 max-w-3xl text-sm'>
-            {EFFECTIVENESS_REPORT_COPY.pageSubtitle}
-          </p>
-        </div>
-
+      <div className='flex flex-col gap-4 md:flex-row md:items-end md:justify-end'>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-end'>
           <div className='flex flex-col gap-1.5'>
             <label

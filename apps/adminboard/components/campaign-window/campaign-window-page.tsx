@@ -20,7 +20,6 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import {
   CAMPAIGN_WINDOW_LIFECYCLE_LABELS,
-  CAMPAIGN_WINDOW_PAGE_DESCRIPTION,
   campaignCouponSelectPlaceholder,
   formatCampaignAttachingStatus,
   formatCampaignCouponHealthLabel,
@@ -117,13 +116,6 @@ export function CampaignWindowPage() {
 
   return (
     <div className='min-h-screen-with-header mx-auto max-w-3xl px-4 py-6'>
-      <div className='mb-8'>
-        <h1 className='text-4xl font-bold tracking-tight'>Campaign Window</h1>
-        <p className='text-muted-foreground mt-2 max-w-2xl'>
-          {CAMPAIGN_WINDOW_PAGE_DESCRIPTION}
-        </p>
-      </div>
-
       <div className='bg-muted/40 mb-8 grid gap-2 rounded-lg p-4 text-sm'>
         <p>
           Status: <span className='font-medium'>{lifecycleLabel}</span>

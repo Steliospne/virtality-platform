@@ -123,15 +123,6 @@ export function CouponLibraryWorkspace({
 
   return (
     <div className='min-h-screen-with-header space-y-6 p-8'>
-      <div className='mb-2'>
-        <h1 className='text-4xl font-bold tracking-tight'>Coupon library</h1>
-        <p className='text-muted-foreground mt-2 max-w-3xl text-sm leading-6'>
-          Reusable Stripe Coupons and their customer-facing Promotion Codes in
-          one workspace. Pick a Coupon above to manage codes, delivery, and
-          campaign usage below.
-        </p>
-      </div>
-
       {couponList.length === 0 ? (
         <div className='rounded-xl border border-dashed p-8 text-center'>
           <p className='text-muted-foreground mb-4 text-sm'>

@@ -38,15 +38,7 @@ const StartPage = () => {
 
   return (
     <div className='min-h-screen-with-header mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:px-6 md:py-8'>
-      <div className='flex items-end justify-between gap-6'>
-        <div className='min-w-0'>
-          <h1 className='text-3xl font-semibold tracking-tight md:text-4xl'>
-            Dashboard
-          </h1>
-          <p className='text-muted-foreground mt-2 text-sm'>
-            Clear overview of patient volume and session activity.
-          </p>
-        </div>
+      <div className='flex justify-end gap-6'>
         <div className='flex flex-wrap items-center gap-3'>
           <Button asChild variant='outline'>
             <Link href='/effectiveness' className='flex items-center gap-2'>
