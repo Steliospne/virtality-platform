@@ -301,6 +301,8 @@ export const AdminAuthoredEmailsPanel = () => {
               previewText: selectedDraft.previewText,
               bodyBlocks: selectedDraft.bodyBlocks,
               recipients: selectedDraft.recipients,
+              topic: selectedDraft.topic,
+              audienceId: selectedDraft.audienceId,
               isFinalSent: selectedDraft.isFinalSent,
               sendReadiness: selectedDraft.sendReadiness,
               updatedAt: selectedDraft.updatedAt,

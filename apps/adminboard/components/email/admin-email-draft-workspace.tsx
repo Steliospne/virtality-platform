@@ -11,52 +11,32 @@ import {
 } from '@virtality/ui/components/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@virtality/ui/components/input'
-import {
-  formatRecipientsForInput,
-  parseRecipientsFromInput,
-} from '@/lib/admin-email-recipients'
+import { parseRecipientsFromInput } from '@/lib/admin-email-recipients'
 import { cn } from '@/lib/utils'
-import type { EmailBodyBlock } from '@virtality/shared/types'
-import { MAX_EMAIL_RECIPIENTS } from '@virtality/shared/types'
 import {
   getAdminEmailDraftPreviewQueryDraftId,
   getAdminEmailDraftWorkspaceHeader,
   isAdminEmailDraftReadOnly,
   prepareAdminEmailDraftPreview,
 } from '@/lib/admin-email-draft-actions'
-import {
-  useAdminEmailDraftPreview,
-  useArchiveAdminEmailDraft,
-  useCloneAdminEmailDraft,
-  useFinalSendAdminEmailDraft,
-  useRestoreAdminEmailDraft,
-  useTestSendAdminEmailDraft,
-  useUpdateAdminEmailDraft,
-} from '@virtality/react-query'
-import { Save, Send } from 'lucide-react'
+import { getAdminEmailTopicLabel } from '@virtality/shared/utils'
+import { useAdminEmailDraftPreview } from '@virtality/react-query'
+import { Save } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { AdminEmailDraftArchiveDialog } from './admin-email-draft-archive-dialog'
 import { AdminEmailDraftHeaderMenu } from './admin-email-draft-header-menu'
 import { AdminEmailDraftPreviewDialog } from './admin-email-draft-preview-dialog'
+import { AdminEmailDraftTargetingCard } from './admin-email-draft-targeting-card'
+import { AdminEmailFinalSendCard } from './admin-email-final-send-card'
+import { AdminEmailTestSendCard } from './admin-email-test-send-card'
 import { EmailBlockBuilder } from './email-block-builder'
 import { FinalSendDialog } from './final-send-dialog'
 import { Label } from '@virtality/ui/components/label'
-import { Textarea } from '@virtality/ui/components/textarea'
-
-type DraftWorkspaceData = {
-  id: string
-  subject: string
-  previewText: string | null
-  bodyBlocks: EmailBodyBlock[]
-  recipients: string[]
-  isFinalSent: boolean
-  updatedAt: string | Date
-  sendReadiness: {
-    ready: boolean
-    reasons: string[]
-  }
-}
+import {
+  toDraftFormState,
+  useAdminEmailDraftActions,
+  type DraftWorkspaceData,
+} from './use-admin-email-draft-actions'
 
 type AdminEmailDraftWorkspaceProps = {
   draft: DraftWorkspaceData
@@ -67,20 +47,6 @@ type AdminEmailDraftWorkspaceProps = {
   onFinalSent: (sentRecordId: string) => void
 }
 
-type DraftFormState = {
-  subject: string
-  previewText: string
-  bodyBlocks: EmailBodyBlock[]
-  recipientsText: string
-}
-
-const toFormState = (draft: DraftWorkspaceData): DraftFormState => ({
-  subject: draft.subject,
-  previewText: draft.previewText ?? '',
-  bodyBlocks: draft.bodyBlocks,
-  recipientsText: formatRecipientsForInput(draft.recipients),
-})
-
 export const AdminEmailDraftWorkspace = ({
   draft,
   isArchived = false,
@@ -89,40 +55,35 @@ export const AdminEmailDraftWorkspace = ({
   onRestored,
   onFinalSent,
 }: AdminEmailDraftWorkspaceProps) => {
-  const [form, setForm] = useState<DraftFormState>(() => toFormState(draft))
+  const [form, setForm] = useState(() => toDraftFormState(draft))
   const [previewOpen, setPreviewOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
-  const [testRecipientEmail, setTestRecipientEmail] = useState('')
-  const [finalSendOpen, setFinalSendOpen] = useState(false)
-  const [confirmedSubject, setConfirmedSubject] = useState('')
-
-  const updateDraftMutation = useUpdateAdminEmailDraft()
-  const cloneDraftMutation = useCloneAdminEmailDraft()
-  const archiveDraftMutation = useArchiveAdminEmailDraft()
-  const restoreDraftMutation = useRestoreAdminEmailDraft()
-  const testSendMutation = useTestSendAdminEmailDraft(draft.id)
-  const finalSendMutation = useFinalSendAdminEmailDraft()
 
   const parsedRecipients = useMemo(
     () => parseRecipientsFromInput(form.recipientsText),
     [form.recipientsText],
   )
 
-  const isDirty = useMemo(() => {
-    const saved = toFormState(draft)
-    return (
-      form.subject !== saved.subject ||
-      form.previewText !== saved.previewText ||
-      form.recipientsText !== saved.recipientsText ||
-      JSON.stringify(form.bodyBlocks) !== JSON.stringify(saved.bodyBlocks)
-    )
-  }, [draft, form])
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(toDraftFormState(draft)),
+    [draft, form],
+  )
+
+  const actions = useAdminEmailDraftActions({
+    draft,
+    form,
+    parsedRecipients,
+    isDirty,
+    onCloned,
+    onArchived,
+    onRestored,
+    onFinalSent,
+  })
 
   useEffect(() => {
-    setForm(toFormState(draft))
+    setForm(toDraftFormState(draft))
     setPreviewOpen(false)
     setArchiveOpen(false)
-    setConfirmedSubject('')
   }, [draft.id, draft.updatedAt])
 
   const previewQueryDraftId = getAdminEmailDraftPreviewQueryDraftId({
@@ -137,29 +98,10 @@ export const AdminEmailDraftWorkspace = ({
     isFetching: isPreviewFetching,
   } = useAdminEmailDraftPreview(previewQueryDraftId)
 
-  const saveDraft = async () => {
-    try {
-      const updated = await updateDraftMutation.mutateAsync({
-        draftId: draft.id,
-        subject: form.subject,
-        previewText: form.previewText.trim() ? form.previewText : null,
-        bodyBlocks: form.bodyBlocks,
-        recipients: parsedRecipients,
-      })
-      toast.success('Draft saved')
-      return updated
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to save draft',
-      )
-      return null
-    }
-  }
-
   const handlePreview = async () => {
     const canPreview = await prepareAdminEmailDraftPreview({
       isDirty,
-      saveDraft,
+      saveDraft: actions.saveDraft,
     })
     if (!canPreview) {
       return
@@ -167,101 +109,6 @@ export const AdminEmailDraftWorkspace = ({
 
     setPreviewOpen(true)
     void refetchPreview()
-  }
-
-  const handleTestSend = async (event: React.FormEvent) => {
-    event.preventDefault()
-
-    if (!testRecipientEmail.includes('@')) {
-      toast.error('Enter a valid test recipient email')
-      return
-    }
-
-    if (isDirty) {
-      const saved = await saveDraft()
-      if (!saved) {
-        return
-      }
-    }
-
-    try {
-      await testSendMutation.mutateAsync({
-        draftId: draft.id,
-        testRecipientEmail: testRecipientEmail.trim(),
-      })
-      toast.success(`Test email sent to ${testRecipientEmail.trim()}`)
-      setTestRecipientEmail('')
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to send test email',
-      )
-    }
-  }
-
-  const handleFinalSend = async () => {
-    const savedDraft = isDirty ? await saveDraft() : null
-    if (isDirty && !savedDraft) {
-      return
-    }
-
-    const subject = savedDraft?.subject ?? draft.subject
-    const recipientCount =
-      savedDraft?.recipients.length ?? draft.recipients.length
-
-    try {
-      const sentRecord = await finalSendMutation.mutateAsync({
-        draftId: draft.id,
-        confirmedSubject: subject,
-        confirmedRecipientCount: recipientCount,
-      })
-      toast.success('Email sent')
-      setFinalSendOpen(false)
-      setConfirmedSubject('')
-      onFinalSent(sentRecord.id)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to send email',
-      )
-    }
-  }
-
-  const handleClone = async () => {
-    try {
-      const cloned = await cloneDraftMutation.mutateAsync({ draftId: draft.id })
-      toast.success('Draft cloned')
-      onCloned(cloned.id)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to clone draft',
-      )
-    }
-  }
-
-  const handleArchive = async () => {
-    try {
-      await archiveDraftMutation.mutateAsync({ draftId: draft.id })
-      toast.success('Draft archived')
-      setArchiveOpen(false)
-      onArchived()
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to archive draft',
-      )
-    }
-  }
-
-  const handleRestore = async () => {
-    try {
-      const restored = await restoreDraftMutation.mutateAsync({
-        draftId: draft.id,
-      })
-      toast.success('Draft restored')
-      onRestored(restored.id)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to restore draft',
-      )
-    }
   }
 
   const readOnly = isAdminEmailDraftReadOnly({
@@ -287,15 +134,18 @@ export const AdminEmailDraftWorkspace = ({
                 isFinalSent={draft.isFinalSent}
                 isArchived={isArchived}
                 onPreview={() => void handlePreview()}
-                onClone={() => void handleClone()}
+                onClone={() => void actions.clone()}
                 onArchive={() => setArchiveOpen(true)}
-                onRestore={() => void handleRestore()}
-                isClonePending={cloneDraftMutation.isPending}
-                isRestorePending={restoreDraftMutation.isPending}
+                onRestore={() => void actions.restore()}
+                isClonePending={actions.isClonePending}
+                isRestorePending={actions.isRestorePending}
               />
             </div>
             <div className='flex flex-wrap items-center gap-2'>
               {isArchived ? <Badge variant='outline'>Archived</Badge> : null}
+              <Badge variant='secondary'>
+                {getAdminEmailTopicLabel(form.topic)}
+              </Badge>
               <AdminEmailWorkflowBadge
                 kind='send-readiness'
                 ready={draft.sendReadiness.ready}
@@ -349,28 +199,6 @@ export const AdminEmailDraftWorkspace = ({
             />
           </div>
 
-          <div>
-            <Label className='text-muted-foreground text-sm font-medium'>
-              Recipients (max {MAX_EMAIL_RECIPIENTS})
-            </Label>
-            <Textarea
-              className='mt-1 min-h-28'
-              value={form.recipientsText}
-              disabled={readOnly}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  recipientsText: event.target.value,
-                }))
-              }
-              placeholder='One email per line'
-            />
-            <p className='text-muted-foreground mt-1 text-xs'>
-              {parsedRecipients.length} recipient
-              {parsedRecipients.length === 1 ? '' : 's'} entered
-            </p>
-          </div>
-
           <EmailBlockBuilder
             blocks={form.bodyBlocks}
             disabled={readOnly}
@@ -382,88 +210,38 @@ export const AdminEmailDraftWorkspace = ({
           {!readOnly ? (
             <Button
               type='button'
-              onClick={() => void saveDraft()}
-              disabled={!isDirty || updateDraftMutation.isPending}
+              onClick={() => void actions.saveDraft()}
+              disabled={!isDirty || actions.isSavePending}
             >
               <Save className='mr-2 size-4' />
-              {updateDraftMutation.isPending ? 'Saving...' : 'Save draft'}
+              {actions.isSavePending ? 'Saving...' : 'Save draft'}
             </Button>
           ) : null}
         </CardContent>
       </Card>
 
+      <AdminEmailDraftTargetingCard
+        value={{
+          topic: form.topic,
+          audienceId: form.audienceId,
+          recipientsText: form.recipientsText,
+        }}
+        parsedRecipients={parsedRecipients}
+        disabled={readOnly}
+        onChange={(update) => setForm((current) => ({ ...current, ...update }))}
+      />
+
       {!readOnly ? (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Test send</CardTitle>
-              <CardDescription>
-                Send a test email to your inbox to preview delivery.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={handleTestSend}
-                className='flex flex-col gap-3 sm:flex-row sm:items-end'
-              >
-                <div className='flex-1'>
-                  <Label className='text-muted-foreground mb-1.5 block text-sm font-medium'>
-                    Test recipient
-                  </Label>
-                  <Input
-                    type='email'
-                    value={testRecipientEmail}
-                    onChange={(event) =>
-                      setTestRecipientEmail(event.target.value)
-                    }
-                    placeholder='you@example.com'
-                  />
-                </div>
-                <Button type='submit' disabled={testSendMutation.isPending}>
-                  <Send className='mr-2 size-4' />
-                  {testSendMutation.isPending ? 'Sending...' : 'Send test'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Final send</CardTitle>
-              <CardDescription>
-                Immediate and irreversible. Requires a send-ready draft.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className='space-y-3'>
-              {!draft.sendReadiness.ready ? (
-                <ul className='text-muted-foreground list-disc space-y-1 pl-5 text-sm'>
-                  {draft.sendReadiness.reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              ) : null}
-              <Button
-                type='button'
-                onClick={async () => {
-                  if (isDirty) {
-                    const saved = await saveDraft()
-                    if (!saved) {
-                      return
-                    }
-                  }
-
-                  setConfirmedSubject('')
-                  setFinalSendOpen(true)
-                }}
-                disabled={
-                  !draft.sendReadiness.ready || finalSendMutation.isPending
-                }
-              >
-                <Send className='mr-2 size-4' />
-                Final send
-              </Button>
-            </CardContent>
-          </Card>
+          <AdminEmailTestSendCard
+            isPending={actions.isTestSendPending}
+            onSend={actions.testSend}
+          />
+          <AdminEmailFinalSendCard
+            sendReadiness={draft.sendReadiness}
+            isPending={actions.isFinalSendPending}
+            onOpen={() => void actions.openFinalSend()}
+          />
         </>
       ) : null}
 
@@ -478,19 +256,22 @@ export const AdminEmailDraftWorkspace = ({
       <AdminEmailDraftArchiveDialog
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
-        onConfirm={() => void handleArchive()}
-        isPending={archiveDraftMutation.isPending}
+        onConfirm={() =>
+          void actions.archive().then(() => setArchiveOpen(false))
+        }
+        isPending={actions.isArchivePending}
       />
 
       <FinalSendDialog
-        open={finalSendOpen}
-        onOpenChange={setFinalSendOpen}
+        open={actions.finalSendOpen}
+        onOpenChange={actions.setFinalSendOpen}
         subject={form.subject}
-        recipientCount={parsedRecipients.length}
-        confirmedSubject={confirmedSubject}
-        onConfirmedSubjectChange={setConfirmedSubject}
-        onConfirm={() => void handleFinalSend()}
-        isPending={finalSendMutation.isPending}
+        topicLabel={getAdminEmailTopicLabel(form.topic)}
+        breakdown={actions.finalSendBreakdown}
+        confirmedSubject={actions.confirmedSubject}
+        onConfirmedSubjectChange={actions.setConfirmedSubject}
+        onConfirm={() => void actions.finalSend()}
+        isPending={actions.isFinalSendPending}
       />
     </div>
   )

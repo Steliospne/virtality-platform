@@ -13,6 +13,7 @@ import {
   useAdminEmailSentRecord,
   useCloneAdminEmailFromSent,
 } from '@virtality/react-query'
+import { getAdminEmailTopicLabel } from '@virtality/shared/utils'
 import { format } from 'date-fns'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
@@ -71,6 +72,9 @@ export const AdminEmailSentRecordView = ({
             </div>
             <div className='flex flex-wrap gap-2'>
               <Badge variant='secondary'>Sent record</Badge>
+              <Badge variant='outline'>
+                {getAdminEmailTopicLabel(sentRecord.topic)}
+              </Badge>
               {failedCount > 0 ? (
                 <Badge variant='outline'>
                   {successCount} sent, {failedCount} failed
@@ -86,6 +90,16 @@ export const AdminEmailSentRecordView = ({
             <p>
               <span className='text-muted-foreground'>Recipients:</span>{' '}
               {sentRecord.recipients.length}
+            </p>
+            <p className='mt-1'>
+              <span className='text-muted-foreground'>Audience:</span>{' '}
+              {sentRecord.audienceName ?? 'None'}
+            </p>
+            <p className='mt-1'>
+              <span className='text-muted-foreground'>
+                Skipped (opted out):
+              </span>{' '}
+              {sentRecord.suppressedRecipients.length}
             </p>
             <p className='mt-1'>
               <span className='text-muted-foreground'>Draft created:</span>{' '}

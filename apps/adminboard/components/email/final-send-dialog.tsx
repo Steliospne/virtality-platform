@@ -11,11 +11,22 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@virtality/ui/components/input'
 
+export type FinalSendBreakdown = {
+  explicitCount: number
+  audienceCount: number
+  audienceName: string | null
+  overlapCount: number
+  suppressedCount: number
+  totalCount: number
+}
+
 type FinalSendDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   subject: string
-  recipientCount: number
+  topicLabel: string
+  /** Resolved at open time; null while resolving. */
+  breakdown: FinalSendBreakdown | null
   confirmedSubject: string
   onConfirmedSubjectChange: (value: string) => void
   onConfirm: () => void
@@ -26,14 +37,17 @@ export const FinalSendDialog = ({
   open,
   onOpenChange,
   subject,
-  recipientCount,
+  topicLabel,
+  breakdown,
   confirmedSubject,
   onConfirmedSubjectChange,
   onConfirm,
   isPending,
 }: FinalSendDialogProps) => {
   const subjectMatches = confirmedSubject === subject
-  const canConfirm = subjectMatches && recipientCount > 0 && !isPending
+  const recipientCount = breakdown?.totalCount ?? 0
+  const canConfirm =
+    subjectMatches && breakdown !== null && recipientCount > 0 && !isPending
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,7 +64,25 @@ export const FinalSendDialog = ({
           <div className='rounded-lg border p-4 text-sm'>
             <p>
               <span className='text-muted-foreground'>Recipients:</span>{' '}
-              <span className='font-medium'>{recipientCount}</span>
+              <span className='font-medium'>
+                {breakdown ? recipientCount : 'Resolving...'}
+              </span>
+            </p>
+            {breakdown ? (
+              <p className='text-muted-foreground mt-1 text-xs'>
+                {breakdown.explicitCount} explicit
+                {breakdown.audienceName
+                  ? ` + ${breakdown.audienceCount} from ${breakdown.audienceName}`
+                  : ''}
+                {breakdown.overlapCount > 0
+                  ? ` − ${breakdown.overlapCount} in both`
+                  : ''}
+                {` − ${breakdown.suppressedCount} opted out`}
+              </p>
+            ) : null}
+            <p className='mt-2'>
+              <span className='text-muted-foreground'>Topic:</span>{' '}
+              <span className='font-medium'>{topicLabel}</span>
             </p>
             <p className='mt-2'>
               <span className='text-muted-foreground'>Subject:</span>{' '}
