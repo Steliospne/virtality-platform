@@ -5,11 +5,60 @@ enum AdminEmailDeliveryStatus {
   failed
 }
 
+/// Topic: fixed category of Admin-authored Email a recipient can opt out of.
+enum AdminEmailTopic {
+  product_updates
+  newsletter
+  promotions
+}
+
+enum EmailOptOutSource {
+  recipient_link
+  admin
+}
+
+/// Audience: admin-defined recipient group. `ruleJson` is the dynamic rule
+/// evaluated at send time; `includeEmails` / `excludeEmails` are static pins.
+model EmailAudience {
+  id            String   @id
+  name          String
+  description   String?
+  ruleJson      String   @default("{}")
+  includeEmails String[] @default([])
+  excludeEmails String[] @default([])
+  createdById   String
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+
+  createdBy User               @relation("EmailAudienceCreator", fields: [createdById], references: [id])
+  drafts    AdminEmailDraft[]
+
+  @@index([updatedAt])
+}
+
+/// Opt-out: a recipient's choice not to receive Admin-authored Email for one
+/// Topic (`topic` set) or for all Topics (`topic` null). Never reversed.
+model EmailOptOut {
+  id           String            @id
+  email        String
+  topic        AdminEmailTopic?
+  source       EmailOptOutSource
+  note         String?
+  recordedById String?
+  createdAt    DateTime          @default(now()) @db.Timestamp(6)
+
+  recordedBy User? @relation("EmailOptOutRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([email])
+}
+
 model AdminEmailDraft {
   id                     String    @id
   subject                String    @default("")
   previewText            String?
   bodyBlocksJson         String    @default("[]")
+  topic                  AdminEmailTopic @default(product_updates)
+  audienceId             String?
   recipients             String[]  @default([])
   hasSuccessfulTestSend  Boolean   @default(false)
   lastTestSentAt         DateTime? @db.Timestamp(6)
@@ -28,12 +77,14 @@ model AdminEmailDraft {
   restoredBy           User?                  @relation("AdminEmailDraftRestoredBy", fields: [restoredById], references: [id], onDelete: SetNull)
   clonedFromDraft      AdminEmailDraft?       @relation("AdminEmailDraftClone", fields: [clonedFromDraftId], references: [id], onDelete: SetNull)
   clonedFromSentRecord AdminEmailSentRecord?  @relation("AdminEmailDraftClonedFromSent", fields: [clonedFromSentRecordId], references: [id], onDelete: SetNull)
+  audience             EmailAudience?         @relation(fields: [audienceId], references: [id], onDelete: SetNull)
   draftClones          AdminEmailDraft[]      @relation("AdminEmailDraftClone")
   sentRecords          AdminEmailSentRecord[]
 
   @@index([createdById])
   @@index([updatedAt])
   @@index([archivedAt])
+  @@index([audienceId])
 }
 
 model AdminEmailSentRecord {
@@ -43,7 +94,11 @@ model AdminEmailSentRecord {
   previewText          String?
   bodyBlocksJson       String
   renderedSnapshotJson String
+  topic                AdminEmailTopic @default(product_updates)
+  audienceId           String?
+  audienceName         String?
   recipients           String[]
+  suppressedRecipients String[]        @default([])
   createdById          String
   sentById             String
   draftCreatedAt       DateTime @db.Timestamp(6)

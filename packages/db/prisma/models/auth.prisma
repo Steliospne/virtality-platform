@@ -37,6 +37,8 @@ model User {
   adminEmailDraftsRestored     AdminEmailDraft[]        @relation("AdminEmailDraftRestoredBy")
   adminEmailSentRecordsCreated AdminEmailSentRecord[]   @relation("AdminEmailSentRecordCreator")
   adminEmailSentRecordsSent    AdminEmailSentRecord[]   @relation("AdminEmailSentRecordSender")
+  emailAudiencesCreated        EmailAudience[]          @relation("EmailAudienceCreator")
+  emailOptOutsRecorded         EmailOptOut[]            @relation("EmailOptOutRecorder")
   pendingPasswordChanges       PendingPasswordChange[]
   pendingAccountDeletions      PendingAccountDeletion[]
   devicePairingAttempts        DevicePairingAttempt[]
