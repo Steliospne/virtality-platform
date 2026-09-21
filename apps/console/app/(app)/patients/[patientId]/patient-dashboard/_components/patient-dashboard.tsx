@@ -17,7 +17,6 @@ import useNow from '@/hooks/use-now'
 import { CastingPanel } from '@/components/ui/casting-panel'
 import { useLiveEntitlementStanding } from '@/hooks/use-live-entitlement-standing'
 import { ImmersiveVideoPanel } from './immersive-video-panel'
-import { useQuickStartFromUrl } from './use-quick-start-from-url'
 import { PatientDashboardVideoDialogs } from './patient-dashboard-video-dialogs'
 import {
   dashboardCastingClassName,
@@ -31,7 +30,6 @@ import {
 
 const PatientDashboard = () => {
   useIsAuthed()
-  useQuickStartFromUrl()
   const [showCasting, setShowCasting] = useState(false)
   const { canLaunchVr, isPending: entitlementPending } =
     useLiveEntitlementStanding()

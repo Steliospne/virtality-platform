@@ -50,17 +50,17 @@ describe('launch', () => {
     ).toBeNull()
   })
 
-  it('opens the patient dashboard, and Quick Start when picked', () => {
+  it('opens the patient dashboard armed to launch, via Quick Start when picked', () => {
     expect(
       homeLaunchHref({ patientId: 'p1', programId: 'rp1', deviceId: 'd1' }),
-    ).toBe('/patients/p1/patient-dashboard')
+    ).toBe('/patients/p1/patient-dashboard?launch=1')
     expect(
       homeLaunchHref({
         patientId: 'p1',
         programId: QUICK_START_PROGRAM_ID,
         deviceId: 'd1',
       }),
-    ).toBe('/patients/p1/patient-dashboard?quickstart=1')
+    ).toBe('/patients/p1/patient-dashboard?launch=1&quickstart=1')
   })
 })
 

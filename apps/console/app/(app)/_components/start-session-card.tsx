@@ -63,7 +63,7 @@ const StartSessionCard = ({ data }: { data: HomeDashboardData }) => {
           onClick={launch}
         >
           <Play className='fill-current' />
-          Continue to launch
+          Launch on headset
         </Button>
       </div>
     </section>

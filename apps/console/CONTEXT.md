@@ -201,8 +201,12 @@ The console landing page for a signed-in clinician: a seven-day sessions overvie
 _Avoid_: Welcome page, landing tips, home screen
 
 **Session Picker**:
-The three-step patient / program / headset choice on the **Home Dashboard**. It does not launch treatment itself: it records the chosen program and headset as the patient's **Last Used Program** and last headset, then opens that patient's dashboard, where the **Session Launch Attempt** happens. Choosing **Quick Start** opens the Quick Start dialog there.
+The three-step patient / program / headset choice on the **Home Dashboard**. Launch records the chosen program and headset as the patient's **Last Used Program** and last headset, then opens that patient's dashboard with a **Launch Intent**.
 _Avoid_: Home launch, remote start, dashboard-side launch
+
+**Launch Intent**:
+A one-shot `?launch=1` (optionally `&quickstart=1`) handed from the **Session Picker** to the patient dashboard. On arrival the dashboard switches to Exercise Mode, opens Quick Start when asked, connects the remembered headset, and presses Start on the clinician's behalf the first moment the manual-Start gate opens (console connected, headset present, entitlement allows, exercises selected, avatar and map set). The params are dropped immediately so a refresh never re-fires; the intent gives up with a reason after a bounded wait (paused while Quick Start is open) and stands down if the clinician starts anything themselves.
+_Avoid_: Auto-start on every visit, launch from the home page, silent retry after timeout
 
 **Pinned Patient**:
 A patient the clinician has marked (`pinnedAt`) to keep on the **Home Dashboard**. It is a per-clinician shortcut, not clinical state, and is separate from the patient's profile form.

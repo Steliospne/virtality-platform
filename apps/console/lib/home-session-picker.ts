@@ -1,4 +1,5 @@
 import type { DeviceVrPresenceStatus } from '@/lib/vr-presence-status'
+import { buildLaunchHref } from '@/lib/patient-dashboard-auto-launch'
 
 export const QUICK_START_PROGRAM_ID = 'quick-start'
 
@@ -57,13 +58,16 @@ export function isHeadsetSelectable(status: DeviceVrPresenceStatus): boolean {
   return status === 'online' || status === 'loading'
 }
 
-/** Where Launch sends the clinician: the patient dashboard, opening Quick Start when picked. */
+/**
+ * Where Launch sends the clinician: the patient dashboard, armed to connect
+ * the headset and start treatment (after Quick Start, when that was picked).
+ */
 export function homeLaunchHref(selection: HomePickerSelection): string | null {
   if (!isHomePickerReady(selection) || !selection.patientId) return null
-  const base = `/patients/${selection.patientId}/patient-dashboard`
-  return selection.programId === QUICK_START_PROGRAM_ID
-    ? `${base}?quickstart=1`
-    : base
+  return buildLaunchHref(selection.patientId, {
+    launch: true,
+    quickStart: selection.programId === QUICK_START_PROGRAM_ID,
+  })
 }
 
 /** Keeps a saved program/headset only while it still exists in the lists. */
