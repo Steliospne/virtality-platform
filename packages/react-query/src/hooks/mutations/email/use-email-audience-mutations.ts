@@ -64,6 +64,11 @@ export const usePreviewEmailAudience = () => {
   return useMutation(orpc.email.audiences.preview.mutationOptions())
 }
 
+export const usePreviewEmailAudienceMembers = () => {
+  const orpc = useORPC()
+  return useMutation(orpc.email.audiences.previewMembers.mutationOptions())
+}
+
 export const useRecordEmailOptOut = () => {
   const orpc = useORPC()
   const queryClient = useQueryClient()

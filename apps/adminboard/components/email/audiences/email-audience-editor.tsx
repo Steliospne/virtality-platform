@@ -169,6 +169,7 @@ export const EmailAudienceEditor = (props: EmailAudienceEditorProps) => {
       </Card>
 
       <EmailAudiencePreviewCard
+        input={editor.previewInput}
         result={editor.previewResult}
         isPending={editor.isPreviewing}
         onEvaluate={() => void editor.preview()}

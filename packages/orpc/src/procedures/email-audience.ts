@@ -177,6 +177,35 @@ const previewAudience = authed
     }
   })
 
+/**
+ * Every member an Audience (saved or unsaved) resolves to right now, with the
+ * Console user's name where one exists. Internal to the Adminboard.
+ */
+const previewAudienceMembers = authed
+  .route({ path: '/email/audiences/preview-members', method: 'POST' })
+  .input(audienceFieldsInput)
+  .handler(async ({ context, input }) => {
+    const fields = validateAudienceFields(input)
+    const resolved = await resolveAudienceFromDb(context.prisma, {
+      id: 'preview',
+      ...fields,
+    })
+    const users = await context.prisma.user.findMany({
+      where: { email: { in: resolved.recipients, mode: 'insensitive' } },
+      select: { email: true, name: true },
+    })
+    const namesByEmail = new Map(
+      users.map((user) => [user.email.toLowerCase(), user.name]),
+    )
+    return {
+      total: resolved.recipients.length,
+      members: resolved.recipients.map((email) => ({
+        email,
+        name: namesByEmail.get(email.toLowerCase()) ?? null,
+      })),
+    }
+  })
+
 export const emailAudience = {
   list: listAudiences,
   get: getAudience,
@@ -184,4 +213,5 @@ export const emailAudience = {
   update: updateAudience,
   delete: deleteAudience,
   preview: previewAudience,
+  previewMembers: previewAudienceMembers,
 }

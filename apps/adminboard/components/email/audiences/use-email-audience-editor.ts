@@ -100,6 +100,7 @@ export const useEmailAudienceEditor = ({
     save,
     remove,
     preview,
+    previewInput: toEmailAudienceInput(form),
     previewResult: previewMutation.data ?? null,
     isPreviewing: previewMutation.isPending,
   }

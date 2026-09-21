@@ -140,6 +140,7 @@ export {
   useUpdateEmailAudience,
   useDeleteEmailAudience,
   usePreviewEmailAudience,
+  usePreviewEmailAudienceMembers,
   useRecordEmailOptOut,
   useConfirmEmailOptOut,
 } from './email/use-email-audience-mutations.js'

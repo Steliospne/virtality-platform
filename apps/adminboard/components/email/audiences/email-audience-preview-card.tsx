@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@virtality/ui/components/card'
 import { Calculator } from 'lucide-react'
+import { EmailAudienceMembersDialog } from './email-audience-members-dialog'
 
 type AudiencePreview = {
   total: number
@@ -20,6 +21,7 @@ type AudiencePreview = {
 }
 
 type EmailAudiencePreviewCardProps = {
+  input: Parameters<typeof EmailAudienceMembersDialog>[0]['input']
   result: AudiencePreview | null
   isPending: boolean
   onEvaluate: () => void
@@ -27,6 +29,7 @@ type EmailAudiencePreviewCardProps = {
 
 /** Evaluates the form as it is now, saved or not. */
 export const EmailAudiencePreviewCard = ({
+  input,
   result,
   isPending,
   onEvaluate,
@@ -40,15 +43,20 @@ export const EmailAudiencePreviewCard = ({
       </CardDescription>
     </CardHeader>
     <CardContent className='space-y-3'>
-      <Button
-        type='button'
-        variant='outline'
-        onClick={onEvaluate}
-        disabled={isPending}
-      >
-        <Calculator className='mr-2 size-4' />
-        {isPending ? 'Evaluating...' : 'Evaluate'}
-      </Button>
+      <div className='flex flex-wrap gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={onEvaluate}
+          disabled={isPending}
+        >
+          <Calculator className='mr-2 size-4' />
+          {isPending ? 'Evaluating...' : 'Evaluate'}
+        </Button>
+        {result && result.total > 0 ? (
+          <EmailAudienceMembersDialog input={input} total={result.total} />
+        ) : null}
+      </div>
 
       {result ? (
         <div className='space-y-2 text-sm'>
