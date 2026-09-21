@@ -122,13 +122,13 @@ const usePatientDashboardState = ({
   const { data: maps } = useMap()
   const { data: programs } = useReusablePrograms()
   const { data: patient } = usePatient({ patientId })
-  const { rememberedMode, rememberMode } = useRememberedDashboardMode()
+  const { rememberedMode, rememberMode } = useRememberedDashboardMode(patientId)
 
-  // Restore the user's last mode once the persisted store has loaded.
+  // Restore this patient's last mode once the persisted store has loaded;
+  // a patient with no memory yet opens in Exercise mode.
   useEffect(() => {
-    if (rememberedMode)
-      dispatch({ type: 'setSelectedMode', payload: rememberedMode })
-  }, [rememberedMode])
+    dispatch({ type: 'setSelectedMode', payload: rememberedMode ?? 'main' })
+  }, [rememberedMode, patientId])
 
   useEffect(() => {
     const program = resolveLastUsedProgram(

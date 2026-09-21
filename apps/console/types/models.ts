@@ -74,6 +74,7 @@ export type PatientLocalData = {
   lastProgram: ReusableProgram['id']
   lastAvatar: Avatar['id']
   lastMap: Map['id']
+  lastDashboardMode?: DashboardMode
 }
 
 export type UserLocalData = {
@@ -83,7 +84,6 @@ export type UserLocalData = {
   program: boolean
   dashboardSuggestionSidebar: boolean
   dashboardSuggestionDropdown: boolean
-  lastDashboardMode?: DashboardMode
 }
 
 export type DashboardMode = 'main' | 'free' | 'immersive'
