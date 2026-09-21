@@ -2,6 +2,7 @@ import { EFFECTIVENESS_REPORT_COPY } from '@/lib/effectiveness-report-copy'
 import type { LucideIcon } from 'lucide-react'
 import {
   Bell,
+  Contact,
   CreditCard,
   Dumbbell,
   Film,
@@ -57,6 +58,7 @@ export const sidebarNav: SidebarNavGroup[] = [
       { title: 'Features', href: '/features', icon: Layers },
       { title: 'Blog', href: '/blog', icon: Newspaper },
       { title: 'Email', href: '/email', icon: Mail },
+      { title: 'Audiences', href: '/audiences', icon: Contact },
     ],
   },
   {

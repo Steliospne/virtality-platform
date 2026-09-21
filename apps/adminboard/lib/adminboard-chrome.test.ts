@@ -31,6 +31,7 @@ describe('adminboard sidebar chrome', () => {
     expect(nav).toMatch(/href: ['"]\/benefits['"]/)
     expect(nav).toMatch(/href: ['"]\/features['"]/)
     expect(nav).toMatch(/href: ['"]\/email['"]/)
+    expect(nav).toMatch(/href: ['"]\/audiences['"]/)
     expect(nav).toMatch(/Resources/)
     expect(nav).toMatch(/href: ['"]\/resources\/exercises['"]/)
     expect(nav).toMatch(/Billing/)
