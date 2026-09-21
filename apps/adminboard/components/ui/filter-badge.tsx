@@ -2,6 +2,10 @@ import { Badge } from '@virtality/ui/components/badge'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
+/**
+ * Pill-shaped toggle filter. Controlled when `checked` is provided,
+ * otherwise it keeps its own state.
+ */
 const FilterBadge = ({
   name,
   checked: checkedProp,
@@ -11,13 +15,14 @@ const FilterBadge = ({
   checked?: boolean
   onClick?: () => void
 }) => {
-  const [checked, setChecked] = useState(checkedProp || false)
+  const [internalChecked, setInternalChecked] = useState(false)
+  const checked = checkedProp ?? internalChecked
 
   const handleClick = () => {
-    if (onClick) {
-      onClick()
+    onClick?.()
+    if (checkedProp === undefined) {
+      setInternalChecked((current) => !current)
     }
-    setChecked(!checked)
   }
 
   return (

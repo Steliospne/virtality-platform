@@ -273,11 +273,21 @@ interface DataTableFooterProps<TData> {
 
 export function DataTableFooter<TData>({ table }: DataTableFooterProps<TData>) {
   'use no memo'
+  // Tables without a checkbox column have nothing to select; show the count.
+  const hasSelectColumn = table
+    .getAllLeafColumns()
+    .some((column) => column.id === 'select')
   return (
     <div className='flex items-center gap-2'>
       <div className='text-muted-foreground text-sm'>
-        {table.getFilteredSelectedRowModel().rows.length} of{' '}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
+        {hasSelectColumn ? (
+          <>
+            {table.getFilteredSelectedRowModel().rows.length} of{' '}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </>
+        ) : (
+          <>{table.getFilteredRowModel().rows.length} row(s)</>
+        )}
       </div>
       <div className='flex items-center space-x-2'>
         <p className='text-sm font-medium'>Rows per page</p>

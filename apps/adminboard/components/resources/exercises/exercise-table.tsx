@@ -7,18 +7,24 @@ import {
 } from '@virtality/ui/components/data-table'
 import { PlusSquare } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useExercise } from '@virtality/react-query'
 import { ExerciseDraftList } from '@/components/resources/exercises/exercise-draft-list'
-import FilterBadge from '@/components/ui/filter-badge'
+import { ExerciseTableFilters } from '@/components/resources/exercises/exercise-table-filters'
 import { Button } from '@/components/ui/button'
 import { columns } from '@/components/resources/exercises/columns'
 import { EXERCISE_WIZARD_CREATE_PATH } from '@/lib/exercise-wizard-constants'
+import {
+  buildExerciseColumnFilters,
+  EMPTY_EXERCISE_TABLE_FILTERS,
+  listExerciseValues,
+  type ExerciseTableFilters as Filters,
+} from '@/lib/exercise-table-filters'
 import { useResourceTable } from '@virtality/ui/lib/use-resource-table'
 
 const ExerciseTable = () => {
   const { data, isPending } = useExercise({ includeDisabled: true })
-  const [enabledFilter, setEnabledFilter] = useState(false)
+  const [filters, setFilters] = useState<Filters>(EMPTY_EXERCISE_TABLE_FILTERS)
   const { table, globalFilter, setGlobalFilter, setColumnFilters } =
     useResourceTable({
       tableId: 'exercises',
@@ -27,9 +33,18 @@ const ExerciseTable = () => {
       enableColumnFilters: true,
     })
 
-  const handleEnabledFilter = () => {
-    setEnabledFilter(!enabledFilter)
-    setColumnFilters([{ id: 'enabled', value: enabledFilter ? true : false }])
+  const categories = useMemo(
+    () => listExerciseValues(data ?? [], 'category'),
+    [data],
+  )
+  const directions = useMemo(
+    () => listExerciseValues(data ?? [], 'direction'),
+    [data],
+  )
+
+  const applyFilters = (next: Filters) => {
+    setFilters(next)
+    setColumnFilters(buildExerciseColumnFilters(next))
   }
 
   return (
@@ -40,10 +55,12 @@ const ExerciseTable = () => {
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         filters={
-          <FilterBadge
-            name='enabled'
-            checked={enabledFilter}
-            onClick={handleEnabledFilter}
+          <ExerciseTableFilters
+            categories={categories}
+            directions={directions}
+            value={filters}
+            onChange={applyFilters}
+            onReset={() => applyFilters(EMPTY_EXERCISE_TABLE_FILTERS)}
           />
         }
       >

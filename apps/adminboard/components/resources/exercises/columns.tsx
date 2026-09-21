@@ -1,39 +1,13 @@
 'use client'
 
+import { BooleanCell } from '@/components/tables/boolean-cell'
 import { ColumnHeader } from '@/components/tables/header-cell'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Exercise } from '@virtality/db'
 import { ColumnDef } from '@tanstack/react-table'
 import startCase from 'lodash.startcase'
+import { exerciseValueFilterFn } from '@/lib/exercise-table-filters'
 
 export const columns: ColumnDef<Exercise>[] = [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: '#',
-    cell: ({ cell }) => <div>{cell.row.index + 1}</div>,
-    enableHiding: false,
-  },
   {
     accessorKey: 'id',
     cell({ row }) {
@@ -52,24 +26,28 @@ export const columns: ColumnDef<Exercise>[] = [
     header: ({ column, header }) => (
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
+    filterFn: exerciseValueFilterFn,
   },
   {
     accessorKey: 'category',
     header: ({ column, header }) => (
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
+    filterFn: exerciseValueFilterFn,
   },
   {
     accessorKey: 'enabled',
     header: ({ column, header }) => (
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
+    cell: ({ row }) => <BooleanCell value={row.getValue<boolean>('enabled')} />,
   },
   {
     accessorKey: 'isNew',
     header: ({ column, header }) => (
       <ColumnHeader column={column} title={startCase(header.id)} />
     ),
+    cell: ({ row }) => <BooleanCell value={row.getValue<boolean>('isNew')} />,
   },
   {
     accessorKey: 'description',
