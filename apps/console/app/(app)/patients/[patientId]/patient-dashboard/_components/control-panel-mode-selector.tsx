@@ -61,7 +61,11 @@ const ModeSelector = ({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <Select value={selectedMode} onValueChange={handleModeChange}>
+      <Select
+        defaultValue='main'
+        value={selectedMode}
+        onValueChange={handleModeChange}
+      >
         {leavingLocked ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -80,7 +84,7 @@ const ModeSelector = ({
             Free Mode
           </SelectItem>
           <SelectItem key='main' value='main'>
-            Normal Mode
+            Exercise Mode
           </SelectItem>
           <SelectItem
             key='immersive'
