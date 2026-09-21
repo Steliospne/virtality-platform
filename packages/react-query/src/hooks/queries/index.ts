@@ -142,6 +142,15 @@ export {
   useAdminEmailSentRecords,
   useAdminEmailSentRecord,
 } from './email/use-admin-authored-emails.js'
+export {
+  useEmailAudiences,
+  useEmailAudience,
+  useEmailOptOuts,
+  useAdminEmailTopics,
+  useAdminEmailDraftRecipients,
+  useAdminEmailTargetingPreview,
+  useEmailOptOutLink,
+} from './email/use-email-audiences.js'
 
 // Adminboard dashboard queries
 export { useTotalUniquePatients } from './adminboard/dashboard/use-total-unique-patients.js'

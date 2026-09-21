@@ -217,6 +217,16 @@ describe('assessEmailSendReadiness', () => {
         ...readyDraft,
         recipients: [],
       }).reasons,
-    ).toContain('recipient list is required')
+    ).toContain('recipient list or audience is required')
+  })
+
+  it('accepts an attached audience in place of an explicit recipient list', () => {
+    expect(
+      assessEmailSendReadiness({
+        ...readyDraft,
+        recipients: [],
+        hasAudience: true,
+      }).ready,
+    ).toBe(true)
   })
 })

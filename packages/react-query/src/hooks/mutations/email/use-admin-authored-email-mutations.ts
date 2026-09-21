@@ -78,6 +78,11 @@ export const useUpdateAdminEmailDraft = () => {
             input: { draftId: draft.id },
           }),
         })
+        queryClient.invalidateQueries({
+          queryKey: orpc.email.adminAuthored.drafts.resolveRecipients.key({
+            input: { draftId: draft.id },
+          }),
+        })
       },
     }),
   )

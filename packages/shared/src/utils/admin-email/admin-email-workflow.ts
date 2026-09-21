@@ -1,4 +1,5 @@
 import type { EmailBodyBlock } from '../../types/admin-email.ts'
+import type { AdminEmailTopic } from '../../types/admin-email-targeting.ts'
 import {
   parseEmailBodyBlocksJson,
   serializeEmailBodyBlocksJson,
@@ -17,6 +18,8 @@ export type DraftRecord = {
   recipients: string[]
   hasSuccessfulTestSend: boolean
   sentRecordCount?: number
+  audienceId?: string | null
+  topic?: AdminEmailTopic
 }
 
 export type DraftUpdateInput = {
@@ -24,6 +27,8 @@ export type DraftUpdateInput = {
   previewText?: string | null
   bodyBlocks?: EmailBodyBlock[]
   recipients?: string[]
+  audienceId?: string | null
+  topic?: AdminEmailTopic
 }
 
 export type FinalSendConfirmation = {
@@ -42,6 +47,7 @@ export const getDraftSendReadiness = (draft: DraftRecord) =>
     subject: draft.subject,
     bodyBlocks: parseDraftBodyBlocks(draft),
     recipients: draft.recipients,
+    hasAudience: Boolean(draft.audienceId),
   })
 
 export const validateDraftRecipientsInput = (
@@ -111,6 +117,10 @@ export const shouldInvalidateTestSend = (
     }
   }
 
+  if (update.topic !== undefined && update.topic !== draft.topic) {
+    return true
+  }
+
   return false
 }
 
@@ -123,6 +133,8 @@ export const buildDraftUpdateData = (
     previewText?: string | null
     bodyBlocksJson?: string
     recipients?: string[]
+    audienceId?: string | null
+    topic?: AdminEmailTopic
     hasSuccessfulTestSend?: boolean
     lastTestSentAt?: Date | null
   } = {}
@@ -143,6 +155,14 @@ export const buildDraftUpdateData = (
     data.recipients = update.recipients
   }
 
+  if (update.audienceId !== undefined) {
+    data.audienceId = update.audienceId
+  }
+
+  if (update.topic !== undefined) {
+    data.topic = update.topic
+  }
+
   if (shouldInvalidateTestSend(draft, update)) {
     data.hasSuccessfulTestSend = false
     data.lastTestSentAt = null
@@ -152,15 +172,15 @@ export const buildDraftUpdateData = (
 }
 
 export const validateFinalSendConfirmation = (
-  draft: Pick<DraftRecord, 'subject' | 'recipients'>,
+  draft: Pick<DraftRecord, 'subject'> & { resolvedRecipientCount: number },
   confirmation: FinalSendConfirmation,
 ): string | null => {
   if (confirmation.confirmedSubject !== draft.subject) {
     return 'confirmation subject does not match draft'
   }
 
-  if (confirmation.confirmedRecipientCount !== draft.recipients.length) {
-    return 'confirmation recipient count does not match draft'
+  if (confirmation.confirmedRecipientCount !== draft.resolvedRecipientCount) {
+    return 'confirmation recipient count does not match resolved recipients'
   }
 
   return null

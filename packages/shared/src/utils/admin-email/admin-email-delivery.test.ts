@@ -61,3 +61,25 @@ describe('deliverIndividualEmails', () => {
     ])
   })
 })
+
+describe('deliverIndividualEmails per-recipient html', () => {
+  it('renders html per recipient when given a function', async () => {
+    const sendEmail = vi.fn().mockResolvedValue(undefined)
+
+    await deliverIndividualEmails({
+      recipients: ['one@example.com', 'two@example.com'],
+      subject: 'June update',
+      html: (recipient) => `<p>${recipient}</p>`,
+      sendEmail,
+    })
+
+    expect(sendEmail).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ html: '<p>one@example.com</p>' }),
+    )
+    expect(sendEmail).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ html: '<p>two@example.com</p>' }),
+    )
+  })
+})

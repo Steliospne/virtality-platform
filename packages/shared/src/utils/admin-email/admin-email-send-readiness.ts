@@ -9,6 +9,8 @@ export type EmailSendReadinessInput = {
   subject: string
   bodyBlocks: EmailBodyBlock[]
   recipients: string[]
+  /** An attached Audience counts as a recipient source. */
+  hasAudience?: boolean
 }
 
 export type EmailSendReadinessResult = {
@@ -33,8 +35,10 @@ export const assessEmailSendReadiness = (
   }
 
   const recipientError = validateEmailRecipientList(input.recipients)
-  if (recipientError) {
-    reasons.push('recipient list is required')
+  if (recipientError && !input.hasAudience) {
+    reasons.push('recipient list or audience is required')
+  } else if (recipientError && input.recipients.length > 0) {
+    reasons.push(recipientError)
   }
 
   return {

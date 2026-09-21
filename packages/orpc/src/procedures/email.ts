@@ -8,6 +8,8 @@ import {
 } from '@virtality/ui/template-registry'
 import { reactToHTML } from '@virtality/ui/components/email/react-to-html'
 import { adminAuthoredEmail } from './admin-authored-email.ts'
+import { emailAudience } from './email-audience.ts'
+import { emailOptOut } from './email-opt-out.ts'
 
 const emailSchema = z.string().email()
 
@@ -111,6 +113,8 @@ const sendTemplateProcedure = authed
 export const email = {
   sendThankYouEmail: sendThankYouEmailProcedure,
   adminAuthored: adminAuthoredEmail,
+  audiences: emailAudience,
+  optOuts: emailOptOut,
   templates: {
     list: listTemplatesProcedure,
     get: getTemplateProcedure,

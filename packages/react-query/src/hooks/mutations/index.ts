@@ -135,6 +135,14 @@ export {
   useTestSendAdminEmailDraft,
   useFinalSendAdminEmailDraft,
 } from './email/use-admin-authored-email-mutations.js'
+export {
+  useCreateEmailAudience,
+  useUpdateEmailAudience,
+  useDeleteEmailAudience,
+  usePreviewEmailAudience,
+  useRecordEmailOptOut,
+  useConfirmEmailOptOut,
+} from './email/use-email-audience-mutations.js'
 
 // Favorite exercise mutations
 export { useAddFavoriteExercise } from './favorite-exercise/use-add-favorite-exercise.js'

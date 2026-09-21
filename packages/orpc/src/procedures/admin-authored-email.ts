@@ -20,12 +20,22 @@ import {
   validateTestSendContent,
 } from '@virtality/shared/utils'
 import {
+  adminEmailTopicSchema,
   emailBodyBlocksSchema,
+  type AdminEmailTopic,
   type EmailBodyBlock,
 } from '@virtality/shared/types'
 import { renderAdminAuthoredEmail } from '@virtality/ui/render-admin-authored-email'
 import { z } from 'zod'
 import { authed } from '../middleware/auth.ts'
+import {
+  buildOptOutPlaceholderLinks,
+  personaliseOptOutLinks,
+} from './admin-authored-email/opt-out-links.ts'
+import {
+  resolveDraftRecipientsFromDb,
+  type AudienceRow,
+} from './admin-authored-email/recipient-resolution.ts'
 
 const draftIdInput = z.object({
   draftId: z.string().min(1),
@@ -37,6 +47,8 @@ const updateDraftInput = z.object({
   previewText: z.string().nullable().optional(),
   bodyBlocks: emailBodyBlocksSchema.optional(),
   recipients: z.array(z.string()).optional(),
+  audienceId: z.string().min(1).nullable().optional(),
+  topic: adminEmailTopicSchema.optional(),
 })
 
 const cloneDraftInput = z.object({
@@ -62,9 +74,24 @@ const sentRecordIdInput = z.object({
   sentRecordId: z.string().min(1),
 })
 
+const audienceSelect = {
+  id: true,
+  name: true,
+  ruleJson: true,
+  includeEmails: true,
+  excludeEmails: true,
+} as const
+
 const draftInclude = {
   sentRecords: {
     select: { id: true },
+  },
+  audience: { select: audienceSelect },
+} as const
+
+const sentRecordInclude = {
+  deliveryResults: {
+    orderBy: { attemptedAt: 'asc' },
   },
 } as const
 
@@ -74,6 +101,9 @@ type DraftWithSentRecords = {
   previewText: string | null
   bodyBlocksJson: string
   recipients: string[]
+  topic: AdminEmailTopic
+  audienceId: string | null
+  audience: AudienceRow | null
   hasSuccessfulTestSend: boolean
   lastTestSentAt: Date | null
   clonedFromDraftId: string | null
@@ -95,6 +125,8 @@ const toDraftRecord = (draft: DraftWithSentRecords) => ({
   recipients: draft.recipients,
   hasSuccessfulTestSend: draft.hasSuccessfulTestSend,
   sentRecordCount: draft.sentRecords.length,
+  audienceId: draft.audienceId,
+  topic: draft.topic,
 })
 
 const mapDraft = (draft: DraftWithSentRecords) => {
@@ -106,6 +138,9 @@ const mapDraft = (draft: DraftWithSentRecords) => {
     previewText: draft.previewText,
     bodyBlocks,
     recipients: draft.recipients,
+    topic: draft.topic,
+    audienceId: draft.audienceId,
+    audienceName: draft.audience?.name ?? null,
     hasSuccessfulTestSend: draft.hasSuccessfulTestSend,
     lastTestSentAt: draft.lastTestSentAt,
     clonedFromDraftId: draft.clonedFromDraftId,
@@ -120,6 +155,74 @@ const mapDraft = (draft: DraftWithSentRecords) => {
     updatedAt: draft.updatedAt,
     isFinalSent: draftHasFinalSend(toDraftRecord(draft)),
     sendReadiness: getDraftSendReadiness(toDraftRecord(draft)),
+  }
+}
+
+type SentRecordWithDeliveries = {
+  id: string
+  sourceDraftId: string | null
+  subject: string
+  previewText: string | null
+  bodyBlocksJson: string
+  renderedSnapshotJson: string
+  topic: AdminEmailTopic
+  audienceId: string | null
+  audienceName: string | null
+  recipients: string[]
+  suppressedRecipients: string[]
+  createdById: string
+  sentById: string
+  draftCreatedAt: Date
+  sentAt: Date
+  deliveryResults: {
+    recipientEmail: string
+    status: 'sent' | 'failed'
+    errorMessage: string | null
+    attemptedAt: Date
+  }[]
+}
+
+const mapSentRecord = (sentRecord: SentRecordWithDeliveries) => ({
+  id: sentRecord.id,
+  sourceDraftId: sentRecord.sourceDraftId,
+  subject: sentRecord.subject,
+  previewText: sentRecord.previewText,
+  bodyBlocks: parseEmailBodyBlocksJson(sentRecord.bodyBlocksJson),
+  renderedSnapshot: parseRenderedEmailSnapshotJson(
+    sentRecord.renderedSnapshotJson,
+  ),
+  topic: sentRecord.topic,
+  audienceId: sentRecord.audienceId,
+  audienceName: sentRecord.audienceName,
+  recipients: sentRecord.recipients,
+  suppressedRecipients: sentRecord.suppressedRecipients,
+  createdById: sentRecord.createdById,
+  sentById: sentRecord.sentById,
+  draftCreatedAt: sentRecord.draftCreatedAt,
+  sentAt: sentRecord.sentAt,
+  deliveryResults: sentRecord.deliveryResults.map((result) => ({
+    recipientEmail: result.recipientEmail,
+    status: result.status,
+    errorMessage: result.errorMessage,
+    attemptedAt: result.attemptedAt,
+  })),
+})
+
+const assertAudienceExists = async (
+  prisma: PrismaClient,
+  audienceId: string | null | undefined,
+) => {
+  if (!audienceId) {
+    return
+  }
+
+  const audience = await prisma.emailAudience.findUnique({
+    where: { id: audienceId },
+    select: { id: true },
+  })
+
+  if (!audience) {
+    throw new ORPCError('NOT_FOUND', { message: 'Audience not found' })
   }
 }
 
@@ -150,13 +253,19 @@ const assertDraftEditable = (draft: DraftWithSentRecords) => {
   }
 }
 
-const renderDraft = async (draft: DraftWithSentRecords) => {
+const renderDraft = async (
+  draft: DraftWithSentRecords,
+  options: { withOptOutFooter: boolean } = { withOptOutFooter: true },
+) => {
   const bodyBlocks = parseDraftBodyBlocks(toDraftRecord(draft))
 
   const rendered = await renderAdminAuthoredEmail({
     subject: draft.subject,
     previewText: draft.previewText ?? undefined,
     bodyBlocks: bodyBlocks as EmailBodyBlock[],
+    optOut: options.withOptOutFooter
+      ? buildOptOutPlaceholderLinks(draft.topic)
+      : undefined,
   })
 
   return {
@@ -232,6 +341,8 @@ const updateDraft = authed
       throw new ORPCError('BAD_REQUEST', { message: bodyBlocksError })
     }
 
+    await assertAudienceExists(context.prisma, input.audienceId)
+
     const updated = await context.prisma.adminEmailDraft.update({
       where: { id: input.draftId },
       data: buildDraftUpdateData(toDraftRecord(draft), {
@@ -239,6 +350,8 @@ const updateDraft = authed
         previewText: input.previewText,
         bodyBlocks: input.bodyBlocks,
         recipients: input.recipients,
+        audienceId: input.audienceId,
+        topic: input.topic,
       }),
       include: draftInclude,
     })
@@ -259,6 +372,8 @@ const cloneDraft = authed
         previewText: source.previewText,
         bodyBlocksJson: source.bodyBlocksJson,
         recipients: source.recipients,
+        topic: source.topic,
+        audienceId: source.audienceId,
         hasSuccessfulTestSend: false,
         lastTestSentAt: null,
         clonedFromDraftId: source.id,
@@ -287,6 +402,14 @@ const cloneSentRecord = authed
       })
     }
 
+    // The Audience may have been deleted since the send; fall back to none.
+    const audience = sentRecord.audienceId
+      ? await context.prisma.emailAudience.findUnique({
+          where: { id: sentRecord.audienceId },
+          select: { id: true },
+        })
+      : null
+
     const cloned = await context.prisma.adminEmailDraft.create({
       data: {
         id: generateUUID(),
@@ -294,6 +417,8 @@ const cloneSentRecord = authed
         previewText: sentRecord.previewText,
         bodyBlocksJson: sentRecord.bodyBlocksJson,
         recipients: sentRecord.recipients,
+        topic: sentRecord.topic,
+        audienceId: audience?.id ?? null,
         hasSuccessfulTestSend: false,
         lastTestSentAt: null,
         clonedFromSentRecordId: sentRecord.id,
@@ -355,6 +480,66 @@ const previewDraft = authed
     return renderDraft(draft)
   })
 
+const toResolvedRecipientsOutput = (
+  resolved: Awaited<ReturnType<typeof resolveDraftRecipientsFromDb>>,
+) => ({
+  explicitCount: resolved.explicitCount,
+  audienceCount: resolved.audienceCount,
+  audienceName: resolved.audienceName,
+  overlapCount: resolved.overlapCount,
+  suppressedCount: resolved.suppressedCount,
+  totalCount: resolved.totalCount,
+  recipients: resolved.recipients,
+  suppressed: resolved.suppressed,
+})
+
+/**
+ * Same resolution as `resolveRecipients`, but for unsaved targeting so the
+ * workspace can show live numbers while the admin edits.
+ */
+const previewDraftRecipients = authed
+  .route({
+    path: '/email/admin-authored/drafts/preview-recipients',
+    method: 'POST',
+  })
+  .input(
+    z.object({
+      topic: adminEmailTopicSchema,
+      audienceId: z.string().min(1).nullable(),
+      recipients: z.array(z.string()),
+    }),
+  )
+  .handler(async ({ context, input }) => {
+    const audience = input.audienceId
+      ? await context.prisma.emailAudience.findUnique({
+          where: { id: input.audienceId },
+          select: audienceSelect,
+        })
+      : null
+
+    const resolved = await resolveDraftRecipientsFromDb(context.prisma, {
+      recipients: input.recipients,
+      topic: input.topic,
+      audience,
+    })
+
+    return toResolvedRecipientsOutput(resolved)
+  })
+
+/** Explicit list ∪ Audience, minus Opt-outs — what Final Send would deliver to. */
+const resolveDraftRecipients = authed
+  .route({
+    path: '/email/admin-authored/drafts/resolve-recipients',
+    method: 'GET',
+  })
+  .input(draftIdInput)
+  .handler(async ({ context, input }) => {
+    const draft = await getDraftOrThrow(context.prisma, input.draftId)
+    const resolved = await resolveDraftRecipientsFromDb(context.prisma, draft)
+
+    return toResolvedRecipientsOutput(resolved)
+  })
+
 const testSendDraft = authed
   .route({ path: '/email/admin-authored/drafts/test-send', method: 'POST' })
   .input(testSendInput)
@@ -370,11 +555,12 @@ const testSendDraft = authed
     }
 
     const rendered = await renderDraft(draft)
+    const htmlFor = personaliseOptOutLinks(rendered.html, draft.topic)
 
     await sendEmail({
       to: input.testRecipientEmail,
       subject: rendered.subject,
-      html: rendered.html,
+      html: htmlFor(input.testRecipientEmail),
     })
 
     const updated = await context.prisma.adminEmailDraft.update({
@@ -404,16 +590,27 @@ const finalSendDraft = authed
       })
     }
 
-    const confirmationError = validateFinalSendConfirmation(draftRecord, input)
+    const resolved = await resolveDraftRecipientsFromDb(context.prisma, draft)
+
+    const confirmationError = validateFinalSendConfirmation(
+      { subject: draft.subject, resolvedRecipientCount: resolved.totalCount },
+      input,
+    )
     if (confirmationError) {
       throw new ORPCError('BAD_REQUEST', { message: confirmationError })
     }
 
+    if (resolved.totalCount === 0) {
+      throw new ORPCError('BAD_REQUEST', {
+        message: 'no recipients remain after applying opt-outs',
+      })
+    }
+
     const rendered = await renderDraft(draft)
     const deliveryResults = await deliverIndividualEmails({
-      recipients: draft.recipients,
+      recipients: resolved.recipients,
       subject: rendered.subject,
-      html: rendered.html,
+      html: personaliseOptOutLinks(rendered.html, draft.topic),
       sendEmail,
     })
 
@@ -426,7 +623,11 @@ const finalSendDraft = authed
         previewText: draft.previewText,
         bodyBlocksJson: draft.bodyBlocksJson,
         renderedSnapshotJson: serializeRenderedEmailSnapshotJson(rendered),
-        recipients: draft.recipients,
+        topic: draft.topic,
+        audienceId: draft.audienceId,
+        audienceName: resolved.audienceName,
+        recipients: resolved.recipients,
+        suppressedRecipients: resolved.suppressed,
         createdById: draft.createdById,
         sentById: context.user.id,
         draftCreatedAt: draft.createdAt,
@@ -440,69 +641,21 @@ const finalSendDraft = authed
           })),
         },
       },
-      include: {
-        deliveryResults: {
-          orderBy: { attemptedAt: 'asc' },
-        },
-      },
+      include: sentRecordInclude,
     })
 
-    return {
-      id: sentRecord.id,
-      sourceDraftId: sentRecord.sourceDraftId,
-      subject: sentRecord.subject,
-      previewText: sentRecord.previewText,
-      bodyBlocks: parseEmailBodyBlocksJson(sentRecord.bodyBlocksJson),
-      renderedSnapshot: parseRenderedEmailSnapshotJson(
-        sentRecord.renderedSnapshotJson,
-      ),
-      recipients: sentRecord.recipients,
-      createdById: sentRecord.createdById,
-      sentById: sentRecord.sentById,
-      draftCreatedAt: sentRecord.draftCreatedAt,
-      sentAt: sentRecord.sentAt,
-      deliveryResults: sentRecord.deliveryResults.map((result) => ({
-        recipientEmail: result.recipientEmail,
-        status: result.status,
-        errorMessage: result.errorMessage,
-        attemptedAt: result.attemptedAt,
-      })),
-    }
+    return mapSentRecord(sentRecord)
   })
 
 const listSentRecords = authed
   .route({ path: '/email/admin-authored/sent/list', method: 'GET' })
   .handler(async ({ context }) => {
     const sentRecords = await context.prisma.adminEmailSentRecord.findMany({
-      include: {
-        deliveryResults: {
-          orderBy: { attemptedAt: 'asc' },
-        },
-      },
+      include: sentRecordInclude,
       orderBy: { sentAt: 'desc' },
     })
 
-    return sentRecords.map((sentRecord) => ({
-      id: sentRecord.id,
-      sourceDraftId: sentRecord.sourceDraftId,
-      subject: sentRecord.subject,
-      previewText: sentRecord.previewText,
-      bodyBlocks: parseEmailBodyBlocksJson(sentRecord.bodyBlocksJson),
-      renderedSnapshot: parseRenderedEmailSnapshotJson(
-        sentRecord.renderedSnapshotJson,
-      ),
-      recipients: sentRecord.recipients,
-      createdById: sentRecord.createdById,
-      sentById: sentRecord.sentById,
-      draftCreatedAt: sentRecord.draftCreatedAt,
-      sentAt: sentRecord.sentAt,
-      deliveryResults: sentRecord.deliveryResults.map((result) => ({
-        recipientEmail: result.recipientEmail,
-        status: result.status,
-        errorMessage: result.errorMessage,
-        attemptedAt: result.attemptedAt,
-      })),
-    }))
+    return sentRecords.map(mapSentRecord)
   })
 
 const getSentRecord = authed
@@ -511,11 +664,7 @@ const getSentRecord = authed
   .handler(async ({ context, input }) => {
     const sentRecord = await context.prisma.adminEmailSentRecord.findUnique({
       where: { id: input.sentRecordId },
-      include: {
-        deliveryResults: {
-          orderBy: { attemptedAt: 'asc' },
-        },
-      },
+      include: sentRecordInclude,
     })
 
     if (!sentRecord) {
@@ -524,27 +673,7 @@ const getSentRecord = authed
       })
     }
 
-    return {
-      id: sentRecord.id,
-      sourceDraftId: sentRecord.sourceDraftId,
-      subject: sentRecord.subject,
-      previewText: sentRecord.previewText,
-      bodyBlocks: parseEmailBodyBlocksJson(sentRecord.bodyBlocksJson),
-      renderedSnapshot: parseRenderedEmailSnapshotJson(
-        sentRecord.renderedSnapshotJson,
-      ),
-      recipients: sentRecord.recipients,
-      createdById: sentRecord.createdById,
-      sentById: sentRecord.sentById,
-      draftCreatedAt: sentRecord.draftCreatedAt,
-      sentAt: sentRecord.sentAt,
-      deliveryResults: sentRecord.deliveryResults.map((result) => ({
-        recipientEmail: result.recipientEmail,
-        status: result.status,
-        errorMessage: result.errorMessage,
-        attemptedAt: result.attemptedAt,
-      })),
-    }
+    return mapSentRecord(sentRecord)
   })
 
 export const adminAuthoredEmail = {
@@ -559,6 +688,8 @@ export const adminAuthoredEmail = {
     archive: archiveDraft,
     restore: restoreDraft,
     preview: previewDraft,
+    resolveRecipients: resolveDraftRecipients,
+    previewRecipients: previewDraftRecipients,
     testSend: testSendDraft,
     finalSend: finalSendDraft,
   },

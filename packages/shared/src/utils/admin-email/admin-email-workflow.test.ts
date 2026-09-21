@@ -72,23 +72,25 @@ describe('buildDraftUpdateData', () => {
 })
 
 describe('validateFinalSendConfirmation', () => {
-  it('requires matching subject and recipient count', () => {
+  const resolvedDraft = { ...baseDraft, resolvedRecipientCount: 1 }
+
+  it('requires matching subject and resolved recipient count', () => {
     expect(
-      validateFinalSendConfirmation(baseDraft, {
+      validateFinalSendConfirmation(resolvedDraft, {
         confirmedSubject: 'June update',
         confirmedRecipientCount: 1,
       }),
     ).toBeNull()
 
     expect(
-      validateFinalSendConfirmation(baseDraft, {
+      validateFinalSendConfirmation(resolvedDraft, {
         confirmedSubject: 'Wrong subject',
         confirmedRecipientCount: 1,
       }),
     ).toMatch(/subject/)
 
     expect(
-      validateFinalSendConfirmation(baseDraft, {
+      validateFinalSendConfirmation(resolvedDraft, {
         confirmedSubject: 'June update',
         confirmedRecipientCount: 2,
       }),

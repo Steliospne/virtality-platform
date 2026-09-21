@@ -14,7 +14,8 @@ export type IndividualEmailDeliveryResult = {
 export type IndividualEmailDeliveryInput = {
   recipients: string[]
   subject: string
-  html: string
+  /** Static HTML, or a per-recipient renderer (e.g. personalised opt-out link). */
+  html: string | ((recipient: string) => string)
   sendEmail: SendIndividualEmail
 }
 
@@ -30,7 +31,8 @@ export const deliverIndividualEmails = async (
       await input.sendEmail({
         to: recipient,
         subject: input.subject,
-        html: input.html,
+        html:
+          typeof input.html === 'function' ? input.html(recipient) : input.html,
       })
       results.push({
         recipientEmail: recipient,
