@@ -1,9 +1,3 @@
-export type AdminEmailDraftHeaderMenuItemId =
-  | 'preview'
-  | 'clone'
-  | 'archive'
-  | 'restore'
-
 export function isAdminEmailDraftReadOnly({
   isArchived,
   isFinalSent,
@@ -40,40 +34,6 @@ export function resolveSelectedAdminEmailDraft<T extends { id: string }>({
   return { draft: undefined, isArchived: false }
 }
 
-export type AdminEmailDraftHeaderMenuItem = {
-  id: AdminEmailDraftHeaderMenuItemId
-  label: string
-}
-
-export function getAdminEmailDraftCloneLabel(isFinalSent: boolean): string {
-  return isFinalSent ? 'Clone into new draft' : 'Clone draft'
-}
-
-export function getAdminEmailDraftWorkspaceHeader({
-  isArchived,
-  isFinalSent,
-}: {
-  isArchived: boolean
-  isFinalSent: boolean
-}): { title: string; description: string } {
-  if (isArchived) {
-    return {
-      title: 'Archived draft (read-only)',
-      description:
-        'Restore this draft to edit it again, or clone it into a new active draft.',
-    }
-  }
-
-  const description =
-    'Edit the subject and Email Body Blocks. The Email Brand Shell stays locked.'
-
-  if (isFinalSent) {
-    return { title: 'Sent draft (read-only)', description }
-  }
-
-  return { title: 'Edit draft', description }
-}
-
 export function getAdminEmailDraftPreviewQueryDraftId({
   previewOpen,
   isDirty,
@@ -99,26 +59,6 @@ export async function prepareAdminEmailDraftPreview({
 
   const saved = await saveDraft()
   return saved !== null
-}
-
-export function getAdminEmailDraftHeaderMenuItems(
-  isFinalSent: boolean,
-  isArchived = false,
-): AdminEmailDraftHeaderMenuItem[] {
-  const cloneItem: AdminEmailDraftHeaderMenuItem = {
-    id: 'clone',
-    label: getAdminEmailDraftCloneLabel(isFinalSent),
-  }
-  const previewAndClone: AdminEmailDraftHeaderMenuItem[] = [
-    { id: 'preview', label: 'Preview' },
-    cloneItem,
-  ]
-
-  if (isArchived) {
-    return [{ id: 'restore', label: 'Restore draft' }, ...previewAndClone]
-  }
-
-  return [...previewAndClone, { id: 'archive', label: 'Archive draft' }]
 }
 
 export const ADMIN_EMAIL_DRAFT_ARCHIVE_DIALOG_COPY = {

@@ -1,19 +1,16 @@
 'use client'
 
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { cn } from '@/lib/utils'
-import { useAdminEmailTargetingPreview } from '@virtality/react-query'
 import type { AdminEmailTopic } from '@virtality/shared/types'
-import { useMemo } from 'react'
+import { useLiveTargetingPreview } from './use-live-targeting-preview'
 
 type AdminEmailRecipientSummaryProps = {
   topic: AdminEmailTopic
   audienceId: string | null
   /** Parsed explicit recipients from the textarea. */
   recipients: string[]
+  className?: string
 }
-
-const DEBOUNCE_MS = 400
 
 /**
  * Explicit list ∪ Audience, minus Opt-outs — what Final Send will deliver to,
@@ -23,19 +20,13 @@ export const AdminEmailRecipientSummary = ({
   topic,
   audienceId,
   recipients,
+  className,
 }: AdminEmailRecipientSummaryProps) => {
-  const recipientsKey = recipients.join('\n')
-  const input = useMemo(
-    () => ({
-      topic,
-      audienceId,
-      recipients: recipientsKey.split('\n').filter(Boolean),
-    }),
-    [topic, audienceId, recipientsKey],
-  )
-  const debouncedInput = useDebouncedValue(input, DEBOUNCE_MS)
-  const { data, isLoading, isFetching } =
-    useAdminEmailTargetingPreview(debouncedInput)
+  const { data, isLoading, isStale } = useLiveTargetingPreview({
+    topic,
+    audienceId,
+    recipients,
+  })
 
   if (isLoading || !data) {
     return (
@@ -43,13 +34,12 @@ export const AdminEmailRecipientSummary = ({
     )
   }
 
-  const isStale = isFetching || debouncedInput !== input
-
   return (
     <div
       className={cn(
         'rounded-lg border p-3 text-sm transition-opacity',
         isStale && 'opacity-60',
+        className,
       )}
     >
       <p className='text-2xl font-semibold'>

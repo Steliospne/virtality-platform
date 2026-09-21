@@ -1,16 +1,6 @@
 'use client'
 
-import { Badge } from '@virtality/ui/components/badge'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@virtality/ui/components/card'
-import { Button } from '@/components/ui/button'
-import { resolveSelectedAdminEmailDraft } from '@/lib/admin-email-draft-actions'
-import { cn } from '@/lib/utils'
+import { getErrorMessage } from '@/lib/get-error-message'
 import {
   useAdminEmailArchivedDrafts,
   useAdminEmailDrafts,
@@ -18,20 +8,25 @@ import {
   useCreateAdminEmailDraft,
   useRestoreAdminEmailDraft,
 } from '@virtality/react-query'
-import { format } from 'date-fns'
-import { Archive, FileText, Plus, RotateCcw, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { AdminEmailDraftWorkspace } from './admin-email-draft-workspace'
-import { AdminEmailSentRecordView } from './admin-email-sent-record-view'
+import { DraftStepper } from './draft-stepper'
+import { EmailEmptyState } from './email-empty-state'
+import {
+  getDraftWorkspaceCallbacks,
+  type EmailLayoutProps,
+  type EmailSelection,
+} from './email-selection'
+import { EmailTable } from './email-table'
+import { SentRecordPage } from './sent-record-page'
+import { useSelectedDraft } from './use-selected-draft'
 
-type Selection =
-  | { kind: 'draft'; id: string }
-  | { kind: 'sent'; id: string }
-  | null
-
+/**
+ * One table of every admin-authored email; a draft opens as
+ * Compose → Target → Review & send, a sent record as its audit view.
+ */
 export const AdminAuthoredEmailsPanel = () => {
-  const [selection, setSelection] = useState<Selection>(null)
+  const [selection, setSelection] = useState<EmailSelection>(null)
   const { data: drafts, isLoading: draftsLoading } = useAdminEmailDrafts()
   const { data: archivedDrafts, isLoading: archivedDraftsLoading } =
     useAdminEmailArchivedDrafts()
@@ -40,21 +35,18 @@ export const AdminAuthoredEmailsPanel = () => {
   const createDraftMutation = useCreateAdminEmailDraft()
   const restoreDraftMutation = useRestoreAdminEmailDraft()
 
-  const selectedDraftResolution =
-    selection?.kind === 'draft'
-      ? resolveSelectedAdminEmailDraft({
-          selectionId: selection.id,
-          activeDrafts: drafts,
-          archivedDrafts,
-        })
-      : { draft: undefined, isArchived: false }
-
-  const selectedDraft = selectedDraftResolution.draft
-  const selectedDraftIsArchived = selectedDraftResolution.isArchived
-  const archivedDraftList = archivedDrafts ?? []
-
-  const isDraftSelected = (draftId: string) =>
-    selection?.kind === 'draft' && selection.id === draftId
+  const lists: EmailLayoutProps = {
+    drafts: drafts ?? [],
+    archivedDrafts: archivedDrafts ?? [],
+    sentRecords: sentRecords ?? [],
+    selection,
+    onSelect: setSelection,
+    onCreateDraft: () => void handleCreateDraft(),
+    isCreatingDraft: createDraftMutation.isPending,
+    onRestoreDraft: (draftId) => void handleRestoreDraft(draftId),
+    isRestoringDraft: restoreDraftMutation.isPending,
+  }
+  const selected = useSelectedDraft(lists)
 
   const handleCreateDraft = async () => {
     try {
@@ -62,9 +54,7 @@ export const AdminAuthoredEmailsPanel = () => {
       setSelection({ kind: 'draft', id: draft.id })
       toast.success('Draft created')
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create draft',
-      )
+      toast.error(getErrorMessage(error, 'Failed to create draft'))
     }
   }
 
@@ -74,9 +64,7 @@ export const AdminAuthoredEmailsPanel = () => {
       setSelection({ kind: 'draft', id: restored.id })
       toast.success('Draft restored')
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to restore draft',
-      )
+      toast.error(getErrorMessage(error, 'Failed to restore draft'))
     }
   }
 
@@ -90,242 +78,27 @@ export const AdminAuthoredEmailsPanel = () => {
     )
   }
 
+  if (!selection) {
+    return <EmailTable {...lists} />
+  }
+
+  if (selection.kind === 'sent') {
+    return (
+      <SentRecordPage sentRecordId={selection.id} onSelect={setSelection} />
+    )
+  }
+
+  if (!selected) {
+    return <EmailEmptyState message='Draft not found.' />
+  }
+
   return (
-    <div className='grid gap-6 lg:grid-cols-[320px_1fr]'>
-      <div className='space-y-6'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Email drafts</CardTitle>
-            <CardDescription>
-              Editable until final send. Clone drafts to reuse structure.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-3'>
-            <Button
-              type='button'
-              className='w-full'
-              onClick={() => void handleCreateDraft()}
-              disabled={createDraftMutation.isPending}
-            >
-              <Plus className='mr-2 size-4' />
-              New draft
-            </Button>
-
-            {(drafts ?? []).length === 0 ? (
-              <p className='text-muted-foreground text-sm'>No drafts yet.</p>
-            ) : (
-              <div className='space-y-2'>
-                {(drafts ?? []).map((draft) => (
-                  <button
-                    key={draft.id}
-                    type='button'
-                    onClick={() =>
-                      setSelection({ kind: 'draft', id: draft.id })
-                    }
-                    className={cn(
-                      'hover:bg-accent w-full rounded-lg border p-3 text-left transition-colors',
-                      isDraftSelected(draft.id) ? 'bg-accent' : '',
-                    )}
-                  >
-                    <div className='flex items-start gap-3'>
-                      <FileText className='text-muted-foreground mt-0.5 size-4 shrink-0' />
-                      <div className='min-w-0 flex-1 space-y-1'>
-                        <p className='truncate font-medium'>
-                          {draft.subject.trim() || 'Untitled draft'}
-                        </p>
-                        <p className='text-muted-foreground text-xs'>
-                          Updated{' '}
-                          {format(
-                            new Date(draft.updatedAt),
-                            'MMM d, yyyy HH:mm',
-                          )}
-                        </p>
-                        <div className='flex flex-wrap gap-1'>
-                          {draft.isFinalSent ? (
-                            <Badge variant='outline'>Final sent</Badge>
-                          ) : draft.sendReadiness.ready ? (
-                            <Badge>Send-ready</Badge>
-                          ) : (
-                            <Badge variant='secondary'>Draft</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {archivedDraftList.length > 0 ? (
-              <details className='rounded-lg border'>
-                <summary className='hover:bg-accent flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden'>
-                  <Archive className='text-muted-foreground size-4 shrink-0' />
-                  Archived drafts ({archivedDraftList.length})
-                </summary>
-                <div className='space-y-2 border-t p-3'>
-                  {archivedDraftList.map((draft) => (
-                    <div
-                      key={draft.id}
-                      className={cn(
-                        'flex items-start gap-2 rounded-lg border p-3',
-                        isDraftSelected(draft.id) ? 'bg-accent' : '',
-                      )}
-                    >
-                      <button
-                        type='button'
-                        onClick={() =>
-                          setSelection({ kind: 'draft', id: draft.id })
-                        }
-                        className='min-w-0 flex-1 space-y-1 text-left'
-                      >
-                        <p className='truncate font-medium'>
-                          {draft.subject.trim() || 'Untitled draft'}
-                        </p>
-                        <p className='text-muted-foreground text-xs'>
-                          Archived{' '}
-                          {draft.archivedAt
-                            ? format(
-                                new Date(draft.archivedAt),
-                                'MMM d, yyyy HH:mm',
-                              )
-                            : 'recently'}
-                        </p>
-                        {draft.isFinalSent ? (
-                          <Badge variant='outline'>Final sent</Badge>
-                        ) : null}
-                      </button>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        disabled={restoreDraftMutation.isPending}
-                        onClick={() => void handleRestoreDraft(draft.id)}
-                      >
-                        <RotateCcw className='mr-1 size-3.5' />
-                        Restore
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sent records</CardTitle>
-            <CardDescription>
-              Immutable audit trail with rendered snapshots and delivery
-              results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {(sentRecords ?? []).length === 0 ? (
-              <p className='text-muted-foreground text-sm'>
-                No sent records yet.
-              </p>
-            ) : (
-              <div className='space-y-2'>
-                {(sentRecords ?? []).map((sentRecord) => {
-                  const failedCount = sentRecord.deliveryResults.filter(
-                    (result) => result.status === 'failed',
-                  ).length
-
-                  return (
-                    <button
-                      key={sentRecord.id}
-                      type='button'
-                      onClick={() =>
-                        setSelection({ kind: 'sent', id: sentRecord.id })
-                      }
-                      className={cn(
-                        'hover:bg-accent w-full rounded-lg border p-3 text-left transition-colors',
-                        selection?.kind === 'sent' &&
-                          selection.id === sentRecord.id
-                          ? 'bg-accent'
-                          : '',
-                      )}
-                    >
-                      <div className='flex items-start gap-3'>
-                        <Send className='text-muted-foreground mt-0.5 size-4 shrink-0' />
-                        <div className='min-w-0 flex-1 space-y-1'>
-                          <p className='truncate font-medium'>
-                            {sentRecord.subject || 'Untitled email'}
-                          </p>
-                          <p className='text-muted-foreground text-xs'>
-                            Sent{' '}
-                            {format(
-                              new Date(sentRecord.sentAt),
-                              'MMM d, yyyy HH:mm',
-                            )}
-                          </p>
-                          <Badge
-                            variant={failedCount > 0 ? 'outline' : 'secondary'}
-                          >
-                            {sentRecord.recipients.length} recipients
-                            {failedCount > 0 ? `, ${failedCount} failed` : ''}
-                          </Badge>
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        {!selection ? (
-          <Card>
-            <CardContent className='flex min-h-100 items-center justify-center py-12'>
-              <p className='text-muted-foreground'>
-                Select a draft or sent record to view details.
-              </p>
-            </CardContent>
-          </Card>
-        ) : selection.kind === 'sent' ? (
-          <AdminEmailSentRecordView
-            sentRecordId={selection.id}
-            onCloned={(draftId) => setSelection({ kind: 'draft', id: draftId })}
-          />
-        ) : selectedDraft ? (
-          <AdminEmailDraftWorkspace
-            key={selectedDraft.id}
-            isArchived={selectedDraftIsArchived}
-            draft={{
-              id: selectedDraft.id,
-              subject: selectedDraft.subject,
-              previewText: selectedDraft.previewText,
-              bodyBlocks: selectedDraft.bodyBlocks,
-              recipients: selectedDraft.recipients,
-              topic: selectedDraft.topic,
-              audienceId: selectedDraft.audienceId,
-              isFinalSent: selectedDraft.isFinalSent,
-              sendReadiness: selectedDraft.sendReadiness,
-              updatedAt: selectedDraft.updatedAt,
-            }}
-            onCloned={(draftId) => setSelection({ kind: 'draft', id: draftId })}
-            onArchived={() => setSelection(null)}
-            onRestored={(draftId) =>
-              setSelection({ kind: 'draft', id: draftId })
-            }
-            onFinalSent={(sentRecordId) =>
-              setSelection({ kind: 'sent', id: sentRecordId })
-            }
-          />
-        ) : (
-          <Card>
-            <CardContent className='py-12'>
-              <p className='text-muted-foreground text-center'>
-                Draft not found.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+    <DraftStepper
+      key={selected.draft.id}
+      draft={selected.draft}
+      isArchived={selected.isArchived}
+      onBack={() => setSelection(null)}
+      {...getDraftWorkspaceCallbacks(setSelection)}
+    />
   )
 }
