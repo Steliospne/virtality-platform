@@ -102,6 +102,7 @@ const PatientForm = () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
+      pinnedAt: null,
     }
 
     const medicalHistoryData: MedicalHistoryType = {

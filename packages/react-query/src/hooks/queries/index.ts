@@ -56,6 +56,7 @@ export { usePatients } from './patient/use-patients.js'
 // Patient session queries
 export { usePatientSession } from './patient-session/use-patient-session.js'
 export { usePatientSessions } from './patient-session/use-patient-sessions.js'
+export { useRecentPatientSessions } from './patient-session/use-recent-patient-sessions.js'
 
 // Device queries
 export { useDeviceCore } from './use-device.js'

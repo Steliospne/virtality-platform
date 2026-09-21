@@ -29,6 +29,7 @@ export { useUpdateReusableProgramExercises } from './reusable-program-exercise/u
 export { useNewPatient } from './patient/use-new-patient.js'
 export { useUpdatePatient } from './patient/use-update-patient.js'
 export { useDeletePatient } from './patient/use-delete-patient.js'
+export { useSetPatientPinned } from './patient/use-set-patient-pinned.js'
 
 // Patient session mutations
 export { useCreatePatientSession } from './patient-session/use-create-patient-session.js'

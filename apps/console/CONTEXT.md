@@ -196,6 +196,18 @@ _Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating U
 Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
+**Home Dashboard**:
+The console landing page for a signed-in clinician: a seven-day sessions overview across all their patients, a **Session Picker**, **Pinned Patients**, and a **Getting Started** checklist that folds away once a headset is paired, a patient exists, a **Reusable Program** exists, and a **Started Session** has run.
+_Avoid_: Welcome page, landing tips, home screen
+
+**Session Picker**:
+The three-step patient / program / headset choice on the **Home Dashboard**. It does not launch treatment itself: it records the chosen program and headset as the patient's **Last Used Program** and last headset, then opens that patient's dashboard, where the **Session Launch Attempt** happens. Choosing **Quick Start** opens the Quick Start dialog there.
+_Avoid_: Home launch, remote start, dashboard-side launch
+
+**Pinned Patient**:
+A patient the clinician has marked (`pinnedAt`) to keep on the **Home Dashboard**. It is a per-clinician shortcut, not clinical state, and is separate from the patient's profile form.
+_Avoid_: Favourite patient, active patient, starred patient
+
 ### Immersive Video
 
 **Headset Library**:
