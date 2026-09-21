@@ -69,11 +69,23 @@ The locked Virtality header, footer, and sender identity wrapped around admin-au
 _Avoid_: Email layout, wrapper template
 
 **Email Recipient List**:
-The explicit list of recipient email addresses entered for a draft send.
+The explicit list of individual recipient email addresses entered for a draft send, combinable with an Audience on the same draft.
 _Avoid_: Audience, mailing list
 
+**Audience**:
+An admin-defined group of recipients used to target a draft send, made of registered Users and Waitlist emails; a dynamic rule evaluated at send time plus static include and exclude pins. Internal; never shown to recipients.
+_Avoid_: Segment, mailing list, group, Email Recipient List
+
+**Topic**:
+A fixed, code-defined category of Admin-authored Email (for example product updates) that a recipient can opt out of. Every Admin-authored Email is sent under exactly one Topic.
+_Avoid_: Mailing list, subscription, category
+
+**Opt-out**:
+A recipient's recorded choice not to receive Admin-authored Email for a Topic, or for all Topics. Enforced at Final Send for every recipient however they reached the draft; admins may record one on a recipient's request but never reverse it.
+_Avoid_: Unsubscribe record, suppression entry, blocklist
+
 **Email Test Send**:
-A required pre-send delivery to verify the rendered email in a real inbox.
+An optional pre-send delivery to verify the rendered email in a real inbox.
 _Avoid_: Preview send
 
 **Final Send**:
