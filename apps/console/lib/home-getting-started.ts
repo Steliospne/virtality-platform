@@ -25,7 +25,7 @@ export type GettingStartedStep = {
 export type GettingStarted = {
   steps: GettingStartedStep[]
   doneCount: number
-  /** Every step is done: the card folds away. */
+  /** Every step is done: the card stays, collapsed to its summary. */
   complete: boolean
 }
 
@@ -91,11 +91,18 @@ export function buildGettingStarted(
   }
 }
 
-/** "Two steps left before your first session." */
+/** The line under the header; also the collapsed card's whole story. */
 export function gettingStartedHeadline(gettingStarted: GettingStarted): string {
   const left = gettingStarted.steps.length - gettingStarted.doneCount
   if (left === 0) return 'You are all set.'
   const words = ['One', 'Two', 'Three', 'Four']
   const word = words[left - 1] ?? String(left)
   return `${word} step${left === 1 ? '' : 's'} left before your first session.`
+}
+
+/** Explains what the card does next, under the headline. */
+export function gettingStartedSubline(gettingStarted: GettingStarted): string {
+  return gettingStarted.complete
+    ? 'Every step is done. Expand it any time to revisit them.'
+    : 'Once these are done this card collapses to a summary.'
 }

@@ -197,8 +197,12 @@ Soft-deleting a Device from the owning clinician's list. It also releases any bo
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
 **Home Dashboard**:
-The console landing page for a signed-in clinician: a seven-day sessions overview across all their patients, a **Session Picker**, **Pinned Patients**, and a **Getting Started** checklist that folds away once a headset is paired, a patient exists, a **Reusable Program** exists, and a **Started Session** has run.
+The console landing page for a signed-in clinician: a seven-day sessions overview across all their patients, a **Session Picker**, **Pinned Patients**, and a **Getting Started** checklist.
 _Avoid_: Welcome page, landing tips, home screen
+
+**Getting Started**:
+The four-step checklist on the **Home Dashboard** — pair a headset, add a patient, build a **Reusable Program**, run a **Started Session** — with each step's done state derived from the clinician's live data, never from stored onboarding flags. Completing the last step collapses the card to its summary row; it stays on the dashboard and can be expanded again.
+_Avoid_: Missions, tour flags, hiding the card when complete
 
 **Session Picker**:
 The three-step patient / program / headset choice on the **Home Dashboard**. Launch records the chosen program and headset as the patient's **Last Used Program** and last headset, then opens that patient's dashboard with a **Launch Intent**.

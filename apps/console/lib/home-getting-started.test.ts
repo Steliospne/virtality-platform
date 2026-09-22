@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildGettingStarted,
   gettingStartedHeadline,
+  gettingStartedSubline,
 } from './home-getting-started'
 
 describe('buildGettingStarted', () => {
@@ -24,6 +25,9 @@ describe('buildGettingStarted', () => {
     ])
     expect(gettingStartedHeadline(result)).toBe(
       'Four steps left before your first session.',
+    )
+    expect(gettingStartedSubline(result)).toBe(
+      'Once these are done this card collapses to a summary.',
     )
   })
 
@@ -78,5 +82,8 @@ describe('buildGettingStarted', () => {
     expect(result.steps.every((s) => !s.current)).toBe(true)
     expect(result.steps[0]?.detail).toBe('2 headsets paired')
     expect(gettingStartedHeadline(result)).toBe('You are all set.')
+    expect(gettingStartedSubline(result)).toBe(
+      'Every step is done. Expand it any time to revisit them.',
+    )
   })
 })

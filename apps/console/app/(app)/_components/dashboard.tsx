@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import useIsAuthed from '@/hooks/use-is-authed'
 import useMounted from '@/hooks/use-mounted'
+import { Skeleton } from '@/components/ui/skeleton'
 import AdminTool from './admin-tool'
 import AccountMismatchDialog from './account-mismatch-dialog'
 import HomeHeader from './home-header'
@@ -36,7 +37,9 @@ const Dashboard = ({ isImpersonating }: { isImpersonating?: boolean }) => {
           patients={home.patients}
           isLoading={home.isLoading}
         />
-        {home.isLoading ? null : (
+        {home.isLoading ? (
+          <Skeleton className='h-48 rounded-xl' />
+        ) : (
           <GettingStartedCard gettingStarted={home.gettingStarted} />
         )}
       </div>
