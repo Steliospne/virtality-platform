@@ -259,6 +259,20 @@ export type WarmupPayload = {
   settings: VRPayloadSettings
 }
 
+/**
+ * The headset reports the rep it just finished as a zero-based index, so the
+ * one-based count of completed reps is `previousRep + 1`.
+ */
+export type RepEndPayload = {
+  previousRep: number
+  progress: number
+}
+
+/** `previousSet` is already the one-based count of sets completed. */
+export type SetEndPayload = {
+  previousSet: number
+}
+
 export type SDPDescription = {
   type: string
   sdp?: string
@@ -426,8 +440,8 @@ export type ProgramEventPayloads = {
   EndAck: []
   ChangeExercise: [exerciseId: string]
   ChangeExerciseAck: []
-  RepEnd: [payload: string]
-  SetEnd: [payload: string]
+  RepEnd: [payload: RepEndPayload]
+  SetEnd: [payload: SetEndPayload]
   WarmupStart: [payload: WarmupPayload]
   WarmupEnd: []
   WarmupStartAck: []

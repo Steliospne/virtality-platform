@@ -62,12 +62,13 @@ function createFlowState(startingExerciseIndex = 0) {
   })
 }
 
+// `subscribe()` parses the headset's JSON text, so the flow sees objects.
 function repEndPayload(previousRep: number, progress: number) {
-  return JSON.stringify({ previousRep, progress })
+  return { previousRep, progress }
 }
 
 function setEndPayload(previousSet: number) {
-  return JSON.stringify({ previousSet })
+  return { previousSet }
 }
 
 function parseUpsertValue(

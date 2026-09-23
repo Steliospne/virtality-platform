@@ -187,7 +187,7 @@ function unchangedSetEndResult(
 
 export function applyRepEndToFlow(
   state: SkipSafeProgressFlowState,
-  payload: string,
+  payload: unknown,
 ): ApplyRepEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {
     return unchangedRepEndResult(state)
@@ -225,7 +225,7 @@ export function applyRepEndToFlow(
 
 export function applySetEndToFlow(
   state: SkipSafeProgressFlowState,
-  payload: string,
+  payload: unknown,
   options?: PersistOptions,
 ): ApplySetEndToFlowResult {
   if (shouldIgnoreProgressEvent(state)) {

@@ -426,7 +426,7 @@ const usePatientDashboardSocketSetup = ({
     syncPlotFromFlowState(result.state)
   }
 
-  const handleRepEnd = (payload: string) => {
+  const handleRepEnd = (payload: unknown) => {
     const flowState = readFlowState()
 
     if (!canPersistFlowState(flowState)) {
@@ -475,7 +475,7 @@ const usePatientDashboardSocketSetup = ({
     )
   }
 
-  const handleSetEnd = async (payload: string) => {
+  const handleSetEnd = async (payload: unknown) => {
     const flowState = readFlowState()
 
     if (!canPersistFlowState(flowState)) {

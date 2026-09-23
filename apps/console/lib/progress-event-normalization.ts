@@ -10,7 +10,7 @@ export type CompletedSetEvent = {
   completedSet: number
 }
 
-type ParseWirePayloadResult<T> = { ok: true; data: T } | { ok: false }
+type ReadWirePayloadResult<T> = { ok: true; data: T } | { ok: false }
 
 const RepEndWireSchema = z.object({
   previousRep: z.number(),
@@ -21,28 +21,28 @@ const SetEndWireSchema = z.object({
   previousSet: z.number().int().min(1),
 })
 
-function parseWirePayload<T>(
-  payload: string,
+/**
+ * `subscribe()` already turned the headset's JSON text into an object, so the
+ * payload arrives parsed and is only validated here. Parsing it a second time
+ * would throw on `"[object Object]"` and drop the event.
+ */
+function readWirePayload<T>(
+  payload: unknown,
   schema: z.ZodType<T>,
-): ParseWirePayloadResult<T> {
-  try {
-    const parsed = JSON.parse(payload) as unknown
-    const validated = schema.safeParse(parsed)
+): ReadWirePayloadResult<T> {
+  const validated = schema.safeParse(payload)
 
-    if (!validated.success) {
-      return { ok: false }
-    }
-
-    return { ok: true, data: validated.data }
-  } catch {
+  if (!validated.success) {
     return { ok: false }
   }
+
+  return { ok: true, data: validated.data }
 }
 
 export function normalizeRepEndPayload(
-  payload: string,
+  payload: unknown,
 ): { ok: true; event: CompletedRepMeasurement } | { ok: false } {
-  const parsed = parseWirePayload(payload, RepEndWireSchema)
+  const parsed = readWirePayload(payload, RepEndWireSchema)
 
   if (!parsed.ok) {
     return { ok: false }
@@ -58,9 +58,9 @@ export function normalizeRepEndPayload(
 }
 
 export function normalizeSetEndPayload(
-  payload: string,
+  payload: unknown,
 ): { ok: true; event: CompletedSetEvent } | { ok: false } {
-  const parsed = parseWirePayload(payload, SetEndWireSchema)
+  const parsed = readWirePayload(payload, SetEndWireSchema)
 
   if (!parsed.ok) {
     return { ok: false }
