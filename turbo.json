@@ -140,6 +140,11 @@
     "@virtality/nodemailer#dev:ethereal": {
       "cache": false
     },
+    "@virtality/team-bot#dev:bot": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
     "dev:apps": {
       "with": [
         "@virtality/console#dev",

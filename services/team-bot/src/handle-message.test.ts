@@ -1,0 +1,116 @@
+import { describe, expect, it, vi } from 'vitest'
+import { handleIncomingMessage } from './handle-message.ts'
+import { createSeenMessages } from './seen-messages.ts'
+import type { IncomingMessage } from './whatsapp/webhook-payload.ts'
+
+const TEAMMATE = '306900000000'
+
+function createDeps() {
+  const createIssue = vi.fn().mockResolvedValue({
+    identifier: 'VIR-42',
+    url: 'https://linear.app/virtality/issue/VIR-42',
+  })
+  const replyText = vi.fn().mockResolvedValue(undefined)
+  const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+
+  return {
+    deps: {
+      phoneNumberId: 'phone-id',
+      allowedSenders: new Set([TEAMMATE]),
+      seenMessages: createSeenMessages(),
+      linear: { createIssue },
+      whatsapp: { replyText },
+      logger,
+    },
+    createIssue,
+    replyText,
+    logger,
+  }
+}
+
+function message(overrides?: Partial<IncomingMessage>): IncomingMessage {
+  return {
+    id: 'wamid.1',
+    from: TEAMMATE,
+    senderName: 'Eleni',
+    phoneNumberId: 'phone-id',
+    type: 'text',
+    text: 'Fix login\nSpins forever',
+    ...overrides,
+  }
+}
+
+describe('handleIncomingMessage', () => {
+  it('creates an issue and replies with its link', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(message(), deps)
+
+    expect(createIssue).toHaveBeenCalledWith({
+      title: 'Fix login',
+      description: 'Spins forever\n\n_Reported via WhatsApp by Eleni_',
+    })
+    expect(replyText).toHaveBeenCalledWith({
+      to: TEAMMATE,
+      replyToMessageId: 'wamid.1',
+      body: 'Created VIR-42: Fix login\nhttps://linear.app/virtality/issue/VIR-42',
+    })
+  })
+
+  it('handles a redelivered message only once', async () => {
+    const { deps, createIssue } = createDeps()
+
+    await handleIncomingMessage(message(), deps)
+    await handleIncomingMessage(message(), deps)
+
+    expect(createIssue).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores senders outside the allowlist without replying', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(message({ from: '15551234567' }), deps)
+
+    expect(createIssue).not.toHaveBeenCalled()
+    expect(replyText).not.toHaveBeenCalled()
+  })
+
+  it('ignores messages sent to another phone number on the app', async () => {
+    const { deps, createIssue } = createDeps()
+
+    await handleIncomingMessage(message({ phoneNumberId: 'other' }), deps)
+
+    expect(createIssue).not.toHaveBeenCalled()
+  })
+
+  it('answers help without creating an issue', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(message({ text: 'help' }), deps)
+
+    expect(createIssue).not.toHaveBeenCalled()
+    expect(replyText).toHaveBeenCalledOnce()
+  })
+
+  it('explains that only text is supported', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(
+      message({ type: 'image', text: undefined }),
+      deps,
+    )
+
+    expect(createIssue).not.toHaveBeenCalled()
+    expect(replyText.mock.calls[0]?.[0].body).toMatch(/only read text/)
+  })
+
+  it('tells the sender when Linear fails', async () => {
+    const { deps, createIssue, replyText, logger } = createDeps()
+    createIssue.mockRejectedValue(new Error('Linear down'))
+
+    await handleIncomingMessage(message(), deps)
+
+    expect(logger.error).toHaveBeenCalled()
+    expect(replyText.mock.calls[0]?.[0].body).toMatch(/Couldn't create/)
+  })
+})
