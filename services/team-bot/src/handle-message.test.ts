@@ -20,6 +20,7 @@ function createDeps() {
       },
     ],
     labels: [{ id: 'label-bug', name: 'Bug' }],
+    statuses: [{ id: 'state-todo', name: 'Todo' }],
   })
   const replyText = vi.fn().mockResolvedValue(undefined)
   const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -78,11 +79,11 @@ describe('handleIncomingMessage', () => {
     expect(getTeamDirectory).not.toHaveBeenCalled()
   })
 
-  it('sets assignee, priority and labels', async () => {
+  it('sets status, assignee, priority and labels', async () => {
     const { deps, createIssue, replyText } = createDeps()
 
     await handleIncomingMessage(
-      message({ text: 'Fix login @eleni !urgent #bug' }),
+      message({ text: 'Fix login\n@eleni !urgent #bug /todo' }),
       deps,
     )
 
@@ -92,9 +93,10 @@ describe('handleIncomingMessage', () => {
       assigneeId: 'user-eleni',
       priority: 1,
       labelIds: ['label-bug'],
+      stateId: 'state-todo',
     })
     expect(replyText.mock.calls[0]?.[0].body).toBe(
-      'Created VIR-42: Fix login\nEleni P · Urgent · Bug\nhttps://linear.app/virtality/issue/VIR-42',
+      'Created VIR-42: Fix login\nTodo · Eleni P · Urgent · Bug\nhttps://linear.app/virtality/issue/VIR-42',
     )
   })
 

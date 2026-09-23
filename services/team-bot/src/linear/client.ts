@@ -21,6 +21,12 @@ const ISSUE_CREATE_MUTATION = `
 const TEAM_DIRECTORY_QUERY = `
   query TeamDirectory($teamId: String!, $teamIdFilter: ID!, $first: Int!) {
     team(id: $teamId) {
+      states(first: $first) {
+        nodes {
+          id
+          name
+        }
+      }
       members(first: $first) {
         nodes {
           id
@@ -60,6 +66,7 @@ type IssueCreateData = {
 
 type TeamDirectoryData = {
   team?: {
+    states: { nodes: TeamStatus[] }
     members: { nodes: (TeamMember & { active: boolean })[] }
   }
   issueLabels?: { nodes: TeamLabel[] }
@@ -82,9 +89,15 @@ export type TeamLabel = {
   name: string
 }
 
+export type TeamStatus = {
+  id: string
+  name: string
+}
+
 export type TeamDirectory = {
   members: TeamMember[]
   labels: TeamLabel[]
+  statuses: TeamStatus[]
 }
 
 export type LinearClient = {
@@ -94,6 +107,7 @@ export type LinearClient = {
     assigneeId?: string
     priority?: number
     labelIds?: string[]
+    stateId?: string
   }) => Promise<CreatedIssue>
   getTeamDirectory: () => Promise<TeamDirectory>
 }
@@ -138,7 +152,14 @@ export function createLinearClient(options: {
   }
 
   return {
-    async createIssue({ title, description, assigneeId, priority, labelIds }) {
+    async createIssue({
+      title,
+      description,
+      assigneeId,
+      priority,
+      labelIds,
+      stateId,
+    }) {
       const data = await request<IssueCreateData>(
         'issueCreate',
         ISSUE_CREATE_MUTATION,
@@ -150,6 +171,7 @@ export function createLinearClient(options: {
             assigneeId,
             priority,
             labelIds: labelIds?.length ? labelIds : undefined,
+            stateId,
           },
         },
       )
@@ -183,6 +205,7 @@ export function createLinearClient(options: {
             email,
           })),
         labels: data.issueLabels?.nodes ?? [],
+        statuses: data.team?.states.nodes ?? [],
       }
     },
   }

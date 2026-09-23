@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_ISSUES_PER_MESSAGE, parseTaskMessage } from './task-message.ts'
 
-const plain = { assignee: undefined, priority: undefined, labels: [] }
+const plain = {
+  assignee: undefined,
+  priority: undefined,
+  labels: [],
+  status: undefined,
+}
 
 describe('parseTaskMessage', () => {
   it('uses the first line as title and the rest as description', () => {
@@ -56,6 +61,7 @@ describe('parseTaskMessage', () => {
           assignee: 'eleni',
           priority: 2,
           labels: ['bug', 'auth-flow'],
+          status: undefined,
         },
       ],
     })
@@ -86,6 +92,62 @@ describe('parseTaskMessage', () => {
           title: 'Crash on #123 at @ 5pm, wow!',
           description: undefined,
         },
+      ],
+    })
+  })
+
+  it('reads options from a line of their own under the title', () => {
+    expect(
+      parseTaskMessage(
+        'Check that the addressables are version agnostic\n@george !medium #bug /todo\ncheck also that they wont brake',
+      ),
+    ).toEqual({
+      kind: 'issues',
+      issues: [
+        {
+          title: 'Check that the addressables are version agnostic',
+          description: 'check also that they wont brake',
+          assignee: 'george',
+          priority: 3,
+          labels: ['bug'],
+          status: 'todo',
+        },
+      ],
+    })
+  })
+
+  it('takes the title from the first line that is not only options', () => {
+    const result = parseTaskMessage('#bug !low\nFix login #auth\nSpins')
+
+    expect(result).toEqual({
+      kind: 'issues',
+      issues: [
+        {
+          ...plain,
+          title: 'Fix login',
+          description: 'Spins',
+          priority: 4,
+          labels: ['bug', 'auth'],
+        },
+      ],
+    })
+  })
+
+  it('keeps description lines that mix options with text', () => {
+    const result = parseTaskMessage('Fix login\nsee #bug in @george notes')
+
+    expect(result.kind === 'issues' && result.issues[0]).toEqual({
+      ...plain,
+      title: 'Fix login',
+      description: 'see #bug in @george notes',
+    })
+  })
+
+  it('explains a WhatsApp contact tag instead of a typed name', () => {
+    expect(parseTaskMessage('Fix login\n@91934563557500 !medium')).toEqual({
+      kind: 'invalid',
+      problems: [
+        "@91934563557500 is a WhatsApp contact, not a name. Type @name yourself without picking from WhatsApp's list.",
       ],
     })
   })
@@ -124,7 +186,7 @@ describe('parseTaskMessage', () => {
         'Issue 1: Unknown priority !soon. Use !urgent, !high, !medium or !low.',
         'Issue 2: Only one @assignee per issue.',
         'Issue 2: Only one !priority per issue.',
-        'Issue 2: The first line needs a title.',
+        'Issue 2: The issue needs a title.',
       ],
     })
   })

@@ -39,6 +39,7 @@ function formatProblems(problems: string[]) {
 
 function formatIssue(issue: ResolvedIssue, created: CreatedIssue) {
   const details = [
+    issue.status?.name,
     issue.assignee?.name,
     issue.priority && PRIORITY_NAMES[issue.priority],
     ...issue.labels.map((label) => label.name),
@@ -125,9 +126,9 @@ export async function handleIncomingMessage(
     return
   }
 
-  // Only look people and labels up when the message uses them.
+  // Only look people, labels and statuses up when the message uses them.
   const needsDirectory = parsed.issues.some(
-    (draft) => draft.assignee || draft.labels.length > 0,
+    (draft) => draft.assignee || draft.status || draft.labels.length > 0,
   )
   let resolved: ResolveResult
 
@@ -136,7 +137,7 @@ export async function handleIncomingMessage(
       parsed.issues,
       needsDirectory
         ? await deps.linear.getTeamDirectory()
-        : { members: [], labels: [] },
+        : { members: [], labels: [], statuses: [] },
     )
   } catch (error) {
     logger.error('team_bot.directory.failed', { messageId: message.id, error })
@@ -159,6 +160,7 @@ export async function handleIncomingMessage(
         assigneeId: issue.assignee?.id,
         priority: issue.priority,
         labelIds: issue.labels.map((label) => label.id),
+        stateId: issue.status?.id,
       })
 
       logger.info('team_bot.issue.created', {
