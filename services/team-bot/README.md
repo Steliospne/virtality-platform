@@ -7,7 +7,24 @@ Console crashes when casting          ← first line: issue title
 Happens on Quest 3 after pairing…     ← the rest: description
 ```
 
-The bot replies with the issue identifier and link. `help` shows usage.
+On the title line, `@name` sets the assignee, `!urgent`/`!high`/`!medium`/`!low`
+(or `!1`–`!4`) sets the priority, and `#label` adds labels. They're removed from
+the title. A line with `---` between issues creates several at once (up to 10):
+
+```
+Console crashes when casting @eleni !high #bug
+Happens on Quest 3 after pairing…
+---
+Update onboarding copy #docs
+```
+
+`@name` matches the Linear username or the email name first, then the first or
+full name. Labels match the team's and the workspace's labels, ignoring case and
+punctuation (`#needs-design` → "Needs design"). If any name, label or priority
+in the message is unknown, the bot creates nothing and replies with the valid
+options, so the corrected message can be sent again without duplicates.
+
+The bot replies with each issue's identifier and link. `help` shows usage.
 
 Internal tool only. It has no database and no access to the platform API.
 It runs as its own container on the VPS (`bot.virtality.app`), separate from
@@ -21,7 +38,10 @@ the prod/preview API.
 3. Messages are ignored when they are repeats of a delivery already handled
    (by message id), sent to another number on the app, or from a number not
    in `TEAM_BOT_ALLOWED_SENDERS`. Strangers get no reply.
-4. It creates the issue through Linear's GraphQL API, then replies in the chat.
+4. When the message uses `@names` or `#labels`, it loads the team's members
+   and labels from Linear (fresh each time, so new labels work right away).
+5. It creates the issues one by one through Linear's GraphQL API, then replies
+   in the chat with what was created and what failed.
 
 `src/app.ts` uses no Node APIs, so the bot can move to Cloudflare Workers
 with a new entry file only.

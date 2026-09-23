@@ -1,7 +1,12 @@
 import type { AppLogger } from '@virtality/shared/observability'
-import type { LinearClient } from './linear/client.ts'
+import type { CreatedIssue, LinearClient } from './linear/client.ts'
 import type { SeenMessages } from './seen-messages.ts'
-import { HELP_TEXT, parseTaskMessage } from './task-message.ts'
+import {
+  type ResolvedIssue,
+  type ResolveResult,
+  resolveIssues,
+} from './resolve-issues.ts'
+import { HELP_TEXT, parseTaskMessage, PRIORITY_NAMES } from './task-message.ts'
 import type { WhatsAppClient } from './whatsapp/client.ts'
 import type { IncomingMessage } from './whatsapp/webhook-payload.ts'
 
@@ -17,6 +22,66 @@ export type MessageHandlerDeps = {
 function withReporter(description: string | undefined, senderName?: string) {
   const footer = `_Reported via WhatsApp${senderName ? ` by ${senderName}` : ''}_`
   return description ? `${description}\n\n${footer}` : footer
+}
+
+type CreateResult = {
+  issue: ResolvedIssue
+  created: CreatedIssue | undefined
+}
+
+function formatProblems(problems: string[]) {
+  return [
+    'Nothing was created. Fix this and send it again:',
+    '',
+    ...problems.map((problem) => `• ${problem}`),
+  ].join('\n')
+}
+
+function formatIssue(issue: ResolvedIssue, created: CreatedIssue) {
+  const details = [
+    issue.assignee?.name,
+    issue.priority && PRIORITY_NAMES[issue.priority],
+    ...issue.labels.map((label) => label.name),
+  ].filter(Boolean)
+
+  return [
+    `${created.identifier}: ${issue.title}`,
+    ...(details.length > 0 ? [details.join(' · ')] : []),
+    created.url,
+  ].join('\n')
+}
+
+function formatResults(results: CreateResult[]) {
+  const created = results.filter(
+    (result): result is CreateResult & { created: CreatedIssue } =>
+      result.created !== undefined,
+  )
+  const failed = results.filter((result) => result.created === undefined)
+
+  if (created.length === 0) {
+    return results.length === 1
+      ? "Couldn't create the Linear issue. Please try again."
+      : "Couldn't create the Linear issues. Please try again."
+  }
+
+  const sections =
+    results.length === 1
+      ? [`Created ${formatIssue(created[0]!.issue, created[0]!.created)}`]
+      : [
+          `Created ${created.length} of ${results.length} issues:`,
+          ...created.map(({ issue, created }) => formatIssue(issue, created)),
+        ]
+
+  if (failed.length > 0) {
+    sections.push(
+      [
+        "Couldn't create these, send them again:",
+        ...failed.map(({ issue }) => `• ${issue.title}`),
+      ].join('\n'),
+    )
+  }
+
+  return sections.join('\n\n')
 }
 
 export async function handleIncomingMessage(
@@ -48,26 +113,64 @@ export async function handleIncomingMessage(
     return
   }
 
-  const task = parseTaskMessage(message.text)
+  const parsed = parseTaskMessage(message.text)
 
-  if (task.kind === 'help') {
+  if (parsed.kind === 'help') {
     await reply(HELP_TEXT)
     return
   }
 
-  try {
-    const issue = await deps.linear.createIssue({
-      title: task.title,
-      description: withReporter(task.description, message.senderName),
-    })
-
-    logger.info('team_bot.issue.created', {
-      messageId: message.id,
-      issue: issue.identifier,
-    })
-    await reply(`Created ${issue.identifier}: ${task.title}\n${issue.url}`)
-  } catch (error) {
-    logger.error('team_bot.issue.failed', { messageId: message.id, error })
-    await reply("Couldn't create the Linear issue. Please try again.")
+  if (parsed.kind === 'invalid') {
+    await reply(formatProblems(parsed.problems))
+    return
   }
+
+  // Only look people and labels up when the message uses them.
+  const needsDirectory = parsed.issues.some(
+    (draft) => draft.assignee || draft.labels.length > 0,
+  )
+  let resolved: ResolveResult
+
+  try {
+    resolved = resolveIssues(
+      parsed.issues,
+      needsDirectory
+        ? await deps.linear.getTeamDirectory()
+        : { members: [], labels: [] },
+    )
+  } catch (error) {
+    logger.error('team_bot.directory.failed', { messageId: message.id, error })
+    await reply("Couldn't reach Linear. Please try again.")
+    return
+  }
+
+  if (!resolved.ok) {
+    await reply(formatProblems(resolved.problems))
+    return
+  }
+
+  // One at a time, so the issue numbers follow the order in the message.
+  const results: CreateResult[] = []
+  for (const issue of resolved.issues) {
+    try {
+      const created = await deps.linear.createIssue({
+        title: issue.title,
+        description: withReporter(issue.description, message.senderName),
+        assigneeId: issue.assignee?.id,
+        priority: issue.priority,
+        labelIds: issue.labels.map((label) => label.id),
+      })
+
+      logger.info('team_bot.issue.created', {
+        messageId: message.id,
+        issue: created.identifier,
+      })
+      results.push({ issue, created })
+    } catch (error) {
+      logger.error('team_bot.issue.failed', { messageId: message.id, error })
+      results.push({ issue, created: undefined })
+    }
+  }
+
+  await reply(formatResults(results))
 }

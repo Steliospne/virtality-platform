@@ -10,6 +10,17 @@ function createDeps() {
     identifier: 'VIR-42',
     url: 'https://linear.app/virtality/issue/VIR-42',
   })
+  const getTeamDirectory = vi.fn().mockResolvedValue({
+    members: [
+      {
+        id: 'user-eleni',
+        name: 'Eleni P',
+        displayName: 'eleni',
+        email: 'eleni@virtality.app',
+      },
+    ],
+    labels: [{ id: 'label-bug', name: 'Bug' }],
+  })
   const replyText = vi.fn().mockResolvedValue(undefined)
   const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 
@@ -18,11 +29,12 @@ function createDeps() {
       phoneNumberId: 'phone-id',
       allowedSenders: new Set([TEAMMATE]),
       seenMessages: createSeenMessages(),
-      linear: { createIssue },
+      linear: { createIssue, getTeamDirectory },
       whatsapp: { replyText },
       logger,
     },
     createIssue,
+    getTeamDirectory,
     replyText,
     logger,
   }
@@ -49,12 +61,108 @@ describe('handleIncomingMessage', () => {
     expect(createIssue).toHaveBeenCalledWith({
       title: 'Fix login',
       description: 'Spins forever\n\n_Reported via WhatsApp by Eleni_',
+      labelIds: [],
     })
     expect(replyText).toHaveBeenCalledWith({
       to: TEAMMATE,
       replyToMessageId: 'wamid.1',
       body: 'Created VIR-42: Fix login\nhttps://linear.app/virtality/issue/VIR-42',
     })
+  })
+
+  it('skips the Linear lookup when no names or labels are used', async () => {
+    const { deps, getTeamDirectory } = createDeps()
+
+    await handleIncomingMessage(message({ text: 'Fix login !high' }), deps)
+
+    expect(getTeamDirectory).not.toHaveBeenCalled()
+  })
+
+  it('sets assignee, priority and labels', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(
+      message({ text: 'Fix login @eleni !urgent #bug' }),
+      deps,
+    )
+
+    expect(createIssue).toHaveBeenCalledWith({
+      title: 'Fix login',
+      description: '_Reported via WhatsApp by Eleni_',
+      assigneeId: 'user-eleni',
+      priority: 1,
+      labelIds: ['label-bug'],
+    })
+    expect(replyText.mock.calls[0]?.[0].body).toBe(
+      'Created VIR-42: Fix login\nEleni P · Urgent · Bug\nhttps://linear.app/virtality/issue/VIR-42',
+    )
+  })
+
+  it('creates several issues in message order', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+    createIssue
+      .mockResolvedValueOnce({ identifier: 'VIR-1', url: 'https://l/VIR-1' })
+      .mockResolvedValueOnce({ identifier: 'VIR-2', url: 'https://l/VIR-2' })
+
+    await handleIncomingMessage(
+      message({ text: 'First\n---\nSecond #bug' }),
+      deps,
+    )
+
+    expect(createIssue.mock.calls.map(([input]) => input.title)).toEqual([
+      'First',
+      'Second',
+    ])
+    expect(replyText.mock.calls[0]?.[0].body).toBe(
+      [
+        'Created 2 of 2 issues:',
+        'VIR-1: First\nhttps://l/VIR-1',
+        'VIR-2: Second\nBug\nhttps://l/VIR-2',
+      ].join('\n\n'),
+    )
+  })
+
+  it('lists the issues that failed when others were created', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+    createIssue
+      .mockResolvedValueOnce({ identifier: 'VIR-1', url: 'https://l/VIR-1' })
+      .mockRejectedValueOnce(new Error('Linear down'))
+
+    await handleIncomingMessage(message({ text: 'First\n---\nSecond' }), deps)
+
+    expect(replyText.mock.calls[0]?.[0].body).toBe(
+      [
+        'Created 1 of 2 issues:',
+        'VIR-1: First\nhttps://l/VIR-1',
+        "Couldn't create these, send them again:\n• Second",
+      ].join('\n\n'),
+    )
+  })
+
+  it('creates nothing when any issue has an unknown name or label', async () => {
+    const { deps, createIssue, replyText } = createDeps()
+
+    await handleIncomingMessage(
+      message({ text: 'First #bug\n---\nSecond @maria' }),
+      deps,
+    )
+
+    expect(createIssue).not.toHaveBeenCalled()
+    expect(replyText.mock.calls[0]?.[0].body).toBe(
+      'Nothing was created. Fix this and send it again:\n\n• Issue 2: No teammate called @maria. Try: @eleni',
+    )
+  })
+
+  it('creates nothing when the team lookup fails', async () => {
+    const { deps, createIssue, getTeamDirectory, replyText, logger } =
+      createDeps()
+    getTeamDirectory.mockRejectedValue(new Error('Linear down'))
+
+    await handleIncomingMessage(message({ text: 'Fix login #bug' }), deps)
+
+    expect(createIssue).not.toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalled()
+    expect(replyText.mock.calls[0]?.[0].body).toMatch(/Couldn't reach Linear/)
   })
 
   it('handles a redelivered message only once', async () => {
