@@ -222,6 +222,10 @@ _Avoid_: Pending (in copy), queued (that is the headset's `downloading` at 0 byt
 A **Headset Library** entry whose `videoId` is not in `immersiveVideo.list` (unpublished or deleted). Play is disabled; Delete is offered. Unpublished and deleted are indistinguishable to the physio. The console never auto-sends `videoDelete`.
 _Avoid_: Missing, orphaned, unknown video, unpublished (as physio-facing copy)
 
+**Session Time Limit**:
+An optional length, picked by the physio on the patient dashboard, after which the console sends `videoStop` for the running **Immersive Video**. It is measured on the same session clock the card shows (from the play command, pauses included), fires once per session, and waits for the headset to be in the room and holding a video. It can be changed mid-session, but not to a length the session has already reached. It is console-only: the headset is not told about it.
+_Avoid_: Auto-stop timer (in copy), video duration, playback limit
+
 ### Access and billing
 
 **Tester Code**:

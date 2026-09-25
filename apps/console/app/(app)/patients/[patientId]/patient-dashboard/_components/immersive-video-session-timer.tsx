@@ -2,11 +2,7 @@
 
 import { Timer } from 'lucide-react'
 import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
-import { useImmersiveSessionTimer } from '@/hooks/use-immersive-session-timer'
-import {
-  formatSessionTimer,
-  isImmersiveSessionActive,
-} from '@/lib/immersive-video-status'
+import { formatSessionTimer } from '@/lib/immersive-video-status'
 import { cn } from '@/lib/utils'
 
 export function ImmersiveVideoSessionTimer({
@@ -14,11 +10,8 @@ export function ImmersiveVideoSessionTimer({
 }: {
   className?: string
 }) {
-  const { playback } = useImmersiveVideoSession()
-  const elapsedSec = useImmersiveSessionTimer(
-    isImmersiveSessionActive(playback.state.status),
-  )
-  if (elapsedSec == null) return null
+  const { sessionElapsedSec, stopAfterMin } = useImmersiveVideoSession()
+  if (sessionElapsedSec == null) return null
 
   return (
     <span
@@ -29,7 +22,10 @@ export function ImmersiveVideoSessionTimer({
       )}
     >
       <Timer className='size-4' />
-      {formatSessionTimer(elapsedSec)}
+      {formatSessionTimer(sessionElapsedSec)}
+      {stopAfterMin != null
+        ? ` / ${formatSessionTimer(stopAfterMin * 60)}`
+        : null}
     </span>
   )
 }

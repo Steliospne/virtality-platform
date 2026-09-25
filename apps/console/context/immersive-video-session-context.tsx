@@ -14,6 +14,8 @@ import {
 } from '@virtality/react-query'
 import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { useHeadsetLibrary } from '@/hooks/use-headset-library'
+import { useImmersiveAutoStop } from '@/hooks/use-immersive-auto-stop'
+import { useImmersiveSessionTimer } from '@/hooks/use-immersive-session-timer'
 import { useImmersiveVideoPlayback } from '@/hooks/use-immersive-video-playback'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
 import {
@@ -26,6 +28,7 @@ import {
   toLibrarySnapshot,
 } from '@/lib/vr-video-page-state'
 import { isReplacementNoticeError } from '@/lib/socket-replacement-notice'
+import { isImmersiveSessionActive } from '@/lib/immersive-video-status'
 import useSocketConnection from '@/hooks/use-socket-connection'
 
 export type ImmersiveVideoSessionValue = {
@@ -34,6 +37,11 @@ export type ImmersiveVideoSessionValue = {
   setSelectedVideoId: (videoId: string | null) => void
   selectedRow: HeadsetLibraryRow | undefined
   playback: ReturnType<typeof useImmersiveVideoPlayback>
+  /** Seconds since the play command; `null` while no session runs. */
+  sessionElapsedSec: number | null
+  /** **Session Time Limit** in minutes; `null` means no limit. */
+  stopAfterMin: number | null
+  setStopAfterMin: (minutes: number | null) => void
   roomComplete: boolean
   replaced: boolean
   replacementDialogOpen: boolean
@@ -77,6 +85,18 @@ export function ImmersiveVideoSessionProvider({
   )
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
   const [replacementAcked, setReplacementAcked] = useState(false)
+  const [stopAfterMin, setStopAfterMin] = useState<number | null>(null)
+  const sessionElapsedSec = useImmersiveSessionTimer(
+    isImmersiveSessionActive(playback.state.status),
+  )
+
+  useImmersiveAutoStop({
+    elapsedSec: sessionElapsedSec,
+    stopAfterMin,
+    status: playback.state.status,
+    commandsEnabled: library.roomComplete && !replaced,
+    sendStop: playback.sendStop,
+  })
 
   const presenceByDeviceId = useVrPresencePolling({
     enabled: Boolean(selectedDevice),
@@ -143,6 +163,9 @@ export function ImmersiveVideoSessionProvider({
     setSelectedVideoId,
     selectedRow,
     playback,
+    sessionElapsedSec,
+    stopAfterMin,
+    setStopAfterMin,
     roomComplete: library.roomComplete,
     replaced,
     replacementDialogOpen,

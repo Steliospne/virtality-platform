@@ -12,6 +12,7 @@ import useControlPanel from './use-control-panel'
 import { NavigationGuardDialog } from '@/components/ui/navigation-guard-dialog'
 import { ImmersiveVideoPicker } from './immersive-video-picker'
 import { ImmersiveVideoTransport } from './immersive-video-transport'
+import { ImmersiveVideoStopAfterPicker } from './immersive-video-stop-after-picker'
 import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 
 interface ControlPanelProps {
@@ -122,6 +123,7 @@ const ControlPanel = ({
 
         {isProgramInactive && isMain && <ProgramSelector className='flex-1' />}
         {isImmersive && <ImmersiveVideoPicker className='flex-1' />}
+        {isImmersive && <ImmersiveVideoStopAfterPicker />}
 
         {isImmersive ? null : (
           <SceneSettings
