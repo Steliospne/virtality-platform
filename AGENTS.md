@@ -12,6 +12,10 @@ Apps and services load workspace packages from `dist/`, not `src/`. After changi
 
 Do not hand-write Prisma migration files. When schema changes are needed, update the Prisma schema and use `pnpm db:migrate:dev` to generate the migration, or `pnpm db:generate` when only client/codegen output is needed.
 
+### Headset simulator
+
+To check a console feature that talks to a VR headset (program mode, immersive video, downloads), run the Simulated Headset. You don't need a real headset. See `docs/agents/headset-sim.md`.
+
 ### Git / PRs
 
 PRs target **`dev`** (staging). Promote to production with `dev` → **`main`** after staging verification. Never open routine work PRs into `main`. See `docs/agents/git-workflow.md`.
