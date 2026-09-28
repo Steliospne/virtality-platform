@@ -12,6 +12,7 @@ import {
   PLAY_ACK_TIMEOUT_MS,
   REATTACH_WAIT_MS,
   reduceImmersivePlayback,
+  STOP_ACK_TIMEOUT_MS,
 } from '@/lib/immersive-video-playback-reducer'
 import type { VRDevice } from '@/types/models'
 
@@ -31,6 +32,7 @@ export function useImmersiveVideoPlayback(
     initialImmersivePlaybackState,
   )
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reattachTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deviceRef = useRef(device)
   deviceRef.current = device
@@ -39,6 +41,13 @@ export function useImmersiveVideoPlayback(
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current)
       playTimeoutRef.current = null
+    }
+  }
+
+  const clearStopTimeout = () => {
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current)
+      stopTimeoutRef.current = null
     }
   }
 
@@ -52,6 +61,7 @@ export function useImmersiveVideoPlayback(
   useEffect(() => {
     return () => {
       clearPlayTimeout()
+      clearStopTimeout()
       clearReattachTimeout()
     }
   }, [])
@@ -72,6 +82,7 @@ export function useImmersiveVideoPlayback(
       RoomComplete: startReattachWait,
       MemberLeft: () => {
         clearPlayTimeout()
+        clearStopTimeout()
         clearReattachTimeout()
         dispatch({ type: 'memberLeft' })
       },
@@ -88,16 +99,19 @@ export function useImmersiveVideoPlayback(
       },
       Ended: () => {
         clearPlayTimeout()
+        clearStopTimeout()
         dispatch({ type: 'ended' })
       },
       StopAck: (videoId: string) => {
         clearPlayTimeout()
+        clearStopTimeout()
         dispatch({ type: 'stopAck', videoId })
       },
     })
 
     const onDisconnect = () => {
       clearPlayTimeout()
+      clearStopTimeout()
       clearReattachTimeout()
       dispatch({ type: 'memberLeft' })
     }
@@ -139,10 +153,16 @@ export function useImmersiveVideoPlayback(
     target.events.video.Pause()
   }
 
+  /** The video stays Playing/Paused until `videoStopAck` or the timeout. */
   const sendStop = () => {
     const target = readyDevice()
-    if (!target || state.videoId == null) return
+    if (!target || state.videoId == null || state.pendingStop != null) return
+    dispatch({ type: 'stopSent' })
     target.events.video.Stop(state.videoId)
+    clearStopTimeout()
+    stopTimeoutRef.current = setTimeout(() => {
+      dispatch({ type: 'stopTimeout' })
+    }, STOP_ACK_TIMEOUT_MS)
   }
 
   /** Recentre the view via the program's `resetPosition`; the dashboard toasts the ack. */

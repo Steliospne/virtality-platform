@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatSessionTimer,
+  immersiveStatusBadge,
   isImmersiveSessionActive,
   shouldShowImmersiveTimeLimitBar,
 } from './immersive-video-status.js'
+
+describe('immersiveStatusBadge', () => {
+  it('reads Stopping while a held video awaits its stop ack', () => {
+    expect(
+      immersiveStatusBadge({
+        status: 'Playing',
+        headsetName: 'Quest',
+        stopping: true,
+      }),
+    ).toBe('Stopping…')
+    expect(
+      immersiveStatusBadge({ status: 'Playing', headsetName: 'Quest' }),
+    ).toBe('Playing on Quest')
+  })
+})
 
 describe('shouldShowImmersiveTimeLimitBar', () => {
   it('shows the bar only while the headset reports playback', () => {

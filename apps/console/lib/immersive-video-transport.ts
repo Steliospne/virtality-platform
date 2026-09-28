@@ -15,14 +15,17 @@ export function resolveImmersivePlayPauseControl(input: {
   status: ImmersivePlaybackStatus
   commandsEnabled: boolean
   readySelected: boolean
+  /** `videoStop` sent and not yet acknowledged. */
+  stopping?: boolean
 }): ImmersivePlayPauseControl {
-  const { status, commandsEnabled, readySelected } = input
+  const { status, commandsEnabled, readySelected, stopping = false } = input
+  const heldDisabled = !commandsEnabled || stopping
 
   if (status === 'Playing') {
-    return { icon: 'pause', disabled: !commandsEnabled, action: 'pause' }
+    return { icon: 'pause', disabled: heldDisabled, action: 'pause' }
   }
   if (status === 'Paused') {
-    return { icon: 'play', disabled: !commandsEnabled, action: 'pause' }
+    return { icon: 'play', disabled: heldDisabled, action: 'pause' }
   }
   if (status === 'Starting') {
     return { icon: 'play', disabled: true, action: 'play' }
@@ -41,11 +44,15 @@ export function shouldShowImmersiveStop(
   return isPlayingOrPaused(status)
 }
 
+/** Stop is held off while an earlier `videoStop` awaits its ack. */
 export function isImmersiveStopEnabled(input: {
   status: ImmersivePlaybackStatus
   commandsEnabled: boolean
+  stopping?: boolean
 }): boolean {
-  return input.commandsEnabled && isPlayingOrPaused(input.status)
+  return (
+    input.commandsEnabled && !input.stopping && isPlayingOrPaused(input.status)
+  )
 }
 
 /** Recentre reuses the program's `resetPosition`; its ack is toasted by the dashboard. */

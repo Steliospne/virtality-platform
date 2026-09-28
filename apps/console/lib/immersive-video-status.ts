@@ -7,7 +7,11 @@ import {
 export function immersiveStatusBadge(input: {
   status: ImmersivePlaybackStatus
   headsetName: string | null
+  stopping?: boolean
 }): string {
+  if (input.stopping && isPlayingOrPaused(input.status)) {
+    return 'Stopping…'
+  }
   if (input.status === 'Playing') {
     return input.headsetName ? `Playing on ${input.headsetName}` : 'Playing'
   }

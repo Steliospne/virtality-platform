@@ -65,6 +65,7 @@ export function ImmersiveVideoSelectedCard({
             {immersiveStatusBadge({
               status: playback.state.status,
               headsetName: state.selectedDevice?.data.name ?? null,
+              stopping: playback.state.pendingStop != null,
             })}
           </Badge>
         </div>

@@ -1,12 +1,23 @@
 import type { VideoPlaybackProgressPayload } from '@virtality/shared/types'
-import type { HeadsetDidNotConfirmReason } from './headset-did-not-confirm'
+import type {
+  HeadsetDidNotConfirmIntent,
+  HeadsetDidNotConfirmReason,
+} from './headset-did-not-confirm'
 
 export const PLAY_ACK_TIMEOUT_MS = 5_000
+export const STOP_ACK_TIMEOUT_MS = 5_000
 export const REATTACH_WAIT_MS = 2_000
 
 export type ImmersivePlaybackStatus = 'Idle' | 'Starting' | 'Playing' | 'Paused'
 
 export type PendingPlayMarker = { videoId: string; kind: 'play' }
+
+export type PendingStopMarker = { videoId: string }
+
+export type ImmersiveConfirmIntent = Extract<
+  HeadsetDidNotConfirmIntent,
+  'play' | 'stop'
+>
 
 export type ImmersivePlaybackState = {
   status: ImmersivePlaybackStatus
@@ -14,7 +25,11 @@ export type ImmersivePlaybackState = {
   positionSec: number
   durationSec: number
   pendingPlay: PendingPlayMarker | null
+  /** `videoStop` sent; the video stays Playing/Paused until `videoStopAck`. */
+  pendingStop: PendingStopMarker | null
   confirmReason: HeadsetDidNotConfirmReason | null
+  /** Which command `confirmReason` is about. */
+  confirmIntent: ImmersiveConfirmIntent
   reattaching: boolean
   lastProgress: VideoPlaybackProgressPayload | null
   lastProgressAt: number | null
@@ -24,6 +39,8 @@ export type ImmersivePlaybackAction =
   | { type: 'playSent'; videoId: string }
   | { type: 'playAck'; videoId: string }
   | { type: 'playTimeout' }
+  | { type: 'stopSent' }
+  | { type: 'stopTimeout' }
   | { type: 'memberLeft' }
   | { type: 'roomComplete' }
   | { type: 'reattachTimeout' }
@@ -39,7 +56,9 @@ export const initialImmersivePlaybackState: ImmersivePlaybackState = {
   positionSec: 0,
   durationSec: 0,
   pendingPlay: null,
+  pendingStop: null,
   confirmReason: null,
+  confirmIntent: 'play',
   reattaching: false,
   lastProgress: null,
   lastProgressAt: null,
@@ -69,6 +88,7 @@ function toIdle(
     positionSec: 0,
     durationSec: 0,
     pendingPlay: null,
+    pendingStop: null,
     reattaching: false,
     confirmReason: keep.confirmReason,
     lastProgress: keep.lastProgress,
@@ -109,6 +129,7 @@ export function reduceImmersivePlayback(
         status: 'Starting',
         videoId: action.videoId,
         pendingPlay: { videoId: action.videoId, kind: 'play' },
+        pendingStop: null,
         confirmReason: null,
         reattaching: false,
         positionSec: 0,
@@ -125,19 +146,50 @@ export function reduceImmersivePlayback(
     }
     case 'playTimeout': {
       if (state.pendingPlay == null) return state
-      return toIdle(state, {
-        confirmReason: 'didnt-respond',
-        lastProgress: state.lastProgress,
-        lastProgressAt: state.lastProgressAt,
-      })
-    }
-    case 'memberLeft': {
-      if (state.pendingPlay != null) {
-        return toIdle(state, {
-          confirmReason: 'disconnected',
+      return {
+        ...toIdle(state, {
+          confirmReason: 'didnt-respond',
           lastProgress: state.lastProgress,
           lastProgressAt: state.lastProgressAt,
-        })
+        }),
+        confirmIntent: 'play',
+      }
+    }
+    case 'stopSent':
+      if (!isPlayingOrPaused(state.status) || state.videoId == null) {
+        return state
+      }
+      if (state.pendingStop != null) return state
+      return { ...state, pendingStop: { videoId: state.videoId } }
+    // The headset never confirmed, so it may still be playing: keep the
+    // status and let the physio press Stop again.
+    case 'stopTimeout':
+      if (state.pendingStop == null) return state
+      return {
+        ...state,
+        pendingStop: null,
+        confirmReason: 'didnt-respond',
+        confirmIntent: 'stop',
+      }
+    case 'memberLeft': {
+      if (state.pendingPlay != null) {
+        return {
+          ...toIdle(state, {
+            confirmReason: 'disconnected',
+            lastProgress: state.lastProgress,
+            lastProgressAt: state.lastProgressAt,
+          }),
+          confirmIntent: 'play',
+        }
+      }
+      if (state.pendingStop != null) {
+        return {
+          ...state,
+          pendingStop: null,
+          reattaching: false,
+          confirmReason: 'disconnected',
+          confirmIntent: 'stop',
+        }
       }
       return { ...state, reattaching: false }
     }

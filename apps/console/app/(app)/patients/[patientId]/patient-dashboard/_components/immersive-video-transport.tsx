@@ -1,6 +1,12 @@
 'use client'
 
-import { Crosshair, PauseCircle, PlayCircle, StopCircle } from 'lucide-react'
+import {
+  Crosshair,
+  Loader2,
+  PauseCircle,
+  PlayCircle,
+  StopCircle,
+} from 'lucide-react'
 import { Button } from '@virtality/ui/components/button'
 import { useImmersiveVideoSession } from '@/context/immersive-video-session-context'
 import { isImmersivePickerRowSelectable } from '@/lib/immersive-video-picker'
@@ -19,10 +25,12 @@ export function ImmersiveVideoTransport() {
   const readySelected =
     selectedRow != null && isImmersivePickerRowSelectable(selectedRow.cell)
   const commandsEnabled = roomComplete && !frozen
+  const stopping = state.pendingStop != null
   const playPause = resolveImmersivePlayPauseControl({
     status: state.status,
     commandsEnabled,
     readySelected,
+    stopping,
   })
   // Until the headset handles `videoPause`, the primary button only plays.
   const showPlayPause =
@@ -31,6 +39,7 @@ export function ImmersiveVideoTransport() {
   const stopEnabled = isImmersiveStopEnabled({
     status: state.status,
     commandsEnabled,
+    stopping,
   })
   const recenterEnabled = isImmersiveRecenterEnabled({
     status: state.status,
@@ -66,11 +75,16 @@ export function ImmersiveVideoTransport() {
         <Button
           size='icon'
           variant='destructive'
-          aria-label='Stop'
+          aria-label={stopping ? 'Stopping' : 'Stop'}
+          aria-busy={stopping}
           disabled={!stopEnabled}
           onClick={sendStop}
         >
-          <StopCircle className='size-6' />
+          {stopping ? (
+            <Loader2 className='size-6 animate-spin' />
+          ) : (
+            <StopCircle className='size-6' />
+          )}
         </Button>
       ) : null}
       <Button

@@ -11,7 +11,7 @@ export function PatientDashboardVideoDialogs() {
   return (
     <>
       <HeadsetDidNotConfirmDialog
-        intent='play'
+        intent={playback.state.confirmIntent}
         reason={playback.state.confirmReason}
         onOpenChange={(open) => {
           if (!open) playback.dismissConfirm()

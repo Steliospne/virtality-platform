@@ -44,6 +44,25 @@ describe('resolveImmersivePlayPauseControl', () => {
     ).toEqual({ icon: 'play', disabled: false, action: 'pause' })
   })
 
+  it('disables pause and resume while a stop awaits its ack', () => {
+    expect(
+      resolveImmersivePlayPauseControl({
+        status: 'Playing',
+        commandsEnabled: true,
+        readySelected: true,
+        stopping: true,
+      }).disabled,
+    ).toBe(true)
+    expect(
+      resolveImmersivePlayPauseControl({
+        status: 'Paused',
+        commandsEnabled: true,
+        readySelected: true,
+        stopping: true,
+      }).disabled,
+    ).toBe(true)
+  })
+
   it('disables the control while Starting', () => {
     expect(
       resolveImmersivePlayPauseControl({
@@ -72,6 +91,13 @@ describe('immersive stop and recenter', () => {
     ).toBe(true)
     expect(
       isImmersiveStopEnabled({ status: 'Playing', commandsEnabled: false }),
+    ).toBe(false)
+    expect(
+      isImmersiveStopEnabled({
+        status: 'Playing',
+        commandsEnabled: true,
+        stopping: true,
+      }),
     ).toBe(false)
     expect(
       isImmersiveRecenterEnabled({ status: 'Paused', commandsEnabled: true }),

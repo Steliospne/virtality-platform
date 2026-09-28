@@ -16,6 +16,17 @@ function progress(
   }
 }
 
+function playingTrail() {
+  const starting = reduceImmersivePlayback(initialImmersivePlaybackState, {
+    type: 'playSent',
+    videoId: 'trail',
+  })
+  return reduceImmersivePlayback(starting, {
+    type: 'playAck',
+    videoId: 'trail',
+  })
+}
+
 describe('reduceImmersivePlayback', () => {
   it('moves Idle → Starting → Playing → Paused → Playing → Idle', () => {
     let state = initialImmersivePlaybackState
@@ -83,6 +94,88 @@ describe('reduceImmersivePlayback', () => {
         videoId: 'trail',
       }),
     ).toBe(initialImmersivePlaybackState)
+  })
+
+  it('stays Playing after stop is sent until the headset acks it', () => {
+    const playing = playingTrail()
+    const stopping = reduceImmersivePlayback(playing, { type: 'stopSent' })
+
+    expect(stopping.status).toBe('Playing')
+    expect(stopping.pendingStop).toEqual({ videoId: 'trail' })
+
+    const idle = reduceImmersivePlayback(stopping, {
+      type: 'stopAck',
+      videoId: 'trail',
+    })
+    expect(idle.status).toBe('Idle')
+    expect(idle.pendingStop).toBeNull()
+    expect(idle.confirmReason).toBeNull()
+  })
+
+  it('keeps the first pending stop when stop is sent twice', () => {
+    const stopping = reduceImmersivePlayback(playingTrail(), {
+      type: 'stopSent',
+    })
+
+    expect(reduceImmersivePlayback(stopping, { type: 'stopSent' })).toBe(
+      stopping,
+    )
+  })
+
+  it('ignores stopSent when nothing is playing', () => {
+    expect(
+      reduceImmersivePlayback(initialImmersivePlaybackState, {
+        type: 'stopSent',
+      }),
+    ).toBe(initialImmersivePlaybackState)
+  })
+
+  it('keeps the video held and asks the physio to retry when the stop ack times out', () => {
+    let state = reduceImmersivePlayback(playingTrail(), { type: 'pauseToggle' })
+    state = reduceImmersivePlayback(state, { type: 'stopSent' })
+    const timedOut = reduceImmersivePlayback(state, { type: 'stopTimeout' })
+
+    expect(timedOut.status).toBe('Paused')
+    expect(timedOut.videoId).toBe('trail')
+    expect(timedOut.pendingStop).toBeNull()
+    expect(timedOut.confirmReason).toBe('didnt-respond')
+    expect(timedOut.confirmIntent).toBe('stop')
+  })
+
+  it('ignores a stop timeout once the ack has arrived', () => {
+    let state = reduceImmersivePlayback(playingTrail(), { type: 'stopSent' })
+    state = reduceImmersivePlayback(state, {
+      type: 'stopAck',
+      videoId: 'trail',
+    })
+
+    expect(reduceImmersivePlayback(state, { type: 'stopTimeout' })).toBe(state)
+  })
+
+  it('yields the disconnected stop reason when MemberLeft has a pending stop', () => {
+    const stopping = reduceImmersivePlayback(playingTrail(), {
+      type: 'stopSent',
+    })
+    const left = reduceImmersivePlayback(stopping, { type: 'memberLeft' })
+
+    expect(left.pendingStop).toBeNull()
+    expect(left.confirmReason).toBe('disconnected')
+    expect(left.confirmIntent).toBe('stop')
+  })
+
+  it('reports a play timeout as a play confirm after a stop timeout', () => {
+    let state = reduceImmersivePlayback(playingTrail(), { type: 'stopSent' })
+    state = reduceImmersivePlayback(state, { type: 'stopTimeout' })
+    state = reduceImmersivePlayback(state, { type: 'ended' })
+    state = reduceImmersivePlayback(state, { type: 'dismissConfirm' })
+    state = reduceImmersivePlayback(state, {
+      type: 'playSent',
+      videoId: 'lake',
+    })
+    state = reduceImmersivePlayback(state, { type: 'playTimeout' })
+
+    expect(state.confirmReason).toBe('didnt-respond')
+    expect(state.confirmIntent).toBe('play')
   })
 
   it('re-attaches as Playing from progress', () => {

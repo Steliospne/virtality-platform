@@ -59,7 +59,7 @@ Keys are `VIDEO_EVENT` / `VIDEO_RELAY` entries in `packages/shared/src/types/soc
 | `PlayAck`                | `videoPlayAck`                | `[videoId]`                    | sent         | Sent on receipt, before playback starts.                                                                                                  |
 | `PlaybackProgress`       | `videoPlaybackProgress`       | `VideoPlaybackProgressPayload` | **not sent** | When sent: ≤1/s while playing and while paused, so a rejoining console can re-attach; it lands on Playing (no pause flag in the payload). |
 | `Ended`                  | `videoEnded`                  | none                           | **not sent** | Until sent, the console only leaves Playing on `videoStopAck`.                                                                            |
-| `StopAck`                | `videoStopAck`                | `[videoId]`                    | sent         | The console returns to Idle; a stale ack for another video is ignored.                                                                    |
+| `StopAck`                | `videoStopAck`                | `[videoId]`                    | sent         | The console returns to Idle; a stale ack for another video is ignored. Console times out at 5 s without it.                               |
 
 Payload types are the source in `packages/shared/src/types/socket-events.ts`; the doc does not repeat them.
 
@@ -112,6 +112,7 @@ sequenceDiagram
 
 - Gate every command on room membership (`RoomComplete` → enabled, `MemberLeft`/disconnect → disabled). Presence polling only selects copy while no room exists. Never show Download or Play enabled when the headset is not in the room.
 - Wait for `DownloadAck` / `PlayAck` with a 5 s timeout. On timeout, or if the room goes incomplete first, open the `HeadsetDidNotConfirmDialog`. Never re-send `videoPlay` automatically.
+- After `videoStop`, stay Playing/Paused with Stop and Pause disabled (badge "Stopping…") until `StopAck`. On a 5 s timeout, or if the room goes incomplete first, keep the video held, re-enable Stop and open the `HeadsetDidNotConfirmDialog` for the stop. Never re-send `videoStop` automatically.
 - A Download Request the headset never acknowledged survives as a `requested` row. Once the headset is in the room and has reported its Library State, re-send `videoDownloadStart` for every `requested` row it does not report: one at a time, at most once per connection, quietly.
 - Show `sizeBytes` from the catalog on every Download button and warn when it exceeds `freeBytes`.
 - Draw download progress from `bytesDownloaded` clamped to the catalog size; never store or show a byte count for a `ready` row.
