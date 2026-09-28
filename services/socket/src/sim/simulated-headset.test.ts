@@ -256,6 +256,15 @@ describe('video library', () => {
     ])
   })
 
+  it('leaves videoStop unanswered when told to ignore it', () => {
+    expect(
+      createSimulatedHeadset({ ignoreVideoStop: true }).handle(
+        VIDEO_EVENT.Stop,
+        'vid-1',
+      ),
+    ).toEqual([])
+  })
+
   it.each([
     VIDEO_EVENT.DownloadPause,
     VIDEO_EVENT.Pause,

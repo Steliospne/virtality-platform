@@ -20,6 +20,8 @@ export type SimulatedHeadsetOptions = {
   repIntervalMs?: number
   downloadDurationMs?: number
   progressIntervalMs?: number
+  /** Leave `videoStop` unanswered, so the console's stop timeout can be checked. */
+  ignoreVideoStop?: boolean
 }
 
 // ── Timing and sizes (the only place these live) ───────────────────────────
@@ -113,6 +115,7 @@ export function createSimulatedHeadset(
   const repIntervalMs = options.repIntervalMs ?? REP_INTERVAL_MS
   const downloadDurationMs = options.downloadDurationMs ?? DOWNLOAD_DURATION_MS
   const progressIntervalMs = options.progressIntervalMs ?? PROGRESS_INTERVAL_MS
+  const ignoreVideoStop = options.ignoreVideoStop ?? false
 
   let program = idleProgram()
   /** Ids the headset holds as `ready`. Starts empty; nothing is seeded. */
@@ -266,6 +269,7 @@ export function createSimulatedHeadset(
       case VIDEO_EVENT.Play:
         return [{ event: VIDEO_EVENT.PlayAck, payload }]
       case VIDEO_EVENT.Stop:
+        if (ignoreVideoStop) return []
         return [{ event: VIDEO_EVENT.StopAck, payload }]
       default:
         return []

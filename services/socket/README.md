@@ -40,6 +40,9 @@ ROOM_CODE=<deviceId> pnpm --filter @virtality/socket dev_sim
 
 # Point at another server (defaults to http://localhost:8081)
 SOCKET_URL=http://localhost:8081 ROOM_CODE=<deviceId> pnpm --filter @virtality/socket dev_sim
+
+# Never answer videoStop, to see the console's stop timeout
+SIM_IGNORE_VIDEO_STOP=1 ROOM_CODE=<deviceId> pnpm --filter @virtality/socket dev_sim
 ```
 
 The library starts empty. Any `videoId` downloads in about 10 s with progress

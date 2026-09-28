@@ -9,7 +9,11 @@ import { createSimulatedHeadset, type Emit } from './simulated-headset'
 
 const TICK_MS = 100
 
-const { ROOM_CODE, SOCKET_URL = 'http://localhost:8081' } = process.env
+const {
+  ROOM_CODE,
+  SOCKET_URL = 'http://localhost:8081',
+  SIM_IGNORE_VIDEO_STOP,
+} = process.env
 
 if (!ROOM_CODE) {
   console.error('Missing ROOM_CODE (the device id shown in the console).')
@@ -19,7 +23,9 @@ if (!ROOM_CODE) {
 const socket = io(SOCKET_URL, {
   query: { roomCode: ROOM_CODE, role: ROOM_PEER_ROLE.Vr },
 })
-const headset = createSimulatedHeadset()
+const headset = createSimulatedHeadset({
+  ignoreVideoStop: SIM_IGNORE_VIDEO_STOP === '1',
+})
 
 function send(emits: Emit[]) {
   for (const { event, payload } of emits) {

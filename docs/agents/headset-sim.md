@@ -19,6 +19,6 @@ To play an immersive video, first download it: open **VR Experiences**, pick the
 
 - **Program:** acknowledges every command, counts reps and sets, and ends the program.
 - **Video library:** starts empty every time the simulator starts. A download takes about 10 s. A `videoId` that starts with `fail-` fails its download.
-- **Playback:** acknowledges play and stop, so the console moves to Playing and back to Idle. It sends no playback progress, so the video's position stays at 0. It does not implement pause, and neither does the headset build (`HEADSET_VIDEO_SUPPORT.playbackPause`).
+- **Playback:** acknowledges play and stop, so the console moves to Playing and back to Idle. With `SIM_IGNORE_VIDEO_STOP=1` it never answers `videoStop`, so the console's stop times out after 5 s. It sends no playback progress, so the video's position stays at 0. It does not implement pause, and neither does the headset build (`HEADSET_VIDEO_SUPPORT.playbackPause`).
 
 Timings and behaviour are in `services/socket/src/sim/simulated-headset.ts`, with tests in `simulated-headset.test.ts`. If a feature needs an event the simulator doesn't answer, extend the simulator and its tests so you can still check the feature.
