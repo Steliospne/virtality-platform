@@ -21,7 +21,7 @@ export function ImmersiveVideoStopAfterPicker({
 }: {
   className?: string
 }) {
-  const { stopAfterMin, setStopAfterMin, sessionElapsedSec, frozen } =
+  const { stopAfterMin, setStopAfterMin, timeLimitElapsedSec, frozen } =
     useImmersiveVideoSession()
   const [open, setOpen] = useState(false)
 
@@ -46,13 +46,13 @@ export function ImmersiveVideoStopAfterPicker({
       <PopoverContent align='end' className='flex w-56 flex-col gap-1 p-1'>
         <ImmersiveVideoStopAfterPresets
           stopAfterMin={stopAfterMin}
-          elapsedSec={sessionElapsedSec}
+          elapsedSec={timeLimitElapsedSec}
           onChoose={choose}
         />
         <Separator />
         <ImmersiveVideoStopAfterCustomForm
           stopAfterMin={stopAfterMin}
-          elapsedSec={sessionElapsedSec}
+          elapsedSec={timeLimitElapsedSec}
           onApply={choose}
         />
       </PopoverContent>

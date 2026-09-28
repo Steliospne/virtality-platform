@@ -33,13 +33,13 @@ describe('ImmersiveVideoStopAfterCustomForm', () => {
     expect(input.value).toBe('25')
   })
 
-  it('shows an error instead of applying a limit the session already reached', () => {
+  it('shows an error instead of applying a limit the timer already reached', () => {
     const { onApply, input, submit } = setup({ elapsedSec: 600 })
     fireEvent.change(input, { target: { value: '10' } })
     fireEvent.click(submit)
     expect(onApply).not.toHaveBeenCalled()
     expect(
-      screen.getByText('The session has already run that long.'),
+      screen.getByText('The timer has already run that long.'),
     ).toBeTruthy()
     expect(input.getAttribute('aria-invalid')).toBe('true')
   })

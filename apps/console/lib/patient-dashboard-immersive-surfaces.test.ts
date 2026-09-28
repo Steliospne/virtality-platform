@@ -33,11 +33,11 @@ describe('patient dashboard immersive surfaces', () => {
     expect(dashboard).not.toMatch(/isImmersive && !showCasting/)
   })
 
-  it('keeps the playback bar and session timer inside the video card', () => {
+  it('keeps the time limit bar and session timer inside the video card', () => {
     const card = readConsoleFile(SELECTED_CARD_PATH)
 
-    expect(card).toMatch(/shouldShowImmersivePlaybackBar/)
-    expect(card).toMatch(/<ImmersiveVideoPlaybackBar \/>/)
+    expect(card).toMatch(/shouldShowImmersiveTimeLimitBar/)
+    expect(card).toMatch(/<ImmersiveVideoTimeLimitBar \/>/)
     expect(card).toMatch(/<ImmersiveVideoSessionTimer \/>/)
     expect(card).not.toMatch(/immersiveHintLine/)
   })

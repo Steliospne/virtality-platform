@@ -16,6 +16,7 @@ import { usePatientDashboard } from '@/context/patient-dashboard-context'
 import { useHeadsetLibrary } from '@/hooks/use-headset-library'
 import { useImmersiveAutoStop } from '@/hooks/use-immersive-auto-stop'
 import { useImmersiveSessionTimer } from '@/hooks/use-immersive-session-timer'
+import { useImmersiveTimeLimit } from '@/hooks/use-immersive-time-limit'
 import { useImmersiveVideoPlayback } from '@/hooks/use-immersive-video-playback'
 import { useVrPresencePolling } from '@/hooks/use-vr-presence-polling'
 import {
@@ -42,6 +43,8 @@ export type ImmersiveVideoSessionValue = {
   /** **Session Time Limit** in minutes; `null` means no limit. */
   stopAfterMin: number | null
   setStopAfterMin: (minutes: number | null) => void
+  /** Seconds the time limit has run; `null` without a limit or a session. */
+  timeLimitElapsedSec: number | null
   roomComplete: boolean
   replaced: boolean
   replacementDialogOpen: boolean
@@ -85,13 +88,14 @@ export function ImmersiveVideoSessionProvider({
   )
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
   const [replacementAcked, setReplacementAcked] = useState(false)
-  const [stopAfterMin, setStopAfterMin] = useState<number | null>(null)
   const sessionElapsedSec = useImmersiveSessionTimer(
     isImmersiveSessionActive(playback.state.status),
   )
+  const { stopAfterMin, setStopAfterMin, timeLimitElapsedSec } =
+    useImmersiveTimeLimit(sessionElapsedSec)
 
   useImmersiveAutoStop({
-    elapsedSec: sessionElapsedSec,
+    elapsedSec: timeLimitElapsedSec,
     stopAfterMin,
     status: playback.state.status,
     commandsEnabled: library.roomComplete && !replaced,
@@ -166,6 +170,7 @@ export function ImmersiveVideoSessionProvider({
     sessionElapsedSec,
     stopAfterMin,
     setStopAfterMin,
+    timeLimitElapsedSec,
     roomComplete: library.roomComplete,
     replaced,
     replacementDialogOpen,

@@ -4,20 +4,6 @@ import {
   type ImmersivePlaybackStatus,
 } from '@/lib/immersive-video-playback-reducer'
 
-export function formatPlaybackClock(
-  positionSec: number,
-  durationSec: number,
-): { elapsed: string; remaining: string; ratio: number } {
-  const duration = Math.max(0, durationSec)
-  const position = Math.max(0, Math.min(positionSec, duration || positionSec))
-  const remaining = Math.max(0, duration - position)
-  return {
-    elapsed: formatDurationLabel(Math.floor(position)) ?? '0:00',
-    remaining: `-${formatDurationLabel(Math.floor(remaining)) ?? '0:00'}`,
-    ratio: duration > 0 ? position / duration : 0,
-  }
-}
-
 export function immersiveStatusBadge(input: {
   status: ImmersivePlaybackStatus
   headsetName: string | null
@@ -32,10 +18,12 @@ export function immersiveStatusBadge(input: {
 }
 
 /** The playback bar only means something once the headset reports position. */
-export function shouldShowImmersivePlaybackBar(
-  status: ImmersivePlaybackStatus,
-): boolean {
-  return isPlayingOrPaused(status)
+/** The time limit bar shows while the headset holds a video under a limit. */
+export function shouldShowImmersiveTimeLimitBar(input: {
+  status: ImmersivePlaybackStatus
+  timeLimitElapsedSec: number | null
+}): boolean {
+  return input.timeLimitElapsedSec != null && isPlayingOrPaused(input.status)
 }
 
 /** A session runs from the play command until playback returns to Idle. */

@@ -2,15 +2,26 @@ import { describe, expect, it } from 'vitest'
 import {
   formatSessionTimer,
   isImmersiveSessionActive,
-  shouldShowImmersivePlaybackBar,
+  shouldShowImmersiveTimeLimitBar,
 } from './immersive-video-status.js'
 
-describe('shouldShowImmersivePlaybackBar', () => {
+describe('shouldShowImmersiveTimeLimitBar', () => {
   it('shows the bar only while the headset reports playback', () => {
-    expect(shouldShowImmersivePlaybackBar('Idle')).toBe(false)
-    expect(shouldShowImmersivePlaybackBar('Starting')).toBe(false)
-    expect(shouldShowImmersivePlaybackBar('Playing')).toBe(true)
-    expect(shouldShowImmersivePlaybackBar('Paused')).toBe(true)
+    const show = (status: 'Idle' | 'Starting' | 'Playing' | 'Paused') =>
+      shouldShowImmersiveTimeLimitBar({ status, timeLimitElapsedSec: 30 })
+    expect(show('Idle')).toBe(false)
+    expect(show('Starting')).toBe(false)
+    expect(show('Playing')).toBe(true)
+    expect(show('Paused')).toBe(true)
+  })
+
+  it('hides the bar without a time limit', () => {
+    expect(
+      shouldShowImmersiveTimeLimitBar({
+        status: 'Playing',
+        timeLimitElapsedSec: null,
+      }),
+    ).toBe(false)
   })
 })
 

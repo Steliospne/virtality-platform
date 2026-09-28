@@ -16,11 +16,11 @@ import {
 } from '@/lib/immersive-video-picker'
 import {
   immersiveStatusBadge,
-  shouldShowImmersivePlaybackBar,
+  shouldShowImmersiveTimeLimitBar,
 } from '@/lib/immersive-video-status'
 import { cn } from '@/lib/utils'
-import { ImmersiveVideoPlaybackBar } from './immersive-video-playback-bar'
 import { ImmersiveVideoSessionTimer } from './immersive-video-session-timer'
+import { ImmersiveVideoTimeLimitBar } from './immersive-video-time-limit-bar'
 
 export function ImmersiveVideoSelectedCard({
   className,
@@ -28,14 +28,23 @@ export function ImmersiveVideoSelectedCard({
   className?: string
 }) {
   const { state } = usePatientDashboard()
-  const { selectedRow, playback, roomComplete, replaced, pollOnline } =
-    useImmersiveVideoSession()
+  const {
+    selectedRow,
+    playback,
+    roomComplete,
+    replaced,
+    pollOnline,
+    timeLimitElapsedSec,
+  } = useImmersiveVideoSession()
   const gateCopy = immersiveHeadsetGateCopy({
     roomComplete,
     replaced,
     pollOnline,
   })
-  const showPlaybackBar = shouldShowImmersivePlaybackBar(playback.state.status)
+  const showTimeLimitBar = shouldShowImmersiveTimeLimitBar({
+    status: playback.state.status,
+    timeLimitElapsedSec,
+  })
 
   return (
     <Card className={cn('flex flex-col', className)}>
@@ -62,7 +71,7 @@ export function ImmersiveVideoSelectedCard({
         {gateCopy ? (
           <p className='text-muted-foreground text-sm'>{gateCopy}</p>
         ) : null}
-        {showPlaybackBar ? <ImmersiveVideoPlaybackBar /> : null}
+        {showTimeLimitBar ? <ImmersiveVideoTimeLimitBar /> : null}
       </CardContent>
     </Card>
   )

@@ -7,7 +7,8 @@ import type { ImmersivePlaybackStatus } from '@/lib/immersive-video-playback-red
 /**
  * Sends `videoStop` once per session when the **Session Time Limit** is
  * reached. If the headset ignores it, the physio's Stop button still works;
- * the hook does not resend. A new session (clock back to `null`) re-arms it.
+ * the hook does not resend. The clock going back to `null` (a new session, or
+ * the limit cleared) re-arms it.
  */
 export function useImmersiveAutoStop(input: {
   elapsedSec: number | null
@@ -26,11 +27,11 @@ export function useImmersiveAutoStop(input: {
     status,
     commandsEnabled,
   })
-  const sessionRunning = elapsedSec != null
+  const counting = elapsedSec != null
 
   useEffect(() => {
-    if (!sessionRunning) firedRef.current = false
-  }, [sessionRunning])
+    if (!counting) firedRef.current = false
+  }, [counting])
 
   useEffect(() => {
     if (!due || firedRef.current) return

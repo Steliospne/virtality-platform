@@ -223,7 +223,7 @@ A **Headset Library** entry whose `videoId` is not in `immersiveVideo.list` (unp
 _Avoid_: Missing, orphaned, unknown video, unpublished (as physio-facing copy)
 
 **Session Time Limit**:
-An optional length, picked by the physio on the patient dashboard, after which the console sends `videoStop` for the running **Immersive Video**. It is measured on the same session clock the card shows (from the play command, pauses included), fires once per session, and waits for the headset to be in the room and holding a video. It can be changed mid-session, but not to a length the session has already reached. It is console-only: the headset is not told about it.
+An optional length, picked by the physio on the patient dashboard, after which the console sends `videoStop` for the running **Immersive Video**. It counts from the play command when picked before play, or from the moment it is picked when none was set mid-session, pauses included; the card's bar shows that count from 0:00 and is hidden while no limit is set. It fires once per count and waits for the headset to be in the room and holding a video. Changing a set limit keeps the running count, so it cannot be changed to a length the count has already reached; clearing it and picking again starts a new count. It is console-only: the headset is not told about it.
 _Avoid_: Auto-stop timer (in copy), video duration, playback limit
 
 ### Access and billing

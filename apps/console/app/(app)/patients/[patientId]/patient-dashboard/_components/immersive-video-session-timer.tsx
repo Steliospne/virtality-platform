@@ -10,7 +10,7 @@ export function ImmersiveVideoSessionTimer({
 }: {
   className?: string
 }) {
-  const { sessionElapsedSec, stopAfterMin } = useImmersiveVideoSession()
+  const { sessionElapsedSec } = useImmersiveVideoSession()
   if (sessionElapsedSec == null) return null
 
   return (
@@ -23,9 +23,6 @@ export function ImmersiveVideoSessionTimer({
     >
       <Timer className='size-4' />
       {formatSessionTimer(sessionElapsedSec)}
-      {stopAfterMin != null
-        ? ` / ${formatSessionTimer(stopAfterMin * 60)}`
-        : null}
     </span>
   )
 }
