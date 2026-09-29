@@ -16,6 +16,8 @@ model Patient {
   createdAt      DateTime         @default(now()) @db.Timestamp(6)
   updatedAt      DateTime         @default(now()) @db.Timestamp(6)
   deletedAt      DateTime?        @db.Timestamp(6)
+  // Set when the clinician pins this patient to the console home dashboard.
+  pinnedAt       DateTime?        @db.Timestamp(6)
   patientProgram PatientProgram[]
   medicalHistory MedicalHistory[]
   patientSession PatientSession[]

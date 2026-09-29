@@ -9,6 +9,7 @@ import SceneSettings from './control-panel-scene-settings'
 import DeviceSelector from './control-panel-device-selector'
 import CastingButton from './control-panel-casting-button'
 import useControlPanel from './use-control-panel'
+import AutoLaunchStatus from './auto-launch-status'
 import { NavigationGuardDialog } from '@/components/ui/navigation-guard-dialog'
 import { ImmersiveVideoPicker } from './immersive-video-picker'
 import { ImmersiveVideoTransport } from './immersive-video-transport'
@@ -40,6 +41,7 @@ const ControlPanel = ({
     isProgramActive,
     isProgramLaunching,
     treatmentLaunchReady,
+    autoLaunchArmed,
     programStart,
     programEnd,
     handleWarmupStart,
@@ -96,6 +98,7 @@ const ControlPanel = ({
       </div>
 
       <div className='flex flex-1 gap-2'>
+        {autoLaunchArmed && <AutoLaunchStatus connected={connected} />}
         {(isProgramActive || isProgramPaused) && isMain && (
           <>
             <Item variant='outline' size='sm' className='max-h-9 p-1'>

@@ -238,10 +238,30 @@ const updatePatient = authed
     }
   })
 
+const SetPatientPinnedSchema = z.object({
+  id: z.string(),
+  pinned: z.boolean(),
+})
+
+// Pinning is a per-clinician shortcut on the console home dashboard, not
+// clinical data, so it lives beside the patient rather than in its form.
+const setPatientPinned = authed
+  .route({ path: '/patient/:id/pinned', method: 'PUT' })
+  .input(SetPatientPinnedSchema)
+  .handler(async ({ context, input }) => {
+    const { prisma, user } = context
+    const patient = await prisma.patient.update({
+      where: { id: input.id, userId: user.id, deletedAt: null },
+      data: { pinnedAt: input.pinned ? new Date() : null },
+    })
+    return patient
+  })
+
 export const patient = {
   list: listPatients,
   find: findPatient,
   create: createPatient,
   delete: deletePatient,
   update: updatePatient,
+  setPinned: setPatientPinned,
 }

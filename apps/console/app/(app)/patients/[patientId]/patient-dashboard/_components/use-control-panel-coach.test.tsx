@@ -61,6 +61,11 @@ vi.mock('@/context/patient-dashboard-context', () => ({
 vi.mock('@/context/device-context', () => ({
   useDeviceContext: () => ({ devices: [mocks.device] }),
 }))
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => '/patients/p1/patient-dashboard',
+  useSearchParams: () => new URLSearchParams(),
+}))
 vi.mock('@/hooks/use-socket-connection', () => ({
   default: () => ({ connected: mocks.connected }),
 }))

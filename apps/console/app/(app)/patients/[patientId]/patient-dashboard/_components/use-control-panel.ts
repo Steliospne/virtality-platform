@@ -27,6 +27,7 @@ import {
 } from '@/lib/session-exercise-skip'
 import { resolveSkipControlUiState } from '@/lib/session-exercise-change-ui'
 import useCoachSettings from './use-coach-settings'
+import { useLaunchIntentFromUrl } from './use-launch-intent-from-url'
 
 const useControlPanel = () => {
   const { devices } = useDeviceContext()
@@ -47,6 +48,7 @@ const useControlPanel = () => {
     exercises,
     activeExerciseData,
     pendingExerciseChange,
+    inQuickStart,
   } = state
 
   const {
@@ -54,10 +56,13 @@ const useControlPanel = () => {
     setSelectedDevice,
     setActiveExerciseData,
     setProgramState,
+    setInQuickStart,
   } = handler
   // const { t } = getClientT(['patient-dashboard', 'common']);
 
-  const { connected } = useSocketConnection({ device: selectedDevice })
+  const { connected, connect } = useSocketConnection({
+    device: selectedDevice,
+  })
   const headsetPresent = useVrHeadsetPresence(selectedDevice)
   const { coachEnabled, changeCoachEnabled, coachToggleDisabled } =
     useCoachSettings({
@@ -69,12 +74,13 @@ const useControlPanel = () => {
     })
   const { canLaunchVr, isPending: entitlementPending } =
     useLiveEntitlementStanding()
-  const treatmentLaunchReady = canLaunchTreatment({
+  const launchReadiness = {
     consoleConnected: connected,
     headsetPresent,
     entitlementAllowsLaunch: canLaunchVr,
     entitlementPending,
-  })
+  }
+  const treatmentLaunchReady = canLaunchTreatment(launchReadiness)
 
   const missingSettings = !selectedAvatar || !selectedMap
 
@@ -162,6 +168,24 @@ const useControlPanel = () => {
     selectedDevice?.events.program.End()
   }
 
+  const { autoLaunchArmed } = useLaunchIntentFromUrl({
+    gate: {
+      selectedMode,
+      inQuickStart,
+      exerciseCount: exercises?.length ?? 0,
+      treatmentLaunchReady,
+      missingSettings,
+      programState,
+    },
+    selectedDevice,
+    consoleConnected: connected,
+    launchError: getTreatmentLaunchError(launchReadiness),
+    connect,
+    programStart,
+    setInQuickStart,
+    setSelectedMode,
+  })
+
   const skipExercise = (direction: SkipDirection) => {
     void requestForwardBackSkip(direction)
   }
@@ -237,6 +261,7 @@ const useControlPanel = () => {
     isProgramActive,
     isProgramLaunching,
     treatmentLaunchReady,
+    autoLaunchArmed,
     programStart,
     programEnd,
     handleWarmupStart,

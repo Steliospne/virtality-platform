@@ -196,6 +196,26 @@ _Avoid_: Remove, disconnect, reset device, replace headset overwrite, treating U
 Soft-deleting a Device from the owning clinician's list. It also releases any bound **Headset Identity**; a soft-deleted Device must not keep an active bind. Distinct from **Unpair**, which clears the bind and keeps the Device.
 _Avoid_: Unpair, hard delete as the only remove path, soft-delete while keeping identity
 
+**Home Dashboard**:
+The console landing page for a signed-in clinician: a seven-day sessions overview across all their patients, a **Session Picker**, **Pinned Patients**, and a **Getting Started** checklist.
+_Avoid_: Welcome page, landing tips, home screen
+
+**Getting Started**:
+The four-step checklist on the **Home Dashboard** — pair a headset, add a patient, build a **Reusable Program**, run a **Started Session** — with each step's done state derived from the clinician's live data, never from stored onboarding flags. Completing the last step collapses the card to its summary row; it stays on the dashboard and can be expanded again.
+_Avoid_: Missions, tour flags, hiding the card when complete
+
+**Session Picker**:
+The three-step patient / program / headset choice on the **Home Dashboard**. Launch records the chosen program and headset as the patient's **Last Used Program** and last headset, then opens that patient's dashboard with a **Launch Intent**.
+_Avoid_: Home launch, remote start, dashboard-side launch
+
+**Launch Intent**:
+A one-shot `?launch=1` (optionally `&quickstart=1`) handed from the **Session Picker** to the patient dashboard. On arrival the dashboard switches to Exercise Mode, opens Quick Start when asked, connects the remembered headset, and presses Start on the clinician's behalf the first moment the manual-Start gate opens (console connected, headset present, entitlement allows, exercises selected, avatar and map set). The params are dropped immediately so a refresh never re-fires; the intent gives up with a reason after a bounded wait (paused while Quick Start is open) and stands down if the clinician starts anything themselves.
+_Avoid_: Auto-start on every visit, launch from the home page, silent retry after timeout
+
+**Pinned Patient**:
+A patient the clinician has marked (`pinnedAt`) to keep on the **Home Dashboard**. It is a per-clinician shortcut, not clinical state, and is separate from the patient's profile form.
+_Avoid_: Favourite patient, active patient, starred patient
+
 ### Immersive Video
 
 **Headset Library**:

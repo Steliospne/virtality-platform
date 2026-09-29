@@ -169,7 +169,7 @@ const PatientFormEdit = ({ patientId }: PatientFormEditProps) => {
 
     const patientData: Omit<
       Patient,
-      'userId' | 'image' | 'id' | 'createdAt' | 'deletedAt'
+      'userId' | 'image' | 'id' | 'createdAt' | 'deletedAt' | 'pinnedAt'
     > & {
       image: File | string | null | undefined
     } = {

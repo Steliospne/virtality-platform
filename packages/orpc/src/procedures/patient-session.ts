@@ -53,6 +53,39 @@ const listPatientSessions = authed
     return patientSessions
   })
 
+const ListRecentPatientSessionsSchema = z.object({
+  since: z.coerce.date(),
+})
+
+// Clinical-history sessions across every patient the clinician owns, for the
+// console home dashboard. Day bucketing happens on the client, in the
+// clinician's timezone, so this only bounds the window.
+const listRecentPatientSessions = authed
+  .route({ path: '/patient-session/list-recent', method: 'GET' })
+  .input(ListRecentPatientSessionsSchema)
+  .handler(async ({ context, input }) => {
+    const { prisma, user } = context
+    return prisma.patientSession.findMany({
+      where: {
+        deletedAt: null,
+        status: { in: ['COMPLETED', 'INTERRUPTED'] },
+        createdAt: { gte: input.since },
+        patient: { userId: user.id, deletedAt: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        patientId: true,
+        status: true,
+        createdAt: true,
+        completedAt: true,
+        sourceReusableProgramId: true,
+        sourceProgramName: true,
+        patient: { select: { id: true, name: true, image: true } },
+      },
+    })
+  })
+
 const findPatientSession = authed
   .route({ path: '/patient-session/find', method: 'GET' })
   .input(PatientSessionFindFirstZodSchema)
@@ -214,6 +247,7 @@ const syncWorkingCopy = authed
 
 export const patientSession = {
   list: listPatientSessions,
+  listRecent: listRecentPatientSessions,
   find: findPatientSession,
   create: createPatientSession,
   startFromAck: startPatientSessionFromAck,
